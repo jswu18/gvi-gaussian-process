@@ -30,6 +30,7 @@ class VariationalKernelParameters(KernelParameters):
 
 
 class VariationalKernel(Kernel):
+
     Parameters = VariationalKernelParameters
 
     def __init__(

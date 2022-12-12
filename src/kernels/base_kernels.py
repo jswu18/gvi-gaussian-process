@@ -135,12 +135,13 @@ class GaussianKernelParameters(BaseKernelParameters):
 
 
 class GaussianKernel(BaseKernel):
-    Parameters = GaussianKernelParameters
     """
     The Gaussian kernel defined as:
         k(x, y) = exp(-σ||x-y||_2^2)
     where σ>0.
     """
+
+    Parameters = GaussianKernelParameters
 
     def _kernel(
         self,
@@ -190,12 +191,13 @@ class ARDKernelParameters(BaseKernelParameters):
 
 
 class ARDKernel(BaseKernel):
-    Parameters = ARDKernelParameters
     """
     The ARD Kernel defined as:
         k(x, y) = (σ_f)^2 * exp( -0.5 * sum_d(((x_d - y_d)^2)/(α_d)^2) )
     where σ_f>0, the kernel scaling factor and α_d the length scale for dimension d
     """
+
+    Parameters = ARDKernelParameters
 
     def _kernel(
         self, parameters: ARDKernelParameters, x: jnp.ndarray, y: jnp.ndarray
