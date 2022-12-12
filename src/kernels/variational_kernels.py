@@ -54,8 +54,7 @@ class VariationalKernel(Kernel):
             jnp.linalg.inv(
                 kzz
                 + parameters.precision * kxz.T @ kxz
-                + regularisation
-                + jnp.eye(kzz.shape[0])
+                + regularisation * jnp.eye(kzz.shape[0])
             )
         )
 
