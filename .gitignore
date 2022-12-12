@@ -1,0 +1,22 @@
+# Virtualenvs
+.env/
+
+# Python
+__pycache__
+
+# IDE
+.idea
+
+# Notebook checkpoints
+*ipynb_checkpoints
+/**/*ipynb_checkpoints
+.DS_Store
+notebooks/.DS_Store
+
+#sandbox notebook
+notebooks/sandbox.ipynb
+
+# Pytest
+*pytest_cache
+/**/*pytest_cache
+
