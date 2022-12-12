@@ -156,7 +156,7 @@ class GaussianProcess(GaussianMeasure):
         """
         parameter_args = asdict(parameters)
         opt_state = optimizer.init(parameter_args)
-        for i in range(number_of_training_iterations):
+        for _ in range(number_of_training_iterations):
             gradients = self._compute_grad(x, y, **parameter_args)
             updates, opt_state = optimizer.update(gradients, opt_state)
             parameter_args = optax.apply_updates(parameter_args, updates)
