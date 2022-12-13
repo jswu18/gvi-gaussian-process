@@ -1,5 +1,5 @@
 from abc import ABC
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from typing import Any, Dict, Tuple
 
 import jax.numpy as jnp
@@ -72,7 +72,7 @@ class GaussianProcess(GaussianMeasure):
         self.kernel = kernel
 
     def _compute_kxx_shifted_cholesky_decomposition(
-        self, parameters: GaussianProcessParameters
+        self, **parameter_args
     ) -> Tuple[jnp.ndarray, bool]:
         """
         Cholesky decomposition of (kxx + (1/σ^2)*I)
@@ -84,6 +84,7 @@ class GaussianProcess(GaussianMeasure):
             cholesky_decomposition_kxx_shifted: the cholesky decomposition (number_of_features, number_of_features)
             lower_flag: flag indicating whether the factor is in the lower or upper triangle
         """
+        parameters = self.Parameters(**parameter_args)
         kxx = self.kernel(self.x, **parameters.kernel)
         kxx_shifted = kxx + parameters.variance * jnp.eye(self.number_of_train_points)
         kxx_shifted_cholesky_decomposition, lower_flag = jax.scipy.linalg.cho_factor(
@@ -111,7 +112,7 @@ class GaussianProcess(GaussianMeasure):
         (
             kxx_shifted_cholesky_decomposition,
             lower_flag,
-        ) = self._compute_kxx_shifted_cholesky_decomposition(parameters)
+        ) = self._compute_kxx_shifted_cholesky_decomposition(**parameter_args)
 
         mean = (
             kxy.T
@@ -131,16 +132,15 @@ class GaussianProcess(GaussianMeasure):
         Reference: http://gaussianprocess.org/gpml/chapters/RW2.pdf
 
         Args:
-            **parameter_args: parameter arguments for the Gaussian Process
+            **parameter_args: parameter arguments for the kernel
 
         Returns:
             The negative log likelihood.
         """
-        parameters = self.Parameters(**parameter_args)
         (
             kxx_shifted_cholesky_decomposition,
             lower_flag,
-        ) = self._compute_kxx_shifted_cholesky_decomposition(parameters)
+        ) = self._compute_kxx_shifted_cholesky_decomposition(**parameter_args)
 
         negative_log_likelihood = -(
             -0.5
@@ -160,7 +160,7 @@ class GaussianProcess(GaussianMeasure):
         """Calculate the gradient of the posterior negative log likelihood with respect to the parameters.
 
         Args:
-            **parameter_args: parameter arguments for the Gaussian Process
+            **parameter_args: parameter arguments for the kernel
 
         Returns:
             A dictionary of the gradients for each parameter argument.
@@ -172,21 +172,20 @@ class GaussianProcess(GaussianMeasure):
 
     def train(
         self,
-        parameters: GaussianProcessParameters,
         optimizer: GradientTransformation,
         number_of_training_iterations: int,
+        **parameter_args,
     ) -> GaussianMeasureParameters:
         """Train the parameters for a Gaussian Process by optimising the negative log likelihood.
 
         Args:
-            parameters: parameters dataclass for the Gaussian Process
             optimizer: jax optimizer object
             number_of_training_iterations: number of iterations to perform the optimizer
+            **parameter_args: parameter arguments for the kernel
 
         Returns:
             A parameters dataclass containing the optimised parameters.
         """
-        parameter_args = asdict(parameters)
         opt_state = optimizer.init(parameter_args)
         for _ in range(number_of_training_iterations):
             gradients = self._compute_gradient(**parameter_args)
