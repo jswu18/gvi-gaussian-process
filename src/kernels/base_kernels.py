@@ -167,11 +167,11 @@ class ARDKernelParameters(BaseKernelParameters):
     """
     Parameters for the ARD Kernel:
         log_sigma: logarithm of the sigma parameter, the logarithm is used to ensure that sigma >= 0
-        alpha: a vector matching the dimension of the data, acting as an independent length scale for each dimension
+        log_alpha: a vector matching the dimension of the data, acting as an independent length scale for each dimension
     """
 
     log_sigma: float
-    alpha: jnp.ndarray
+    log_alpha: jnp.ndarray
 
     @property
     def variance(self) -> float:
@@ -184,6 +184,14 @@ class ARDKernelParameters(BaseKernelParameters):
     @sigma.setter
     def sigma(self, value) -> None:
         self.log_sigma = jnp.log(value)
+
+    @property
+    def alpha(self) -> np.ndarray:
+        return jnp.exp(self.log_alpha)
+
+    @alpha.setter
+    def alpha(self, value) -> None:
+        self.log_alpha = jnp.log(value)
 
     @property
     def precision_matrix(self) -> np.ndarray:

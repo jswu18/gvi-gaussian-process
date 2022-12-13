@@ -3,9 +3,9 @@ from dataclasses import asdict, dataclass
 from typing import Any, Dict, Tuple
 
 import jax.numpy as jnp
+import jax.scipy
 import optax
 from jax import grad
-from jax.scipy.stats import multivariate_normal
 from optax import GradientTransformation
 
 from src.kernels.kernels import Kernel
@@ -71,10 +71,31 @@ class GaussianProcess(GaussianMeasure):
         self.y = y
         self.kernel = kernel
 
+    def _compute_kxx_shifted_cholesky_decomposition(
+        self, parameters: GaussianProcessParameters
+    ) -> Tuple[jnp.ndarray, bool]:
+        """
+        Cholesky decomposition of (kxx + (1/σ^2)*I)
+
+        Args:
+            parameters: parameters dataclass for the Gaussian Process
+
+        Returns:
+            cholesky_decomposition_kxx_shifted: the cholesky decomposition (number_of_features, number_of_features)
+            lower_flag: flag indicating whether the factor is in the lower or upper triangle
+        """
+        kxx = self.kernel(self.x, **parameters.kernel)
+        kxx_shifted = kxx + parameters.variance * jnp.eye(self.number_of_train_points)
+        kxx_shifted_cholesky_decomposition, lower_flag = jax.scipy.linalg.cho_factor(
+            a=kxx_shifted, lower=True
+        )
+        return kxx_shifted_cholesky_decomposition, lower_flag
+
     def posterior_distribution(
         self, x: jnp.ndarray, **parameter_args
     ) -> Tuple[jnp.ndarray, jnp.ndarray]:
         """Compute the posterior distribution for test points x.
+        Reference: http://gaussianprocess.org/gpml/chapters/RW2.pdf
 
         Args:
             x: test points (number_of_features, number_of_dimensions)
@@ -87,58 +108,71 @@ class GaussianProcess(GaussianMeasure):
         parameters = self.Parameters(**parameter_args)
         kxy = self.kernel(self.x, x, **parameters.kernel)
         kyy = self.kernel(x, **parameters.kernel)
-        kxx = self.kernel(self.x, **parameters.kernel)
-        inv_kxx_shifted = jnp.linalg.inv(
-            kxx + parameters.variance * jnp.eye(self.number_of_train_points)
-        )
+        (
+            kxx_shifted_cholesky_decomposition,
+            lower_flag,
+        ) = self._compute_kxx_shifted_cholesky_decomposition(parameters)
 
-        mean = (kxy.T @ inv_kxx_shifted @ self.y).reshape(
+        mean = (
+            kxy.T
+            @ jax.scipy.linalg.cho_solve(
+                c_and_lower=(kxx_shifted_cholesky_decomposition, lower_flag), b=self.y
+            )
+        ).reshape(
             -1,
         )
-        covariance = kyy - kxy.T @ inv_kxx_shifted @ kxy
+        covariance = kyy - kxy.T @ jax.scipy.linalg.cho_solve(
+            (kxx_shifted_cholesky_decomposition, lower_flag), kxy
+        )
         return mean, covariance
 
-    def posterior_negative_log_likelihood(
-        self, x: jnp.ndarray, y: jnp.ndarray, **parameter_args
-    ) -> jnp.float64:
-        """The negative log likelihood of the posterior distribution for test data (x, y).
+    def posterior_negative_log_likelihood(self, **parameter_args) -> jnp.float64:
+        """The negative log likelihood of the posterior distribution for the training data (x, y).
+        Reference: http://gaussianprocess.org/gpml/chapters/RW2.pdf
 
         Args:
-            x: test points (number_of_features, number_of_dimensions)
-            y: test point responses (number_of_features, )
             **parameter_args: parameter arguments for the Gaussian Process
 
         Returns:
             The negative log likelihood.
         """
-        mean, covariance = self.posterior_distribution(x, **parameter_args)
-        return -jnp.sum(
-            multivariate_normal.logpdf(x=y.reshape(1, -1), mean=mean, cov=covariance)
-        )
+        parameters = self.Parameters(**parameter_args)
+        (
+            kxx_shifted_cholesky_decomposition,
+            lower_flag,
+        ) = self._compute_kxx_shifted_cholesky_decomposition(parameters)
 
-    def _compute_grad(
-        self, x: jnp.ndarray, y: jnp.ndarray, **parameter_args
-    ) -> Dict[str, Any]:
+        negative_log_likelihood = -(
+            -0.5
+            * (
+                self.y.T
+                @ jax.scipy.linalg.cho_solve(
+                    c_and_lower=(kxx_shifted_cholesky_decomposition, lower_flag),
+                    b=self.y,
+                )
+            )
+            - jnp.trace(jnp.log(kxx_shifted_cholesky_decomposition))
+            - (self.number_of_train_points / 2) * jnp.log(2 * jnp.pi)
+        )
+        return negative_log_likelihood
+
+    def _compute_gradient(self, **parameter_args) -> Dict[str, Any]:
         """Calculate the gradient of the posterior negative log likelihood with respect to the parameters.
 
         Args:
-            x: test points (number_of_features, number_of_dimensions)
-            y: test point responses (number_of_features, )
             **parameter_args: parameter arguments for the Gaussian Process
 
         Returns:
             A dictionary of the gradients for each parameter argument.
         """
         gradients = grad(
-            lambda params: self.posterior_negative_log_likelihood(x, y, **params)
+            lambda params: self.posterior_negative_log_likelihood(**params)
         )(parameter_args)
         return gradients
 
     def train(
         self,
         parameters: GaussianProcessParameters,
-        x: jnp.ndarray,
-        y: jnp.ndarray,
         optimizer: GradientTransformation,
         number_of_training_iterations: int,
     ) -> GaussianMeasureParameters:
@@ -146,8 +180,6 @@ class GaussianProcess(GaussianMeasure):
 
         Args:
             parameters: parameters dataclass for the Gaussian Process
-            x: test points (number_of_features, number_of_dimensions)
-            y: test point responses (number_of_features, )
             optimizer: jax optimizer object
             number_of_training_iterations: number of iterations to perform the optimizer
 
@@ -157,7 +189,7 @@ class GaussianProcess(GaussianMeasure):
         parameter_args = asdict(parameters)
         opt_state = optimizer.init(parameter_args)
         for _ in range(number_of_training_iterations):
-            gradients = self._compute_grad(x, y, **parameter_args)
+            gradients = self._compute_gradient(**parameter_args)
             updates, opt_state = optimizer.update(gradients, opt_state)
             parameter_args = optax.apply_updates(parameter_args, updates)
         return self.Parameters(**parameter_args)
