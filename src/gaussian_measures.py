@@ -99,7 +99,7 @@ class GaussianProcess(GaussianMeasure):
 
         Args:
             x: test points (number_of_features, number_of_dimensions)
-            **parameter_args: parameter arguments for the kernel
+            **parameter_args: parameter arguments for the Gaussian Process
 
         Returns:
             mean: the distribution mean (number_of_features, )
@@ -131,7 +131,7 @@ class GaussianProcess(GaussianMeasure):
         Reference: http://gaussianprocess.org/gpml/chapters/RW2.pdf
 
         Args:
-            **parameter_args: parameter arguments for the kernel
+            **parameter_args: parameter arguments for the Gaussian Process
 
         Returns:
             The negative log likelihood.
@@ -160,7 +160,7 @@ class GaussianProcess(GaussianMeasure):
         """Calculate the gradient of the posterior negative log likelihood with respect to the parameters.
 
         Args:
-            **parameter_args: parameter arguments for the kernel
+            **parameter_args: parameter arguments for the Gaussian Process
 
         Returns:
             A dictionary of the gradients for each parameter argument.
@@ -181,7 +181,7 @@ class GaussianProcess(GaussianMeasure):
         Args:
             optimizer: jax optimizer object
             number_of_training_iterations: number of iterations to perform the optimizer
-            **parameter_args: parameter arguments for the kernel
+            **parameter_args: parameter arguments for the Gaussian Process
 
         Returns:
             A parameters dataclass containing the optimised parameters.
