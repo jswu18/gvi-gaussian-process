@@ -72,7 +72,7 @@ class GaussianProcess(GaussianMeasure):
         self.kernel = kernel
 
     def _compute_kxx_shifted_cholesky_decomposition(
-        self, **parameter_args
+        self, parameters
     ) -> Tuple[jnp.ndarray, bool]:
         """
         Cholesky decomposition of (kxx + (1/σ^2)*I)
@@ -84,7 +84,6 @@ class GaussianProcess(GaussianMeasure):
             cholesky_decomposition_kxx_shifted: the cholesky decomposition (number_of_features, number_of_features)
             lower_flag: flag indicating whether the factor is in the lower or upper triangle
         """
-        parameters = self.Parameters(**parameter_args)
         kxx = self.kernel(self.x, **parameters.kernel)
         kxx_shifted = kxx + parameters.variance * jnp.eye(self.number_of_train_points)
         kxx_shifted_cholesky_decomposition, lower_flag = jax.scipy.linalg.cho_factor(
@@ -112,7 +111,7 @@ class GaussianProcess(GaussianMeasure):
         (
             kxx_shifted_cholesky_decomposition,
             lower_flag,
-        ) = self._compute_kxx_shifted_cholesky_decomposition(**parameter_args)
+        ) = self._compute_kxx_shifted_cholesky_decomposition(parameters)
 
         mean = (
             kxy.T
@@ -137,10 +136,11 @@ class GaussianProcess(GaussianMeasure):
         Returns:
             The negative log likelihood.
         """
+        parameters = self.Parameters(**parameter_args)
         (
             kxx_shifted_cholesky_decomposition,
             lower_flag,
-        ) = self._compute_kxx_shifted_cholesky_decomposition(**parameter_args)
+        ) = self._compute_kxx_shifted_cholesky_decomposition(parameters)
 
         negative_log_likelihood = -(
             -0.5
