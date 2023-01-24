@@ -1,34 +1,22 @@
-from abc import ABC
-from dataclasses import dataclass
-from typing import Any, Dict, Tuple
+from dataclasses import asdict, dataclass
+from typing import Any, Dict, Tuple, Union
 
 import jax.numpy as jnp
 import jax.scipy
 import optax
-from jax import grad
 from optax import GradientTransformation
 
-from src.kernels.kernels import Kernel
+from src.kernels.kernels import Kernel, KernelParameters
+from src.kernels.variational_kernels import (
+    VariationalKernel,
+    VariationalKernelParameters,
+)
+from src.mean_functions import Constant, MeanFunction
 from src.parameters import Parameters
 
 
 @dataclass
-class GaussianMeasureParameters(Parameters, ABC):
-    """
-    An abstract dataclass containing parameters for a Gaussian measure.
-    """
-
-
-class GaussianMeasure(ABC):
-    """
-    An abstract Gaussian measure.
-    """
-
-    Parameters: GaussianMeasureParameters = None
-
-
-@dataclass
-class GaussianProcessParameters(GaussianMeasureParameters):
+class GaussianMeasureParameters(Parameters):
     """
     Parameters for a Gaussian Process:
         log_sigma: logarithm of the noise parameter
@@ -36,11 +24,16 @@ class GaussianProcessParameters(GaussianMeasureParameters):
     """
 
     log_sigma: float
-    kernel: Dict[str, Any]
+    mean: Dict[str, Any]
+    kernel: Union[Dict[str, Any], KernelParameters]
 
     @property
     def variance(self) -> float:
         return self.sigma**2
+
+    @property
+    def precision(self) -> float:
+        return 1 / self.variance
 
     @property
     def sigma(self) -> float:
@@ -51,14 +44,20 @@ class GaussianProcessParameters(GaussianMeasureParameters):
         self.log_sigma = jnp.log(value)
 
 
-class GaussianProcess(GaussianMeasure):
+class GaussianMeasure:
     """
     A Gaussian measure defined with a kernel, better known as a Gaussian Process.
     """
 
-    Parameters = GaussianProcessParameters
+    Parameters = GaussianMeasureParameters
 
-    def __init__(self, kernel: Kernel, x: jnp.ndarray, y: jnp.ndarray) -> None:
+    def __init__(
+        self,
+        x: jnp.ndarray,
+        y: jnp.ndarray,
+        kernel: Kernel,
+        mean_function: MeanFunction = None,
+    ) -> None:
         """Initialising requires a kernel and data to condition the distribution.
 
         Args:
@@ -69,6 +68,7 @@ class GaussianProcess(GaussianMeasure):
         self.number_of_train_points = x.shape[0]
         self.x = x
         self.y = y
+        self.mean_function = mean_function if mean_function is not None else Constant()
         self.kernel = kernel
 
     def _compute_kxx_shifted_cholesky_decomposition(
@@ -90,6 +90,12 @@ class GaussianProcess(GaussianMeasure):
             a=kxx_shifted, lower=True
         )
         return kxx_shifted_cholesky_decomposition, lower_flag
+
+    def mean_and_covariance(self, x: jnp.ndarray, **parameter_args):
+        parameters = self.Parameters(**parameter_args)
+        kernel_mean, covariance = self.posterior_distribution(x, **parameter_args)
+        mean = kernel_mean + self.mean_function.predict(x=x, parameters=parameters.mean)
+        return mean, covariance
 
     def posterior_distribution(
         self, x: jnp.ndarray, **parameter_args
@@ -165,7 +171,7 @@ class GaussianProcess(GaussianMeasure):
         Returns:
             A dictionary of the gradients for each parameter argument.
         """
-        gradients = grad(
+        gradients = jax.grad(
             lambda params: self.posterior_negative_log_likelihood(**params)
         )(parameter_args)
         return gradients
@@ -192,3 +198,72 @@ class GaussianProcess(GaussianMeasure):
             updates, opt_state = optimizer.update(gradients, opt_state)
             parameter_args = optax.apply_updates(parameter_args, updates)
         return self.Parameters(**parameter_args)
+
+
+@dataclass
+class StochasticGaussianProcessParameters(Parameters):
+    log_sigma: float
+    mean: Dict[str, Any]
+    kernel: Union[Dict[str, Any], VariationalKernelParameters]
+    beta: jnp.ndarray
+
+    @property
+    def variance(self) -> float:
+        return self.sigma**2
+
+    @property
+    def precision(self) -> float:
+        return 1 / self.variance
+
+    @property
+    def sigma(self) -> float:
+        return jnp.exp(self.log_sigma)
+
+    @sigma.setter
+    def sigma(self, value: float) -> None:
+        self.log_sigma = jnp.log(value)
+
+
+class StochasticGaussianProcess(GaussianMeasure):
+
+    Parameters = StochasticGaussianProcessParameters
+
+    def __init__(
+        self,
+        x: jnp.ndarray,
+        y: jnp.ndarray,
+        kernel: VariationalKernel,
+        mean_function: MeanFunction = None,
+    ) -> None:
+        """Initialising requires a kernel and data to condition the distribution.
+
+        Args:
+            kernel: kernel for the Gaussian Process
+            x: design matrix (number_of_features, number_of_dimensions)
+            y: response vector (number_of_features, )
+        """
+        self.number_of_train_points = x.shape[0]
+        self.x = x
+        self.y = y
+        self.mean_function = mean_function if mean_function is not None else Constant()
+        self.kernel = kernel
+
+    def mean_and_covariance(self, x: jnp.ndarray, **parameter_args):
+        parameters = self.Parameters(**parameter_args)
+        if isinstance(parameters.kernel, dict):
+            parameters.kernel = self.kernel.Parameters(**parameters.kernel)
+        _, covariance = self.posterior_distribution(x, **parameter_args)
+
+        if isinstance(parameters.kernel.base_kernel_parameters, dict):
+            parameters.kernel.base_kernel_parameters = (
+                self.kernel.base_kernel.Parameters(
+                    **parameters.kernel.base_kernel_parameters
+                )
+            )
+        kernel_mean = parameters.beta.T @ self.kernel.base_kernel(
+            self.kernel.inducing_points,
+            x,
+            **asdict(parameters.kernel.base_kernel_parameters),
+        )
+        mean = kernel_mean + self.mean_function.predict(x=x, parameters=parameters.mean)
+        return mean.reshape(-1), covariance
