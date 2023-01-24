@@ -37,7 +37,7 @@ class VariationalKernel(Kernel):
         self,
         base_kernel: BaseKernel,
         inducing_points: jnp.ndarray,
-        regularisation: float,
+        regularisation: float = 1e-5,
     ) -> None:
         self.base_kernel = base_kernel
         self.inducing_points = inducing_points
@@ -50,13 +50,14 @@ class VariationalKernel(Kernel):
         kxz: jnp.ndarray,
         regularisation: float,
     ) -> jnp.ndarray:
-        return jnp.linalg.cholesky(
-            jnp.linalg.inv(
+        cholesky_ = jnp.linalg.inv(
+            jnp.linalg.cholesky(
                 kzz
                 + parameters.precision * kxz.T @ kxz
                 + regularisation * jnp.eye(kzz.shape[0])
             )
         )
+        return jnp.linalg.cholesky(cholesky_.T @ cholesky_)
 
     def kernel(
         self,
@@ -64,10 +65,16 @@ class VariationalKernel(Kernel):
         x: jnp.ndarray,
         y: jnp.ndarray = None,
     ) -> jnp.ndarray:
+        if isinstance(parameters.base_kernel_parameters, dict):
+            parameters.base_kernel_parameters = self.base_kernel.Parameters(
+                **parameters.base_kernel_parameters
+            )
         kzz = self.base_kernel(
             self.inducing_points, **asdict(parameters.base_kernel_parameters)
         )
-        cholesky_kzz_and_lower = cho_factor(kzz)
+        cholesky_kzz_and_lower = cho_factor(
+            kzz + self.regularisation * jnp.eye(kzz.shape[0])
+        )
 
         kxz = self.base_kernel(
             x, self.inducing_points, **asdict(parameters.base_kernel_parameters)
@@ -98,6 +105,6 @@ class VariationalKernel(Kernel):
         covariance = cholesky_x.T @ cholesky_y
         return (
             kxy
-            - kxz @ cho_solve(c_and_lower=cholesky_kzz_and_lower, b=kxz.T)
+            - kxz @ cho_solve(c_and_lower=cholesky_kzz_and_lower, b=kyz.T)
             + kxz @ covariance @ kyz.T
         )

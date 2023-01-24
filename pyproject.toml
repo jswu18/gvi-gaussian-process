@@ -10,19 +10,22 @@ authors = [
 python = "~3.10"
 
 # Core dependencies
-numpy="~1.23.1"
+numpy="~1.24.1"
 scipy="~1.8.1"
-jax="~0.3.15"
-sklearn = "^0.0"
+jax="^0.4.1"
 optax = "^0.1.4"
+scikit-learn = "^1.2.0"
+matplotlib = "^3.6.2"
+flax = "^0.6.3"
 
 [tool.poetry.dev-dependencies]
 black = "~22.6"
 isort = "~5.10"
-pytest = "~7.1"
+pytest = "~7.2"
+ipykernel = "^6.20.1"
 
 [tool.isort]
-skip = [".env"]
+skip = [".venv"]
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
