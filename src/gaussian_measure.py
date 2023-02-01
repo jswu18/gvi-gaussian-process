@@ -1,11 +1,15 @@
 from dataclasses import asdict, dataclass
-from typing import Any, Dict, Tuple, Union
+from typing import Any, Callable, Dict, Tuple, Union
 
 import jax.numpy as jnp
 import jax.scipy
 import optax
 from optax import GradientTransformation
 
+from src.kernels.base_kernels import (
+    NeuralNetworkGaussianProcessKernel,
+    NeuralNetworkGaussianProcessKernelParameters,
+)
 from src.kernels.kernels import Kernel, KernelParameters
 from src.kernels.variational_kernels import (
     VariationalKernel,
@@ -266,4 +270,162 @@ class StochasticGaussianProcess(GaussianMeasure):
             **asdict(parameters.kernel.base_kernel_parameters),
         )
         mean = kernel_mean + self.mean_function.predict(x=x, parameters=parameters.mean)
+        return mean.reshape(-1), covariance
+
+
+@dataclass
+class NeuralNetworkGaussianMeasureParameters(Parameters):
+    """
+    Parameters for a Gaussian Process:
+        log_sigma: logarithm of the noise parameter
+    """
+
+    log_sigma: float
+    mean: Dict[str, Any]
+    kernel: NeuralNetworkGaussianProcessKernelParameters
+    predict_function: Callable
+
+    @property
+    def variance(self) -> float:
+        return self.sigma**2
+
+    @property
+    def precision(self) -> float:
+        return 1 / self.variance
+
+    @property
+    def sigma(self) -> float:
+        return jnp.exp(self.log_sigma)
+
+    @sigma.setter
+    def sigma(self, value: float) -> None:
+        self.log_sigma = jnp.log(value)
+
+
+class NeuralNetworkGaussianMeasure:
+    """
+    A Gaussian measure defined with a NNGP kernel
+    """
+
+    Parameters = NeuralNetworkGaussianMeasureParameters
+
+    def __init__(
+        self,
+        kernel: NeuralNetworkGaussianProcessKernel,
+        mean_function: MeanFunction = None,
+    ) -> None:
+        """Initialising requires a kernel and data to condition the distribution.
+
+        Args:
+            kernel: kernel for the Gaussian Process
+            x: design matrix (number_of_features, number_of_dimensions)
+            y: response vector (number_of_features, )
+        """
+        self.mean_function = mean_function if mean_function is not None else Constant()
+        self.kernel = kernel
+
+    def posterior_distribution(
+        self, x: jnp.ndarray, **parameter_args
+    ) -> Tuple[jnp.ndarray, jnp.ndarray]:
+        """Compute the posterior distribution for test points x.
+        Reference: http://gaussianprocess.org/gpml/chapters/RW2.pdf
+
+        Args:
+            x: test points (number_of_features, number_of_dimensions)
+            **parameter_args: parameter arguments for the Gaussian Process
+
+        Returns:
+            mean: the distribution mean (number_of_features, )
+            covariance: the distribution covariance (number_of_features, number_of_features)
+        """
+        parameters = self.Parameters(**parameter_args)
+        mean, covariance = parameters.predict_function(
+            x_test=x, get="nngp", compute_cov=True
+        )
+        return (
+            mean.reshape(
+                -1,
+            ),
+            covariance,
+        )
+
+    def mean_and_covariance(self, x: jnp.ndarray, **parameter_args):
+        parameters = self.Parameters(**parameter_args)
+        kernel_mean, covariance = self.posterior_distribution(x, **parameter_args)
+        mean = kernel_mean + self.mean_function.predict(x=x, parameters=parameters.mean)
+        return mean, covariance
+
+
+@dataclass
+class StochasticNeuralNetworkGaussianProcessParameters(Parameters):
+    log_sigma: float
+    mean: Dict[str, Any]
+    kernel: Union[Dict[str, Any], VariationalKernelParameters]
+    predict_function: Callable
+    beta: jnp.ndarray
+    mean_shift: float
+
+    @property
+    def variance(self) -> float:
+        return self.sigma**2
+
+    @property
+    def precision(self) -> float:
+        return 1 / self.variance
+
+    @property
+    def sigma(self) -> float:
+        return jnp.exp(self.log_sigma)
+
+    @sigma.setter
+    def sigma(self, value: float) -> None:
+        self.log_sigma = jnp.log(value)
+
+
+class StochasticNeuralNetworkGaussianProcess(NeuralNetworkGaussianMeasure):
+
+    Parameters = StochasticNeuralNetworkGaussianProcessParameters
+
+    def __init__(
+        self,
+        x: jnp.ndarray,
+        y: jnp.ndarray,
+        kernel: VariationalKernel,
+        mean_function: MeanFunction = None,
+    ) -> None:
+        """Initialising requires a kernel and data to condition the distribution.
+
+        Args:
+            kernel: kernel for the Gaussian Process
+            x: design matrix (number_of_features, number_of_dimensions)
+            y: response vector (number_of_features, )
+        """
+        self.number_of_train_points = x.shape[0]
+        self.x = x
+        self.y = y
+        self.mean_function = mean_function if mean_function is not None else Constant()
+        self.kernel = kernel
+
+    def mean_and_covariance(self, x: jnp.ndarray, **parameter_args):
+        parameters = self.Parameters(**parameter_args)
+        if isinstance(parameters.kernel, dict):
+            parameters.kernel = self.kernel.Parameters(**parameters.kernel)
+        _, covariance = self.posterior_distribution(x, **parameter_args)
+
+        if isinstance(parameters.kernel.base_kernel_parameters, dict):
+            parameters.kernel.base_kernel_parameters = (
+                self.kernel.base_kernel.Parameters(
+                    **parameters.kernel.base_kernel_parameters
+                )
+            )
+        kernel_mean = parameters.beta.T @ self.kernel.base_kernel(
+            self.kernel.inducing_points,
+            x,
+            **asdict(parameters.kernel.base_kernel_parameters),
+        )
+        mean = (
+            kernel_mean
+            + self.mean_function.predict(x=x, parameters=parameters.mean)
+            + parameters.mean_shift
+        )
         return mean.reshape(-1), covariance

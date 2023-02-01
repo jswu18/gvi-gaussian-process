@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from typing import Callable
 
 import jax.numpy as jnp
 import numpy as np
@@ -228,3 +229,49 @@ class ARDKernel(BaseKernel):
             parameters.variance
             * jnp.exp(-0.5 * (x - y).T @ parameters.precision_matrix @ (x - y))
         )
+
+
+@dataclass
+class NeuralNetworkGaussianProcessKernelParameters(BaseKernelParameters):
+
+    kernel_function: Callable
+
+
+class NeuralNetworkGaussianProcessKernel(BaseKernel):
+    Parameters = NeuralNetworkGaussianProcessKernelParameters
+
+    def _kernel(
+        self,
+        parameters: NeuralNetworkGaussianProcessKernelParameters,
+        x: jnp.ndarray,
+        y: jnp.ndarray,
+    ) -> jnp.ndarray:
+        pass
+
+    def kernel(
+        self,
+        parameters: NeuralNetworkGaussianProcessKernelParameters,
+        x: jnp.ndarray,
+        y: jnp.ndarray = None,
+    ) -> jnp.ndarray:
+        # compute k(x, x) if y is None
+        if y is None:
+            y = x
+
+        # add dimension when x is 1D, assume the vector is a single feature
+        x = jnp.atleast_2d(x)
+        y = jnp.atleast_2d(y)
+
+        assert (
+            x.shape[1] == y.shape[1]
+        ), f"Dimension Mismatch: {x.shape[1]=} != {y.shape[1]=}"
+
+        return parameters.kernel_function(x, y, "nngp")
+
+    def diagonal(
+        self,
+        x: jnp.ndarray,
+        y: jnp.ndarray = None,
+        **parameter_args,
+    ) -> jnp.ndarray:
+        pass
