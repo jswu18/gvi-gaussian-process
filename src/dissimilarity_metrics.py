@@ -8,22 +8,18 @@ import numpy as np
 from src.gaussian_measure import GaussianMeasure, StochasticGaussianProcess
 from src.parameters import Parameters
 
-# @dataclass
-# class GaussianWassersteinDistanceParameters(Parameters):
-#     gaussian_measure_p: Dict[str, Any]
-#     gaussian_measure_q: Dict[str, Any]
-
 
 @dataclass
 class GaussianWassersteinDistanceFrozenParameters(Parameters):
     gaussian_measure_p_mean: Dict[str, Any]
     gaussian_measure_p_kernel: Dict[str, Any]
     gaussian_measure_p_log_sigma: float
+    gaussian_measure_q_kernel: Dict[str, Any]
+    gaussian_measure_q_mean_shift: float = 0
 
 
 @dataclass
 class GaussianWassersteinDistanceVariableParameters(Parameters):
-    gaussian_measure_q_kernel: Dict[str, Any]
     gaussian_measure_q_mean: Dict[str, Any]
     gaussian_measure_q_beta: Dict[str, Any]
 
@@ -68,20 +64,37 @@ class GaussianWassersteinDistance:
         data_set_size: int,
         frozen_parameters,
         variable_parameters,
+        predict_function=None,
     ) -> jnp.float64:
         frozen_parameters = self.FrozenParameters(**frozen_parameters)
         variable_parameters = self.VariableParameters(**variable_parameters)
-        gaussian_measure_parameters_p = self.gaussian_measure_p.Parameters(
-            mean=frozen_parameters.gaussian_measure_p_mean,
-            log_sigma=frozen_parameters.gaussian_measure_p_log_sigma,
-            kernel=frozen_parameters.gaussian_measure_p_kernel,
-        )
-        gaussian_measure_parameters_q = self.gaussian_measure_q.Parameters(
-            mean=variable_parameters.gaussian_measure_q_mean,
-            log_sigma=frozen_parameters.gaussian_measure_p_log_sigma,
-            kernel=variable_parameters.gaussian_measure_q_kernel,
-            beta=variable_parameters.gaussian_measure_q_beta,
-        )
+        if predict_function is None:
+            gaussian_measure_parameters_p = self.gaussian_measure_p.Parameters(
+                mean=frozen_parameters.gaussian_measure_p_mean,
+                log_sigma=frozen_parameters.gaussian_measure_p_log_sigma,
+                kernel=frozen_parameters.gaussian_measure_p_kernel,
+            )
+            gaussian_measure_parameters_q = self.gaussian_measure_q.Parameters(
+                mean=variable_parameters.gaussian_measure_q_mean,
+                log_sigma=frozen_parameters.gaussian_measure_p_log_sigma,
+                kernel=frozen_parameters.gaussian_measure_q_kernel,
+                beta=variable_parameters.gaussian_measure_q_beta,
+            )
+        else:
+            gaussian_measure_parameters_p = self.gaussian_measure_p.Parameters(
+                mean=frozen_parameters.gaussian_measure_p_mean,
+                log_sigma=frozen_parameters.gaussian_measure_p_log_sigma,
+                predict_function=predict_function,
+                kernel=frozen_parameters.gaussian_measure_p_kernel,
+            )
+            gaussian_measure_parameters_q = self.gaussian_measure_q.Parameters(
+                mean=variable_parameters.gaussian_measure_q_mean,
+                log_sigma=frozen_parameters.gaussian_measure_p_log_sigma,
+                kernel=frozen_parameters.gaussian_measure_q_kernel,
+                predict_function=predict_function,
+                beta=variable_parameters.gaussian_measure_q_beta,
+                mean_shift=frozen_parameters.gaussian_measure_q_mean_shift,
+            )
         if isinstance(gaussian_measure_parameters_p, dict):
             gaussian_measure_parameters_p = self.gaussian_measure_p.Parameters(
                 **gaussian_measure_parameters_p
