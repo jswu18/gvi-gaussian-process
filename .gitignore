@@ -13,10 +13,19 @@ __pycache__
 .DS_Store
 notebooks/.DS_Store
 
-#sandbox notebook
+# Sandbox notebook
 notebooks/sandbox.ipynb
 
 # Pytest
 *pytest_cache
 /**/*pytest_cache
 
+# latex log files
+/**/*.aux
+/**/*.bbl
+/**/*.blg
+/**/*.fdb_latexmk
+/**/*.fls
+/**/*.log
+/**/*.synctex.gz
+/**/*.out
