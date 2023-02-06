@@ -239,19 +239,19 @@
 \def\@endeditor{\normalsize}
 \def\@maketitle{\vbox{\hsize\textwidth
  \linewidth\hsize \vskip \beforetitskip
- {\begin{center} \Large\bf \@title \par \end{center}} \vskip \aftertitskip
- {\def\and{\unskip\enspace{\rm and}\enspace}%
-  \def\addr{\small\it}%
-  \def\email{\hfill\small\sc}%
-  \def\name{\normalsize\bf}%
-  \def\AND{\@endauthor\rm\hss \vskip \interauthorskip \@startauthor}
-  \@startauthor \@author \@endauthor}
-  \vskip \aftermaketitskip
-  \if@preprint
-  \else
+ {\begin{center} \Large\bf \@title \par \end{center}} %\vskip \aftertitskip
+ % {\def\and{\unskip\enspace{\rm and}\enspace}%
+ %  \def\addr{\small\it}%
+ %  \def\email{\hfill\small\sc}%
+ %  \def\name{\normalsize\bf}%
+ %  \def\AND{\@endauthor\rm\hss \vskip \interauthorskip \@startauthor}
+ %  \@startauthor \@author \@endauthor}
+  % \vskip \aftermaketitskip
+  % \if@preprint
+  % \else
   % \noindent \@starteditor \@editor \@endeditor
-  \vskip \aftermaketitskip
-  \fi
+  % \vskip \aftermaketitskip
+  % \fi
 }}
 
 \def\editor#1{\gdef\@editor{#1}}
