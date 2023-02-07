@@ -28,10 +28,14 @@
 \newcommand{\dataset}{{\cal D}}
 \newcommand{\fracpartial}[2]{\frac{\partial #1}{\partial  #2}}
 
+
 % Heading arguments are {volume}{year}{pages}{date submitted}{date published}{paper id}{author-full-names}
 
 \usepackage{lastpage}
 \usepackage{amsmath}
+\usepackage{mathtools}
+\DeclareMathOperator*{\argmax}{arg\,max}
+\DeclareMathOperator*{\argmin}{arg\,min}
 %\jmlrheading{23}{2022}{1-\pageref{LastPage}}{1/21; Revised 5/22}{9/22}{21-0000}{Author One and Author Two}
 
 % Short headings should be running head and authors last names
@@ -105,6 +109,62 @@ A benefit of the robust max function is that the variational expectation is anal
 where $S$ is the probability that the function value corresponding to observed class $y$ is larger than the other function values at that point:
 \[S = \mathbb{E}_{\mathbf{f}^{(y)} \sim \mathcal{N}(\mathbf{f}^{(y)} | \mu^{(y)}, C^{(y)})} \left[\prod_{i \neq y} \phi \left(\frac{\textbf{f}^{(y)}-\mu^{(i)}}{\sqrt{C^{(i)}}} \right)\right]\]
 where $\phi$ is the standard normal CDF. This one dimensional integral can be evaluated using Gauss-Hermite quadrature.
+
+
+\section{GWI for Multiclass Classification}\label{sec:gwi-for-multiclass-classification}
+Notes taken from A.6 from \cite{wild2022generalized}.
+
+\subsection{Objective Function}\label{subsec:gwi-for-multiclass-classification-objective-function}
+
+The likelihood:
+
+\[p(y|f_1, \dots, f_J) = \prod_{n=1}^N p(y_n | f_1, \dots, f_J)\]
+
+where $p(y_n | f_1, \dots, f_J) \coloneqq h_{y_n}^{\epsilon}(f_1(x_n), \dots , f_J{x_N})$ and $y_n \in \{1, \dots, J\}$.
+$h_{y_n}^{\epsilon}$ is the robust max function $\mathcal{S}_{robust}^{(\epsilon)}$ as described in \cite{matthews2017scalable}.
+\cite{wild2022generalized} used $\epsilon = 1 \%$.
+
+The model consists of $J$ independent Gaussian Random Elements such that:
+\[f_j \sim P_j = \mathcal{N}(m_{\mathbb{P}, j}, C_{\mathbb{P}, j})\]
+with the corresponding variational measures:
+\[Q_j = \mathcal{N}(m_{\mathbb{Q}, j}, C_{\mathbb{Q}, j})\]
+The objective to minimise:
+\[\mathcal{L} = -\mathbb{E}_{\mathbb{Q}}\left[ \log p(y_n | F_1, \dots, F_J)\right] + \sum_{j=1}^{J} W_2^2(P_j, Q_j)\]
+The variational (posterior) approximation of the probability of $\{(F_1(x), \dots, F_J(x)) \in A\}$ will be denoted:
+\[\mathbb{Q}\left( (F_1(x), \dots, F_J(x)) \in A\right)\]
+where $A \subset \mathbb{R}^J$.
+We get the expected log-likelihood:
+\[\mathbb{E}_{\mathbb{Q}}\left[ \log p(y_n | F_1, \dots, F_J)\right] \approx \sum_{n=1}^{N} \log(1-\epsilon)S(x_n, y_n) + \log \left(\frac{\epsilon}{J-1}\right)(1-S(x_n, y_n))\]
+where:
+\[S(x, j) \coloneqq \frac{1}{\sqrt{\pi}} \sum_{i=1}^I w_i \prod_{l\neq j} \phi \left( \frac{\sqrt{2 r_j (x, x)}\xi_i + m_{Q, j}(x) - m_{Q, l}(x)}{\sqrt{r_l (x, x)}}\right)\]
+for any $x \in \mathcal{X}$, $j=1, \dots, J$ where $(w_i, \xi_i)_{i=1}^I$ are the weights and roots of the Hermite polynomial of order $I \in \mathbb{N}$., calculated with \verb|scipy.special.roots_hermite|.
+$\phi$ is the standard normal cumulative distribution function.
+
+The Wasserstein distance $W_2^2(P_j, Q_j)$ can be estimated in the same way as for regression:
+\[
+\begin{split}
+\hat{W}^2 \coloneqq & \frac{1}{N}\sum_{n=1}^N (m_{\mathbb{P}}(x_n)-m_{\mathbb{Q}}(x_n))^2 + \frac{1}{N}\sum_{n=1}^{N}k(x_n, x_n) \\
+ &+\frac{1}{N}\sum_{n=1}^{N}r(x_n, x_n) - \frac{2}{\sqrt {N N_S}}\sum_{s=1}^{N_S}\sqrt {\lambda_s(r(X_S, X)k(X, X_S))} \\
+\end{split}\label{eq:w-2-distance-approx}
+\]
+where:
+\begin{itemize}
+    \item $X_S \coloneqq (x_{S, 1}, \dots, x_{S, N_S})$ with $x_{S, 1}, \dots, x_{S, N_S} \in \mathbb{R}^D$, a set of $N_S$ points sub-sampled from the input data $X$
+    \item $r(X_S, X) \coloneqq \left(r(x_{S_s, x_n})\right)_{s, n} \in \mathbb{R}^{N_s \times N}$
+    \item $k(X, X_S) \coloneqq \left(k(x_{x_n, S_s})\right)_{n, s} \in \mathbb{R}^{N \times N_s}$
+    \item $\lambda_s(\cdot)$ calculates the s-th eigenvalue
+\end{itemize}
+and $n=1,\dots, N$, $s=1, \dots, N_S$, $k$ is the kernel for $\mathbb{P}$, $r$ is the kernel for $\mathbb{Q}$
+
+\subsection{Prediction}\label{subsec:gwi-for-multiclass-classification-prediction}
+
+For an unseen point $x^* \in \mathcal{X}$, the probability that it belongs to class $j \in \{1, \dots, J\}$:
+
+\[\mathbb{Q}(Y^* = j) = (1-\epsilon) S(x^*, j) + \frac{\epsilon}{J-1}(1-S(x^*, j))\]
+
+where the predicted label class is the maximiser  of this probability:
+
+\[Cat(\mathbb{Q}(Y^*)) = \argmax_{j \in \{1, \dots J\}} \mathbb{Q}(Y^* = j)\]
 
 
 % Acknowledgements and Disclosure of Funding should go at the end, before appendices and references
