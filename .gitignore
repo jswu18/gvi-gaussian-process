@@ -29,3 +29,6 @@ notebooks/sandbox.ipynb
 /**/*.log
 /**/*.synctex.gz
 /**/*.out
+
+# scripts
+/scripts/regression_toy_example_outputs/*
