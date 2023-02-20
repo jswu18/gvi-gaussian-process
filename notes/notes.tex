@@ -28,7 +28,8 @@
 \newcommand{\dataset}{{\cal D}}
 \newcommand{\fracpartial}[2]{\frac{\partial #1}{\partial  #2}}
 
-
+\usepackage{xcolor}
+\newcommand{\jk}[1]{{\color{blue} [JK: #1]}}
 % Heading arguments are {volume}{year}{pages}{date submitted}{date published}{paper id}{author-full-names}
 
 \usepackage{lastpage}
@@ -127,6 +128,9 @@ The likelihood:
 
 where $p(y_n | f_1, \dots, f_J) \coloneqq h_{y_n}^{\epsilon}(f_1(x_n), \dots , f_J{x_N})$ and $y_n \in \{1, \dots, J\}$.
 $h_{y_n}^{\epsilon}$ is the robust max function $\mathcal{S}_{robust}^{(\epsilon)}$ as described in \cite{matthews2017scalable}.
+%
+\jk{Don't define the same object twice with different names. Easy fix if you can't decide on which notation you want to use and perhaps want to change later: introduce a macro for the max function.}
+%
 \cite{wild2022generalized} used $\epsilon = 1 \%$.
 
 The model consists of $J$ independent Gaussian Random Elements such that:
@@ -139,6 +143,9 @@ The variational (posterior) approximation of the probability of $\{(F_1(x), \dot
 \[\mathbb{Q}\left( (F_1(x), \dots, F_J(x)) \in A\right)\]
 where $A \subset \mathbb{R}^J$.
 We get the expected log-likelihood:
+%
+\jk{Would be good to explain where this approximation comes from}
+%
 \[\mathbb{E}_{\mathbb{Q}}\left[ \log p(y_n | F_1, \dots, F_J)\right] \approx \sum_{n=1}^{N} \log(1-\epsilon)S(x_n, y_n) + \log \left(\frac{\epsilon}{J-1}\right)(1-S(x_n, y_n))\]
 where:
 \[S(x, j) \coloneqq \frac{1}{\sqrt{\pi}} \sum_{i=1}^I w_i \prod_{l\neq j} \phi \left( \frac{\sqrt{2 r_j (x, x)}\xi_i + m_{Q, j}(x) - m_{Q, l}(x)}{\sqrt{r_l (x, x)}}\right)\]
@@ -146,6 +153,9 @@ for any $x \in \mathcal{X}$, $j=1, \dots, J$ where $(w_i, \xi_i)_{i=1}^I$ are th
 $\phi$ is the standard normal cumulative distribution function.
 
 The Wasserstein distance $W_2^2(P_j, Q_j)$ can be estimated in the same way as for regression:
+%
+\jk{Explain why this is a natural estimator/what the exact Wasserstein distance would look like and how this estimate relates to that. Also, you haven't covered the regression case here so it's not clear how this differs/is similar to the regression case.}
+%
 \[
 \begin{split}
 \hat{W}^2 \coloneqq & \frac{1}{N}\sum_{n=1}^N (m_{\mathbb{P}}(x_n)-m_{\mathbb{Q}}(x_n))^2 + \frac{1}{N}\sum_{n=1}^{N}k(x_n, x_n) \\
@@ -167,7 +177,7 @@ For an unseen point $x^* \in \mathcal{X}$, the probability that it belongs to cl
 
 \[\mathbb{Q}(Y^* = j) = (1-\epsilon) S(x^*, j) + \frac{\epsilon}{J-1}(1-S(x^*, j))\]
 
-where the predicted label class is the maximiser  of this probability:
+where the predicted label class is the maximiser  of this probability: \jk{Style thing: define a macro for $Cat$ so that i looks like  $\operatorname{Cat}$ in math environments if you're going to use it more often. Otherwise, just write $\operatorname{Cat}$ in-text. Also unclear what $\operatorname{Cat}$ means here; undefined.}
 
 \[Cat(\mathbb{Q}(Y^*)) = \argmax_{j \in \{1, \dots J\}} \mathbb{Q}(Y^* = j)\]
 
