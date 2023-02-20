@@ -70,9 +70,14 @@
 %  keyword one, keyword two, keyword three
 %\end{keywords}
 
+%\section{Generalized Variational Inference}\label{sec:generalized-variational-inference}
+%Notes taken from \cite{knoblauch2022optimization}.
+
+
 \section{Gaussian Processes for Classification}\label{sec:gaussian-processes-for-classification}
 
-Notes taken from chapter 4 from \cite{matthews2017scalable}.
+
+Notes taken from chapter 4 of \cite{matthews2017scalable}.
 
 For Gaussian process regression (GPR), a class of models is defined:
 \[f \sim \mathcal{GP}(0, K(\theta))\]
@@ -112,7 +117,7 @@ where $\phi$ is the standard normal CDF. This one dimensional integral can be ev
 
 
 \section{GWI for Multiclass Classification}\label{sec:gwi-for-multiclass-classification}
-Notes taken from A.6 from \cite{wild2022generalized}.
+Notes taken from A.6 of \cite{wild2022generalized}.
 
 \subsection{Objective Function}\label{subsec:gwi-for-multiclass-classification-objective-function}
 
@@ -165,6 +170,91 @@ For an unseen point $x^* \in \mathcal{X}$, the probability that it belongs to cl
 where the predicted label class is the maximiser  of this probability:
 
 \[Cat(\mathbb{Q}(Y^*)) = \argmax_{j \in \{1, \dots J\}} \mathbb{Q}(Y^* = j)\]
+
+
+
+\section{Uncertainty Quantification Review}\label{sec:uncertainty-quantification-review}
+Notes taken from a review paper by \cite{abdar2021review}.
+
+There are two main types of uncertainty: aleatoric and epistemic.
+Epistemic uncertainty is the model uncertainty (i.e. choosing to fit the data with a quadratic function when the data is sinusoidal) and can be formulated as a probability distribution over the model parameters.
+Aleatoric uncertainty is the irreducible uncertainty of the data (data uncertainty) and considered an inherent property of the data distribution.
+Aleatoric uncertainty can be further divided into homoscedastic and heteroscedastic uncertainties.
+
+\subsection{Monte Carlo Dropout}\label{subsec:monte-carlo-dropout}
+Estimate epistemic uncertainty by applying MC dropout with Bernoulli distribution at the output of the neurons of a NN.
+Different options for dropout-based methods include Bernoulli/Gaussian dropout of either the nodes of a NN or the weights of a NN.
+
+\subsection{Markov Chain Monte Carlo}\label{subsec:markov-chain-monte-carlo}
+This uses MCMC to estimate intractable posterior distributions.
+There are issues with the required iterations for sufficient burn-in of the sampler being unknown, an issue with MCMC that extends beyond uncertainty quantification.
+
+\subsection{Variational Inference}
+An approximation method learning the posterior distribution over BNN weights.
+
+\subsection{Ensemble Techniques}
+NNs generally have competitive accuracy but poor predictive uncertainty quantification, usually generating overconfident predictions.
+Calibration and domain shift are two evaluation measures used to evaluate the quality of predictive uncertainty.
+Calibration measures the discrepancy between long-run frequencies and subjective forecasts.
+Domain shift quantifies the generalisation of predictive uncertainty to a domain shift in the data (i.e. trained on cats and dogs but then asked to make a prediction on a bird).
+Quantifies if the model is aware of what it does/doesn't know.
+
+An ensemble of models enhances predictive performance, but it's not immediately obvious why it would generate good uncertainty estimation.
+Bayesian model averaging (BMA) holds belief that the true model lies within the hypothesis class of the prior $\mathcal{H}$.
+Ensembles combine models to discover more powerful models, so they can be expected to be better when true model does not lie in $\mathcal{H}$.
+
+An evaluation approach for measuring uncertainty estimators in vision problems can be found in \cite{gustafsson2020evaluating}.
+
+Measures of spread or "disagreement" of ensembles such as mutual information can be used to assess uncertainty in predictions due to knowledge uncertainty:
+
+\[\mathcal{MI}\left[y, \theta | \textbf{x}^{*}, \mathcal{D}\right] = H[\mathbb{E}_{p(\theta | \mathcal{D})} [P(y|\textbf{x}^{*}, \theta)]] - \mathbb{E}_{p(\theta | \mathcal{D})}[H[y|\textbf{x}^{*}, \theta]]\]
+
+where:
+\begin{itemize}
+\item $\mathcal{MI}\left[y, \theta | \textbf{x}^{*}, \mathcal{D}\right]$ is the knowledge uncertainty
+\item $H[\mathbb{E}_{p(\theta | \mathcal{D})} [P(y|\textbf{x}^{*}, \theta)]]$ is the total uncertainty
+\item $\mathbb{E}_{p(\theta | \mathcal{D})}[H[y|\textbf{x}^{*}, \theta]]$ is the expected data uncertainty (i.e. regions of severe class overlap)
+\end{itemize}
+
+Two situations: all models have similar uncertainty distribution are very uncertain for each label (data uncertainty) or the models in the ensemble have very different predictions (model uncertainty).
+
+\subsection{Other Uncertainty Quantification Methods}
+Neural Architecture Distribution Search (NADS) finds an appropriate distribution of different architectures that perform significantly well on a specified task.
+
+explored the training dynamics of over-parameterised NNs under natural gradient descent.
+They showed that the discrepancy between NNs trained on non-linearised and linearised natural gradient descent is smaller than that of standard gradient descent.
+Also, that empirically there was no need to formulate a limit argument about the width of the neural network layers, as the discrepancy was small for over-parameterised NNs.
+
+BNNs have been used as a solution for NN predictions but specifying priors is still an open problem.
+Independent normal prior in weight space leads to weak constraints on function posterior, allowing it to generalise in unanticipated ways on OOD data.
+Noise contrastive priors (NCPs) used to estimate consistent uncertainty by \cite{hafner2020noise}.
+
+Mixup is a DNN training technique where extra samples are produced during training by convexly integrating random pairs of images and their labels.
+\cite{thulasidasan2019mixup} showed that this provided much better model calibration and was less likely to yield overconfident predictions using random noise and OoD data.
+
+Adversarial training can eradicate the vulnerability in a single model by forcing it to learn more robust features, but this approach is rigid and suffers from substantial loss on clean data accuracy.
+Ensemble techniques can be induced to have diverse sub-models robust to a transfer adversarial example.
+
+Gaussian processes do not scale well, but a common technique is to have a variational GP using inducing samples.
+Deep Gaussian processes represent a multilayer hierarchy of Gaussian processes.
+
+Most weight perturbation-based algorithms suffer from high variance of gradient estimation due to sharing the same perturbations among all samples in a mini-batch.
+Flipout by \cite{wen2018flipout} is an approach that samples pseudo-independent weight perturbations for each input to decorrelate the gradients within a minibatch.
+
+DNNs have been successful with complex high-dimensional image data but are not robust to adversarial examples as shown in \cite{szegedy2013intriguing}.
+\cite{bradshaw2017adversarial} proposed a hybrid model of GP and DNNs (GPDNNs) to deal with the uncertainty caused by adversarial examples.
+Convolutional structures have also been introduced into GPs such as in \cite{van2017convolutional}.
+
+
+\section{Neural Tangents}\label{sec:neural-tangents}
+Notes taken from \cite{novak2019neural}.
+
+The infinite-width limit of a large class of Bayesian neural networks become Gaussian Processes with specific, architecture-dependent, compositional kernel, forming a Neural Network Gaussian Process (NNGP) model.
+Kernels can be defined with recurrence relationships for a wide range of non-linearities (activation functions), convolutional layers, residual connections, and pooling.
+Neural Tangent Kernels (NTK) relates to the gradient descent training of the infinite-width limit of a Bayesian Neural Network.
+Infinite-width kernels that cannot be constructed analytically can be approximated by Monte Carlo sampling.
+
+Neural Tangents provide framework for automatic construction of infinite-width kernels that would otherwise need to be derived for each new architecture by hand.
 
 
 % Acknowledgements and Disclosure of Funding should go at the end, before appendices and references
