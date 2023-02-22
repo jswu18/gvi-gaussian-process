@@ -51,10 +51,10 @@ class GaussianWassersteinDistance:
     def calculate_eigenvalues(
         matrix: jnp.ndarray, regularisation: float
     ) -> jnp.ndarray:
-        return (
-            jnp.linalg.eigvals(matrix + regularisation * jnp.eye(matrix.shape[0]))
-            - regularisation
+        eigen_values, _ = jnp.linalg.eigh(
+            matrix + regularisation * jnp.eye(matrix.shape[0])
         )
+        return eigen_values - regularisation
 
     def calculate(
         self,
