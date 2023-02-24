@@ -30,6 +30,8 @@
 
 \usepackage{xcolor}
 \newcommand{\jk}[1]{{\color{blue} [JK: #1]}}
+\newcommand{\jw}[1]{{\color{gray} [JW: #1]}}
+\newcommand{\Cat}{\operatorname{Cat}}
 % Heading arguments are {volume}{year}{pages}{date submitted}{date published}{paper id}{author-full-names}
 
 \usepackage{lastpage}
@@ -126,10 +128,13 @@ The likelihood:
 
 \[p(y|f_1, \dots, f_J) = \prod_{n=1}^N p(y_n | f_1, \dots, f_J)\]
 
-where $p(y_n | f_1, \dots, f_J) \coloneqq h_{y_n}^{\epsilon}(f_1(x_n), \dots , f_J{x_N})$ and $y_n \in \{1, \dots, J\}$.
-$h_{y_n}^{\epsilon}$ is the robust max function $\mathcal{S}_{robust}^{(\epsilon)}$ as described in \cite{matthews2017scalable}.
+where $p(y_n | f_1, \dots, f_J) \coloneqq \mathcal{S}_{robust}^{(\epsilon)}(f_1(x_n), \dots , f_J{x_N})$ and $y_n \in \{1, \dots, J\}$.
+$\mathcal{S}_{robust}^{(\epsilon)}$ is the robust max function as described in \cite{matthews2017scalable}.
 %
 \jk{Don't define the same object twice with different names. Easy fix if you can't decide on which notation you want to use and perhaps want to change later: introduce a macro for the max function.}
+%
+%
+\jw{Changed to $\mathcal{S}_{robust}$ for now}
 %
 \cite{wild2022generalized} used $\epsilon = 1 \%$.
 
@@ -139,29 +144,52 @@ with the corresponding variational measures:
 \[Q_j = \mathcal{N}(m_{\mathbb{Q}, j}, C_{\mathbb{Q}, j})\]
 The objective to minimise:
 \[\mathcal{L} = -\mathbb{E}_{\mathbb{Q}}\left[ \log p(y_n | F_1, \dots, F_J)\right] + \sum_{j=1}^{J} W_2^2(P_j, Q_j)\]
+
+\subsubsection{Expected Log-likelihood}\label{subsec:expected-log-likelihood}
+
 The variational (posterior) approximation of the probability of $\{(F_1(x), \dots, F_J(x)) \in A\}$ will be denoted:
 \[\mathbb{Q}\left( (F_1(x), \dots, F_J(x)) \in A\right)\]
 where $A \subset \mathbb{R}^J$.
 We get the expected log-likelihood:
 %
 \jk{Would be good to explain where this approximation comes from}
+\jw{I've copied over the reasoning from Veit's paper but not entirely sure on how each step follows yet.}
 %
+
+\begin{align*}
+\mathbb{E}_{\mathbb{Q}}\left[ \log p(y | F_1, \dots, F_J)\right] &= \sum_{n=1}^{N}\mathbb{E}_{\mathbb{Q}}\left[ \log p(y_n | F_1, \dots, F_J)\right]\\
+&= \sum_{n=1}^{N}\log(1-\epsilon)\mathbb{Q}\left( \argmax_{j=1, \cdots, J} \{F_j(x_n)\} = y_n\right)\\
+& \qquad + \log\left(\frac{\epsilon}{J-1}\right)\mathbb{Q}\left( \argmax_{j=1, \cdots, J} \{F_j(x_n)\} \neq y_n\right)\\
+&\approx \sum_{n=1}^{N} \log(1-\epsilon)S(x_n, y_n) + \log \left(\frac{\epsilon}{J-1}\right)(1-S(x_n, y_n))
+\end{align*}
+
 \[\mathbb{E}_{\mathbb{Q}}\left[ \log p(y_n | F_1, \dots, F_J)\right] \approx \sum_{n=1}^{N} \log(1-\epsilon)S(x_n, y_n) + \log \left(\frac{\epsilon}{J-1}\right)(1-S(x_n, y_n))\]
 where:
 \[S(x, j) \coloneqq \frac{1}{\sqrt{\pi}} \sum_{i=1}^I w_i \prod_{l\neq j} \phi \left( \frac{\sqrt{2 r_j (x, x)}\xi_i + m_{Q, j}(x) - m_{Q, l}(x)}{\sqrt{r_l (x, x)}}\right)\]
 for any $x \in \mathcal{X}$, $j=1, \dots, J$ where $(w_i, \xi_i)_{i=1}^I$ are the weights and roots of the Hermite polynomial of order $I \in \mathbb{N}$., calculated with \verb|scipy.special.roots_hermite|.
 $\phi$ is the standard normal cumulative distribution function.
 
-The Wasserstein distance $W_2^2(P_j, Q_j)$ can be estimated in the same way as for regression:
+\subsubsection{The Wasserstein Metric}\label{subsec:wasserstein-metric}
+
+
 %
 \jk{Explain why this is a natural estimator/what the exact Wasserstein distance would look like and how this estimate relates to that. Also, you haven't covered the regression case here so it's not clear how this differs/is similar to the regression case.}
+\jw{Using Veit's paper I've followed the same reasoning. I've tried elaborating on the last trace term to fill in the steps that Veit skipped for my own understanding.}
 %
+
+For two Gaussian Measures $\mathbb{P} = \mathcal{N}(m_{\mathbb{P}}, C_{\mathbb{P}})$ and $\mathbb{Q} = \mathcal{N}(m_{\mathbb{Q}}, C_{\mathbb{Q}})$ on the Hilbert space $H=L^2(\mathcal{X}, \rho, \mathbb{R})$ Wasserstein distance $W_2^2(P_j, Q_j)$ the Wasserstein metric is given as:
+
+\[W_2^2(\mathbb{P}, \mathbb{Q}) = \|m_{\mathbb{P}} - m_{\mathbb{Q}}\|_2^2 + tr(C_{\mathbb{P}}) + tr(C_{\mathbb{Q}}) - 2 \cdot tr \left[ \left( C_{\mathbb{P}}^{\frac{1}{2}}C_{\mathbb{Q}}C_{\mathbb{P}}^{\frac{1}{2}}\right)^{\frac{1}{2}}\right]\]
+
+which can be approximated with $\hat{W}^2$:
+
 \[
 \begin{split}
-\hat{W}^2 \coloneqq & \frac{1}{N}\sum_{n=1}^N (m_{\mathbb{P}}(x_n)-m_{\mathbb{Q}}(x_n))^2 + \frac{1}{N}\sum_{n=1}^{N}k(x_n, x_n) \\
- &+\frac{1}{N}\sum_{n=1}^{N}r(x_n, x_n) - \frac{2}{\sqrt {N N_S}}\sum_{s=1}^{N_S}\sqrt {\lambda_s(r(X_S, X)k(X, X_S))} \\
+\hat{W}^2 & \coloneqq \frac{1}{N}\sum_{n=1}^N (m_{\mathbb{P}}(x_n)-m_{\mathbb{Q}}(x_n))^2 + \frac{1}{N}\sum_{n=1}^{N}k(x_n, x_n) \\
+ &\qquad +\frac{1}{N}\sum_{n=1}^{N}r(x_n, x_n) - \frac{2}{\sqrt {N N_S}}\sum_{s=1}^{N_S}\sqrt {\lambda_s(r(X_S, X)k(X, X_S))} \\
 \end{split}\label{eq:w-2-distance-approx}
 \]
+
 where:
 \begin{itemize}
     \item $X_S \coloneqq (x_{S, 1}, \dots, x_{S, N_S})$ with $x_{S, 1}, \dots, x_{S, N_S} \in \mathbb{R}^D$, a set of $N_S$ points sub-sampled from the input data $X$
@@ -169,7 +197,77 @@ where:
     \item $k(X, X_S) \coloneqq \left(k(x_{x_n, S_s})\right)_{n, s} \in \mathbb{R}^{N \times N_s}$
     \item $\lambda_s(\cdot)$ calculates the s-th eigenvalue
 \end{itemize}
-and $n=1,\dots, N$, $s=1, \dots, N_S$, $k$ is the kernel for $\mathbb{P}$, $r$ is the kernel for $\mathbb{Q}$
+
+and $n=1,\dots, N$, $s=1, \dots, N_S$, $k$ is the kernel for $\mathbb{P}$, $r$ is the kernel for $\mathbb{Q}$. \\
+
+The approximation for each term of $W^2$ is shown below.
+
+For $\|m_{\mathbb{P}} - m_{\mathbb{Q}}\|_2^2$:
+\[\|m_{\mathbb{P}} - m_{\mathbb{Q}}\|_2^2 = \int \left(m_{\mathbb{P}}(x) - m_{\mathbb{Q}}(x)\right)^2 d\rho(x)\]
+
+Approximating $\rho(x)$ with the empirical data distribution:
+\[\|m_{\mathbb{P}} - m_{\mathbb{Q}}\|_2^2 \approx \frac{1}{N}\sum_{n=1}^N (m_{\mathbb{P}}(x_n)-m_{\mathbb{Q}}(x_n))^2\]
+
+we have our approximation for the first term.
+
+For $tr(C_{\mathbb{P}})$ and  $tr(C_{\mathbb{Q}})$:
+\[tr(C_{\mathbb{P}}) = \int k(x, x) d\rho(x)\]
+
+Again, approximating $\rho(x)$ with the empirical data distribution, we have our estimate:
+\[tr(C_{\mathbb{P}}) \approx \frac{1}{N}\sum_{n=1}^{N}k(x_n, x_n)\]
+
+Similarly:
+
+\[tr(C_{\mathbb{Q}})  \approx \frac{1}{N}\sum_{n=1}^{N}r(x_n, x_n)\]
+
+For $tr \left[ \left( C_{\mathbb{P}}^{\frac{1}{2}}C_{\mathbb{Q}}C_{\mathbb{P}}^{\frac{1}{2}}\right)^{\frac{1}{2}}\right]$:
+
+\begin{align*}
+tr \left[ \left( C_{\mathbb{P}}^{\frac{1}{2}}C_{\mathbb{Q}}C_{\mathbb{P}}^{\frac{1}{2}}\right)^{\frac{1}{2}}\right] &= \sum_{n=1}^{\infty} \sqrt {\lambda_n\left( C_{\mathbb{P}}^{\frac{1}{2}}C_{\mathbb{Q}}C_{\mathbb{P}}^{\frac{1}{2}}\right)}\\
+&= \sum_{n=1}^{\infty} \sqrt {\lambda_n\left( C_{\mathbb{Q}}C_{\mathbb{P}}\right)}
+\end{align*}
+
+because $C_{\mathbb{Q}}C_{\mathbb{P}}$ has the same eigenvalues as $C_{\mathbb{P}}^{\frac{1}{2}}C_{\mathbb{Q}}C_{\mathbb{P}}^{\frac{1}{2}}$.
+
+Knowing that $C_{\mathbb{P}}(x) = \int k(x, x') d\rho(x')$, the operator $C_{\mathbb{Q}}C_{\mathbb{P}}$  is given as:
+
+\begin{align*}
+C_{\mathbb{Q}}C_{\mathbb{P}}f(x) &= \int r(x, x')\left(C_{\mathbb{P}} f \right) (x') d\rho(x')\\
+&= \int r(x, x')\left( \int k(x', t)f(t) d\rho(t) \right) d\rho(x')\\
+&= \int \int r(x, x')  k(x', t)f(t) d\rho(x') d\rho(t)\\
+&= \int (r * k)(x, t)  f(t) d\rho(t)\\
+\end{align*}
+
+where $(r * k)(x, t) \coloneqq \int r(x, x')  k(x', t) d\rho(x'), \forall x, t \in \mathcal{X}$.
+
+This means $C_{\mathbb{Q}}C_{\mathbb{P}}$ is also an integral operator with (non-symmetric) kernel $r * k$.
+We can again approximate $\rho$ with the data samples:
+
+\[\widehat{(r * k)}(x, t) = \frac{1}{N} \sum_{n=1}^N r(x, x_n)  k(x_n, t)\]
+
+Thus, the spectrum of $C_{\mathbb{Q}}C_{\mathbb{P}}$ (set of its eigenvalues), we can calculate the spectrum by choosing a subsample of the data $X_S$ of size $N_S < N$, we can approximate:
+
+\begin{align*}
+\lambda\left( C_{\mathbb{Q}}C_{\mathbb{P}}\right) &\approx \lambda\left(\frac{1}{N_S}\widehat{(r * k)}(X_S, X_S)\right)\\
+&= \lambda\left(\frac{1}{N_S}\frac{1}{N} r(X_S, X)  k(X, X_S)\right)\\
+\end{align*}
+
+We can then use this to approximate:
+
+\begin{align*}
+tr \left[ \left( C_{\mathbb{P}}^{\frac{1}{2}}C_{\mathbb{Q}}C_{\mathbb{P}}^{\frac{1}{2}}\right)^{\frac{1}{2}}\right] &= \sum_{n=1}^{\infty} \sqrt {\lambda_n\left( C_{\mathbb{Q}}C_{\mathbb{P}}\right)}\\
+&\approx \sum_{s=1}^{N_S} \sqrt {\lambda_s\left( \frac{1}{N_S}\frac{1}{N} r(X_S, X)  k(X, X_S)\right)}\\
+&\qquad = \frac{1}{\sqrt{N N_S}} \sum_{s=1}^{N_S} \sqrt {\lambda_s\left(  r(X_S, X)  k(X, X_S)\right)}\\
+\end{align*}
+
+Combining, we arrive at the approximation:
+
+\[
+\begin{split}
+\hat{W}^2 & \coloneqq \frac{1}{N}\sum_{n=1}^N (m_{\mathbb{P}}(x_n)-m_{\mathbb{Q}}(x_n))^2 + \frac{1}{N}\sum_{n=1}^{N}k(x_n, x_n) \\
+ &\qquad +\frac{1}{N}\sum_{n=1}^{N}r(x_n, x_n) - \frac{2}{\sqrt {N N_S}}\sum_{s=1}^{N_S}\sqrt {\lambda_s(r(X_S, X)k(X, X_S))} \\
+\end{split}\label{eq:w-2-distance-approx}
+\]
 
 \subsection{Prediction}\label{subsec:gwi-for-multiclass-classification-prediction}
 
@@ -177,11 +275,14 @@ For an unseen point $x^* \in \mathcal{X}$, the probability that it belongs to cl
 
 \[\mathbb{Q}(Y^* = j) = (1-\epsilon) S(x^*, j) + \frac{\epsilon}{J-1}(1-S(x^*, j))\]
 
-where the predicted label class is the maximiser  of this probability: \jk{Style thing: define a macro for $Cat$ so that i looks like  $\operatorname{Cat}$ in math environments if you're going to use it more often. Otherwise, just write $\operatorname{Cat}$ in-text. Also unclear what $\operatorname{Cat}$ means here; undefined.}
+where the predicted label class is the maximiser  of this probability:
+%
+\jk{Style thing: define a macro for $Cat$ so that i looks like  $\operatorname{Cat}$ in math environments if you're going to use it more often. Otherwise, just write $\operatorname{Cat}$ in-text. Also unclear what $\operatorname{Cat}$ means here; undefined.}
+\jw{Added a $\Cat$ operator, thanks for the tip.}
+%
+\[\Cat(\mathbb{Q}(Y^*)) = \argmax_{j \in \{1, \dots J\}} \mathbb{Q}(Y^* = j)\]
 
-\[Cat(\mathbb{Q}(Y^*)) = \argmax_{j \in \{1, \dots J\}} \mathbb{Q}(Y^* = j)\]
-
-
+where $\Cat$ is the categorical operator, choosing the class from $1, \cdots J$ with the highest probability given by $\mathbb{Q}$.
 
 \section{Uncertainty Quantification Review}\label{sec:uncertainty-quantification-review}
 Notes taken from a review paper by \cite{abdar2021review}.
