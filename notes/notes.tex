@@ -92,23 +92,22 @@ Similarly, the approximation Gaussian Measure:
 
 where $m_{\mathbb{Q}}(\cdot)$ is the approximation mean function, which will be defined with dependence on the reference mean function, and $r(\cdot, \cdot)$ is the approximation kernel function, which will be defined with dependence on the reference kernel function.
 
-\section{GWI for Regression}\label{sec:gwi-for-regression}
-Notes taken from \cite{wild2022generalized}.
-
-Assume our $N$ data pairs $(\mathbf{x}_n, y_n)$ are generated from:
+We will assume that our $N$ data pairs $(\mathbf{x}_n, y_n)$ are generated from:
 
 \[y_n = F(\mathbf{x}_n) + \epsilon_n\]
 
 where $F \sim \mathcal{N}(0, \mathbf{C})$ is a random function, $\epsilon \sim \mathcal{N}(0, \sigma^2)$ for $n=1, \cdots, N$, and $\mathbf{C} = \mathbf{C}_{k}$ depends on the reference kernel function $k$.
 $\sigma >0$ is the observation noise or aleatoric uncertainty (irreducible data uncertainty).
 
-A choice of reference kernel $k$ is the ARD kernel:
+\subsection{Reference Kernels}
+
+One choice of a reference kernel $k$ is the ARD kernel:
 \[k(\mathbf{x}, \mathbf{x}') = \sigma_f^2 \exp\left( - \frac{1}{2} \sum_{d=1}^D \frac{(x_d - x'_d)^2}{\alpha_d^2}\right)\]
 
 for $\mathbf{x}, \mathbf{x}' \in \mathbb{R}^D$. $\sigma_f^2$ is the kernel scaling factor and $\mathbf{\alpha} = [\alpha_1 \cdots \alpha_D]^T$ where each $\alpha_d > 0$ is the length-scale for dimension $d$.
 Any kernel can be chosen as the reference kernel, another example is the NNGP kernel.
 
-\subsection{Reference Kernel Hyperparameter Tuning}\label{subsec:reference-kernel-hyperparameter-tuning}
+\subsubsection{Reference Kernel Hyperparameter Tuning}
 For GWI, we choose $M$ inducing points where $M \in \{0.5\sqrt{N}, \sqrt{N},\cdots\}$.
 $M$ is some multiple of $\sqrt{N}$, which we will see is for control the computational cost of evaluating the approximation kernel is controlled.
 This provides us with inducing points $z_1, \cdots z_M$.
@@ -120,7 +119,7 @@ One example of hyper-parameter tuning is by maximising the log-likelihood on the
 where the inducing point pairs of the vectors $\mathbf{X}_{\mathbf{Z}}$ and $\mathbf{y}_{\mathbf{Z}}$ are $(\mathbf{x}_m, y_m)$ for $m=1,\cdots M$.
 Recall that $\sigma >0$ is the observation noise or aleatoric uncertainty (irreducible data uncertainty).
 
-If we choose the NNGP kernel, I think they have their own method of finding the optimal hyper-parameters.
+\jw{If we choose the NNGP kernel, I think they have their own method of finding the optimal hyper-parameters.}
 
 \subsection{Approximation Mean Functions}\label{subsec:approximation-mean-functions}
 There are many different ways we can define $m_{\mathbb{Q}}(\cdot)$, all of which should depend on the reference Gaussian Measure.
@@ -155,7 +154,6 @@ and
 \[\mathbf{L} = \Chol\left( \left[k(\mathbf{X}_{\mathbf{Z}}, \mathbf{X}_{\mathbf{Z}}) + \frac{1}{\sigma^2} k(\mathbf{X}_{\mathbf{Z}}, \mathbf{x})k(\mathbf{x}', \mathbf{X}_{\mathbf{Z}})\right]^{-1}\right)\]
 
 where we can also calculate the matrix inverse above with a Cholesky decomposition.
-
 
 \subsection{The Wasserstein Metric}\label{subsec:wasserstein-metric}
 
