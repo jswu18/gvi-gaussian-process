@@ -78,19 +78,41 @@
 %\section{Generalized Variational Inference}\label{sec:generalized-variational-inference}
 %Notes taken from \cite{knoblauch2022optimization}.
 
-\section{GWI Problem Set Up}\label{sec:gwi-problem-set-up}
+\section{GWI in FS Set Up}\label{sec:gwi-in-fs-set-up}
 
 Notes taken from \cite{wild2022generalized}.
 
-The reference Gaussian Measure:
+\subsection{Gaussian Measures of GWI in FS}\label{sec:gaussian-measures-of-gwi-in-fs}
+
+The Reference Gaussian Measure:
 \[P \coloneqq \mathbb{P}^{F} \sim \mathcal{N} (m_{\mathbb{P}}(\cdot), \mathbf{C}_{k(\cdot, \cdot)})\]
 
 where $m_{\mathbb{P}}(\cdot)$ is the reference mean function (generally zero constant mean function) and $k(\cdot, \cdot)$ is the reference kernel function.
 
-Similarly, the approximation Gaussian Measure:
+Similarly, the Approximation Gaussian Measure:
 \[Q \coloneqq \mathbb{Q}^{F} \sim \mathcal{N} (m_{\mathbb{Q}}(\cdot), \mathbf{C}_{r(\cdot, \cdot)})\]
 
 where $m_{\mathbb{Q}}(\cdot)$ is the approximation mean function, which will be defined with dependence on the reference mean function, and $r(\cdot, \cdot)$ is the approximation kernel function, which will be defined with dependence on the reference kernel function.
+
+\subsection{Motivations}\label{sec:motivations}
+
+
+Evaluations of Gaussian Measures have computational complexity of order $\mathcal{O}(N^3)$ where $N$ is the number of training points.
+Thus, despite the nice uncertainty quantification properties that Gaussian Measures provide, they are unable to scale well in large and more complicated data regimes (i.e training on a large number of images).
+
+
+\subsection{Modelling Approach}\label{sec:modelling-approach}
+
+The approach of GVI in FS is to define a reference Gaussian Measure $P$ that will have the usual scaling issues.
+$P$ will be trained on a subset of the data of size $\mathcal{O}\left(N^{1/2}\right)$ such that the evaluation of these points will have computational complexity $\mathcal{O}\left(N^{3/2}\right)$.
+Then an approximation Gaussian Measure $Q$ is defined with respect to these $\mathcal{O}\left(N^{1/2}\right)$ inducing points such that the evaluation of the full $N$ training points on $Q$ will have computational complexity $\mathcal{O}\left(N^{3/2}\right)$.
+
+GVI in FS involves the process of training $Q$ such that it's behaviour will resemble that of $P$, our reference measure that is computationally intractable.
+This will be done in a two step process:
+\begin{enumerate}
+    \item Training the parameters of the reference measure $P$ using the inducing points.
+    \item Training the parameters of $Q$ through the minimisation of the Wasserstein distance between $P$ and $Q$.
+\end{enumerate}
 
 We will assume that our $N$ data pairs $(\mathbf{x}_n, y_n)$ are generated from:
 
