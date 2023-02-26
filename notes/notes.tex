@@ -172,7 +172,7 @@ One choice of approximation kernel is by defining a variational kernel:
 \[r(\mathbf{x}, \mathbf{x}') = k(\mathbf{x}, \mathbf{x}') - k(\mathbf{x}, \mathbf{X}_{\mathbf{Z}})k(\mathbf{X}_{\mathbf{Z}}, \mathbf{X}_{\mathbf{Z}})^{-1}k(\mathbf{X}_{\mathbf{Z}}, \mathbf{x}') + k(\mathbf{x}, \mathbf{X}_{\mathbf{Z}})\mathbf{\Sigma}k(\mathbf{X}_{\mathbf{Z}}, \mathbf{x}')\]
 
 where $k$ is the reference kernel and $\mathbf{\Sigma} \in \mathbb{R}^{m \times m}$ defined with respect to a Cholesky decomposition:
-\[\mathbf{\Sigma} = \mathbf{L}\mathbf{L}\]
+\[\mathbf{\Sigma} = \mathbf{L}\mathbf{L}^T\]
 
 and
 \[\mathbf{L} = \Chol\left( \left[k(\mathbf{X}_{\mathbf{Z}}, \mathbf{X}_{\mathbf{Z}}) + \frac{1}{\sigma^2} k(\mathbf{X}_{\mathbf{Z}}, \mathbf{x})k(\mathbf{x}', \mathbf{X}_{\mathbf{Z}})\right]^{-1}\right)\]
@@ -189,11 +189,9 @@ Notes taken from \cite{wild2022generalized}.
 %
 
 For two Gaussian Measures $\mathbb{P} = \mathcal{N}(m_{\mathbb{P}}, C_{\mathbb{P}})$ and $\mathbb{Q} = \mathcal{N}(m_{\mathbb{Q}}, C_{\mathbb{Q}})$ on the Hilbert space $H=L^2(\mathcal{X}, \rho, \mathbb{R})$ Wasserstein distance $W_2^2(P_j, Q_j)$ the Wasserstein metric is given as:
-
 \[W_2^2(\mathbb{P}, \mathbb{Q}) = \|m_{\mathbb{P}} - m_{\mathbb{Q}}\|_2^2 + tr(C_{\mathbb{P}}) + tr(C_{\mathbb{Q}}) - 2 \cdot tr \left[ \left( C_{\mathbb{P}}^{\frac{1}{2}}C_{\mathbb{Q}}C_{\mathbb{P}}^{\frac{1}{2}}\right)^{\frac{1}{2}}\right]\]
 
 which can be approximated with $\hat{W}^2$:
-
 \[
 \begin{split}
 \hat{W}^2 & \coloneqq \frac{1}{N}\sum_{n=1}^N (m_{\mathbb{P}}(x_n)-m_{\mathbb{Q}}(x_n))^2 + \frac{1}{N}\sum_{n=1}^{N}k(x_n, x_n) \\
@@ -228,11 +226,9 @@ Again, approximating $\rho(x)$ with the empirical data distribution, we have our
 \[tr(C_{\mathbb{P}}) \approx \frac{1}{N}\sum_{n=1}^{N}k(x_n, x_n)\]
 
 Similarly:
-
 \[tr(C_{\mathbb{Q}})  \approx \frac{1}{N}\sum_{n=1}^{N}r(x_n, x_n)\]
 
 For $tr \left[ \left( C_{\mathbb{P}}^{\frac{1}{2}}C_{\mathbb{Q}}C_{\mathbb{P}}^{\frac{1}{2}}\right)^{\frac{1}{2}}\right]$:
-
 \begin{align*}
 tr \left[ \left( C_{\mathbb{P}}^{\frac{1}{2}}C_{\mathbb{Q}}C_{\mathbb{P}}^{\frac{1}{2}}\right)^{\frac{1}{2}}\right] &= \sum_{n=1}^{\infty} \sqrt {\lambda_n\left( C_{\mathbb{P}}^{\frac{1}{2}}C_{\mathbb{Q}}C_{\mathbb{P}}^{\frac{1}{2}}\right)}\\
 &= \sum_{n=1}^{\infty} \sqrt {\lambda_n\left( C_{\mathbb{Q}}C_{\mathbb{P}}\right)}
@@ -241,7 +237,6 @@ tr \left[ \left( C_{\mathbb{P}}^{\frac{1}{2}}C_{\mathbb{Q}}C_{\mathbb{P}}^{\frac
 because $C_{\mathbb{Q}}C_{\mathbb{P}}$ has the same eigenvalues as $C_{\mathbb{P}}^{\frac{1}{2}}C_{\mathbb{Q}}C_{\mathbb{P}}^{\frac{1}{2}}$.
 
 Knowing that $C_{\mathbb{P}}(x) = \int k(x, x') d\rho(x')$, the operator $C_{\mathbb{Q}}C_{\mathbb{P}}$  is given as:
-
 \begin{align*}
 C_{\mathbb{Q}}C_{\mathbb{P}}f(x) &= \int r(x, x')\left(C_{\mathbb{P}} f \right) (x') d\rho(x')\\
 &= \int r(x, x')\left( \int k(x', t)f(t) d\rho(t) \right) d\rho(x')\\
@@ -253,18 +248,15 @@ where $(r * k)(x, t) \coloneqq \int r(x, x')  k(x', t) d\rho(x'), \forall x, t \
 
 This means $C_{\mathbb{Q}}C_{\mathbb{P}}$ is also an integral operator with (non-symmetric) kernel $r * k$.
 We can again approximate $\rho$ with the data samples:
-
 \[\widehat{(r * k)}(x, t) = \frac{1}{N} \sum_{n=1}^N r(x, x_n)  k(x_n, t)\]
 
 Thus, the spectrum of $C_{\mathbb{Q}}C_{\mathbb{P}}$ (set of its eigenvalues), we can calculate the spectrum by choosing a subsample of the data $X_S$ of size $N_S < N$, we can approximate:
-
 \begin{align*}
 \lambda\left( C_{\mathbb{Q}}C_{\mathbb{P}}\right) &\approx \lambda\left(\frac{1}{N_S}\widehat{(r * k)}(X_S, X_S)\right)\\
 &= \lambda\left(\frac{1}{N_S}\frac{1}{N} r(X_S, X)  k(X, X_S)\right)\\
 \end{align*}
 
 We can then use this to approximate:
-
 \begin{align*}
 tr \left[ \left( C_{\mathbb{P}}^{\frac{1}{2}}C_{\mathbb{Q}}C_{\mathbb{P}}^{\frac{1}{2}}\right)^{\frac{1}{2}}\right] &= \sum_{n=1}^{\infty} \sqrt {\lambda_n\left( C_{\mathbb{Q}}C_{\mathbb{P}}\right)}\\
 &\approx \sum_{s=1}^{N_S} \sqrt {\lambda_s\left( \frac{1}{N_S}\frac{1}{N} r(X_S, X)  k(X, X_S)\right)}\\
@@ -272,7 +264,6 @@ tr \left[ \left( C_{\mathbb{P}}^{\frac{1}{2}}C_{\mathbb{Q}}C_{\mathbb{P}}^{\frac
 \end{align*}
 
 Combining, we arrive at the approximation:
-
 \[
 \begin{split}
 \hat{W}^2 & \coloneqq \frac{1}{N}\sum_{n=1}^N (m_{\mathbb{P}}(x_n)-m_{\mathbb{Q}}(x_n))^2 + \frac{1}{N}\sum_{n=1}^{N}k(x_n, x_n) \\
