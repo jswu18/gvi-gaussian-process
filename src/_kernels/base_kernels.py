@@ -6,7 +6,7 @@ import jax.numpy as jnp
 import numpy as np
 from jax import vmap
 
-from src.kernels.kernels import Kernel, KernelParameters
+from src._kernels.kernels import Kernel, KernelParameters
 
 
 @dataclass

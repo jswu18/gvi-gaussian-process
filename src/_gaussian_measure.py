@@ -6,16 +6,16 @@ import jax.scipy
 import optax
 from optax import GradientTransformation
 
-from src.kernels.base_kernels import (
+from src._kernels.base_kernels import (
     NeuralNetworkGaussianProcessKernel,
     NeuralNetworkGaussianProcessKernelParameters,
 )
-from src.kernels.kernels import Kernel, KernelParameters
-from src.kernels.variational_kernels import (
+from src._kernels.kernels import Kernel, KernelParameters
+from src._kernels.variational_kernels import (
     VariationalKernel,
     VariationalKernelParameters,
 )
-from src.mean_functions import Constant, MeanFunction
+from src._mean_functions import Constant, MeanFunction
 from src.parameters import Parameters
 
 

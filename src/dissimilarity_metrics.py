@@ -5,7 +5,7 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 
-from src.gaussian_measure import GaussianMeasure, StochasticGaussianProcess
+from src._gaussian_measure import GaussianMeasure, StochasticGaussianProcess
 from src.parameters import Parameters
 
 
