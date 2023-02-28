@@ -3,8 +3,8 @@ from dataclasses import asdict, dataclass
 import jax.numpy as jnp
 from jax.scipy.linalg import cho_factor, cho_solve
 
-from src.kernels.base_kernels import BaseKernel, BaseKernelParameters
-from src.kernels.kernels import Kernel, KernelParameters
+from src._kernels.base_kernels import BaseKernel, BaseKernelParameters
+from src._kernels.kernels import Kernel, KernelParameters
 
 
 @dataclass
