@@ -183,10 +183,10 @@ where we can also calculate the matrix inverse above with a Cholesky decompositi
 
 Notes taken from \cite{wild2022generalized}.
 
-\subsection{The Loss}\label{subsec:gwi-for-regression-the-liss}
+\subsection{The Objective Function}\label{subsec:gwi-for-regression-the-liss}
 
 
-The objective to minimise:
+The generalised objective to minimise:
 
 \[\mathcal{L} = - \mathbb{E}_{\mathbb{Q}}\left[ \log p(y |F)\right] + \mathbb{D}(\mathbb{Q}^F, \mathbb{P}^F)\]
 
@@ -208,11 +208,11 @@ Combining:
 
 \[\mathcal{L} = - \sum_{n=1}^N \mathbb{E}_{\mathbb{Q}}\left[ \log \mathcal{N}(y_n |F(x_n), \sigma^2)\right] + W_2^2(P, Q)\]
 
-the expected log-likelihood of the data and the Wasserstein distance between the two distribution, over $N$ data points.
+our objective for Gaussian Wasserstein Inference.
 
 \subsubsection{The Negative Expected Log-Likelihood}
 
-Assuming Gaussian measures for $P$ and $Q$, the negative expected log likelihood can be calculated as:
+Assuming Gaussian measures for $P$ and $Q$, the negative expected log likelihood can be expressed as:
 
 \[-\sum_{n=1}^N \mathbb{E}_{\mathbb{Q}}\left[ \log \mathcal{N}(y_n |F(x_n), \sigma^2)\right] = -\frac{N}{2} \log(2\pi \sigma^2) -\sum_{n=1}^N \frac{(y_n-m_Q(x_n))^2 + r(x_n, x_n)}{2\sigma^2} \]
 
@@ -309,7 +309,7 @@ Combining, we arrive at the approximation:
 
 We are concerned with:
 
-\[p(y^*|\{x_n, y_n\}_{n=1}^N)\]
+\[p(y^*|x^*, \{x_n, y_n\}_{n=1}^N)\]
 
 the posterior distribution for a new point $y^*$ when conditioning our Gaussian measure on the training data $\{x_n, y_n\}_{n=1}^N$.
 
@@ -317,9 +317,9 @@ the posterior distribution for a new point $y^*$ when conditioning our Gaussian 
 
 For a Gaussian process, the posterior distribution is given by:
 
-\[p(y^*|\{x_n, y_n\}_{n=1}^N) = \mathcal{N}(\mu^*, \Sigma^* + \sigma^2)\]
+\[p(y^*|x^*, \{x_n, y_n\}_{n=1}^N) = \mathcal{N}(\mu^*, \Sigma^* + \sigma^2)\]
 
-where:
+where $\mathbf{X} = (x_n)_{n=1}^{N}$ and $\mathbf{y} = (y_n)_{n=1}^{N}$ such that:
 
 \[\mu^* = k(x^*, \mathbf{X}) \left(k(\mathbf{X}, \mathbf{X}) + \sigma^2\mathbf{I}\right) \mathbf{y}\]
 
@@ -332,9 +332,9 @@ and
 
 Consider the negative log-likelihood for the prediction for a point $(x^*, y^*)$:
 \begin{align*}
-    NLL &\coloneqq - \log p(y^*|\{x_n, y_n\}_{n=1}^N)\\
-    &= - \log \mathcal{N} \left( m_Q(x^*), r(x^*, x^*) + \sigma^2\right)\\
-    &= \frac{1}{2} \left( \log\left(2\pi(r(x^*, x^*)+\sigma^2\right) + \frac{(y^*-m_Q(x^*))^2}{r(x^*, x^*) + \sigma^2}\right)
+    NLL &\coloneqq - \log p(y^*|x^*, \{x_n, y_n\}_{n=1}^N)\\
+    &= - \log \mathcal{N} \left( m_P(x^*), k(x^*, x^*) + \sigma^2\right)\\
+    &= \frac{1}{2} \left( \log\left(2\pi(k(x^*, x^*)+\sigma^2\right) + \frac{(y^*-m_P(x^*))^2}{k(x^*, x^*) + \sigma^2}\right)
     \end{align*}
 
 Tempering is the shrinking of the variance of the posterior predicted distribution by a factor of $\alpha_T \in [0, 1]$.
@@ -343,9 +343,9 @@ This can be done experimentally by using a validation set of $(x^*, y^*)$ points
 
 The tempered negative log-likelihood for the prediction for a point $(x^*, y^*)$:
 \begin{align*}
-    NLL_{\alpha^{T}} &\coloneqq - \log p_{\alpha^T}(y^*|\{x_n, y_n\}_{n=1}^N)\\
-    &= - \log \mathcal{N} \left( m_Q(x^*), \alpha_T \cdot (r(x^*, x^*) + \sigma^2)\right)\\
-    &= \frac{1}{2} \left( \log\left(2\pi \left[ \alpha_T \cdot (r(x^*, x^*)+\sigma^2)\right]\right) + \frac{(y^*-m_Q(x^*))^2}{\alpha_T\cdot (r(x^*, x^*) + \sigma^2)}\right)
+    NLL_{\alpha^{T}} &\coloneqq - \log p_{\alpha^T}(y^*|x^*, \{x_n, y_n\}_{n=1}^N)\\
+    &= - \log \mathcal{N} \left( m_P(x^*), \alpha_T \cdot (k(x^*, x^*) + \sigma^2)\right)\\
+    &= \frac{1}{2} \left( \log\left(2\pi \left[ \alpha_T \cdot (k(x^*, x^*)+\sigma^2)\right]\right) + \frac{(y^*-m_P(x^*))^2}{\alpha_T\cdot (k(x^*, x^*) + \sigma^2)}\right)
     \end{align*}
 
 We can find the optimal $\alpha_T$ by minimising the negative log-likelihood on the validation set, while holding all other previously learned hyper-parameters fixed.
@@ -362,7 +362,7 @@ where $f: X \rightarrow \mathbb{R}$, mapping to the set of real numbers $\mathbb
 For binary Gaussian process classification (GPC), a mapping is defined:
 \[g: \mathbb{R} \rightarrow [0, 1]\]
 transforming a value on the real line to the unit interval to represent a probability.
-A bernoulli random variable $\mathcal{B}$ can be defined such that:
+A Bernoulli random variable $\mathcal{B}$ can be defined such that:
 \[f_c \sim \mathcal{B}(g(f))\]
 where $f_c: X \rightarrow \{0, 1\}$, the desired binary classifier.
 
