@@ -179,10 +179,44 @@ and
 
 where we can also calculate the matrix inverse above with a Cholesky decomposition.
 
-\subsection{The Wasserstein Metric}\label{subsec:wasserstein-metric}
+\section{GWI for Regression}\label{sec:gwi-for-regression}
 
 Notes taken from \cite{wild2022generalized}.
 
+\subsection{The Loss}\label{subsec:gwi-for-regression-the-liss}
+
+
+The objective to minimise:
+
+\[\mathcal{L} = - \mathbb{E}_{\mathbb{Q}}\left[ \log p(y |F)\right] + \mathbb{D}(\mathbb{Q}^F, \mathbb{P}^F)\]
+
+the negative expected log-likelihood and the dissimilarity measure between the two distributions.
+
+Assuming:
+\[p(y|f) = \prod{n=1}^N p(y_n | f)\]
+
+and
+\[p(y_n | f) \coloneqq \mathcal{N}(y_n| f(x_n), \sigma^2)\]
+
+we can write the expected log-likelihood as:
+\[\mathbb{E}_{\mathbb{Q}}\left[ \log p(y |F)\right] =\sum_{n=1}^N \mathbb{E}_{\mathbb{Q}}\left[\mathcal{N}(y_n| f(x_n), \sigma^2)\right]\]
+
+Choosing the Wasserstein metric as the dissimilarity measure:
+\[\mathbb{D}(\mathbb{Q}^F, \mathbb{P}^F) = W_2^2(P, Q)\]
+
+Combining:
+
+\[\mathcal{L} = - \sum_{n=1}^N \mathbb{E}_{\mathbb{Q}}\left[ \log \mathcal{N}(y_n |F(x_n), \sigma^2)\right] + W_2^2(P, Q)\]
+
+the expected log-likelihood of the data and the Wasserstein distance between the two distribution, over $N$ data points.
+
+\subsubsection{The Negative Expected Log-Likelihood}
+
+Assuming Gaussian measures for $P$ and $Q$, the negative expected log likelihood can be calculated as:
+
+\[-\sum_{n=1}^N \mathbb{E}_{\mathbb{Q}}\left[ \log \mathcal{N}(y_n |F(x_n), \sigma^2)\right] = -\frac{N}{2} \log(2\pi \sigma^2) -\sum_{n=1}^N \frac{(y_n-m_Q(x_n))^2 + r(x_n, x_n)}{2\sigma^2} \]
+
+\subsubsection{The Wasserstein Metric}\label{subsec:gwi-for-regression-wasserstein-metric}
 %
 \jk{Explain why this is a natural estimator/what the exact Wasserstein distance would look like and how this estimate relates to that. Also, you haven't covered the regression case here so it's not clear how this differs/is similar to the regression case.}
 \jw{Using Veit's paper I've followed the same reasoning. I've tried elaborating on the last trace term to fill in the steps that Veit skipped for my own understanding.}
@@ -270,6 +304,51 @@ Combining, we arrive at the approximation:
  &\qquad +\frac{1}{N}\sum_{n=1}^{N}r(x_n, x_n) - \frac{2}{\sqrt {N N_S}}\sum_{s=1}^{N_S}\sqrt {\lambda_s(r(X_S, X)k(X, X_S))} \\
 \end{split}\label{eq:w-2-distance-approx}
 \]
+
+\subsection{Prediction}\label{subsec:gwi-for-regression-prediction}
+
+We are concerned with:
+
+\[p(y^*|\{x_n, y_n\}_{n=1}^N)\]
+
+the posterior distribution for a new point $y^*$ when conditioning our Gaussian measure on the training data $\{x_n, y_n\}_{n=1}^N$.
+
+\subsubsection{Gaussian Process Prediction}
+
+For a Gaussian process, the posterior distribution is given by:
+
+\[p(y^*|\{x_n, y_n\}_{n=1}^N) = \mathcal{N}(\mu^*, \Sigma^* + \sigma^2)\]
+
+where:
+
+\[\mu^* = k(x^*, \mathbf{X}) \left(k(\mathbf{X}, \mathbf{X}) + \sigma^2\mathbf{I}\right) \mathbf{y}\]
+
+and
+
+\[\Sigma^* = k(x^*, x^*) - k(x^*, \mathbf{X})\left(k(\mathbf{X}, \mathbf{X}) + \sigma^2\mathbf{I}\right)^{-1} k(\mathbf{X}, x^*)\]
+
+
+\subsection{Tempering the Negative Log-Likelihood for Prediction}\label{subsec:gwi-for-regression-tempering}
+
+Consider the negative log-likelihood for the prediction for a point $(x^*, y^*)$:
+\begin{align*}
+    NLL &\coloneqq - \log p(y^*|\{x_n, y_n\}_{n=1}^N)\\
+    &= - \log \mathcal{N} \left( m_Q(x^*), r(x^*, x^*) + \sigma^2\right)\\
+    &= \frac{1}{2} \left( \log\left(2\pi(r(x^*, x^*)+\sigma^2\right) + \frac{(y^*-m_Q(x^*))^2}{r(x^*, x^*) + \sigma^2}\right)
+    \end{align*}
+
+Tempering is the shrinking of the variance of the posterior predicted distribution by a factor of $\alpha_T \in [0, 1]$.
+It can be viewed as a process of uncertainty calibration for the model's predictions.
+This can be done experimentally by using a validation set of $(x^*, y^*)$ points to find the optimal $\alpha_T$ for a Gaussian measure conditions on the training data.
+
+The tempered negative log-likelihood for the prediction for a point $(x^*, y^*)$:
+\begin{align*}
+    NLL_{\alpha^{T}} &\coloneqq - \log p_{\alpha^T}(y^*|\{x_n, y_n\}_{n=1}^N)\\
+    &= - \log \mathcal{N} \left( m_Q(x^*), \alpha_T \cdot (r(x^*, x^*) + \sigma^2)\right)\\
+    &= \frac{1}{2} \left( \log\left(2\pi \left[ \alpha_T \cdot (r(x^*, x^*)+\sigma^2)\right]\right) + \frac{(y^*-m_Q(x^*))^2}{\alpha_T\cdot (r(x^*, x^*) + \sigma^2)}\right)
+    \end{align*}
+
+We can find the optimal $\alpha_T$ by minimising the negative log-likelihood on the validation set, while holding all other previously learned hyper-parameters fixed.
 
 
 \section{Gaussian Processes for Classification}\label{sec:gaussian-processes-for-classification}
