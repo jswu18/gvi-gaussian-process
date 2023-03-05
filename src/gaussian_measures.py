@@ -1,16 +1,22 @@
 from abc import ABC, abstractmethod
-from typing import Tuple
+from typing import Any, Tuple
 
 import jax.numpy as jnp
 from flax.core.frozen_dict import FrozenDict
-from jax import jit
+from jax import random
 from jax.scipy.linalg import cho_factor, cho_solve
 
+from src.kernels.approximation_kernels import ApproximationKernel
 from src.kernels.kernels import Kernel
+from src.kernels.reference_kernels import StandardKernel
+from src.mean_functions.approximation_mean_functions import ApproximationMeanFunction
 from src.mean_functions.mean_functions import MeanFunction
+from src.module import Module
+
+PRNGKey = Any  # pylint: disable=invalid-name
 
 
-class GaussianMeasure(ABC):
+class GaussianMeasure(Module, ABC):
     def __init__(
         self,
         x: jnp.ndarray,
@@ -18,7 +24,6 @@ class GaussianMeasure(ABC):
         mean_function: MeanFunction,
         kernel: Kernel,
     ):
-        """Initialising requires a kernel and data to condition the distribution."""
         self.number_of_train_points = x.shape[0]
         self.x = x
         self.y = y
@@ -26,13 +31,44 @@ class GaussianMeasure(ABC):
         self.kernel = kernel
 
     @abstractmethod
-    def kernel_posterior_distribution(
+    def mean_and_covariance(
         self, x: jnp.ndarray, parameters: FrozenDict
     ) -> Tuple[jnp.ndarray, jnp.ndarray]:
-        """
-        http://krasserm.github.io/2020/12/12/gaussian-processes-sparse/
-        """
         raise NotImplementedError
+
+
+class ReferenceGaussianMeasure(GaussianMeasure):
+    def __init__(
+        self,
+        x: jnp.ndarray,
+        y: jnp.ndarray,
+        mean_function: MeanFunction,
+        kernel: StandardKernel,
+    ):
+        super().__init__(x, y, mean_function, kernel)
+
+    def initialise_random_parameters(
+        self,
+        key: PRNGKey,
+    ) -> FrozenDict:
+        return FrozenDict(
+            {
+                "log_observation_noise": random.normal(key),
+                "mean_function": self.mean_function.initialise_random_parameters(key),
+                "kernel": self.kernel.initialise_random_parameters(key),
+            }
+        )
+
+    def initialise_parameters(self, **kwargs) -> FrozenDict:
+        return FrozenDict(
+            {
+                "log_observation_noise": kwargs["log_observation_noise"],
+                "mean_function": self.mean_function.initialise_parameters(
+                    **kwargs["mean_function"]
+                ),
+                "kernel": self.kernel.initialise_parameters(**kwargs["kernel"]),
+            }
+        )
 
     def mean_and_covariance(
         self, x: jnp.ndarray, parameters: FrozenDict
@@ -43,76 +79,62 @@ class GaussianMeasure(ABC):
         )
         return mean, covariance
 
-
-class ReferenceGaussianMeasure(GaussianMeasure):
     def kernel_posterior_distribution(
         self, x: jnp.ndarray, parameters: FrozenDict
     ) -> Tuple[jnp.ndarray, jnp.ndarray]:
-        pass
+        gram_train = self.kernel.gram(x=self.x, parameters=parameters["kernel"])
+        gram_train_test = self.kernel.gram(
+            x=self.x, y=x, parameters=parameters["kernel"]
+        )
+        gram_test = self.kernel.gram(x=x, parameters=parameters["kernel"])
+        observation_noise = jnp.eye(self.number_of_train_points) * jnp.exp(
+            parameters["log_observation_noise"]
+        )
+        cholesky_decomposition_and_lower = cho_factor(gram_train + observation_noise)
+
+        mean = gram_train_test.T @ cho_solve(
+            c_and_lower=cholesky_decomposition_and_lower, b=self.y
+        )
+        covariance = gram_test - gram_train_test.T @ cho_solve(
+            c_and_lower=cholesky_decomposition_and_lower, b=gram_train_test
+        )
+        return mean, covariance
 
 
 class ApproximationGaussianMeasure(GaussianMeasure):
-    def kernel_posterior_distribution(
+    def __init__(
+        self,
+        x: jnp.ndarray,
+        y: jnp.ndarray,
+        mean_function: ApproximationMeanFunction,
+        kernel: ApproximationKernel,
+    ):
+        super().__init__(x, y, mean_function, kernel)
+
+    def initialise_random_parameters(
+        self,
+        key: PRNGKey,
+    ) -> FrozenDict:
+        return FrozenDict(
+            {
+                "mean_function": self.mean_function.initialise_random_parameters(key),
+                "kernel": self.kernel.initialise_random_parameters(key),
+            }
+        )
+
+    def initialise_parameters(self, **kwargs) -> FrozenDict:
+        return FrozenDict(
+            {
+                "mean_function": self.mean_function.initialise_parameters(
+                    **kwargs["mean_function"]
+                ),
+                "kernel": self.kernel.initialise_parameters(**kwargs["kernel"]),
+            }
+        )
+
+    def mean_and_covariance(
         self, x: jnp.ndarray, parameters: FrozenDict
     ) -> Tuple[jnp.ndarray, jnp.ndarray]:
-        pass
-
-    # self.compute_kxx_shifted_cholesky_decomposition = jit(
-    #     lambda kernel_parameters, log_observation_noise: self._compute_kxx_shifted_cholesky_decomposition(
-    #         kernel_parameters, log_observation_noise, x, kernel
-    #     )
-    # )
-    #
-    # @staticmethod
-    # def _compute_kxx_shifted_cholesky_decomposition(
-    #     kernel_parameters: FrozenDict,
-    #     log_observation_noise: float,
-    #     x: jnp.ndarray,
-    #     kernel: Kernel,
-    # ) -> Tuple[jnp.ndarray, bool]:
-    #     observation_variance = jnp.exp(log_observation_noise) ** 2
-    #
-    #     kxx = kernel.gram(kernel_parameters, x)
-    #     kxx_shifted = kxx + observation_variance * jnp.eye(self.number_of_train_points)
-    #     kxx_shifted_cholesky_decomposition, lower_flag = cho_factor(
-    #         a=kxx_shifted, lower=True
-    #     )
-    #     return kxx_shifted_cholesky_decomposition, lower_flag
-    #
-    # def posterior_distribution(
-    #     self, x: jnp.ndarray, parameters: FrozenDict
-    # ) -> Tuple[jnp.ndarray, jnp.ndarray]:
-    #     """Compute the posterior distribution for test points x.
-    #     Reference: http://gaussianprocess.org/gpml/chapters/RW2.pdf
-    #     """
-    #     kxy = self.kernel.gram(parameters["kernel"], self.x, x)
-    #     kyy = self.kernel.gram(parameters["kernel"], x)
-    #     (
-    #         kxx_shifted_cholesky_decomposition,
-    #         lower_flag,
-    #     ) = self.compute_kxx_shifted_cholesky_decomposition(
-    #         kernel_parameters=parameters["kernel"],
-    #         log_observation_noise=parameters["log_observation_noise"],
-    #     )
-    #
-    #     mean = (
-    #         kxy.T
-    #         @ cho_solve(
-    #             c_and_lower=(kxx_shifted_cholesky_decomposition, lower_flag), b=self.y
-    #         )
-    #     ).reshape(
-    #         -1,
-    #     )
-    #     covariance = kyy - kxy.T @ cho_solve(
-    #         (kxx_shifted_cholesky_decomposition, lower_flag), kxy
-    #     )
-    #     return mean, covariance
-    #
-    # def mean_and_covariance(
-    #     self, x: jnp.ndarray, parameters: FrozenDict
-    # ) -> Tuple[jnp.ndarray, jnp.ndarray]:
-    #     kernel_mean, covariance = self.posterior_distribution(x, parameters)
-    #     mean = kernel_mean + self.mean_function.predict(
-    #         x=x, parameters=parameters["mean_function"]
-    #     )
-    #     return mean, covariance
+        mean = self.mean_function.predict(x=x, parameters=parameters["mean_function"])
+        covariance = self.kernel.gram(x=x, parameters=parameters["kernel"])
+        return mean, covariance
