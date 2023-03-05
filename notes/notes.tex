@@ -169,15 +169,16 @@ There are many different ways we can define $r(\cdot, \cdot)$, all of which shou
 \subsubsection{SVGP Kernel}
 
 One choice of approximation kernel is by defining a variational kernel:
-\[r(\mathbf{x}, \mathbf{x}') = k(\mathbf{x}, \mathbf{x}') - k(\mathbf{x}, \mathbf{X}_{\mathbf{Z}})k(\mathbf{X}_{\mathbf{Z}}, \mathbf{X}_{\mathbf{Z}})^{-1}k(\mathbf{X}_{\mathbf{Z}}, \mathbf{x}') + k(\mathbf{x}, \mathbf{X}_{\mathbf{Z}})\mathbf{\Sigma}k(\mathbf{X}_{\mathbf{Z}}, \mathbf{x}')\]
+\[r(\mathbf{x}, \mathbf{x}') = k(\mathbf{x}, \mathbf{x}') - k(\mathbf{x}, \mathbf{X}_{\mathbf{Z}_{M}})k(\mathbf{X}_{\mathbf{Z}_{M}}, \mathbf{X}_{\mathbf{Z}_{M}})^{-1}k(\mathbf{X}_{\mathbf{Z}_{M}}, \mathbf{x}') + k(\mathbf{x}, \mathbf{X}_{\mathbf{Z}_{M}})\mathbf{\Sigma}k(\mathbf{X}_{\mathbf{Z}_{M}}, \mathbf{x}')\]
 
 where $k$ is the reference kernel and $\mathbf{\Sigma} \in \mathbb{R}^{m \times m}$ defined with respect to a Cholesky decomposition:
 \[\mathbf{\Sigma} = \mathbf{L}\mathbf{L}^T\]
 
 and
-\[\mathbf{L} = \Chol\left( \left[k(\mathbf{X}_{\mathbf{Z}}, \mathbf{X}_{\mathbf{Z}}) + \frac{1}{\sigma^2} k(\mathbf{X}_{\mathbf{Z}}, \mathbf{x})k(\mathbf{x}', \mathbf{X}_{\mathbf{Z}})\right]^{-1}\right)\]
+\[\mathbf{L} = \Chol\left( \left[k(\mathbf{X}_{\mathbf{Z}_{M}}, \mathbf{X}_{\mathbf{Z}_{M}}) + \frac{1}{\sigma^2} k(\mathbf{X}_{\mathbf{Z}_{M}}, \mathbf{X}_{\mathbf{Z}_{N}})k(\mathbf{X}_{\mathbf{Z}_{N}}, \mathbf{X}_{\mathbf{Z}_{M}}) + \lambda \mathbf{I}_M\right]^{-1}\right)\]
 
-where we can also calculate the matrix inverse above with a Cholesky decomposition.
+where $\mathbf{Z}_{M}$ are the inducing points, $\mathbf{Z}_{N}$ are the training points and $\lambda$ is a regulariser to ensure numerical stability.
+
 
 \section{GWI for Regression}\label{sec:gwi-for-regression}
 
