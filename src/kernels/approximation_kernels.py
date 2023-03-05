@@ -93,7 +93,7 @@ class StochasticVariationalGaussianProcessKernel(ApproximationKernel):
             cholesky_el_matrix_y = self._calculate_cholesky(
                 kzz=self.kzz,
                 kxz=kyz,
-                reference_gaussian_measure_precision=self.reference_gaussian_measure_parameters[
+                reference_gaussian_measure_observation_precision=self.reference_gaussian_measure_parameters[
                     "precision"
                 ],
                 regularisation=self.regularisation,
