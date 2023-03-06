@@ -8,10 +8,13 @@ from optax import GradientTransformation
 
 from src._kernels.base_kernels import (
     NeuralNetworkGaussianProcessKernel,
-    NeuralNetworkGaussianProcessKernelParameters)
+    NeuralNetworkGaussianProcessKernelParameters,
+)
 from src._kernels.kernels import Kernel, KernelParameters
-from src._kernels.variational_kernels import (VariationalKernel,
-                                              VariationalKernelParameters)
+from src._kernels.variational_kernels import (
+    VariationalKernel,
+    VariationalKernelParameters,
+)
 from src._mean_functions import Constant, MeanFunction
 from src.parameters import Parameters
 
