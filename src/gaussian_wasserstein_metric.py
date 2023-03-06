@@ -15,8 +15,32 @@ def _compute_cross_covariance_eigenvalues(
     eigenvalue_regularisation: float = 0.0,
     is_eigenvalue_regularisation_absolute_scale: bool = False,
 ) -> jnp.ndarray:
-    gram_batch_train_p = p.covariance(x=x_batch, y=x_train, parameters=p_parameters)
-    gram_batch_train_q = q.covariance(x=x_batch, y=x_train, parameters=q_parameters)
+    """
+    Compute the eigenvalues of the covariance matrix of shape (m, m).
+    Regularisation is applied to the covariance matrix before computing.
+        - n is the number of training points
+        - m is the number of batch points
+        - d is the number of dimensions
+
+    Args:
+        p: the first Gaussian measure
+        q: the second Gaussian measure
+        p_parameters: the parameters of the first Gaussian measure
+        q_parameters: the parameters of the second Gaussian measure
+        x_batch: a batch of data points of shape (m, d)
+        x_train: the training data points of shape (n, d)
+        eigenvalue_regularisation: the regularisation to add to the covariance matrix during eigenvalue computation
+        is_eigenvalue_regularisation_absolute_scale: whether the regularisation is an absolute or relative scale
+
+    Returns: the eigenvalues of the covariance matrix, a vector of shape (m, 1)
+
+    """
+    gram_batch_train_p = p.calculate_covariance(
+        x=x_batch, y=x_train, parameters=p_parameters
+    )
+    gram_batch_train_q = q.calculate_covariance(
+        x=x_batch, y=x_train, parameters=q_parameters
+    )
     covariance_p_q = gram_batch_train_p @ gram_batch_train_q.T
     covariance_p_q_regularised = add_diagonal_regulariser(
         matrix=covariance_p_q,
@@ -36,15 +60,34 @@ def gaussian_wasserstein_metric(
     eigenvalue_regularisation: float = 0.0,
     is_eigenvalue_regularisation_absolute_scale: bool = False,
 ) -> float:
+    """
+    Compute the empirical Gaussian Wasserstein metric between two Gaussian measures.
+            - n is the number of training points
+            - m is the number of batch points
+            - d is the number of dimensions
+
+    Args:
+        p: the first Gaussian measure
+        q: the second Gaussian measure
+        p_parameters: the parameters of the first Gaussian measure
+        q_parameters: the parameters of the second Gaussian measure
+        x_batch: a batch of data points of shape (m, d)
+        x_train: the training data points of shape (n, d)
+        eigenvalue_regularisation: the regularisation to add to the covariance matrix during eigenvalue computation
+        is_eigenvalue_regularisation_absolute_scale: whether the regularisation is an absolute or relative scale
+
+    Returns: the Gaussian Wasserstein metric between the two Gaussian measures, a scalar
+
+    """
     train_size = x_train.shape[0]
     batch_size = x_batch.shape[0]
 
-    mean_train_p, covariance_train_p = p.mean_and_covariance(
-        x=x_train, parameters=p_parameters
-    )
-    mean_train_q, covariance_train_q = q.mean_and_covariance(
-        x=x_train, parameters=q_parameters
-    )
+    mean_train_p = p.calculate_mean(x=x_train, parameters=p_parameters)
+    covariance_train_p = p.calculate_covariance(x=x_train, parameters=p_parameters)
+
+    mean_train_q = q.calculate_mean(x=x_train, parameters=q_parameters)
+    covariance_train_q = q.calculate_covariance(x=x_train, parameters=q_parameters)
+
     cross_covariance_eigenvalues = _compute_cross_covariance_eigenvalues(
         p=p,
         q=q,

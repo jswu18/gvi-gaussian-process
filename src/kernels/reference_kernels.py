@@ -96,23 +96,21 @@ class ARDKernel(StandardKernel):
     ) -> jnp.ndarray:
         """
         The ARD kernel function defined as:
-        k(x, y) = scaling * exp(-0.5 * (x - y)^T @ diag(1 / lengthscales) @ (x - y))
-        where:
-        - scaling is a scalar (log_scaling in the parameters)
-        - lengthscales is a vector of length d (log_lengthscales in the parameters
-        - x and y are vectors of length d, the number of dimensions
-        - n is the number of points in x
-        - m is the number of points in y
-        - d is the number of dimensions
+        k(x, y) = scaling * exp(-0.5 * (x - y)^T @ diag(1 / lengthscales) @ (x - y)).
+            - n is the number of points in x
+            - m is the number of points in y
+            - d is the number of dimensions
 
-        The parameters of the kernel are:
-        - log_scaling: the log of the scaling parameter, a float
-        - log_lengthscales: the log of the lengthscales parameter of shape (d, 1)
+        The parameters of the kernel are passed in as a dictionary of the form:
+            parameters = {
+                "log_scaling": float,
+                "log_lengthscales": jnp.ndarray, of shape (d, 1),
+            }
 
         Args:
             parameters: parameters of the kernel
-            x: design matrix of shape (1, d)
-            y: design matrix of shape (1, d)
+            x: vector of shape (1, d)
+            y: vector of shape (1, d)
 
         Returns: the ARD kernel function evaluated at x and y
 
