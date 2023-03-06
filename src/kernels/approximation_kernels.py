@@ -13,16 +13,29 @@ PRNGKey = Any  # pylint: disable=invalid-name
 
 
 class ApproximationKernel(Kernel, ABC):
+    """
+    Approximation kernels which are defined with respect to a reference Gaussian measure.
+    """
+
     def __init__(
         self,
         reference_gaussian_measure_parameters: FrozenDict,
         reference_kernel: Kernel,
     ):
+        """
+        Defining the kernel with respect to a reference Gaussian measure.
+
+        Args:
+            reference_gaussian_measure_parameters: the parameters of the reference Gaussian measure.
+            reference_kernel: the kernel of the reference Gaussian measure.
+        """
         self.reference_gaussian_measure_parameters = (
             reference_gaussian_measure_parameters
         )
-        self.reference_kernel_gram = jit(
-            lambda x, y=None: reference_kernel.gram(
+
+        # define a jit-compiled version of the reference kernel gram matrix using the reference kernel parameters
+        self.calculate_reference_gram = jit(
+            lambda x, y=None: reference_kernel.calculate_gram(
                 parameters=reference_gaussian_measure_parameters["kernel"],
                 x=x,
                 y=y,
@@ -30,13 +43,30 @@ class ApproximationKernel(Kernel, ABC):
         )
 
     @abstractmethod
-    def gram(
+    def calculate_gram(
         self, x: jnp.ndarray, y: jnp.ndarray = None, parameters: FrozenDict = None
     ) -> jnp.ndarray:
+        """
+        Computes the Gram matrix of the kernel. If y is None, the Gram matrix is computed for x and x.
+            - n is the number of points in x
+            - m is the number of points in y
+            - d is the number of dimensions
+        Args:
+            parameters: parameters of the kernel
+            x: design matrix of shape (n, d)
+            y: design matrix of shape (m, d)
+
+        Returns: the kernel gram matrix of shape (n, m)
+
+        """
         raise NotImplementedError
 
 
 class StochasticVariationalGaussianProcessKernel(ApproximationKernel):
+    """
+    The stochastic variational Gaussian process kernel as defined in Titsias (2009).
+    """
+
     def __init__(
         self,
         reference_gaussian_measure_parameters: FrozenDict,
@@ -46,6 +76,17 @@ class StochasticVariationalGaussianProcessKernel(ApproximationKernel):
         diagonal_regularisation: float = 1e-5,
         is_diagonal_regularisation_absolute_scale: bool = False,
     ):
+        """
+        Defining the stochastic variational Gaussian process kernel using the reference Gaussian measure
+        and inducing points.
+        Args:
+            reference_gaussian_measure_parameters: the parameters of the reference Gaussian measure.
+            reference_kernel: the kernel of the reference Gaussian measure.
+            inducing_points: the inducing points of the stochastic variational Gaussian process.
+            training_points: the training points of the stochastic variational Gaussian process.
+            diagonal_regularisation: the diagonal regularisation used to stabilise the Cholesky decomposition.
+            is_diagonal_regularisation_absolute_scale: whether the diagonal regularisation is an absolute scale.
+        """
         super().__init__(reference_gaussian_measure_parameters, reference_kernel)
         self.inducing_points = inducing_points
         self.training_points = training_points
@@ -53,17 +94,17 @@ class StochasticVariationalGaussianProcessKernel(ApproximationKernel):
         self.is_diagonal_regularisation_absolute_scale = (
             is_diagonal_regularisation_absolute_scale
         )
-        self.kzz = self.reference_kernel_gram(x=inducing_points)
-        self.kzz_cholesky_decomposition_and_lower = cho_factor(
+        self.reference_gram_inducing = self.calculate_reference_gram(x=inducing_points)
+        self.reference_gram_inducing_cholesky_decomposition_and_lower = cho_factor(
             add_diagonal_regulariser(
-                matrix=self.kzz,
+                matrix=self.reference_gram_inducing,
                 diagonal_regularisation=diagonal_regularisation,
                 is_diagonal_regularisation_absolute_scale=is_diagonal_regularisation_absolute_scale,
             )
         )
         self.sigma_matrix = self._calculate_sigma_matrix(
-            gram_inducing=self.kzz,
-            gram_inducing_train=self.reference_kernel_gram(
+            gram_inducing=self.reference_gram_inducing,
+            gram_inducing_train=self.calculate_reference_gram(
                 x=inducing_points, y=training_points
             ),
             reference_gaussian_measure_observation_precision=1
@@ -76,9 +117,25 @@ class StochasticVariationalGaussianProcessKernel(ApproximationKernel):
         self,
         key: PRNGKey,
     ) -> FrozenDict:
+        """
+        Initialise the parameters of the module using a random key.
+        Args:
+            key: A random key used to initialise the parameters.
+
+        Returns: A dictionary of the parameters of the module.
+
+        """
         pass
 
     def initialise_parameters(self, **kwargs) -> FrozenDict:
+        """
+        Initialise the parameters of the module using the provided arguments.
+        Args:
+            **kwargs: The parameters of the module.
+
+        Returns: A dictionary of the parameters of the module.
+
+        """
         pass
 
     @staticmethod
@@ -109,26 +166,45 @@ class StochasticVariationalGaussianProcessKernel(ApproximationKernel):
         )
         return el_matrix @ el_matrix.T
 
-    def gram(
+    def calculate_gram(
         self, x: jnp.ndarray, y: jnp.ndarray = None, parameters: FrozenDict = None
     ) -> jnp.ndarray:
-        kxz = self.reference_kernel_gram(
+        """
+        Computing the Gram matrix using for the SVGP which depends on the reference kernel.
+        If y is None, the Gram matrix is computed for x and x.
+            - n is the number of points in x
+            - m is the number of points in y
+            - d is the number of dimensions
+        Args:
+            parameters: parameters of the kernel
+            x: design matrix of shape (n, d)
+            y: design matrix of shape (m, d)
+
+        Returns: the kernel gram matrix of shape (n, m)
+
+        """
+        reference_gram_x_inducing = self.calculate_reference_gram(
             x=x,
             y=self.inducing_points,
         )
         if y is None:
             y = x
-            kyz = kxz
+            reference_gram_y_inducing = reference_gram_x_inducing
         else:
-            kyz = self.reference_kernel_gram(
+            reference_gram_y_inducing = self.calculate_reference_gram(
                 x=y,
                 y=self.inducing_points,
             )
 
-        kxy = self.reference_kernel_gram(x=x, y=y)
+        reference_gram_x_y = self.calculate_reference_gram(x=x, y=y)
         return (
-            kxy
-            - kxz
-            @ cho_solve(c_and_lower=self.kzz_cholesky_decomposition_and_lower, b=kyz.T)
-            + kxz @ self.sigma_matrix @ kyz.T
+            reference_gram_x_y
+            - reference_gram_x_inducing
+            @ cho_solve(
+                c_and_lower=self.reference_gram_inducing_cholesky_decomposition_and_lower,
+                b=reference_gram_y_inducing.T,
+            )
+            + reference_gram_x_inducing
+            @ self.sigma_matrix
+            @ reference_gram_y_inducing.T
         )
