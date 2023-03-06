@@ -31,10 +31,33 @@ class GaussianMeasure(Module, ABC):
         self.kernel = kernel
 
     @abstractmethod
+    def covariance(
+        self, x: jnp.ndarray, y: jnp.ndarray, parameters: FrozenDict
+    ) -> jnp.ndarray:
+        raise NotImplementedError
+
+    @abstractmethod
+    def mean(self, x: jnp.ndarray, parameters: FrozenDict) -> jnp.ndarray:
+        raise NotImplementedError
+
     def mean_and_covariance(
         self, x: jnp.ndarray, parameters: FrozenDict
     ) -> Tuple[jnp.ndarray, jnp.ndarray]:
-        raise NotImplementedError
+        mean = self.mean(x, parameters)
+        covariance = self.covariance(x, x, parameters)
+        return mean, covariance
+
+    def compute_expected_log_likelihood(
+        self,
+        x: jnp.ndarray,
+        y: jnp.ndarray,
+        observation_noise: float,
+        parameters: FrozenDict,
+    ) -> float:
+        mean, covariance = self.mean_and_covariance(x, parameters)
+        return (x.shape[0] / 2) * jnp.log(2 * jnp.pi * observation_noise) + (
+            1 / (2 * observation_noise)
+        ) * (jnp.sum((y - mean) ** 2) + jnp.trace(covariance))
 
 
 class ReferenceGaussianMeasure(GaussianMeasure):
@@ -70,35 +93,37 @@ class ReferenceGaussianMeasure(GaussianMeasure):
             }
         )
 
-    def mean_and_covariance(
-        self, x: jnp.ndarray, parameters: FrozenDict
-    ) -> Tuple[jnp.ndarray, jnp.ndarray]:
-        kernel_mean, covariance = self.kernel_posterior_distribution(x, parameters)
-        mean = kernel_mean + self.mean_function.predict(
-            x=x, parameters=parameters["mean_function"]
-        )
-        return mean, covariance
-
-    def kernel_posterior_distribution(
-        self, x: jnp.ndarray, parameters: FrozenDict
-    ) -> Tuple[jnp.ndarray, jnp.ndarray]:
+    def mean(self, x: jnp.ndarray, parameters: FrozenDict) -> jnp.ndarray:
         gram_train = self.kernel.gram(x=self.x, parameters=parameters["kernel"])
         gram_train_test = self.kernel.gram(
             x=self.x, y=x, parameters=parameters["kernel"]
         )
-        gram_test = self.kernel.gram(x=x, parameters=parameters["kernel"])
+        observation_noise = jnp.eye(self.number_of_train_points) * jnp.exp(
+            parameters["log_observation_noise"]
+        )
+        cholesky_decomposition_and_lower = cho_factor(gram_train + observation_noise)
+        kernel_mean = gram_train_test.T @ cho_solve(
+            c_and_lower=cholesky_decomposition_and_lower, b=self.y
+        )
+        return kernel_mean + self.mean_function.predict(
+            x=x, parameters=parameters["mean_function"]
+        )
+
+    def covariance(
+        self, x: jnp.ndarray, y: jnp.ndarray, parameters: FrozenDict
+    ) -> jnp.ndarray:
+        gram_train = self.kernel.gram(x=self.x, parameters=parameters["kernel"])
+        gram_train_x = self.kernel.gram(x=self.x, y=x, parameters=parameters["kernel"])
+        gram_train_y = self.kernel.gram(x=self.x, y=y, parameters=parameters["kernel"])
+        gram_xy = self.kernel.gram(x=x, y=y, parameters=parameters["kernel"])
         observation_noise = jnp.eye(self.number_of_train_points) * jnp.exp(
             parameters["log_observation_noise"]
         )
         cholesky_decomposition_and_lower = cho_factor(gram_train + observation_noise)
 
-        mean = gram_train_test.T @ cho_solve(
-            c_and_lower=cholesky_decomposition_and_lower, b=self.y
+        return gram_xy - gram_train_x.T @ cho_solve(
+            c_and_lower=cholesky_decomposition_and_lower, b=gram_train_y
         )
-        covariance = gram_test - gram_train_test.T @ cho_solve(
-            c_and_lower=cholesky_decomposition_and_lower, b=gram_train_test
-        )
-        return mean, covariance
 
 
 class ApproximationGaussianMeasure(GaussianMeasure):
@@ -110,6 +135,7 @@ class ApproximationGaussianMeasure(GaussianMeasure):
         kernel: ApproximationKernel,
     ):
         super().__init__(x, y, mean_function, kernel)
+        self.kernel = kernel
 
     def initialise_random_parameters(
         self,
@@ -132,9 +158,10 @@ class ApproximationGaussianMeasure(GaussianMeasure):
             }
         )
 
-    def mean_and_covariance(
-        self, x: jnp.ndarray, parameters: FrozenDict
-    ) -> Tuple[jnp.ndarray, jnp.ndarray]:
-        mean = self.mean_function.predict(x=x, parameters=parameters["mean_function"])
-        covariance = self.kernel.gram(x=x, parameters=parameters["kernel"])
-        return mean, covariance
+    def mean(self, x: jnp.ndarray, parameters: FrozenDict) -> jnp.ndarray:
+        return self.mean_function.predict(x=x, parameters=parameters["mean_function"])
+
+    def covariance(
+        self, x: jnp.ndarray, y: jnp.ndarray, parameters: FrozenDict
+    ) -> jnp.ndarray:
+        return self.kernel.gram(x=x, y=y, parameters=parameters["kernel"])
