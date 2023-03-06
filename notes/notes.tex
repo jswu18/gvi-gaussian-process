@@ -200,7 +200,8 @@ and
 \[p(y_n | f) \coloneqq \mathcal{N}(y_n| f(x_n), \sigma^2)\]
 
 we can write the expected log-likelihood as:
-\[\mathbb{E}_{\mathbb{Q}}\left[ \log p(y |F)\right] =\sum_{n=1}^N \mathbb{E}_{\mathbb{Q}}\left[\mathcal{N}(y_n| f(x_n), \sigma^2)\right]\]
+\[\mathbb{E}_{\mathbb{Q}}\left[ \log p(y |F)\right] =\sum_{n=1}^N \mathbb{E}_{\mathbb{Q}}\left[\log \mathcal{N}(y_n| f(x_n), \sigma^2)\right]\]
+
 
 Choosing the Wasserstein metric as the dissimilarity measure:
 \[\mathbb{D}(\mathbb{Q}^F, \mathbb{P}^F) = W_2^2(P, Q)\]
