@@ -8,10 +8,10 @@ import numpy as np
 import optax
 from jax import random
 
-from src.gaussian_measure import GaussianMeasure, StochasticGaussianProcess
-from src.kernels.base_kernels import ARDKernel
-from src.kernels.variational_kernels import VariationalKernel
-from src.mean_functions import Constant, MultiLayerPerceptron
+from src._gaussian_measure import GaussianMeasure, StochasticGaussianProcess
+from src._kernels.base_kernels import ARDKernel
+from src._kernels.variational_kernels import VariationalKernel
+from src._mean_functions import Constant, MultiLayerPerceptron
 
 # A copy of the notebook example in script form
 
@@ -160,7 +160,7 @@ svgp_parameters = StochasticGaussianProcess.Parameters(
 
 
 # GWI
-from src.dissimilarity_metrics import (
+from src._dissimilarity_metrics import (
     GaussianWassersteinDistance,
     GaussianWassersteinDistanceFrozenParameters,
     GaussianWassersteinDistanceVariableParameters,

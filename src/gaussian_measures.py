@@ -9,8 +9,7 @@ from jax.scipy.linalg import cho_factor, cho_solve
 from src.kernels.approximation_kernels import ApproximationKernel
 from src.kernels.kernels import Kernel
 from src.kernels.reference_kernels import StandardKernel
-from src.mean_functions.approximation_mean_functions import \
-    ApproximationMeanFunction
+from src.mean_functions.approximation_mean_functions import ApproximationMeanFunction
 from src.mean_functions.mean_functions import MeanFunction
 from src.module import Module
 
