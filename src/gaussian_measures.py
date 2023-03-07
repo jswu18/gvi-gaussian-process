@@ -1,11 +1,12 @@
 from abc import ABC, abstractmethod
-from typing import Any, Tuple
+from typing import Any, Dict
 
 import jax.numpy as jnp
 from flax.core.frozen_dict import FrozenDict
 from jax import random
 from jax.scipy.linalg import cho_factor, cho_solve
 
+from src import decorators
 from src.kernels.approximation_kernels import ApproximationKernel
 from src.kernels.kernels import Kernel
 from src.kernels.reference_kernels import StandardKernel
@@ -20,6 +21,8 @@ class GaussianMeasure(Module, ABC):
     """
     A Gaussian measure defined with respect to a mean function and a kernel.
     """
+
+    parameter_keys: Dict[str, type] = NotImplementedError
 
     def __init__(
         self,
@@ -45,6 +48,10 @@ class GaussianMeasure(Module, ABC):
         self.mean_function = mean_function
         self.kernel = kernel
 
+    @decorators.common.default_duplicate_x
+    @decorators.kernels.preprocess_kernel_inputs
+    @decorators.kernels.check_kernel_inputs
+    @decorators.common.check_parameters(parameter_keys)
     @abstractmethod
     def calculate_covariance(
         self, parameters: FrozenDict, x: jnp.ndarray, y: jnp.ndarray = None
@@ -66,8 +73,9 @@ class GaussianMeasure(Module, ABC):
         """
         raise NotImplementedError
 
+    @decorators.common.check_parameters(parameter_keys)
     @abstractmethod
-    def calculate_mean(self, x: jnp.ndarray, parameters: FrozenDict) -> jnp.ndarray:
+    def calculate_mean(self, parameters: FrozenDict, x: jnp.ndarray) -> jnp.ndarray:
         """
         Calculate the posterior mean of the Gaussian measure at the set of points x.
             - n is the number of points in x
@@ -82,12 +90,13 @@ class GaussianMeasure(Module, ABC):
         """
         raise NotImplementedError
 
+    @decorators.common.check_parameters(parameter_keys)
     def compute_expected_log_likelihood(
         self,
+        parameters: FrozenDict,
         x: jnp.ndarray,
         y: jnp.ndarray,
         observation_noise: float,
-        parameters: FrozenDict,
     ) -> float:
         """
         Compute the expected log likelihood of the Gaussian measure at the inputs x and outputs y.
@@ -103,7 +112,7 @@ class GaussianMeasure(Module, ABC):
         Returns: a scalar representing the empirical expected log likelihood
 
         """
-        mean = self.calculate_mean(x, parameters)
+        mean = self.calculate_mean(x=x, parameters=parameters)
         covariance = self.calculate_covariance(x=x, parameters=parameters)
         return (x.shape[0] / 2) * jnp.log(2 * jnp.pi * observation_noise) + (
             1 / (2 * observation_noise)
@@ -114,6 +123,12 @@ class ReferenceGaussianMeasure(GaussianMeasure):
     """
     A Standard reference measure.
     """
+
+    parameter_keys: Dict[str, type] = {
+        "log_observation_noise": jnp.float64,
+        "mean_function": FrozenDict,
+        "kernel": FrozenDict,
+    }
 
     def __init__(
         self,
@@ -155,31 +170,8 @@ class ReferenceGaussianMeasure(GaussianMeasure):
             }
         )
 
-    def initialise_parameters(self, **kwargs) -> FrozenDict:
-        """
-        Initialise the parameters of the Gaussian measure with a dictionary of the form:
-            kwargs = {
-                "log_observation_noise": float,
-                "mean_function": FrozenDict, the parameters of the mean function,
-                "kernel": FrozenDict, the parameters of the kernel,
-            }
-        Args:
-            **kwargs: The parameters of the module.
-
-        Returns: A dictionary of the parameters of the module.
-
-        """
-        return FrozenDict(
-            {
-                "log_observation_noise": kwargs["log_observation_noise"],
-                "mean_function": self.mean_function.initialise_parameters(
-                    **kwargs["mean_function"]
-                ),
-                "kernel": self.kernel.initialise_parameters(**kwargs["kernel"]),
-            }
-        )
-
-    def calculate_mean(self, x: jnp.ndarray, parameters: FrozenDict) -> jnp.ndarray:
+    @decorators.common.check_parameters(parameter_keys)
+    def calculate_mean(self, parameters: FrozenDict, x: jnp.ndarray) -> jnp.ndarray:
         """
         Calculate the posterior mean using the formula for the posterior mean of a Gaussian process which is
         m(x) = k(x, X) @ (K(X, X) + σ^2I)^-1 @ y. This is added to the mean function prediction to generate the
@@ -200,10 +192,13 @@ class ReferenceGaussianMeasure(GaussianMeasure):
 
         """
         gram_train = self.kernel.calculate_gram(
-            x=self.x, parameters=parameters["kernel"]
+            parameters=parameters["kernel"],
+            x=self.x,
         )
         gram_train_test = self.kernel.calculate_gram(
-            x=self.x, y=x, parameters=parameters["kernel"]
+            parameters=parameters["kernel"],
+            x=self.x,
+            y=x,
         )
         observation_noise = jnp.eye(self.number_of_train_points) * jnp.exp(
             parameters["log_observation_noise"]
@@ -216,6 +211,10 @@ class ReferenceGaussianMeasure(GaussianMeasure):
             x=x, parameters=parameters["mean_function"]
         )
 
+    @decorators.common.default_duplicate_x
+    @decorators.kernels.preprocess_kernel_inputs
+    @decorators.kernels.check_kernel_inputs
+    @decorators.common.check_parameters(parameter_keys)
     def calculate_covariance(
         self, parameters: FrozenDict, x: jnp.ndarray, y: jnp.ndarray = None
     ) -> jnp.ndarray:
@@ -241,9 +240,6 @@ class ReferenceGaussianMeasure(GaussianMeasure):
         Returns: the posterior covariance of shape (n, m)
 
         """
-        if y is None:
-            y = x
-
         gram_train = self.kernel.calculate_gram(
             x=self.x, parameters=parameters["kernel"]
         )
@@ -271,6 +267,11 @@ class ApproximationGaussianMeasure(GaussianMeasure):
     A Gaussian measure which uses an approximation to the kernel and mean function. These are defined with respect
     to reference Gaussian measures.
     """
+
+    parameter_keys: Dict[str, type] = {
+        "mean_function": FrozenDict,
+        "kernel": FrozenDict,
+    }
 
     def __init__(
         self,
@@ -312,29 +313,8 @@ class ApproximationGaussianMeasure(GaussianMeasure):
             }
         )
 
-    def initialise_parameters(self, **kwargs) -> FrozenDict:
-        """
-        Initialise the parameters of the Gaussian measure with a dictionary of the form:
-            kwargs = {
-                "mean_function": FrozenDict, the parameters of the mean function,
-                "kernel": FrozenDict, the parameters of the kernel,
-            }
-        Args:
-            **kwargs: The parameters of the module.
-
-        Returns: A dictionary of the parameters of the module.
-
-        """
-        return FrozenDict(
-            {
-                "mean_function": self.mean_function.initialise_parameters(
-                    **kwargs["mean_function"]
-                ),
-                "kernel": self.kernel.initialise_parameters(**kwargs["kernel"]),
-            }
-        )
-
-    def calculate_mean(self, x: jnp.ndarray, parameters: FrozenDict) -> jnp.ndarray:
+    @decorators.common.check_parameters(parameter_keys)
+    def calculate_mean(self, parameters: FrozenDict, x: jnp.ndarray) -> jnp.ndarray:
         """
         Calculate the posterior mean by evaluating the mean function at the test points.
             - n is the number of points in x
@@ -355,6 +335,10 @@ class ApproximationGaussianMeasure(GaussianMeasure):
         """
         return self.mean_function.predict(x=x, parameters=parameters["mean_function"])
 
+    @decorators.common.default_duplicate_x
+    @decorators.kernels.preprocess_kernel_inputs
+    @decorators.kernels.check_kernel_inputs
+    @decorators.common.check_parameters(parameter_keys)
     def calculate_covariance(
         self, parameters: FrozenDict, x: jnp.ndarray, y: jnp.ndarray = None
     ) -> jnp.ndarray:
@@ -378,6 +362,4 @@ class ApproximationGaussianMeasure(GaussianMeasure):
         Returns: the posterior covariance of shape (n, m)
 
         """
-        if y is None:
-            y = x
         return self.kernel.calculate_gram(x=x, y=y, parameters=parameters["kernel"])

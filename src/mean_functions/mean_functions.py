@@ -1,12 +1,17 @@
 from abc import ABC, abstractmethod
+from typing import Dict
 
 import jax.numpy as jnp
 from flax.core.frozen_dict import FrozenDict
 
+from src import decorators
 from src.module import Module
 
 
 class MeanFunction(Module, ABC):
+    parameter_keys: Dict[str, type] = NotImplementedError
+
+    @decorators.common.check_parameters(parameter_keys)
     @abstractmethod
     def predict(self, parameters: FrozenDict, x: jnp.ndarray) -> jnp.ndarray:
         """
