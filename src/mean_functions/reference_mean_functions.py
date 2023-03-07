@@ -1,14 +1,19 @@
-from typing import Any
+from typing import Any, Dict
 
 import jax.numpy as jnp
 from flax.core.frozen_dict import FrozenDict
 
+from src import decorators
 from src.mean_functions.mean_functions import MeanFunction
 
 PRNGKey = Any  # pylint: disable=invalid-name
 
 
 class ConstantFunction(MeanFunction):
+    parameter_keys = {
+        "constant": float,
+    }
+
     def initialise_random_parameters(
         self,
         key: PRNGKey,
@@ -23,17 +28,7 @@ class ConstantFunction(MeanFunction):
         """
         pass
 
-    def initialise_parameters(self, **kwargs) -> FrozenDict:
-        """
-        Initialise the parameters of the module using the provided arguments.
-        Args:
-            **kwargs: The parameters of the module.
-
-        Returns: A dictionary of the parameters of the module.
-
-        """
-        return FrozenDict({"constant": kwargs["constant"]})
-
+    @decorators.common.check_parameters(parameter_keys)
     def predict(self, parameters: FrozenDict, x: jnp.ndarray) -> jnp.ndarray:
         """
         Returns a constant value for all points of x.

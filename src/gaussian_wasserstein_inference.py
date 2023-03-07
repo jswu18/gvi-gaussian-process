@@ -1,10 +1,11 @@
-from typing import Any
+from typing import Any, Dict
 
 import jax.numpy as jnp
 from flax.core.frozen_dict import FrozenDict
 from jax import jit
 
-from src.gaussian_measures import GaussianMeasure
+from src import decorators
+from src.gaussian_measures import ApproximationGaussianMeasure, GaussianMeasure
 from src.gaussian_wasserstein_metric import gaussian_wasserstein_metric
 from src.module import Module
 
@@ -16,6 +17,8 @@ class GaussianWassersteinInference(Module):
     A framework for learning the parameters of an approximation gaussian measure by minimising the Gaussian Wasserstein
     distance between the reference gaussian measure and the approximation gaussian measure.
     """
+
+    parameter_keys: Dict[str, type] = ApproximationGaussianMeasure.parameter_keys
 
     def __init__(
         self,
@@ -92,21 +95,10 @@ class GaussianWassersteinInference(Module):
         """
         return self.approximation_gaussian_measure.initialise_random_parameters(key)
 
-    def initialise_parameters(self, **kwargs) -> FrozenDict:
-        """
-        Initialise the parameters of the approximation gaussian measure by calling the initialise_parameters method of
-        the approximation gaussian measure and passing the given parameters.
-        Args:
-            **kwargs: The parameters of the approximation gaussian measure.
-
-        Returns: A dictionary of the parameters of the approximation gaussian measure.
-
-        """
-        return self.approximation_gaussian_measure.initialise_parameters(**kwargs)
-
+    @decorators.common.check_parameters(parameter_keys)
     def compute_loss(
         self,
-        approximation_gaussian_measure_parameters: FrozenDict,
+        parameters: FrozenDict,
         x_batch: jnp.ndarray,
     ) -> float:
         """
@@ -116,19 +108,17 @@ class GaussianWassersteinInference(Module):
             - d is the number of dimensions
 
         Args:
-            approximation_gaussian_measure_parameters: the parameters of the approximation gaussian measure
+            parameters: the parameters of the approximation gaussian measure
             x_batch: the design matrix of the batch of training data points of shape (n, d)
 
         Returns: The loss of the approximation gaussian measure.
 
         """
         negative_expected_log_likelihood = (
-            self.compute_negative_expected_log_likelihood(
-                approximation_gaussian_measure_parameters
-            )
+            self.compute_negative_expected_log_likelihood(parameters)
         )
         dissimilarity_measure = self.compute_dissimilarity_measure(
             x_batch=x_batch,
-            approximation_gaussian_measure_parameters=approximation_gaussian_measure_parameters,
+            approximation_gaussian_measure_parameters=parameters,
         )
         return negative_expected_log_likelihood + dissimilarity_measure

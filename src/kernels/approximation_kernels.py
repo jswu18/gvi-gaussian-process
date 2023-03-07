@@ -1,13 +1,14 @@
-from abc import ABC, abstractmethod
-from typing import Any
+from abc import ABC
+from typing import Any, Dict
 
 import jax.numpy as jnp
 from flax.core.frozen_dict import FrozenDict
 from jax import jit
 from jax.scipy.linalg import cho_factor, cho_solve
 
+from src import decorators
+from src.common.utils import add_diagonal_regulariser
 from src.kernels.reference_kernels import Kernel
-from src.utils import add_diagonal_regulariser
 
 PRNGKey = Any  # pylint: disable=invalid-name
 
@@ -42,30 +43,13 @@ class ApproximationKernel(Kernel, ABC):
             )
         )
 
-    @abstractmethod
-    def calculate_gram(
-        self, x: jnp.ndarray, y: jnp.ndarray = None, parameters: FrozenDict = None
-    ) -> jnp.ndarray:
-        """
-        Computes the Gram matrix of the kernel. If y is None, the Gram matrix is computed for x and x.
-            - n is the number of points in x
-            - m is the number of points in y
-            - d is the number of dimensions
-        Args:
-            parameters: parameters of the kernel
-            x: design matrix of shape (n, d)
-            y: design matrix of shape (m, d)
-
-        Returns: the kernel gram matrix of shape (n, m)
-
-        """
-        raise NotImplementedError
-
 
 class StochasticVariationalGaussianProcessKernel(ApproximationKernel):
     """
     The stochastic variational Gaussian process kernel as defined in Titsias (2009).
     """
+
+    parameter_keys = {}
 
     def __init__(
         self,
@@ -127,17 +111,6 @@ class StochasticVariationalGaussianProcessKernel(ApproximationKernel):
         """
         pass
 
-    def initialise_parameters(self, **kwargs) -> FrozenDict:
-        """
-        Initialise the parameters of the module using the provided arguments.
-        Args:
-            **kwargs: The parameters of the module.
-
-        Returns: A dictionary of the parameters of the module.
-
-        """
-        pass
-
     @staticmethod
     def _calculate_sigma_matrix(
         gram_inducing: jnp.ndarray,
@@ -166,8 +139,11 @@ class StochasticVariationalGaussianProcessKernel(ApproximationKernel):
         )
         return el_matrix @ el_matrix.T
 
+    @decorators.kernels.preprocess_kernel_inputs
+    @decorators.kernels.check_kernel_inputs
+    @decorators.common.check_parameters(parameter_keys)
     def calculate_gram(
-        self, x: jnp.ndarray, y: jnp.ndarray = None, parameters: FrozenDict = None
+        self, parameters: FrozenDict, x: jnp.ndarray, y: jnp.ndarray = None
     ) -> jnp.ndarray:
         """
         Computing the Gram matrix using for the SVGP which depends on the reference kernel.

@@ -1,11 +1,12 @@
 from abc import ABC
-from typing import Any
+from typing import Any, Dict
 
 import flax
 import jax.numpy as jnp
 from flax.core.frozen_dict import FrozenDict
 from jax import jit, random
 
+from src import decorators
 from src.kernels.reference_kernels import Kernel
 from src.mean_functions.reference_mean_functions import MeanFunction
 
@@ -44,6 +45,10 @@ class StochasticVariationalGaussianProcessMeanFunction(ApproximationMeanFunction
     """
     The mean function of a stochastic variational Gaussian process, defined with respect to the reference kernel.
     """
+
+    parameter_keys = {
+        "weights": jnp.ndarray,
+    }
 
     def __init__(
         self,
@@ -94,23 +99,7 @@ class StochasticVariationalGaussianProcessMeanFunction(ApproximationMeanFunction
         )
         return FrozenDict({"weights": weights})
 
-    def initialise_parameters(self, **kwargs) -> FrozenDict:
-        """
-        Initialise the parameters of the module using the provided arguments.
-        Args:
-            **kwargs: The parameters of the module.
-
-        Returns: A dictionary of the parameters of the module.
-
-        """
-        assert "weights" in kwargs, "weights must be provided"
-        weights = jnp.atleast_2d(kwargs["weights"])
-        assert weights.shape == (
-            self.number_of_inducing_points,
-            1,
-        ), f"weights must have shape ({self.number_of_inducing_points}, 1), the shape provided was {weights.shape}"
-        return FrozenDict({"weights": weights})
-
+    @decorators.common.check_parameters(parameter_keys)
     def predict(self, parameters: FrozenDict, x: jnp.ndarray) -> jnp.ndarray:
         """
         Predict the mean function at the provided points x by adding the reference mean function to the
@@ -136,6 +125,10 @@ class StochasticVariationalGaussianProcessMeanFunction(ApproximationMeanFunction
 
 
 class NeuralNetworkMeanFunction(ApproximationMeanFunction):
+    parameter_keys = {
+        "neural_network": FrozenDict,
+    }
+
     def __init__(
         self,
         reference_gaussian_measure_parameters: FrozenDict,
@@ -167,19 +160,11 @@ class NeuralNetworkMeanFunction(ApproximationMeanFunction):
         Returns: Random initialisation of the parameters of the neural network.
 
         """
-        return self.neural_network.init(key, jnp.zeros((1, 1)))
+        return FrozenDict(
+            {"neural_network": self.neural_network.init(key, jnp.zeros((1, 1)))}
+        )
 
-    def initialise_parameters(self, **kwargs) -> FrozenDict:
-        """
-        Initialise the parameters of the module using the provided arguments.
-        Args:
-            **kwargs: The parameters of the module.
-
-        Returns: A dictionary of the parameters of the module.
-
-        """
-        return FrozenDict(kwargs)
-
+    @decorators.common.check_parameters(parameter_keys)
     def predict(self, parameters: FrozenDict, x: jnp.ndarray) -> jnp.ndarray:
         """
         Predict the mean function at the provided points x by adding the reference mean function to the
@@ -194,4 +179,6 @@ class NeuralNetworkMeanFunction(ApproximationMeanFunction):
         Returns: the mean function evaluated at the provided points x of shape (n, 1).
 
         """
-        return self.reference_mean_func(x) + self.neural_network.apply(parameters, x)
+        return self.reference_mean_func(x) + self.neural_network.apply(
+            parameters["neural_network"], x
+        )
