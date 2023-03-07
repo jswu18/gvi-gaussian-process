@@ -80,6 +80,18 @@ class GaussianWassersteinInference(Module):
             )
         )
 
+    @decorators.common.check_parameters(parameter_keys)
+    def initialise_parameters(self, parameters: Dict[str, type]) -> FrozenDict:
+        """
+        Initialise the parameters of the module using the provided arguments.
+        Args:
+            parameters: The parameters of the module.
+
+        Returns: A dictionary of the parameters of the module.
+
+        """
+        return self._initialise_parameters(parameters=parameters)
+
     def initialise_random_parameters(
         self,
         key: PRNGKey,

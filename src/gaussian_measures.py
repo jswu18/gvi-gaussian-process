@@ -91,6 +91,7 @@ class GaussianMeasure(Module, ABC):
         raise NotImplementedError
 
     @decorators.common.check_parameters(parameter_keys)
+    @abstractmethod
     def compute_expected_log_likelihood(
         self,
         parameters: FrozenDict,
@@ -100,6 +101,29 @@ class GaussianMeasure(Module, ABC):
     ) -> float:
         """
         Compute the expected log likelihood of the Gaussian measure at the inputs x and outputs y.
+            - n is the number of points in x
+            - d is the number of dimensions
+
+        Args:
+            x: design matrix of shape (n, d)
+            y: response vector of shape (n, 1)
+            observation_noise: the observation noise of the Gaussian measure
+            parameters: parameters of the Gaussian measure
+
+        Returns: a scalar representing the empirical expected log likelihood
+
+        """
+        raise NotImplementedError
+
+    def _compute_expected_log_likelihood(
+        self,
+        parameters: FrozenDict,
+        x: jnp.ndarray,
+        y: jnp.ndarray,
+        observation_noise: float,
+    ) -> float:
+        """
+        General method for computing the expected log likelihood of the Gaussian measure at the inputs x and outputs y.
             - n is the number of points in x
             - d is the number of dimensions
 
@@ -150,6 +174,18 @@ class ReferenceGaussianMeasure(GaussianMeasure):
         """
         super().__init__(x, y, mean_function, kernel)
 
+    @decorators.common.check_parameters(parameter_keys)
+    def initialise_parameters(self, parameters: Dict[str, type]) -> FrozenDict:
+        """
+        Initialise the parameters of the module using the provided arguments.
+        Args:
+            parameters: The parameters of the module.
+
+        Returns: A dictionary of the parameters of the module.
+
+        """
+        return self._initialise_parameters(parameters=parameters)
+
     def initialise_random_parameters(
         self,
         key: PRNGKey,
@@ -168,6 +204,32 @@ class ReferenceGaussianMeasure(GaussianMeasure):
                 "mean_function": self.mean_function.initialise_random_parameters(key),
                 "kernel": self.kernel.initialise_random_parameters(key),
             }
+        )
+
+    @decorators.common.check_parameters(parameter_keys)
+    def compute_expected_log_likelihood(
+        self,
+        parameters: FrozenDict,
+        x: jnp.ndarray,
+        y: jnp.ndarray,
+        observation_noise: float,
+    ) -> float:
+        """
+        Compute the expected log likelihood of the Gaussian measure at the inputs x and outputs y.
+            - n is the number of points in x
+            - d is the number of dimensions
+
+        Args:
+            x: design matrix of shape (n, d)
+            y: response vector of shape (n, 1)
+            observation_noise: the observation noise of the Gaussian measure
+            parameters: parameters of the Gaussian measure
+
+        Returns: a scalar representing the empirical expected log likelihood
+
+        """
+        return self._compute_expected_log_likelihood(
+            parameters=parameters, x=x, y=y, observation_noise=observation_noise
         )
 
     @decorators.common.check_parameters(parameter_keys)
@@ -294,6 +356,18 @@ class ApproximationGaussianMeasure(GaussianMeasure):
         super().__init__(x, y, mean_function, kernel)
         self.kernel = kernel
 
+    @decorators.common.check_parameters(parameter_keys)
+    def initialise_parameters(self, parameters: Dict[str, type]) -> FrozenDict:
+        """
+        Initialise the parameters of the module using the provided arguments.
+        Args:
+            parameters: The parameters of the module.
+
+        Returns: A dictionary of the parameters of the module.
+
+        """
+        return self._initialise_parameters(parameters=parameters)
+
     def initialise_random_parameters(
         self,
         key: PRNGKey,
@@ -311,6 +385,32 @@ class ApproximationGaussianMeasure(GaussianMeasure):
                 "mean_function": self.mean_function.initialise_random_parameters(key),
                 "kernel": self.kernel.initialise_random_parameters(key),
             }
+        )
+
+    @decorators.common.check_parameters(parameter_keys)
+    def compute_expected_log_likelihood(
+        self,
+        parameters: FrozenDict,
+        x: jnp.ndarray,
+        y: jnp.ndarray,
+        observation_noise: float,
+    ) -> float:
+        """
+        Compute the expected log likelihood of the Gaussian measure at the inputs x and outputs y.
+            - n is the number of points in x
+            - d is the number of dimensions
+
+        Args:
+            x: design matrix of shape (n, d)
+            y: response vector of shape (n, 1)
+            observation_noise: the observation noise of the Gaussian measure
+            parameters: parameters of the Gaussian measure
+
+        Returns: a scalar representing the empirical expected log likelihood
+
+        """
+        return self._compute_expected_log_likelihood(
+            parameters=parameters, x=x, y=y, observation_noise=observation_noise
         )
 
     @decorators.common.check_parameters(parameter_keys)
