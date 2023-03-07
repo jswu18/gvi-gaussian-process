@@ -40,6 +40,18 @@ class StandardKernel(Kernel, ABC):
 class ARDKernel(StandardKernel):
     parameter_keys = {"log_scaling": jnp.float64, "log_lengthscales": jnp.ndarray}
 
+    @decorators.common.check_parameters(parameter_keys)
+    def initialise_parameters(self, parameters: Dict[str, type]) -> FrozenDict:
+        """
+        Initialise the parameters of the module using the provided arguments.
+        Args:
+            parameters: The parameters of the module.
+
+        Returns: A dictionary of the parameters of the module.
+
+        """
+        return self._initialise_parameters(parameters=parameters)
+
     def initialise_random_parameters(
         self,
         key: PRNGKey,
@@ -133,6 +145,18 @@ class NeuralNetworkGaussianProcessKernel(Kernel):
             ntk_kernel_function: The kernel function provided by the NTK package.
         """
         self.ntk_kernel_function = ntk_kernel_function
+
+    @decorators.common.check_parameters(parameter_keys)
+    def initialise_parameters(self, parameters: Dict[str, type]) -> FrozenDict:
+        """
+        Initialise the parameters of the module using the provided arguments.
+        Args:
+            parameters: The parameters of the module.
+
+        Returns: A dictionary of the parameters of the module.
+
+        """
+        return self._initialise_parameters(parameters=parameters)
 
     def initialise_random_parameters(
         self,

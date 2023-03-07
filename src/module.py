@@ -26,7 +26,8 @@ class Module(ABC):
         """
         raise NotImplementedError
 
-    # @decorators.common.check_parameters(parameter_keys)
+    @decorators.common.check_parameters(parameter_keys)
+    @abstractmethod
     def initialise_parameters(self, parameters: Dict[str, type]) -> FrozenDict:
         """
         Initialise the parameters of the module using the provided arguments.
@@ -36,7 +37,17 @@ class Module(ABC):
         Returns: A dictionary of the parameters of the module.
 
         """
-        print(self.parameter_keys)
+        raise NotImplementedError
+
+    def _initialise_parameters(self, parameters: Dict[str, type]) -> FrozenDict:
+        """
+        General method for initialise the parameters of the module using the provided arguments.
+        Args:
+            # **kwargs: The parameters of the module.
+
+        Returns: A dictionary of the parameters of the module.
+
+        """
         return FrozenDict(
             {
                 parameter_key: parameters[parameter_key]
