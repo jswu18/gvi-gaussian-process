@@ -13,7 +13,7 @@ DType = TypeVar("DType")
 
 class ArrayType(jnp.ndarray, Generic[DType]):
     """
-    Wrapper class for numpy arrays that stores and validates type information.
+    Wrapper class for jax.numpy arrays that stores and validates type information.
     This can be used in place of a numpy array, but when used in a pydantic BaseModel
     or with pydantic.validate_arguments, its dtype will be *coerced* at runtime to the
     declared type.
