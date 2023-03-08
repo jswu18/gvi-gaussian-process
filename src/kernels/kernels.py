@@ -23,6 +23,7 @@ class Kernel(Module, ABC):
             - n is the number of points in x
             - m is the number of points in y
             - d is the number of dimensions
+
         Args:
             parameters: parameters of the kernel
             x: design matrix of shape (n, d)

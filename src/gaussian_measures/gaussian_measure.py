@@ -29,13 +29,13 @@ class GaussianMeasure(Module, ABC):
         kernel: Kernel,
     ):
         """
-        Defining the training data, the mean function and the kernel for the Gaussian measure.
-            - n is the number of points in x
+        Defining the training data (x, y), the mean function, and the kernel for the Gaussian measure.
+            - n is the number of training points
             - d is the number of dimensions
 
         Args:
-            x: the training inputs of shape (n, d)
-            y: the training outputs of shape (n, 1)
+            x: the training inputs design matrix of shape (n, d)
+            y: the training outputs response vector of shape (n, 1)
             mean_function: the mean function of the Gaussian measure
             kernel: the kernel of the Gaussian measure
         """
@@ -63,9 +63,9 @@ class GaussianMeasure(Module, ABC):
             - d is the number of dimensions
 
         Args:
+            parameters: parameters of the Gaussian measure
             x: design matrix of shape (n, d)
             y: design matrix of shape (m, d)
-            parameters: parameters of the Gaussian measure
 
         Returns: the posterior covariance matrix of shape (n, m)
 
@@ -83,10 +83,10 @@ class GaussianMeasure(Module, ABC):
             - d is the number of dimensions
 
         Args:
-            x: design matrix of shape (n, d)
             parameters: parameters of the Gaussian measure
+            x: design matrix of shape (n, d)
 
-        Returns: the mean function evaluations of shape (n, 1)
+        Returns: the mean function evaluations, a vector of shape (n, 1)
 
         """
         raise NotImplementedError
@@ -103,6 +103,10 @@ class GaussianMeasure(Module, ABC):
             - n is the number of points in x
             - d is the number of dimensions
 
+        Args:
+            parameters_dict: a dictionary containing the parameters, a dictionary is required for jit compilation
+            x: design matrix of shape (n, d)
+            y: response vector of shape (n, 1)
 
         Returns: a scalar representing the empirical expected log likelihood
 
@@ -121,6 +125,14 @@ class GaussianMeasure(Module, ABC):
         General method for computing the expected log likelihood of the Gaussian measure at the inputs x and outputs y.
             - n is the number of points in x
             - d is the number of dimensions
+
+        Args:
+            mean: response vector from the mean function of shape (n, 1)
+            covariance: covariance matrix from the kernel function of shape (n, n)
+            observation_noise: the observation noise
+            x: design matrix of shape (n, d)
+            y: response vector of shape (n, 1)
+
         Returns: a scalar representing the empirical expected log likelihood
 
         """

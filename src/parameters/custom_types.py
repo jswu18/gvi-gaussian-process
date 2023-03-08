@@ -1,4 +1,4 @@
-# Copied from
+# Modified for JAX arrays from
 # https://gist.github.com/danielhfrank/00e6b8556eed73fb4053450e602d2434
 
 from typing import Generic, TypeVar
@@ -24,7 +24,7 @@ class ArrayType(jnp.ndarray, Generic[DType]):
         yield cls.validate
 
     @classmethod
-    def validate(cls, val, field: ModelField):
+    def validate(cls, val, field: ModelField) -> jnp.ndarray:
         dtype_field = field.sub_fields[0]
         actual_dtype = dtype_field.type_.__args__[0]
         # If jax.numpy cannot create an array with the request dtype, an error will be raised

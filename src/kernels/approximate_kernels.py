@@ -74,6 +74,7 @@ class StochasticVariationalGaussianProcessKernel(ApproximateKernel):
         """
         Defining the stochastic variational Gaussian process kernel using the reference Gaussian measure
         and inducing points.
+
         Args:
             reference_gaussian_measure_parameters: the parameters of the reference Gaussian measure.
             reference_kernel: the kernel of the reference Gaussian measure.
@@ -115,11 +116,12 @@ class StochasticVariationalGaussianProcessKernel(ApproximateKernel):
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def generate_parameters(self, parameters: Union[FrozenDict, Dict]) -> Parameters:
         """
-        Generator for a Pydantic model of the parameters for the module.
-        Args:
-            parameters: A dictionary of the parameters of the module.
+        Generates a Pydantic model of the parameters for Stochastic Variational Gaussian Process Kernels.
 
-        Returns: A Pydantic model of the parameters for the module.
+        Args:
+            parameters: A dictionary of the parameters for Stochastic Variational Gaussian Process Kernels.
+
+        Returns: A Pydantic model of the parameters for Stochastic Variational Gaussian Process Kernels.
 
         """
         return StochasticVariationalGaussianProcessKernel.Parameters(**parameters)
@@ -130,16 +132,18 @@ class StochasticVariationalGaussianProcessKernel(ApproximateKernel):
         key: PRNGKey,
     ) -> StochasticVariationalGaussianProcessKernelParameters:
         """
-        Initialise the parameters of the module using a random key.
+        Initialise each parameter of the Stochastic Variational Gaussian Process Kernel with the appropriate random initialisation.
+
         Args:
             key: A random key used to initialise the parameters.
 
-        Returns: A dictionary of the parameters of the module.
+        Returns: A Pydantic model of the parameters for Stochastic Variational Gaussian Process Kernels.
 
         """
         pass
 
     @staticmethod
+    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def _calculate_sigma_matrix(
         gram_inducing: jnp.ndarray,
         gram_inducing_train: jnp.ndarray,
@@ -178,6 +182,7 @@ class StochasticVariationalGaussianProcessKernel(ApproximateKernel):
     ) -> jnp.ndarray:
         """
         Computing the Gram matrix using for the SVGP which depends on the reference kernel.
+
         If y is None, the Gram matrix is computed for x and x.
             - n is the number of points in x
             - m is the number of points in y
@@ -194,6 +199,8 @@ class StochasticVariationalGaussianProcessKernel(ApproximateKernel):
             x=x,
             y=self.inducing_points,
         )
+
+        # if y is None, compute for x and x
         if y is None:
             y = x
             reference_gram_y_inducing = reference_gram_x_inducing

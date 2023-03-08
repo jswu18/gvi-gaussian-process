@@ -14,11 +14,12 @@ class Module(ABC):
     @abstractmethod
     def generate_parameters(self, parameters: FrozenDict) -> Parameters:
         """
-        Generator for a Pydantic model of the parameters for the module.
-        Args:
-            parameters: A dictionary of the parameters of the module.
+        Generates a Pydantic model of the parameters for the Module.
 
-        Returns: A Pydantic model of the parameters for the module.
+        Args:
+            parameters: A dictionary of the parameters for the Module.
+
+        Returns: A Pydantic model of the parameters for the Module.
 
         """
         raise NotImplementedError
@@ -28,11 +29,12 @@ class Module(ABC):
         key: PRNGKey,
     ) -> ModuleParameters:
         """
-        Initialise the parameters of the module using a random key.
+        Initialise each parameter of the Module with the appropriate random initialisation.
+
         Args:
             key: A random key used to initialise the parameters.
 
-        Returns: A dictionary of the parameters of the module.
+        Returns: A Pydantic model of the parameters for the Module.
 
         """
         raise NotImplementedError
