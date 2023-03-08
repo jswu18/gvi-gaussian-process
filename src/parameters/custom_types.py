@@ -27,7 +27,6 @@ class ArrayType(jnp.ndarray, Generic[DType]):
     def validate(cls, val, field: ModelField):
         dtype_field = field.sub_fields[0]
         actual_dtype = dtype_field.type_.__args__[0]
-        # If numpy cannot create an array with the request dtype, an error will be raised
+        # If jax.numpy cannot create an array with the request dtype, an error will be raised
         # and correctly bubbled up.
-        array = jnp.array(val, dtype=actual_dtype)
-        return array
+        return jnp.array(val, dtype=actual_dtype)

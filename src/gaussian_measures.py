@@ -56,9 +56,8 @@ class GaussianMeasure(Module, ABC):
         self.mean_function = mean_function
         self.kernel = kernel
 
-    @decorators.common.default_duplicate_x
-    @decorators.kernels.preprocess_kernel_inputs
-    @decorators.kernels.check_kernel_inputs
+    @decorators.preprocess_kernel_inputs
+    @decorators.check_kernel_inputs
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     @abstractmethod
     def calculate_covariance(
@@ -274,9 +273,8 @@ class ReferenceGaussianMeasure(GaussianMeasure):
             x=x, parameters=parameters.mean_function
         )
 
-    @decorators.common.default_duplicate_x
-    @decorators.kernels.preprocess_kernel_inputs
-    @decorators.kernels.check_kernel_inputs
+    @decorators.preprocess_kernel_inputs
+    @decorators.check_kernel_inputs
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def calculate_covariance(
         self,
@@ -306,6 +304,10 @@ class ReferenceGaussianMeasure(GaussianMeasure):
         Returns: the posterior covariance of shape (n, m)
 
         """
+        # if y is None, compute for x and x
+        if y is None:
+            y = x
+
         gram_train = self.kernel.calculate_gram(x=self.x, parameters=parameters.kernel)
         gram_train_x = self.kernel.calculate_gram(
             x=self.x, y=x, parameters=parameters.kernel
@@ -448,9 +450,8 @@ class ApproximationGaussianMeasure(GaussianMeasure):
         """
         return self.mean_function.predict(x=x, parameters=parameters.mean_function)
 
-    @decorators.common.default_duplicate_x
-    @decorators.kernels.preprocess_kernel_inputs
-    @decorators.kernels.check_kernel_inputs
+    @decorators.preprocess_kernel_inputs
+    @decorators.check_kernel_inputs
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def calculate_covariance(
         self,
@@ -478,4 +479,8 @@ class ApproximationGaussianMeasure(GaussianMeasure):
         Returns: the posterior covariance of shape (n, m)
 
         """
+        # if y is None, compute for x and x
+        if y is None:
+            y = x
+
         return self.kernel.calculate_gram(x=x, y=y, parameters=parameters.kernel)

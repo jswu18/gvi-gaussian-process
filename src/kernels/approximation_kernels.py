@@ -8,7 +8,6 @@ from jax import jit
 from jax.scipy.linalg import cho_factor, cho_solve
 
 from src import decorators
-from src.common.utils import add_diagonal_regulariser
 from src.kernels.reference_kernels import Kernel
 from src.parameters.gaussian_measures.reference_gaussian_measures import (
     ReferenceGaussianMeasureParameters,
@@ -17,6 +16,7 @@ from src.parameters.kernels.approximation_kernels import (
     ApproximationKernelParameters,
     StochasticVariationalGaussianProcessKernelParameters,
 )
+from src.utils import add_diagonal_regulariser
 
 PRNGKey = Any  # pylint: disable=invalid-name
 
@@ -167,8 +167,8 @@ class StochasticVariationalGaussianProcessKernel(ApproximationKernel):
         )
         return el_matrix @ el_matrix.T
 
-    @decorators.kernels.preprocess_kernel_inputs
-    @decorators.kernels.check_kernel_inputs
+    @decorators.preprocess_kernel_inputs
+    @decorators.check_kernel_inputs
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def calculate_gram(
         self,
