@@ -1,5 +1,5 @@
 import jax.numpy as jnp
-import numpy as np
+import pydantic
 import pytest
 from flax.core.frozen_dict import FrozenDict
 from jax.config import config
@@ -13,7 +13,7 @@ config.update("jax_enable_x64", True)
     "kernel,parameters,x,y,k",
     [
         [
-            ARDKernel(),
+            ARDKernel(number_of_dimensions=3),
             FrozenDict(
                 {
                     "log_scaling": 0.5,
@@ -25,11 +25,11 @@ config.update("jax_enable_x64", True)
             1.8095777100611745,
         ],
         [
-            ARDKernel(),
+            ARDKernel(number_of_dimensions=1),
             FrozenDict(
                 {
                     "log_scaling": jnp.log(1),
-                    "log_lengthscales": -0.5,
+                    "log_lengthscales": jnp.array(-0.5),
                 }
             ),
             6.0,
@@ -37,15 +37,15 @@ config.update("jax_enable_x64", True)
             jnp.exp(0),
         ],
         [
-            ARDKernel(),
+            ARDKernel(number_of_dimensions=1),
             FrozenDict(
                 {
                     "log_scaling": jnp.log(1),
-                    "log_lengthscales": -0.5,
+                    "log_lengthscales": jnp.array(-0.5),
                 }
             ),
             6.0,
-            None,
+            6.0,
             jnp.exp(0),
         ],
     ],
@@ -57,14 +57,16 @@ def test_standard_kernels(
     y: jnp.ndarray,
     k: float,
 ):
-    assert kernel.calculate_kernel(parameters, x=x, y=y) == k
+    assert (
+        kernel.calculate_kernel(kernel.generate_parameters(parameters), x=x, y=y) == k
+    )
 
 
 @pytest.mark.parametrize(
     "kernel,parameters,x,y,k",
     [
         [
-            ARDKernel(),
+            ARDKernel(number_of_dimensions=3),
             FrozenDict(
                 {
                     "log_scaling": 0.5,
@@ -89,14 +91,16 @@ def test_standard_kernel_grams(
     y: jnp.ndarray,
     k: float,
 ):
-    assert jnp.array_equal(kernel.calculate_gram(parameters=parameters, x=x, y=y), k)
+    assert jnp.array_equal(
+        kernel.calculate_gram(kernel.generate_parameters(parameters), x=x, y=y), k
+    )
 
 
 @pytest.mark.parametrize(
     "kernel,parameters,x,y",
     [
         [
-            ARDKernel(),
+            ARDKernel(number_of_dimensions=1),
             FrozenDict(
                 {
                     "log_scaling": jnp.log(1),
@@ -113,5 +117,5 @@ def test_missing_kernel_parameter(
     x: jnp.ndarray,
     y: jnp.ndarray,
 ):
-    with pytest.raises(KeyError):
-        kernel.calculate_kernel(parameters=parameters, x=x, y=y)
+    with pytest.raises(pydantic.ValidationError):
+        kernel.calculate_kernel(kernel.generate_parameters(parameters), x=x, y=y)

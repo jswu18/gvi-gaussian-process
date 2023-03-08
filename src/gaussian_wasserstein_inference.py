@@ -1,13 +1,19 @@
-from typing import Any, Dict
+from typing import Any, Dict, Union
 
 import jax.numpy as jnp
+import pydantic
 from flax.core.frozen_dict import FrozenDict
 from jax import jit
 
-from src import decorators
 from src.gaussian_measures import ApproximationGaussianMeasure, GaussianMeasure
 from src.gaussian_wasserstein_metric import gaussian_wasserstein_metric
 from src.module import Module
+from src.parameters.gaussian_measures.approximation_gaussian_measures import (
+    ApproximationGaussianMeasureParameters,
+)
+from src.parameters.gaussian_measures.reference_gaussian_measures import (
+    ReferenceGaussianMeasureParameters,
+)
 
 PRNGKey = Any  # pylint: disable=invalid-name
 
@@ -18,13 +24,13 @@ class GaussianWassersteinInference(Module):
     distance between the reference gaussian measure and the approximation gaussian measure.
     """
 
-    parameter_keys: Dict[str, type] = ApproximationGaussianMeasure.parameter_keys
+    Parameters = ApproximationGaussianMeasureParameters
 
     def __init__(
         self,
         reference_gaussian_measure: GaussianMeasure,
-        approximation_gaussian_measure: GaussianMeasure,
-        reference_gaussian_measure_parameters: FrozenDict,
+        approximation_gaussian_measure: ApproximationGaussianMeasure,
+        reference_gaussian_measure_parameters: ReferenceGaussianMeasureParameters,
         x: jnp.ndarray,
         y: jnp.ndarray,
         eigenvalue_regularisation: float = 0.0,
@@ -56,23 +62,20 @@ class GaussianWassersteinInference(Module):
             is_eigenvalue_regularisation_absolute_scale
         )
         self.compute_negative_expected_log_likelihood = jit(
-            lambda approximation_gaussian_measure_parameters: (
+            lambda approximation_gaussian_measure_parameters_dict: (
                 approximation_gaussian_measure.compute_expected_log_likelihood(
                     x=x,
                     y=y,
-                    observation_noise=jnp.exp(
-                        reference_gaussian_measure_parameters["log_observation_noise"]
-                    ),
-                    parameters=approximation_gaussian_measure_parameters,
+                    parameters=approximation_gaussian_measure_parameters_dict,
                 )
             )
         )
         self.compute_dissimilarity_measure = jit(
-            lambda x_batch, approximation_gaussian_measure_parameters: gaussian_wasserstein_metric(
+            lambda x_batch, approximation_gaussian_measure_parameters_dict: gaussian_wasserstein_metric(
                 p=reference_gaussian_measure,
                 q=approximation_gaussian_measure,
-                p_parameters=reference_gaussian_measure_parameters,
-                q_parameters=approximation_gaussian_measure_parameters,
+                p_parameters=reference_gaussian_measure_parameters.dict(),
+                q_parameters=approximation_gaussian_measure_parameters_dict,
                 x_batch=x_batch,
                 x_train=x,
                 eigenvalue_regularisation=eigenvalue_regularisation,
@@ -80,22 +83,25 @@ class GaussianWassersteinInference(Module):
             )
         )
 
-    @decorators.common.check_parameters(parameter_keys)
-    def initialise_parameters(self, parameters: Dict[str, type]) -> FrozenDict:
+    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
+    def generate_parameters(
+        self, parameters: FrozenDict
+    ) -> ApproximationGaussianMeasureParameters:
         """
-        Initialise the parameters of the module using the provided arguments.
+        Generator for a Pydantic model of the parameters for the module.
         Args:
-            parameters: The parameters of the module.
+            parameters: A dictionary of the parameters of the module.
 
-        Returns: A dictionary of the parameters of the module.
+        Returns: A Pydantic model of the parameters for the module.
 
         """
-        return self._initialise_parameters(parameters=parameters)
+        return self.approximation_gaussian_measure.Parameters(**parameters)
 
+    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def initialise_random_parameters(
         self,
         key: PRNGKey,
-    ) -> FrozenDict:
+    ) -> ApproximationGaussianMeasureParameters:
         """
         Randomly initialise the parameters of the approximation gaussian measure by calling the
         initialise_random_parameters method of the approximation gaussian measure and passing the given parameters.
@@ -107,10 +113,10 @@ class GaussianWassersteinInference(Module):
         """
         return self.approximation_gaussian_measure.initialise_random_parameters(key)
 
-    @decorators.common.check_parameters(parameter_keys)
+    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def compute_loss(
         self,
-        parameters: FrozenDict,
+        parameters_dict: Union[Dict, FrozenDict],
         x_batch: jnp.ndarray,
     ) -> float:
         """
@@ -120,17 +126,19 @@ class GaussianWassersteinInference(Module):
             - d is the number of dimensions
 
         Args:
-            parameters: the parameters of the approximation gaussian measure
+            parameters_dict: the parameters of the approximation gaussian measure
             x_batch: the design matrix of the batch of training data points of shape (n, d)
 
         Returns: The loss of the approximation gaussian measure.
 
         """
         negative_expected_log_likelihood = (
-            self.compute_negative_expected_log_likelihood(parameters)
+            self.compute_negative_expected_log_likelihood(
+                approximation_gaussian_measure_parameters_dict=parameters_dict
+            )
         )
         dissimilarity_measure = self.compute_dissimilarity_measure(
             x_batch=x_batch,
-            approximation_gaussian_measure_parameters=parameters,
+            approximation_gaussian_measure_parameters_dict=parameters_dict,
         )
         return negative_expected_log_likelihood + dissimilarity_measure

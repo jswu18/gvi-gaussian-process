@@ -1,14 +1,19 @@
 from abc import ABC
-from typing import Any, Dict
+from typing import Any, Dict, Union
 
 import flax
 import jax.numpy as jnp
+import pydantic
 from flax.core.frozen_dict import FrozenDict
 from jax import jit, random
 
-from src import decorators
 from src.kernels.reference_kernels import Kernel
 from src.mean_functions.reference_mean_functions import MeanFunction
+from src.parameters.mean_functions.approximation_mean_functions import (
+    ApproximationMeanFunctionParameters,
+    NeuralNetworkMeanFunctionParameters,
+    StochasticVariationalGaussianProcessMeanFunctionParameters,
+)
 
 PRNGKey = Any  # pylint: disable=invalid-name
 
@@ -18,6 +23,8 @@ class ApproximationMeanFunction(MeanFunction, ABC):
     Approximation mean functions which incorporate the mean function of the reference mean function into its prediction.
     The approximation mean function itself may or may not be defined with respect to the reference Gaussian measure.
     """
+
+    Parameters = ApproximationMeanFunctionParameters
 
     def __init__(
         self,
@@ -36,7 +43,7 @@ class ApproximationMeanFunction(MeanFunction, ABC):
         )
         self.reference_mean_func = jit(
             lambda x: reference_mean_function.predict(
-                parameters=reference_gaussian_measure_parameters["mean_function"], x=x
+                parameters=reference_gaussian_measure_parameters.mean_function, x=x
             )
         )
 
@@ -46,9 +53,7 @@ class StochasticVariationalGaussianProcessMeanFunction(ApproximationMeanFunction
     The mean function of a stochastic variational Gaussian process, defined with respect to the reference kernel.
     """
 
-    parameter_keys = {
-        "weights": jnp.ndarray,
-    }
+    Parameters = StochasticVariationalGaussianProcessMeanFunctionParameters
 
     def __init__(
         self,
@@ -75,24 +80,29 @@ class StochasticVariationalGaussianProcessMeanFunction(ApproximationMeanFunction
         # define a jit-compiled version of the reference kernel gram matrix using the reference kernel parameters
         self.calculate_reference_gram = jit(
             lambda x: reference_kernel.calculate_gram(
-                parameters=reference_gaussian_measure_parameters["kernel"],
+                parameters=reference_gaussian_measure_parameters.kernel,
                 x=x,
                 y=inducing_points,
             )
         )
 
-    @decorators.common.check_parameters(parameter_keys)
-    def initialise_parameters(self, parameters: Dict[str, type]) -> FrozenDict:
+    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
+    def generate_parameters(
+        self, parameters: Union[FrozenDict, Dict]
+    ) -> StochasticVariationalGaussianProcessMeanFunctionParameters:
         """
-        Initialise the parameters of the module using the provided arguments.
+        Generator for a Pydantic model of the parameters for the module.
         Args:
-            parameters: The parameters of the module.
+            parameters: A dictionary of the parameters of the module.
 
-        Returns: A dictionary of the parameters of the module.
+        Returns: A Pydantic model of the parameters for the module.
 
         """
-        return self._initialise_parameters(parameters=parameters)
+        return StochasticVariationalGaussianProcessMeanFunction.Parameters(
+            number_of_inducing_points=self.number_of_inducing_points, **parameters
+        )
 
+    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def initialise_random_parameters(
         self,
         key: PRNGKey,
@@ -111,8 +121,12 @@ class StochasticVariationalGaussianProcessMeanFunction(ApproximationMeanFunction
         )
         return FrozenDict({"weights": weights})
 
-    @decorators.common.check_parameters(parameter_keys)
-    def predict(self, parameters: FrozenDict, x: jnp.ndarray) -> jnp.ndarray:
+    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
+    def predict(
+        self,
+        parameters: StochasticVariationalGaussianProcessMeanFunctionParameters,
+        x: jnp.ndarray,
+    ) -> jnp.ndarray:
         """
         Predict the mean function at the provided points x by adding the reference mean function to the
         product of the reference kernel gram matrix and the weights.
@@ -132,14 +146,12 @@ class StochasticVariationalGaussianProcessMeanFunction(ApproximationMeanFunction
         """
         return (
             self.reference_mean_func(x)
-            + (self.calculate_reference_gram(x) @ parameters["weights"]).T
+            + (self.calculate_reference_gram(x) @ parameters.weights).T
         ).reshape(-1)
 
 
 class NeuralNetworkMeanFunction(ApproximationMeanFunction):
-    parameter_keys = {
-        "neural_network": FrozenDict,
-    }
+    Parameters = NeuralNetworkMeanFunctionParameters
 
     def __init__(
         self,
@@ -160,22 +172,25 @@ class NeuralNetworkMeanFunction(ApproximationMeanFunction):
         super().__init__(reference_gaussian_measure_parameters, reference_mean_function)
         self.neural_network = neural_network
 
-    @decorators.common.check_parameters(parameter_keys)
-    def initialise_parameters(self, parameters: Dict[str, type]) -> FrozenDict:
+    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
+    def generate_parameters(
+        self, parameters: Union[FrozenDict, Dict]
+    ) -> NeuralNetworkMeanFunctionParameters:
         """
-        Initialise the parameters of the module using the provided arguments.
+        Generator for a Pydantic model of the parameters for the module.
         Args:
-            parameters: The parameters of the module.
+            parameters: A dictionary of the parameters of the module.
 
-        Returns: A dictionary of the parameters of the module.
+        Returns: A Pydantic model of the parameters for the module.
 
         """
-        return self._initialise_parameters(parameters=parameters)
+        return NeuralNetworkMeanFunction.Parameters(**parameters)
 
+    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def initialise_random_parameters(
         self,
         key: PRNGKey,
-    ) -> FrozenDict:
+    ) -> NeuralNetworkMeanFunctionParameters:
         """
         Initialise the parameters of the neural network using a random key.
         Args:
@@ -184,12 +199,14 @@ class NeuralNetworkMeanFunction(ApproximationMeanFunction):
         Returns: Random initialisation of the parameters of the neural network.
 
         """
-        return FrozenDict(
-            {"neural_network": self.neural_network.init(key, jnp.zeros((1, 1)))}
+        return NeuralNetworkMeanFunctionParameters(
+            neural_network=self.neural_network.init(key, jnp.zeros((1, 1)))
         )
 
-    @decorators.common.check_parameters(parameter_keys)
-    def predict(self, parameters: FrozenDict, x: jnp.ndarray) -> jnp.ndarray:
+    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
+    def predict(
+        self, parameters: NeuralNetworkMeanFunctionParameters, x: jnp.ndarray
+    ) -> jnp.ndarray:
         """
         Predict the mean function at the provided points x by adding the reference mean function to the
         output of the neural network.
@@ -204,5 +221,5 @@ class NeuralNetworkMeanFunction(ApproximationMeanFunction):
 
         """
         return self.reference_mean_func(x) + self.neural_network.apply(
-            parameters["neural_network"], x
+            parameters.neural_network, x
         )

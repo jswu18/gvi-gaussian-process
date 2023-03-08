@@ -1,21 +1,32 @@
-from abc import ABC, abstractclassmethod, abstractmethod
-from typing import Any, Dict
+from abc import ABC, abstractmethod
+from typing import Any
 
 from flax.core.frozen_dict import FrozenDict
 
-from src import decorators
+from src.parameters.module import ModuleParameters
 
 PRNGKey = Any  # pylint: disable=invalid-name
 
 
 class Module(ABC):
-    parameter_keys: Dict[str, type] = NotImplementedError
+    Parameters: ModuleParameters = ModuleParameters
 
     @abstractmethod
+    def generate_parameters(self, parameters: FrozenDict) -> Parameters:
+        """
+        Generator for a Pydantic model of the parameters for the module.
+        Args:
+            parameters: A dictionary of the parameters of the module.
+
+        Returns: A Pydantic model of the parameters for the module.
+
+        """
+        raise NotImplementedError
+
     def initialise_random_parameters(
         self,
         key: PRNGKey,
-    ) -> FrozenDict:
+    ) -> ModuleParameters:
         """
         Initialise the parameters of the module using a random key.
         Args:
@@ -25,32 +36,3 @@ class Module(ABC):
 
         """
         raise NotImplementedError
-
-    @decorators.common.check_parameters(parameter_keys)
-    @abstractmethod
-    def initialise_parameters(self, parameters: Dict[str, type]) -> FrozenDict:
-        """
-        Initialise the parameters of the module using the provided arguments.
-        Args:
-            # **kwargs: The parameters of the module.
-
-        Returns: A dictionary of the parameters of the module.
-
-        """
-        raise NotImplementedError
-
-    def _initialise_parameters(self, parameters: Dict[str, type]) -> FrozenDict:
-        """
-        General method for initialise the parameters of the module using the provided arguments.
-        Args:
-            # **kwargs: The parameters of the module.
-
-        Returns: A dictionary of the parameters of the module.
-
-        """
-        return FrozenDict(
-            {
-                parameter_key: parameters[parameter_key]
-                for parameter_key in self.parameter_keys
-            }
-        )

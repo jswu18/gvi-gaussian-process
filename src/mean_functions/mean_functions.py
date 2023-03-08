@@ -1,19 +1,20 @@
 from abc import ABC, abstractmethod
-from typing import Dict
 
 import jax.numpy as jnp
-from flax.core.frozen_dict import FrozenDict
+import pydantic
 
-from src import decorators
 from src.module import Module
+from src.parameters.mean_functions.mean_functions import MeanFunctionParameters
 
 
 class MeanFunction(Module, ABC):
-    parameter_keys: Dict[str, type] = NotImplementedError
+    Parameters = MeanFunctionParameters
 
-    @decorators.common.check_parameters(parameter_keys)
+    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     @abstractmethod
-    def predict(self, parameters: FrozenDict, x: jnp.ndarray) -> jnp.ndarray:
+    def predict(
+        self, parameters: MeanFunctionParameters, x: jnp.ndarray
+    ) -> jnp.ndarray:
         """
         Computes the mean function at the given points.
             - n is the number of points in x

@@ -1,28 +1,33 @@
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict
+from typing import Any, Callable, Dict, Union
 
 import jax.numpy as jnp
+import pydantic
 from flax.core.frozen_dict import FrozenDict
 from jax import vmap
 
 from src import decorators
-from src.common import compose_decorators
 from src.kernels.kernels import Kernel
+from src.parameters.kernels.reference_kernels import (
+    ARDKernelParameters,
+    NeuralNetworkGaussianProcessKernelParameters,
+    StandardKernelParameters,
+)
 
 PRNGKey = Any  # pylint: disable=invalid-name
 
 
 class StandardKernel(Kernel, ABC):
-    parameter_keys = NotImplemented
+    Parameters = StandardKernelParameters
     """
     Kernel class for kernels that can be easily defined with a kernel function evaluated at a single pair of points.
     """
 
     @staticmethod
-    @decorators.common.check_parameters(parameter_keys)
+    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     @abstractmethod
     def calculate_kernel(
-        parameters: FrozenDict, x: jnp.ndarray, y: jnp.ndarray = None
+        parameters: StandardKernelParameters, x: jnp.ndarray, y: jnp.ndarray = None
     ) -> jnp.float64:
         """
         Computes the kernel function for a single pair of points x and y.
@@ -38,24 +43,33 @@ class StandardKernel(Kernel, ABC):
 
 
 class ARDKernel(StandardKernel):
-    parameter_keys = {"log_scaling": jnp.float64, "log_lengthscales": jnp.ndarray}
+    Parameters = ARDKernelParameters
 
-    @decorators.common.check_parameters(parameter_keys)
-    def initialise_parameters(self, parameters: Dict[str, type]) -> FrozenDict:
+    def __init__(self, number_of_dimensions: int):
+        self.number_of_dimensions = number_of_dimensions
+
+    # def generate_parameters(self, parameters: FrozenDict) -> ARDKernelParameters:
+    #     return self._generate_parameters(parameters)
+
+    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
+    def generate_parameters(
+        self, parameters: Union[FrozenDict, Dict]
+    ) -> ARDKernelParameters:
         """
-        Initialise the parameters of the module using the provided arguments.
+        Generator for a Pydantic model of the parameters for the module.
         Args:
-            parameters: The parameters of the module.
+            parameters: A dictionary of the parameters of the module.
 
-        Returns: A dictionary of the parameters of the module.
+        Returns: A Pydantic model of the parameters for the module.
 
         """
-        return self._initialise_parameters(parameters=parameters)
+        return ARDKernel.Parameters(**parameters)
 
+    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def initialise_random_parameters(
         self,
         key: PRNGKey,
-    ) -> FrozenDict:
+    ) -> ARDKernelParameters:
         """
         Initialise the parameters of the module using a random key.
         Args:
@@ -69,9 +83,9 @@ class ARDKernel(StandardKernel):
     @decorators.common.default_duplicate_x
     @decorators.kernels.preprocess_kernel_inputs
     @decorators.kernels.check_kernel_inputs
-    @decorators.common.check_parameters(parameter_keys)
+    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def calculate_kernel(
-        self, parameters: FrozenDict, x: jnp.ndarray, y: jnp.ndarray = None
+        self, parameters: ARDKernelParameters, x: jnp.ndarray, y: jnp.ndarray = None
     ) -> jnp.ndarray:
         """
         The ARD kernel function defined as:
@@ -94,9 +108,9 @@ class ARDKernel(StandardKernel):
         Returns: the ARD kernel function evaluated at x and y
 
         """
-        scaling = jnp.exp(jnp.atleast_1d(parameters["log_scaling"])) ** 2
+        scaling = jnp.exp(jnp.atleast_1d(parameters.log_scaling)) ** 2
         lengthscale_matrix = jnp.diag(
-            jnp.exp(jnp.atleast_1d(parameters["log_lengthscales"]))
+            jnp.exp(jnp.atleast_1d(parameters.log_lengthscales))
         )
         return jnp.sum(
             scaling * jnp.exp(-0.5 * (x - y) @ lengthscale_matrix @ (x - y).T)
@@ -105,10 +119,10 @@ class ARDKernel(StandardKernel):
     @decorators.common.default_duplicate_x
     @decorators.kernels.preprocess_kernel_inputs
     @decorators.kernels.check_kernel_inputs
-    @decorators.common.check_parameters(parameter_keys)
+    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def calculate_gram(
         self,
-        parameters: FrozenDict,
+        parameters: ARDKernelParameters,
         x: jnp.ndarray,
         y: jnp.ndarray = None,
     ) -> jnp.ndarray:
@@ -136,7 +150,7 @@ class ARDKernel(StandardKernel):
 
 
 class NeuralNetworkGaussianProcessKernel(Kernel):
-    parameter_keys = {}
+    Parameters = NeuralNetworkGaussianProcessKernelParameters
 
     def __init__(self, ntk_kernel_function: Callable):
         """
@@ -146,22 +160,25 @@ class NeuralNetworkGaussianProcessKernel(Kernel):
         """
         self.ntk_kernel_function = ntk_kernel_function
 
-    @decorators.common.check_parameters(parameter_keys)
-    def initialise_parameters(self, parameters: Dict[str, type]) -> FrozenDict:
+    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
+    def generate_parameters(
+        self, parameters: Union[FrozenDict, Dict]
+    ) -> NeuralNetworkGaussianProcessKernelParameters:
         """
-        Initialise the parameters of the module using the provided arguments.
+        Generator for a Pydantic model of the parameters for the module.
         Args:
-            parameters: The parameters of the module.
+            parameters: A dictionary of the parameters of the module.
 
-        Returns: A dictionary of the parameters of the module.
+        Returns: A Pydantic model of the parameters for the module.
 
         """
-        return self._initialise_parameters(parameters=parameters)
+        return NeuralNetworkGaussianProcessKernel.Parameters(**parameters)
 
+    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def initialise_random_parameters(
         self,
         key: PRNGKey,
-    ) -> FrozenDict:
+    ) -> NeuralNetworkGaussianProcessKernelParameters:
         """
         Initialise the parameters of the module using a random key.
         Args:
@@ -175,10 +192,10 @@ class NeuralNetworkGaussianProcessKernel(Kernel):
     @decorators.common.default_duplicate_x
     @decorators.kernels.preprocess_kernel_inputs
     @decorators.kernels.check_kernel_inputs
-    @decorators.common.check_parameters(parameter_keys)
+    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def calculate_gram(
         self,
-        parameters: FrozenDict,
+        parameters: NeuralNetworkGaussianProcessKernelParameters,
         x: jnp.ndarray,
         y: jnp.ndarray = None,
     ) -> jnp.ndarray:
