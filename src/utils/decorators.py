@@ -2,14 +2,15 @@ from functools import wraps
 from typing import Any, Dict
 
 import jax.numpy as jnp
-from flax.core.frozen_dict import FrozenDict
+
+from src.parameters.module import ModuleParameters
 
 
 def preprocess_inputs(f):
     @wraps(f)
     def decorated_f(
         self,
-        parameters: FrozenDict,
+        parameters: ModuleParameters,
         x: jnp.ndarray,
         y: jnp.ndarray = None,
         *args,
@@ -43,7 +44,7 @@ def check_inputs(f):
     @wraps(f)
     def decorated_f(
         self,
-        parameters: FrozenDict,
+        parameters: ModuleParameters,
         x: jnp.ndarray,
         y: jnp.ndarray = None,
         *args,
