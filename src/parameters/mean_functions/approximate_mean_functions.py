@@ -7,12 +7,12 @@ from src.parameters.custom_types import ArrayType
 from src.parameters.mean_functions.mean_functions import MeanFunctionParameters
 
 
-class ApproximationMeanFunctionParameters(MeanFunctionParameters):
+class ApproximateMeanFunctionParameters(MeanFunctionParameters):
     pass
 
 
 class StochasticVariationalGaussianProcessMeanFunctionParameters(
-    ApproximationMeanFunctionParameters
+    ApproximateMeanFunctionParameters
 ):
     number_of_inducing_points: int
     weights: ArrayType[Literal["float64"]]
@@ -29,5 +29,5 @@ class StochasticVariationalGaussianProcessMeanFunctionParameters(
         return weights
 
 
-class NeuralNetworkMeanFunctionParameters(ApproximationMeanFunctionParameters):
+class NeuralNetworkMeanFunctionParameters(ApproximateMeanFunctionParameters):
     neural_network: Any  # hack fix for now

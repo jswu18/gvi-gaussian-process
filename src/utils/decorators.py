@@ -5,7 +5,7 @@ import jax.numpy as jnp
 from flax.core.frozen_dict import FrozenDict
 
 
-def preprocess_kernel_inputs(f):
+def preprocess_inputs(f):
     @wraps(f)
     def decorated_f(
         self,
@@ -39,7 +39,7 @@ def preprocess_kernel_inputs(f):
     return decorated_f
 
 
-def check_kernel_inputs(f):
+def check_inputs(f):
     @wraps(f)
     def decorated_f(
         self,

@@ -3,9 +3,12 @@ from typing import Dict, Union
 import jax.numpy as jnp
 from flax.core.frozen_dict import FrozenDict
 
-from src.gaussian_measures import GaussianMeasure
-from src.parameters.gaussian_measures.gaussian_measures import GaussianMeasureParameters
-from src.utils import add_diagonal_regulariser, compute_covariance_eigenvalues
+from src.gaussian_measures.gaussian_measure import GaussianMeasure
+from src.parameters.gaussian_measures.gaussian_measure import GaussianMeasureParameters
+from src.utils.matrix_operations import (
+    add_diagonal_regulariser,
+    compute_covariance_eigenvalues,
+)
 
 
 def _compute_cross_covariance_eigenvalues(

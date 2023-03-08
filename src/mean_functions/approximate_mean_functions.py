@@ -9,8 +9,8 @@ from jax import jit, random
 
 from src.kernels.reference_kernels import Kernel
 from src.mean_functions.reference_mean_functions import MeanFunction
-from src.parameters.mean_functions.approximation_mean_functions import (
-    ApproximationMeanFunctionParameters,
+from src.parameters.mean_functions.approximate_mean_functions import (
+    ApproximateMeanFunctionParameters,
     NeuralNetworkMeanFunctionParameters,
     StochasticVariationalGaussianProcessMeanFunctionParameters,
 )
@@ -18,13 +18,13 @@ from src.parameters.mean_functions.approximation_mean_functions import (
 PRNGKey = Any  # pylint: disable=invalid-name
 
 
-class ApproximationMeanFunction(MeanFunction, ABC):
+class ApproximateMeanFunction(MeanFunction, ABC):
     """
-    Approximation mean functions which incorporate the mean function of the reference mean function into its prediction.
-    The approximation mean function itself may or may not be defined with respect to the reference Gaussian measure.
+    Approximate mean functions which incorporate the mean function of the reference mean function into its prediction.
+    The approximate mean function itself may or may not be defined with respect to the reference Gaussian measure.
     """
 
-    Parameters = ApproximationMeanFunctionParameters
+    Parameters = ApproximateMeanFunctionParameters
 
     def __init__(
         self,
@@ -48,7 +48,7 @@ class ApproximationMeanFunction(MeanFunction, ABC):
         )
 
 
-class StochasticVariationalGaussianProcessMeanFunction(ApproximationMeanFunction):
+class StochasticVariationalGaussianProcessMeanFunction(ApproximateMeanFunction):
     """
     The mean function of a stochastic variational Gaussian process, defined with respect to the reference kernel.
     """
@@ -150,7 +150,7 @@ class StochasticVariationalGaussianProcessMeanFunction(ApproximationMeanFunction
         ).reshape(-1)
 
 
-class NeuralNetworkMeanFunction(ApproximationMeanFunction):
+class NeuralNetworkMeanFunction(ApproximateMeanFunction):
     Parameters = NeuralNetworkMeanFunctionParameters
 
     def __init__(
