@@ -1,7 +1,8 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict
+from typing import Any, Dict, Union
 
 import jax.numpy as jnp
+import pydantic
 from flax.core.frozen_dict import FrozenDict
 from jax import random
 from jax.scipy.linalg import cho_factor, cho_solve
@@ -13,6 +14,13 @@ from src.kernels.reference_kernels import StandardKernel
 from src.mean_functions.approximation_mean_functions import ApproximationMeanFunction
 from src.mean_functions.mean_functions import MeanFunction
 from src.module import Module
+from src.parameters.gaussian_measures.approximation_gaussian_measures import (
+    ApproximationGaussianMeasureParameters,
+)
+from src.parameters.gaussian_measures.gaussian_measures import GaussianMeasureParameters
+from src.parameters.gaussian_measures.reference_gaussian_measures import (
+    ReferenceGaussianMeasureParameters,
+)
 
 PRNGKey = Any  # pylint: disable=invalid-name
 
@@ -22,7 +30,7 @@ class GaussianMeasure(Module, ABC):
     A Gaussian measure defined with respect to a mean function and a kernel.
     """
 
-    parameter_keys: Dict[str, type] = NotImplementedError
+    Parameters = GaussianMeasureParameters
 
     def __init__(
         self,
@@ -51,10 +59,13 @@ class GaussianMeasure(Module, ABC):
     @decorators.common.default_duplicate_x
     @decorators.kernels.preprocess_kernel_inputs
     @decorators.kernels.check_kernel_inputs
-    @decorators.common.check_parameters(parameter_keys)
+    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     @abstractmethod
     def calculate_covariance(
-        self, parameters: FrozenDict, x: jnp.ndarray, y: jnp.ndarray = None
+        self,
+        parameters: GaussianMeasureParameters,
+        x: jnp.ndarray,
+        y: jnp.ndarray = None,
     ) -> jnp.ndarray:
         """
         Calculate the posterior covariance matrix of the Gaussian measure at the sets of points x and y.
@@ -73,9 +84,11 @@ class GaussianMeasure(Module, ABC):
         """
         raise NotImplementedError
 
-    @decorators.common.check_parameters(parameter_keys)
+    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     @abstractmethod
-    def calculate_mean(self, parameters: FrozenDict, x: jnp.ndarray) -> jnp.ndarray:
+    def calculate_mean(
+        self, parameters: GaussianMeasureParameters, x: jnp.ndarray
+    ) -> jnp.ndarray:
         """
         Calculate the posterior mean of the Gaussian measure at the set of points x.
             - n is the number of points in x
@@ -90,25 +103,18 @@ class GaussianMeasure(Module, ABC):
         """
         raise NotImplementedError
 
-    @decorators.common.check_parameters(parameter_keys)
     @abstractmethod
     def compute_expected_log_likelihood(
         self,
-        parameters: FrozenDict,
+        parameters_dict: Union[Dict, FrozenDict],
         x: jnp.ndarray,
         y: jnp.ndarray,
-        observation_noise: float,
     ) -> float:
         """
         Compute the expected log likelihood of the Gaussian measure at the inputs x and outputs y.
             - n is the number of points in x
             - d is the number of dimensions
 
-        Args:
-            x: design matrix of shape (n, d)
-            y: response vector of shape (n, 1)
-            observation_noise: the observation noise of the Gaussian measure
-            parameters: parameters of the Gaussian measure
 
         Returns: a scalar representing the empirical expected log likelihood
 
@@ -117,42 +123,26 @@ class GaussianMeasure(Module, ABC):
 
     def _compute_expected_log_likelihood(
         self,
-        parameters: FrozenDict,
+        mean: jnp.ndarray,
+        covariance: jnp.ndarray,
+        observation_noise: float,
         x: jnp.ndarray,
         y: jnp.ndarray,
-        observation_noise: float,
     ) -> float:
         """
         General method for computing the expected log likelihood of the Gaussian measure at the inputs x and outputs y.
             - n is the number of points in x
             - d is the number of dimensions
-
-        Args:
-            x: design matrix of shape (n, d)
-            y: response vector of shape (n, 1)
-            observation_noise: the observation noise of the Gaussian measure
-            parameters: parameters of the Gaussian measure
-
         Returns: a scalar representing the empirical expected log likelihood
 
         """
-        mean = self.calculate_mean(x=x, parameters=parameters)
-        covariance = self.calculate_covariance(x=x, parameters=parameters)
         return (x.shape[0] / 2) * jnp.log(2 * jnp.pi * observation_noise) + (
             1 / (2 * observation_noise)
         ) * (jnp.sum((y - mean) ** 2) + jnp.trace(covariance))
 
 
 class ReferenceGaussianMeasure(GaussianMeasure):
-    """
-    A Standard reference measure.
-    """
-
-    parameter_keys: Dict[str, type] = {
-        "log_observation_noise": jnp.float64,
-        "mean_function": FrozenDict,
-        "kernel": FrozenDict,
-    }
+    Parameters = ReferenceGaussianMeasureParameters
 
     def __init__(
         self,
@@ -174,22 +164,31 @@ class ReferenceGaussianMeasure(GaussianMeasure):
         """
         super().__init__(x, y, mean_function, kernel)
 
-    @decorators.common.check_parameters(parameter_keys)
-    def initialise_parameters(self, parameters: Dict[str, type]) -> FrozenDict:
+    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
+    def generate_parameters(
+        self, parameters: Union[FrozenDict, Dict]
+    ) -> ReferenceGaussianMeasureParameters:
         """
-        Initialise the parameters of the module using the provided arguments.
+        Generator for a Pydantic model of the parameters for the module.
         Args:
-            parameters: The parameters of the module.
+            parameters: A dictionary of the parameters of the module.
 
-        Returns: A dictionary of the parameters of the module.
+        Returns: A Pydantic model of the parameters for the module.
 
         """
-        return self._initialise_parameters(parameters=parameters)
+        return ReferenceGaussianMeasureParameters(
+            log_observation_noise=parameters["log_observation_noise"],
+            mean_function=self.mean_function.generate_parameters(
+                parameters["mean_function"]
+            ),
+            kernel=self.kernel.generate_parameters(parameters["kernel"]),
+        )
 
+    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def initialise_random_parameters(
         self,
         key: PRNGKey,
-    ) -> FrozenDict:
+    ) -> ReferenceGaussianMeasureParameters:
         """
         Initialise each parameter of the Gaussian measure with the appropriate random initialisation.
         Args:
@@ -198,21 +197,17 @@ class ReferenceGaussianMeasure(GaussianMeasure):
         Returns: A dictionary of the parameters of the module.
 
         """
-        return FrozenDict(
-            {
-                "log_observation_noise": random.normal(key),
-                "mean_function": self.mean_function.initialise_random_parameters(key),
-                "kernel": self.kernel.initialise_random_parameters(key),
-            }
+        return ReferenceGaussianMeasureParameters(
+            log_observation_noise=random.normal(key),
+            mean_function=self.mean_function.initialise_random_parameters(key),
+            kernel=self.kernel.initialise_random_parameters(key),
         )
 
-    @decorators.common.check_parameters(parameter_keys)
     def compute_expected_log_likelihood(
         self,
-        parameters: FrozenDict,
+        parameters_dict: Union[Dict, FrozenDict],
         x: jnp.ndarray,
         y: jnp.ndarray,
-        observation_noise: float,
     ) -> float:
         """
         Compute the expected log likelihood of the Gaussian measure at the inputs x and outputs y.
@@ -222,18 +217,24 @@ class ReferenceGaussianMeasure(GaussianMeasure):
         Args:
             x: design matrix of shape (n, d)
             y: response vector of shape (n, 1)
-            observation_noise: the observation noise of the Gaussian measure
-            parameters: parameters of the Gaussian measure
+            parameters_dict: parameters of the Gaussian measure
 
         Returns: a scalar representing the empirical expected log likelihood
 
         """
+        parameters = self.generate_parameters(parameters_dict)
         return self._compute_expected_log_likelihood(
-            parameters=parameters, x=x, y=y, observation_noise=observation_noise
+            mean=self.calculate_mean(x=x, parameters=parameters),
+            covariance=self.calculate_covariance(x=x, parameters=parameters),
+            observation_noise=jnp.exp(parameters.log_observation_noise),
+            x=x,
+            y=y,
         )
 
-    @decorators.common.check_parameters(parameter_keys)
-    def calculate_mean(self, parameters: FrozenDict, x: jnp.ndarray) -> jnp.ndarray:
+    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
+    def calculate_mean(
+        self, parameters: ReferenceGaussianMeasureParameters, x: jnp.ndarray
+    ) -> jnp.ndarray:
         """
         Calculate the posterior mean using the formula for the posterior mean of a Gaussian process which is
         m(x) = k(x, X) @ (K(X, X) + σ^2I)^-1 @ y. This is added to the mean function prediction to generate the
@@ -254,31 +255,34 @@ class ReferenceGaussianMeasure(GaussianMeasure):
 
         """
         gram_train = self.kernel.calculate_gram(
-            parameters=parameters["kernel"],
+            parameters=parameters.kernel,
             x=self.x,
         )
         gram_train_test = self.kernel.calculate_gram(
-            parameters=parameters["kernel"],
+            parameters=parameters.kernel,
             x=self.x,
             y=x,
         )
         observation_noise = jnp.eye(self.number_of_train_points) * jnp.exp(
-            parameters["log_observation_noise"]
+            parameters.log_observation_noise
         )
         cholesky_decomposition_and_lower = cho_factor(gram_train + observation_noise)
         kernel_mean = gram_train_test.T @ cho_solve(
             c_and_lower=cholesky_decomposition_and_lower, b=self.y
         )
         return kernel_mean + self.mean_function.predict(
-            x=x, parameters=parameters["mean_function"]
+            x=x, parameters=parameters.mean_function
         )
 
     @decorators.common.default_duplicate_x
     @decorators.kernels.preprocess_kernel_inputs
     @decorators.kernels.check_kernel_inputs
-    @decorators.common.check_parameters(parameter_keys)
+    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def calculate_covariance(
-        self, parameters: FrozenDict, x: jnp.ndarray, y: jnp.ndarray = None
+        self,
+        parameters: ReferenceGaussianMeasureParameters,
+        x: jnp.ndarray,
+        y: jnp.ndarray = None,
     ) -> jnp.ndarray:
         """
         Calculate the posterior covariance using the formula for the posterior covariance of a Gaussian process which is
@@ -302,18 +306,16 @@ class ReferenceGaussianMeasure(GaussianMeasure):
         Returns: the posterior covariance of shape (n, m)
 
         """
-        gram_train = self.kernel.calculate_gram(
-            x=self.x, parameters=parameters["kernel"]
-        )
+        gram_train = self.kernel.calculate_gram(x=self.x, parameters=parameters.kernel)
         gram_train_x = self.kernel.calculate_gram(
-            x=self.x, y=x, parameters=parameters["kernel"]
+            x=self.x, y=x, parameters=parameters.kernel
         )
         gram_train_y = self.kernel.calculate_gram(
-            x=self.x, y=y, parameters=parameters["kernel"]
+            x=self.x, y=y, parameters=parameters.kernel
         )
-        gram_xy = self.kernel.calculate_gram(x=x, y=y, parameters=parameters["kernel"])
+        gram_xy = self.kernel.calculate_gram(x=x, y=y, parameters=parameters.kernel)
         observation_noise_matrix = jnp.eye(self.number_of_train_points) * jnp.exp(
-            parameters["log_observation_noise"]
+            parameters.log_observation_noise
         )
         cholesky_decomposition_and_lower = cho_factor(
             gram_train + observation_noise_matrix
@@ -330,10 +332,7 @@ class ApproximationGaussianMeasure(GaussianMeasure):
     to reference Gaussian measures.
     """
 
-    parameter_keys: Dict[str, type] = {
-        "mean_function": FrozenDict,
-        "kernel": FrozenDict,
-    }
+    Parameters = ApproximationGaussianMeasureParameters
 
     def __init__(
         self,
@@ -356,22 +355,31 @@ class ApproximationGaussianMeasure(GaussianMeasure):
         super().__init__(x, y, mean_function, kernel)
         self.kernel = kernel
 
-    @decorators.common.check_parameters(parameter_keys)
-    def initialise_parameters(self, parameters: Dict[str, type]) -> FrozenDict:
+    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
+    def generate_parameters(
+        self, parameters: Union[FrozenDict, Dict]
+    ) -> ApproximationGaussianMeasureParameters:
         """
-        Initialise the parameters of the module using the provided arguments.
+        Generator for a Pydantic model of the parameters for the module.
         Args:
-            parameters: The parameters of the module.
+            parameters: A dictionary of the parameters of the module.
 
-        Returns: A dictionary of the parameters of the module.
+        Returns: A Pydantic model of the parameters for the module.
 
         """
-        return self._initialise_parameters(parameters=parameters)
+        return ApproximationGaussianMeasureParameters(
+            reference_gaussian_measure=self.kernel.reference_gaussian_measure_parameters,
+            mean_function=self.mean_function.generate_parameters(
+                parameters["mean_function"]
+            ),
+            kernel=self.kernel.generate_parameters(parameters["kernel"]),
+        )
 
+    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def initialise_random_parameters(
         self,
         key: PRNGKey,
-    ) -> FrozenDict:
+    ) -> ApproximationGaussianMeasureParameters:
         """
         Initialise each parameter of the Gaussian measure with the appropriate random initialisation.
         Args:
@@ -380,20 +388,16 @@ class ApproximationGaussianMeasure(GaussianMeasure):
         Returns: A dictionary of the parameters of the module.
 
         """
-        return FrozenDict(
-            {
-                "mean_function": self.mean_function.initialise_random_parameters(key),
-                "kernel": self.kernel.initialise_random_parameters(key),
-            }
+        return ApproximationGaussianMeasureParameters(
+            mean_function=self.mean_function.initialise_random_parameters(key),
+            kernel=self.kernel.initialise_random_parameters(key),
         )
 
-    @decorators.common.check_parameters(parameter_keys)
     def compute_expected_log_likelihood(
         self,
-        parameters: FrozenDict,
+        parameters: Union[Dict, FrozenDict, ApproximationGaussianMeasureParameters],
         x: jnp.ndarray,
         y: jnp.ndarray,
-        observation_noise: float,
     ) -> float:
         """
         Compute the expected log likelihood of the Gaussian measure at the inputs x and outputs y.
@@ -403,18 +407,27 @@ class ApproximationGaussianMeasure(GaussianMeasure):
         Args:
             x: design matrix of shape (n, d)
             y: response vector of shape (n, 1)
-            observation_noise: the observation noise of the Gaussian measure
             parameters: parameters of the Gaussian measure
 
         Returns: a scalar representing the empirical expected log likelihood
 
         """
+        if not isinstance(parameters, ApproximationGaussianMeasureParameters):
+            parameters = self.generate_parameters(parameters)
         return self._compute_expected_log_likelihood(
-            parameters=parameters, x=x, y=y, observation_noise=observation_noise
+            mean=self.calculate_mean(x=x, parameters=parameters),
+            covariance=self.calculate_covariance(x=x, parameters=parameters),
+            observation_noise=jnp.exp(
+                self.kernel.reference_gaussian_measure_parameters.log_observation_noise
+            ),
+            x=x,
+            y=y,
         )
 
-    @decorators.common.check_parameters(parameter_keys)
-    def calculate_mean(self, parameters: FrozenDict, x: jnp.ndarray) -> jnp.ndarray:
+    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
+    def calculate_mean(
+        self, parameters: ApproximationGaussianMeasureParameters, x: jnp.ndarray
+    ) -> jnp.ndarray:
         """
         Calculate the posterior mean by evaluating the mean function at the test points.
             - n is the number of points in x
@@ -433,14 +446,17 @@ class ApproximationGaussianMeasure(GaussianMeasure):
         Returns: the mean function evaluations of shape (n, 1)
 
         """
-        return self.mean_function.predict(x=x, parameters=parameters["mean_function"])
+        return self.mean_function.predict(x=x, parameters=parameters.mean_function)
 
     @decorators.common.default_duplicate_x
     @decorators.kernels.preprocess_kernel_inputs
     @decorators.kernels.check_kernel_inputs
-    @decorators.common.check_parameters(parameter_keys)
+    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def calculate_covariance(
-        self, parameters: FrozenDict, x: jnp.ndarray, y: jnp.ndarray = None
+        self,
+        parameters: ApproximationGaussianMeasureParameters,
+        x: jnp.ndarray,
+        y: jnp.ndarray = None,
     ) -> jnp.ndarray:
         """
         Calculate the posterior covariance by evaluating the kernel gram matrix at the test points.
@@ -462,4 +478,4 @@ class ApproximationGaussianMeasure(GaussianMeasure):
         Returns: the posterior covariance of shape (n, m)
 
         """
-        return self.kernel.calculate_gram(x=x, y=y, parameters=parameters["kernel"])
+        return self.kernel.calculate_gram(x=x, y=y, parameters=parameters.kernel)

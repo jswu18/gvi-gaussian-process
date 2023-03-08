@@ -1,21 +1,20 @@
 from abc import ABC, abstractmethod
-from typing import Dict
 
 import jax.numpy as jnp
-from flax.core.frozen_dict import FrozenDict
+import pydantic
 
-from src import decorators
 from src.module import Module
+from src.parameters.kernels.kernels import KernelParameters
 
 
 class Kernel(Module, ABC):
-    parameter_keys: Dict[str, type] = NotImplementedError
+    Parameters = KernelParameters
 
-    @decorators.common.check_parameters(parameter_keys)
+    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     @abstractmethod
     def calculate_gram(
         self,
-        parameters: FrozenDict,
+        parameters: KernelParameters,
         x: jnp.ndarray,
         y: jnp.ndarray = None,
     ) -> jnp.ndarray:

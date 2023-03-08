@@ -1,31 +1,31 @@
-from typing import Any, Dict
+from typing import Any, Dict, Union
 
 import jax.numpy as jnp
+import pydantic
 from flax.core.frozen_dict import FrozenDict
 
-from src import decorators
 from src.mean_functions.mean_functions import MeanFunction
+from src.parameters.mean_functions.mean_functions import ConstantFunctionParameters
 
 PRNGKey = Any  # pylint: disable=invalid-name
 
 
 class ConstantFunction(MeanFunction):
-    parameter_keys = {
-        "constant": float,
-    }
+    Parameters = ConstantFunctionParameters
 
-    @decorators.common.check_parameters(parameter_keys)
-    def initialise_parameters(self, parameters: Dict[str, type]) -> FrozenDict:
+    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
+    def generate_parameters(self, parameters: Union[FrozenDict, Dict]) -> Parameters:
         """
-        Initialise the parameters of the module using the provided arguments.
+        Generator for a Pydantic model of the parameters for the module.
         Args:
-            parameters: The parameters of the module.
+            parameters: A dictionary of the parameters of the module.
 
-        Returns: A dictionary of the parameters of the module.
+        Returns: A Pydantic model of the parameters for the module.
 
         """
-        return self._initialise_parameters(parameters=parameters)
+        return self.Parameters(**parameters)
 
+    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def initialise_random_parameters(
         self,
         key: PRNGKey,
@@ -40,8 +40,10 @@ class ConstantFunction(MeanFunction):
         """
         pass
 
-    @decorators.common.check_parameters(parameter_keys)
-    def predict(self, parameters: FrozenDict, x: jnp.ndarray) -> jnp.ndarray:
+    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
+    def predict(
+        self, parameters: ConstantFunctionParameters, x: jnp.ndarray
+    ) -> jnp.ndarray:
         """
         Returns a constant value for all points of x.
             - n is the number of points in x
@@ -57,4 +59,4 @@ class ConstantFunction(MeanFunction):
         Returns: a constant vector of shape (n, 1)
 
         """
-        return parameters["constant"] * jnp.ones((x.shape[0],))
+        return parameters.constant * jnp.ones((x.shape[0],))

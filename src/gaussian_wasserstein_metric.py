@@ -1,15 +1,18 @@
+from typing import Dict, Union
+
 import jax.numpy as jnp
 from flax.core.frozen_dict import FrozenDict
 
 from src.common.utils import add_diagonal_regulariser, compute_covariance_eigenvalues
 from src.gaussian_measures import GaussianMeasure
+from src.parameters.gaussian_measures.gaussian_measures import GaussianMeasureParameters
 
 
 def _compute_cross_covariance_eigenvalues(
     p: GaussianMeasure,
     q: GaussianMeasure,
-    p_parameters: FrozenDict,
-    q_parameters: FrozenDict,
+    p_parameters: GaussianMeasureParameters,
+    q_parameters: GaussianMeasureParameters,
     x_batch: jnp.ndarray,
     x_train: jnp.ndarray,
     eigenvalue_regularisation: float = 0.0,
@@ -53,8 +56,8 @@ def _compute_cross_covariance_eigenvalues(
 def gaussian_wasserstein_metric(
     p: GaussianMeasure,
     q: GaussianMeasure,
-    p_parameters: FrozenDict,
-    q_parameters: FrozenDict,
+    p_parameters: Union[FrozenDict, Dict, GaussianMeasureParameters],
+    q_parameters: Union[FrozenDict, Dict, GaussianMeasureParameters],
     x_batch: jnp.ndarray,
     x_train: jnp.ndarray,
     eigenvalue_regularisation: float = 0.0,
@@ -81,6 +84,10 @@ def gaussian_wasserstein_metric(
     """
     train_size = x_train.shape[0]
     batch_size = x_batch.shape[0]
+    if not isinstance(p_parameters, p.Parameters):
+        p_parameters = p.generate_parameters(p_parameters)
+    if not isinstance(q_parameters, q.Parameters):
+        q_parameters = q.generate_parameters(q_parameters)
 
     mean_train_p = p.calculate_mean(x=x_train, parameters=p_parameters)
     covariance_train_p = p.calculate_covariance(x=x_train, parameters=p_parameters)
