@@ -6,13 +6,13 @@ import pydantic
 from flax.core.frozen_dict import FrozenDict
 from jax import vmap
 
-from src import decorators
 from src.kernels.kernels import Kernel
 from src.parameters.kernels.reference_kernels import (
     ARDKernelParameters,
     NeuralNetworkGaussianProcessKernelParameters,
     StandardKernelParameters,
 )
+from src.utils import decorators
 
 PRNGKey = Any  # pylint: disable=invalid-name
 
@@ -80,8 +80,8 @@ class ARDKernel(StandardKernel):
         """
         pass
 
-    @decorators.preprocess_kernel_inputs
-    @decorators.check_kernel_inputs
+    @decorators.preprocess_inputs
+    @decorators.check_inputs
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def calculate_kernel(
         self, parameters: ARDKernelParameters, x: jnp.ndarray, y: jnp.ndarray = None
@@ -119,8 +119,8 @@ class ARDKernel(StandardKernel):
             scaling * jnp.exp(-0.5 * (x - y) @ lengthscale_matrix @ (x - y).T)
         ).astype(jnp.float64)
 
-    @decorators.preprocess_kernel_inputs
-    @decorators.check_kernel_inputs
+    @decorators.preprocess_inputs
+    @decorators.check_inputs
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def calculate_gram(
         self,
@@ -195,8 +195,8 @@ class NeuralNetworkGaussianProcessKernel(Kernel):
         """
         pass
 
-    @decorators.preprocess_kernel_inputs
-    @decorators.check_kernel_inputs
+    @decorators.preprocess_inputs
+    @decorators.check_inputs
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def calculate_gram(
         self,

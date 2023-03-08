@@ -7,26 +7,26 @@ from flax.core.frozen_dict import FrozenDict
 from jax import jit
 from jax.scipy.linalg import cho_factor, cho_solve
 
-from src import decorators
 from src.kernels.reference_kernels import Kernel
-from src.parameters.gaussian_measures.reference_gaussian_measures import (
+from src.parameters.gaussian_measures.reference_gaussian_measure import (
     ReferenceGaussianMeasureParameters,
 )
-from src.parameters.kernels.approximation_kernels import (
-    ApproximationKernelParameters,
+from src.parameters.kernels.approximate_kernels import (
+    ApproximateKernelParameters,
     StochasticVariationalGaussianProcessKernelParameters,
 )
-from src.utils import add_diagonal_regulariser
+from src.utils import decorators
+from src.utils.matrix_operations import add_diagonal_regulariser
 
 PRNGKey = Any  # pylint: disable=invalid-name
 
 
-class ApproximationKernel(Kernel, ABC):
+class ApproximateKernel(Kernel, ABC):
     """
-    Approximation kernels which are defined with respect to a reference Gaussian measure.
+    Approximate kernels which are defined with respect to a reference Gaussian measure.
     """
 
-    Parameters = ApproximationKernelParameters
+    Parameters = ApproximateKernelParameters
 
     def __init__(
         self,
@@ -55,7 +55,7 @@ class ApproximationKernel(Kernel, ABC):
         )
 
 
-class StochasticVariationalGaussianProcessKernel(ApproximationKernel):
+class StochasticVariationalGaussianProcessKernel(ApproximateKernel):
     """
     The stochastic variational Gaussian process kernel as defined in Titsias (2009).
     """
@@ -167,8 +167,8 @@ class StochasticVariationalGaussianProcessKernel(ApproximationKernel):
         )
         return el_matrix @ el_matrix.T
 
-    @decorators.preprocess_kernel_inputs
-    @decorators.check_kernel_inputs
+    @decorators.preprocess_inputs
+    @decorators.check_inputs
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def calculate_gram(
         self,
