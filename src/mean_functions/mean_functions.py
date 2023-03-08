@@ -19,6 +19,7 @@ class MeanFunction(Module, ABC):
         Computes the mean function at the given points.
             - n is the number of points in x
             - d is the number of dimensions
+
         Args:
             parameters: parameters of the mean function
             x: design matrix of shape (n, d)

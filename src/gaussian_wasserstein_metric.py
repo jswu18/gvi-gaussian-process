@@ -75,8 +75,10 @@ def gaussian_wasserstein_metric(
     Args:
         p: the first Gaussian measure
         q: the second Gaussian measure
-        p_parameters: the parameters of the first Gaussian measure
-        q_parameters: the parameters of the second Gaussian measure
+        p_parameters: a dictionary or Pydantic model containing the parameters of the first Gaussian measure
+                        a dictionary is required for jit compilation which is converted if necessary
+        q_parameters: a dictionary or Pydantic model containing the parameters of the second Gaussian measure
+                        a dictionary is required for jit compilation which is converted if necessary
         x_batch: a batch of data points of shape (m, d)
         x_train: the training data points of shape (n, d)
         eigenvalue_regularisation: the regularisation to add to the covariance matrix during eigenvalue computation
@@ -87,6 +89,8 @@ def gaussian_wasserstein_metric(
     """
     train_size = x_train.shape[0]
     batch_size = x_batch.shape[0]
+
+    # convert to Pydantic models if necessary
     if not isinstance(p_parameters, p.Parameters):
         p_parameters = p.generate_parameters(p_parameters)
     if not isinstance(q_parameters, q.Parameters):

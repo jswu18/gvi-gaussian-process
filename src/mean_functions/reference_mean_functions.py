@@ -14,28 +14,32 @@ class ConstantFunction(MeanFunction):
     Parameters = ConstantFunctionParameters
 
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
-    def generate_parameters(self, parameters: Union[FrozenDict, Dict]) -> Parameters:
+    def generate_parameters(
+        self, parameters: Union[FrozenDict, Dict]
+    ) -> ConstantFunctionParameters:
         """
-        Generator for a Pydantic model of the parameters for the module.
+        Generates a Pydantic model of the parameters for Constant Functions.
+
         Args:
-            parameters: A dictionary of the parameters of the module.
+            parameters: A dictionary of the parameters for Constant Functions.
 
-        Returns: A Pydantic model of the parameters for the module.
+        Returns: A Pydantic model of the parameters for Constant Functions.
 
         """
-        return self.Parameters(**parameters)
+        return ConstantFunction.Parameters(**parameters)
 
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def initialise_random_parameters(
         self,
         key: PRNGKey,
-    ) -> FrozenDict:
+    ) -> ConstantFunctionParameters:
         """
-        Initialise the parameters of the module using a random key.
+        Initialise the parameters of the Constant Function using a random key.
+
         Args:
             key: A random key used to initialise the parameters.
 
-        Returns: A dictionary of the parameters of the module.
+        Returns: A Pydantic model of the parameters for Constant Functions.
 
         """
         pass
@@ -49,14 +53,11 @@ class ConstantFunction(MeanFunction):
             - n is the number of points in x
             - d is the number of dimensions
 
-        The parameters of the mean function are:
-            - constant: a constant value
-
         Args:
             parameters: parameters of the mean function
             x: design matrix of shape (n, d)
 
-        Returns: a constant vector of shape (n, 1)
+        Returns: a constant vector of shape (n,)
 
         """
         return parameters.constant * jnp.ones((x.shape[0],))

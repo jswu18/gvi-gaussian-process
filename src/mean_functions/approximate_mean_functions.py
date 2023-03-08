@@ -9,6 +9,9 @@ from jax import jit, random
 
 from src.kernels.reference_kernels import Kernel
 from src.mean_functions.reference_mean_functions import MeanFunction
+from src.parameters.gaussian_measures.reference_gaussian_measure import (
+    ReferenceGaussianMeasureParameters,
+)
 from src.parameters.mean_functions.approximate_mean_functions import (
     ApproximateMeanFunctionParameters,
     NeuralNetworkMeanFunctionParameters,
@@ -28,7 +31,7 @@ class ApproximateMeanFunction(MeanFunction, ABC):
 
     def __init__(
         self,
-        reference_gaussian_measure_parameters: FrozenDict,
+        reference_gaussian_measure_parameters: ReferenceGaussianMeasureParameters,
         reference_mean_function: MeanFunction,
     ):
         """
@@ -41,6 +44,8 @@ class ApproximateMeanFunction(MeanFunction, ABC):
         self.reference_gaussian_measure_parameters = (
             reference_gaussian_measure_parameters
         )
+
+        # define a jit-compiled version of the reference mean function using the reference mean function parameters
         self.reference_mean_func = jit(
             lambda x: reference_mean_function.predict(
                 parameters=reference_gaussian_measure_parameters.mean_function, x=x
@@ -57,7 +62,7 @@ class StochasticVariationalGaussianProcessMeanFunction(ApproximateMeanFunction):
 
     def __init__(
         self,
-        reference_gaussian_measure_parameters: FrozenDict,
+        reference_gaussian_measure_parameters: ReferenceGaussianMeasureParameters,
         reference_mean_function: MeanFunction,
         reference_kernel: Kernel,
         inducing_points: jnp.ndarray,
@@ -91,35 +96,37 @@ class StochasticVariationalGaussianProcessMeanFunction(ApproximateMeanFunction):
         self, parameters: Union[FrozenDict, Dict]
     ) -> StochasticVariationalGaussianProcessMeanFunctionParameters:
         """
-        Generator for a Pydantic model of the parameters for the module.
-        Args:
-            parameters: A dictionary of the parameters of the module.
+        Generates a Pydantic model of the parameters for Stochastic Variational Gaussian Process Mean Functions.
 
-        Returns: A Pydantic model of the parameters for the module.
+        Args:
+            parameters: A dictionary of the parameters for Stochastic Variational Gaussian Process Mean Functions.
+
+        Returns: A Pydantic model of the parameters for Stochastic Variational Gaussian Process Mean Functions.
 
         """
-        return StochasticVariationalGaussianProcessMeanFunction.Parameters(
-            number_of_inducing_points=self.number_of_inducing_points, **parameters
-        )
+        return StochasticVariationalGaussianProcessMeanFunction.Parameters(**parameters)
 
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def initialise_random_parameters(
         self,
         key: PRNGKey,
-    ) -> FrozenDict:
+    ) -> StochasticVariationalGaussianProcessMeanFunctionParameters:
         """
-        Initialise the weight parameters from a normal distribution using a random key.and
-         scaling by the number of inducing points
+        Initialise the weight parameters from a normal distribution using a random key and
+        scaling by the number of inducing points
+
         Args:
             key: A random key used to initialise the parameters.
 
-        Returns: A dictionary of the parameters of the module.
+        Returns: A Pydantic model of the parameters for Stochastic Variational Gaussian Process Mean Functions.
 
         """
         weights = random.normal(key, (self.number_of_inducing_points, 1)) / (
             self.number_of_inducing_points
         )
-        return FrozenDict({"weights": weights})
+        return StochasticVariationalGaussianProcessMeanFunction.Parameters(
+            weights=weights
+        )
 
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def predict(
@@ -133,9 +140,6 @@ class StochasticVariationalGaussianProcessMeanFunction(ApproximateMeanFunction):
             - n is the number of points in x
             - d is the number of dimensions
             - m is the number of inducing points
-
-        The parameters of the mean function:
-            - weights: the weights of the mean function scaling the inducing points, of shape (m, 1)
 
         Args:
             parameters: parameters of the mean function
@@ -151,11 +155,15 @@ class StochasticVariationalGaussianProcessMeanFunction(ApproximateMeanFunction):
 
 
 class NeuralNetworkMeanFunction(ApproximateMeanFunction):
+    """
+    A Mean Function which is defined by a neural network.
+    """
+
     Parameters = NeuralNetworkMeanFunctionParameters
 
     def __init__(
         self,
-        reference_gaussian_measure_parameters: FrozenDict,
+        reference_gaussian_measure_parameters: ReferenceGaussianMeasureParameters,
         reference_mean_function: MeanFunction,
         neural_network: flax.linen.Module,
     ):
@@ -177,14 +185,17 @@ class NeuralNetworkMeanFunction(ApproximateMeanFunction):
         self, parameters: Union[FrozenDict, Dict]
     ) -> NeuralNetworkMeanFunctionParameters:
         """
-        Generator for a Pydantic model of the parameters for the module.
-        Args:
-            parameters: A dictionary of the parameters of the module.
+        Generates a Pydantic model of the parameters for Neural Network Mean Functions.
 
-        Returns: A Pydantic model of the parameters for the module.
+        Args:
+            parameters: A dictionary of the parameters for Neural Network Mean Functions.
+
+        Returns: A Pydantic model of the parameters for Neural Network Mean Functions.
 
         """
-        return NeuralNetworkMeanFunction.Parameters(**parameters)
+        return NeuralNetworkMeanFunction.Parameters(
+            neural_network=parameters["neural_network"]
+        )
 
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def initialise_random_parameters(
@@ -192,11 +203,12 @@ class NeuralNetworkMeanFunction(ApproximateMeanFunction):
         key: PRNGKey,
     ) -> NeuralNetworkMeanFunctionParameters:
         """
-        Initialise the parameters of the neural network using a random key.
+        Initialise the parameters of the ARD Kernel using a random key.
+
         Args:
             key: A random key used to initialise the parameters.
 
-        Returns: Random initialisation of the parameters of the neural network.
+        Returns: A Pydantic model of the parameters for Neural Network Mean Functions.
 
         """
         return NeuralNetworkMeanFunctionParameters(

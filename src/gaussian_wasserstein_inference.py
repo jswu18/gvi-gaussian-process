@@ -64,6 +64,9 @@ class GaussianWassersteinInference(Module):
         self.is_eigenvalue_regularisation_absolute_scale = (
             is_eigenvalue_regularisation_absolute_scale
         )
+
+        # define a jit-compiled function to compute the negative expected log likelihood
+        # a dictionary of parameters is passed to allow for jit compilation
         self.compute_negative_expected_log_likelihood = jit(
             lambda approximate_gaussian_measure_parameters_dict: (
                 approximate_gaussian_measure.compute_expected_log_likelihood(
@@ -73,6 +76,9 @@ class GaussianWassersteinInference(Module):
                 )
             )
         )
+
+        # define a jit-compiled function to compute the dissimilarity measure
+        # a dictionary of parameters is passed to allow for jit compilation
         self.compute_dissimilarity_measure = jit(
             lambda x_batch, approximate_gaussian_measure_parameters_dict: gaussian_wasserstein_metric(
                 p=reference_gaussian_measure,
@@ -88,17 +94,18 @@ class GaussianWassersteinInference(Module):
 
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def generate_parameters(
-        self, parameters: FrozenDict
+        self, parameters: Union[Dict, FrozenDict]
     ) -> ApproximateGaussianMeasureParameters:
         """
-        Generator for a Pydantic model of the parameters for the module.
-        Args:
-            parameters: A dictionary of the parameters of the module.
+        Generates a Pydantic model of the parameters for the Approximate Gaussian Measures.
 
-        Returns: A Pydantic model of the parameters for the module.
+        Args:
+            parameters: A dictionary of the parameters for Approximate Gaussian Measures.
+
+        Returns: A Pydantic model of the parameters for Approximate Gaussian Measures.
 
         """
-        return self.approximate_gaussian_measure.Parameters(**parameters)
+        return self.approximate_gaussian_measure.generate_parameters(parameters)
 
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def initialise_random_parameters(
@@ -106,12 +113,13 @@ class GaussianWassersteinInference(Module):
         key: PRNGKey,
     ) -> ApproximateGaussianMeasureParameters:
         """
-        Randomly initialise the parameters of the approximate gaussian measure by calling the
-        initialise_random_parameters method of the approximate gaussian measure and passing the given parameters.
+        The parameters of Gaussian Wasserstein Inference are the Approximate Gaussian Measure Parameters.
+        These are initialised using a random key.
+
         Args:
             key: A random key used to initialise the parameters.
 
-        Returns: A dictionary of the parameters of the approximate gaussian measure.
+        Returns: A Pydantic model of the parameters for Approximate Gaussian Measures.
 
         """
         return self.approximate_gaussian_measure.initialise_random_parameters(key)
@@ -119,29 +127,35 @@ class GaussianWassersteinInference(Module):
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def compute_loss(
         self,
-        parameters_dict: Union[Dict, FrozenDict],
+        parameters: Union[Dict, FrozenDict, ApproximateGaussianMeasureParameters],
         x_batch: jnp.ndarray,
     ) -> float:
         """
-        Compute the loss of the approximate gaussian measure by adding the negative expected log likelihood and the
-        dissimilarity measure.
+        Compute the loss of the approximate gaussian measure is computed as the summation of the negative expected
+        log likelihood and the dissimilarity measure
             - n is the number of points
             - d is the number of dimensions
 
         Args:
-            parameters_dict: the parameters of the approximate gaussian measure
+            parameters: a dictionary or Pydantic model containing the parameters,
+                        a dictionary is required for jit compilation which is converted if necessary
             x_batch: the design matrix of the batch of training data points of shape (n, d)
 
         Returns: The loss of the approximate gaussian measure.
 
         """
+        # convert to Pydantic model if necessary
+        if not isinstance(parameters, ApproximateGaussianMeasureParameters):
+            parameters = self.generate_parameters(parameters)
+
+        # parameters are passed in as a dictionary to allow for jit compilation
         negative_expected_log_likelihood = (
             self.compute_negative_expected_log_likelihood(
-                approximate_gaussian_measure_parameters_dict=parameters_dict
+                approximate_gaussian_measure_parameters_dict=parameters.dict()
             )
         )
         dissimilarity_measure = self.compute_dissimilarity_measure(
             x_batch=x_batch,
-            approximate_gaussian_measure_parameters_dict=parameters_dict,
+            approximate_gaussian_measure_parameters_dict=parameters.dict(),
         )
         return negative_expected_log_likelihood + dissimilarity_measure
