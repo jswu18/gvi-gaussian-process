@@ -1,7 +1,7 @@
 from abc import ABC
 from typing import Literal
 
-from src.custom_types import ArrayType
+from src.parameters.custom_types import ArrayType
 from src.parameters.kernels.kernels import KernelParameters
 
 

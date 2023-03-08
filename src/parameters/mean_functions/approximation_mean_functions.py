@@ -3,7 +3,7 @@ from typing import Any, Literal
 import pydantic
 from jax import numpy as jnp
 
-from src.custom_types import ArrayType
+from src.parameters.custom_types import ArrayType
 from src.parameters.mean_functions.mean_functions import MeanFunctionParameters
 
 

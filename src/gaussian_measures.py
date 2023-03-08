@@ -121,8 +121,8 @@ class GaussianMeasure(Module, ABC):
         """
         raise NotImplementedError
 
+    @staticmethod
     def _compute_expected_log_likelihood(
-        self,
         mean: jnp.ndarray,
         covariance: jnp.ndarray,
         observation_noise: float,
