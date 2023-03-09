@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import Any, Dict, Union
 
 from flax.core.frozen_dict import FrozenDict
 
@@ -12,7 +12,7 @@ class Module(ABC):
     Parameters: ModuleParameters = ModuleParameters
 
     @abstractmethod
-    def generate_parameters(self, parameters: FrozenDict) -> Parameters:
+    def generate_parameters(self, parameters: Union[Dict, FrozenDict]) -> Parameters:
         """
         Generates a Pydantic model of the parameters for the Module.
 

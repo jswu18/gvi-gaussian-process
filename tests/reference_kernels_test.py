@@ -1,7 +1,8 @@
+from typing import Dict
+
 import jax.numpy as jnp
 import pydantic
 import pytest
-from flax.core.frozen_dict import FrozenDict
 from jax.config import config
 
 from src.kernels.reference_kernels import ARDKernel, StandardKernel
@@ -14,36 +15,30 @@ config.update("jax_enable_x64", True)
     [
         [
             ARDKernel(number_of_dimensions=3),
-            FrozenDict(
-                {
-                    "log_scaling": 0.5,
-                    "log_lengthscales": jnp.array([-0.5, 0, 0.5]),
-                }
-            ),
+            {
+                "log_scaling": 0.5,
+                "log_lengthscales": jnp.array([-0.5, 0, 0.5]),
+            },
             jnp.array([1.0, 2.0, 3.0]),
             jnp.array([1.5, 2.5, 3.5]),
             1.8095777100611745,
         ],
         [
             ARDKernel(number_of_dimensions=1),
-            FrozenDict(
-                {
-                    "log_scaling": jnp.log(1),
-                    "log_lengthscales": jnp.array(-0.5),
-                }
-            ),
+            {
+                "log_scaling": jnp.log(1),
+                "log_lengthscales": jnp.array(-0.5),
+            },
             6.0,
             6.0,
             jnp.exp(0),
         ],
         [
             ARDKernel(number_of_dimensions=1),
-            FrozenDict(
-                {
-                    "log_scaling": jnp.log(1),
-                    "log_lengthscales": jnp.array(-0.5),
-                }
-            ),
+            {
+                "log_scaling": jnp.log(1),
+                "log_lengthscales": jnp.array(-0.5),
+            },
             6.0,
             6.0,
             jnp.exp(0),
@@ -52,7 +47,7 @@ config.update("jax_enable_x64", True)
 )
 def test_standard_kernels(
     kernel: StandardKernel,
-    parameters: FrozenDict,
+    parameters: Dict,
     x: jnp.ndarray,
     y: jnp.ndarray,
     k: float,
@@ -67,12 +62,10 @@ def test_standard_kernels(
     [
         [
             ARDKernel(number_of_dimensions=3),
-            FrozenDict(
-                {
-                    "log_scaling": 0.5,
-                    "log_lengthscales": jnp.array([-0.5, 0, 0.5]),
-                }
-            ),
+            {
+                "log_scaling": 0.5,
+                "log_lengthscales": jnp.array([-0.5, 0, 0.5]),
+            },
             jnp.array([[1.0, 2.0, 3.0]]),
             jnp.array(
                 [
@@ -86,7 +79,7 @@ def test_standard_kernels(
 )
 def test_standard_kernel_grams(
     kernel: StandardKernel,
-    parameters: FrozenDict,
+    parameters: Dict,
     x: jnp.ndarray,
     y: jnp.ndarray,
     k: float,
@@ -101,11 +94,9 @@ def test_standard_kernel_grams(
     [
         [
             ARDKernel(number_of_dimensions=1),
-            FrozenDict(
-                {
-                    "log_scaling": jnp.log(1),
-                }
-            ),
+            {
+                "log_scaling": jnp.log(1),
+            },
             jnp.array(6.0),
             jnp.array(6.0),
         ],
@@ -113,7 +104,7 @@ def test_standard_kernel_grams(
 )
 def test_missing_kernel_parameter(
     kernel: StandardKernel,
-    parameters: FrozenDict,
+    parameters: Dict,
     x: jnp.ndarray,
     y: jnp.ndarray,
 ):
