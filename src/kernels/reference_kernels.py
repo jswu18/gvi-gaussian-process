@@ -64,6 +64,7 @@ class StandardKernel(Kernel, ABC):
         """
         x, y = self.preprocess_inputs(x, y)
         self.check_inputs(x, y)
+        self.check_parameters(parameters, self.Parameters)
 
         return self._calculate_kernel(parameters, x, y)
 

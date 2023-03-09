@@ -204,11 +204,14 @@ class StochasticVariationalGaussianProcessKernel(ApproximateKernel):
             y=self.inducing_points,
         )
 
+        self.check_parameters(parameters, self.Parameters)
+
         # if y is None, compute for x and x
         if y is None:
             y = x
             reference_gram_y_inducing = reference_gram_x_inducing
         else:
+            self.check_inputs(x, y)
             reference_gram_y_inducing = self.calculate_reference_gram(
                 x=y,
                 y=self.inducing_points,

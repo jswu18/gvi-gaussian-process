@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Union
+from typing import Any, Dict, Type, Union
 
 import pydantic
 from flax.core.frozen_dict import FrozenDict
@@ -11,6 +11,22 @@ PRNGKey = Any  # pylint: disable=invalid-name
 
 class Module(ABC):
     Parameters: ModuleParameters = ModuleParameters
+
+    @staticmethod
+    def check_parameters(
+        parameters: ModuleParameters, parameter_type: Type[ModuleParameters]
+    ) -> None:
+        """
+        Checks that the parameters are valid.
+
+        Args:
+            parameters: A Pydantic model of the parameters for the Module.
+            parameter_type: The type of the parameters for the Module.
+
+        """
+        assert isinstance(
+            parameters, parameter_type
+        ), f"Parameters is type: {type(parameters)=}, needs to be {parameter_type=}"
 
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     @abstractmethod
