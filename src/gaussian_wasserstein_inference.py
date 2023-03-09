@@ -181,6 +181,7 @@ class GaussianWassersteinInference(Module):
         # convert to Pydantic model if necessary
         if not isinstance(parameters, ApproximateGaussianMeasureParameters):
             parameters = self.generate_parameters(parameters)
+        self.check_parameters(parameters, self.Parameters)
 
         negative_expected_log_likelihood = (
             self.compute_negative_expected_log_likelihood(
