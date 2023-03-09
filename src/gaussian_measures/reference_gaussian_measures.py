@@ -12,7 +12,6 @@ from src.mean_functions.mean_functions import MeanFunction
 from src.parameters.gaussian_measures.reference_gaussian_measure import (
     ReferenceGaussianMeasureParameters,
 )
-from src.utils import decorators
 
 
 class ReferenceGaussianMeasure(GaussianMeasure):
@@ -83,7 +82,7 @@ class ReferenceGaussianMeasure(GaussianMeasure):
             kernel=self.kernel.initialise_random_parameters(key),
         )
 
-    def compute_expected_log_likelihood(
+    def _compute_expected_log_likelihood(
         self,
         parameters: Union[Dict, FrozenDict, ReferenceGaussianMeasureParameters],
         x: jnp.ndarray,
@@ -107,7 +106,7 @@ class ReferenceGaussianMeasure(GaussianMeasure):
         if not isinstance(parameters, ReferenceGaussianMeasureParameters):
             parameters = self.generate_parameters(parameters)
 
-        return self._compute_expected_log_likelihood(
+        return self.compute_general_expected_log_likelihood(
             mean=self.calculate_mean(x=x, parameters=parameters),
             covariance=self.calculate_covariance(x=x, parameters=parameters),
             observation_noise=jnp.exp(parameters.log_observation_noise),
@@ -115,8 +114,7 @@ class ReferenceGaussianMeasure(GaussianMeasure):
             y=y,
         )
 
-    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
-    def calculate_mean(
+    def _calculate_mean(
         self, parameters: ReferenceGaussianMeasureParameters, x: jnp.ndarray
     ) -> jnp.ndarray:
         """
@@ -151,10 +149,7 @@ class ReferenceGaussianMeasure(GaussianMeasure):
             x=x, parameters=parameters.mean_function
         )
 
-    @decorators.preprocess_inputs
-    @decorators.check_inputs
-    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
-    def calculate_covariance(
+    def _calculate_covariance(
         self,
         parameters: ReferenceGaussianMeasureParameters,
         x: jnp.ndarray,
@@ -175,10 +170,6 @@ class ReferenceGaussianMeasure(GaussianMeasure):
         Returns: the posterior covariance matrix of shape (n, m)
 
         """
-        # if y is None, compute for x and x
-        if y is None:
-            y = x
-
         gram_train = self.kernel.calculate_gram(x=self.x, parameters=parameters.kernel)
         gram_train_x = self.kernel.calculate_gram(
             x=self.x, y=x, parameters=parameters.kernel
