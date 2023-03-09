@@ -1,92 +1,96 @@
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from typing import Tuple
 
 import jax.numpy as jnp
+import pydantic
 
-from src.parameters import Parameters
-
-
-@dataclass
-class KernelParameters(Parameters, ABC):
-    """
-    An abstract dataclass containing the parameters for a kernel.
-    """
+from src.module import Module
+from src.parameters.kernels.kernels import KernelParameters
+from src.utils.checks import check_matching_dimensions, check_maximum_dimension
 
 
-class Kernel(ABC):
-    """
-    An abstract kernel.
-    """
+class Kernel(Module, ABC):
+    Parameters = KernelParameters
 
-    Parameters: KernelParameters = None
-
-    @abstractmethod
-    def kernel(
-        self, parameters: KernelParameters, x: jnp.ndarray, y: jnp.ndarray = None
-    ) -> jnp.ndarray:
-        """Kernel evaluation for an arbitrary number of x features and y features.
-        Computes k(x, x) if y is None.
-        This method contains the kernel computation implementation and precisely outlines
-        the parameters required with a dataclass.
+    @staticmethod
+    def preprocess_inputs(
+        x: jnp.ndarray, y: jnp.ndarray = None
+    ) -> Tuple[jnp.ndarray, jnp.ndarray]:
+        """
+        Preprocesses the inputs of the kernel function.
+            - n is the number of points in x
+            - m is the number of points in y
+            - d is the number of dimensions
 
         Args:
-            parameters: parameters dataclass for the kernel
-            x: ndarray of shape (number_of_x_features, number_of_dimensions)
-            y: ndarray of shape (number_of_y_features, number_of_dimensions)
+            x: design matrix of shape (n, d)
+            y: design matrix of shape (m, d)
+        """
+        y = x if y is None else y
+        return jnp.atleast_2d(x), jnp.atleast_2d(y)
 
-        Returns:
-            A gram matrix k(x, y), if y is None then k(x,x). (number_of_x_features, number_of_y_features)
+    @staticmethod
+    def check_inputs(x: jnp.ndarray, y: jnp.ndarray) -> None:
+        """
+        Checks the inputs of a kernel function.
+            - n is the number of points in x
+            - m is the number of points in y
+            - d is the number of dimensions
+
+        Args:
+            x: design matrix of shape (n, d)
+            y: design matrix of shape (m, d)
+        """
+        check_matching_dimensions(x, y)
+        check_maximum_dimension(x, maximum_dimensionality=2)
+        check_maximum_dimension(y, maximum_dimensionality=2)
+
+    @abstractmethod
+    def _calculate_gram(
+        self,
+        parameters: KernelParameters,
+        x: jnp.ndarray,
+        y: jnp.ndarray = None,
+    ) -> jnp.ndarray:
+        """
+        Computes the Gram matrix of the kernel. If y is None, the Gram matrix is computed for x and x.
+            - n is the number of points in x
+            - m is the number of points in y
+            - d is the number of dimensions
+
+        Args:
+            parameters: parameters of the kernel
+            x: design matrix of shape (n, d)
+            y: design matrix of shape (m, d)
+
+        Returns: the kernel gram matrix of shape (n, m)
         """
         raise NotImplementedError
 
-    def __call__(
-        self, x: jnp.ndarray, y: jnp.ndarray = None, **parameter_args
+    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
+    def calculate_gram(
+        self,
+        parameters: KernelParameters,
+        x: jnp.ndarray,
+        y: jnp.ndarray = None,
     ) -> jnp.ndarray:
-        """Kernel evaluation for an arbitrary number of x features and y features.
-        This method is more user-friendly without the need for a parameter data class.
-        It wraps the kernel computation with the initial step of constructing the parameter data class from the
-        provided parameter arguments.
+        """
+        Computes the Gram matrix of the kernel.
+        Calls _calculate_gram, which needs to be implemented by the child class.
+        If y is None, the gram is computed for x and x.
+            - n is the number of points in x
+            - m is the number of points in y
+            - d is the number of dimensions
 
         Args:
-            x: ndarray of shape (number_of_x_features, number_of_dimensions)
-            y: ndarray of shape (number_of_y_features, number_of_dimensions)
-            **parameter_args: parameter arguments for the kernel
+            parameters: parameters of the kernel
+            x: design matrix of shape (n, d)
+            y: design matrix of shape (m, d) if y is None, compute for x and x
 
-        Returns:
-            A gram matrix k(x, y), if y is None then k(x,x). (number_of_x_features, number_of_y_features).
+        Returns: the kernel gram matrix of shape (n, m)
+
         """
-        parameters = self.Parameters(**parameter_args)
-        return self.kernel(parameters, x, y)
-
-    def diagonal(
-        self, x: jnp.ndarray, y: jnp.ndarray = None, **parameter_args
-    ) -> jnp.ndarray:
-        """Naive implementation for diagonal gram matrix, calculates full gram matrix and takes diagonal.
-
-        Args:
-            x: ndarray of shape (number_of_x_features, number_of_dimensions)
-            y: ndarray of shape (number_of_y_features, number_of_dimensions)
-            **parameter_args: parameter arguments for the kernel
-
-        Returns:
-            The diagonal of the gram matrix k(x, y), if y is None then trace(k(x,x)).
-            (number_of_x_features, number_of_y_features)
-        """
-        parameters = self.Parameters(**parameter_args)
-        return jnp.diagonal(self.kernel(parameters, x, y))
-
-    def trace(
-        self, x: jnp.ndarray, y: jnp.ndarray = None, **parameter_args
-    ) -> jnp.ndarray:
-        """Trace of the gram matrix, calculated by summation of the diagonal matrix.
-
-        Args:
-            x: ndarray of shape (number_of_x_features, number_of_dimensions)
-            y: ndarray of shape (number_of_y_features, number_of_dimensions)
-            **parameter_args: parameter arguments for the kernel
-
-        Returns:
-            The trace of the gram matrix k(x, y).
-        """
-        parameters = self.Parameters(**parameter_args)
-        return jnp.trace(self.kernel(parameters, x, y))
+        x, y = self.preprocess_inputs(x, y)
+        self.check_inputs(x, y)
+        self.check_parameters(parameters, self.Parameters)
+        return self._calculate_gram(parameters, x, y)
