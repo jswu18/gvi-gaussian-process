@@ -12,7 +12,6 @@ from src.parameters.kernels.reference_kernels import (
     NeuralNetworkGaussianProcessKernelParameters,
     StandardKernelParameters,
 )
-from src.utils import decorators
 
 PRNGKey = Any  # pylint: disable=invalid-name
 
@@ -25,10 +24,9 @@ class StandardKernel(Kernel, ABC):
     Parameters = StandardKernelParameters
 
     @staticmethod
-    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     @abstractmethod
-    def calculate_kernel(
-        parameters: StandardKernelParameters, x: jnp.ndarray, y: jnp.ndarray = None
+    def _calculate_kernel(
+        parameters: StandardKernelParameters, x: jnp.ndarray, y: jnp.ndarray
     ) -> jnp.float64:
         """
         Computes the kernel function for a single pair of points x and y.
@@ -43,12 +41,35 @@ class StandardKernel(Kernel, ABC):
         """
         raise NotImplementedError
 
-    @decorators.preprocess_inputs
-    @decorators.check_inputs
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
-    def calculate_gram(
+    def calculate_kernel(
         self,
-        parameters: ARDKernelParameters,
+        parameters: StandardKernelParameters,
+        x: jnp.ndarray,
+        y: jnp.ndarray = None,
+    ) -> jnp.float64:
+        """
+        Computes the kernel function for a single pair of points x and y. Calls
+        _calculate_kernel after preprocessing the inputs, which needs to be
+        implemented by the child class. If y is None, the kernel function is
+         computed for x and x.
+            - d is the number of dimensions
+
+        Args:
+            parameters: parameters of the kernel
+            x: vector of shape (1, d)
+            y: vector of shape (1, d) or None
+
+        Returns: the kernel function evaluated at x and y
+        """
+        x, y = self.preprocess_inputs(x, y)
+        self.check_inputs(x, y)
+
+        return self._calculate_kernel(parameters, x, y)
+
+    def _calculate_gram(
+        self,
+        parameters: StandardKernelParameters,
         x: jnp.ndarray,
         y: jnp.ndarray = None,
     ) -> jnp.ndarray:
@@ -65,10 +86,6 @@ class StandardKernel(Kernel, ABC):
 
         Returns: the kernel gram matrix of shape (n, m)
         """
-        # if y is None, compute for x and x
-        if y is None:
-            y = x
-
         return vmap(
             lambda x_: vmap(
                 lambda y_: self.calculate_kernel(
@@ -86,7 +103,6 @@ class ARDKernel(StandardKernel):
     def __init__(self, number_of_dimensions: int):
         self.number_of_dimensions = number_of_dimensions
 
-    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def generate_parameters(
         self, parameters: Union[FrozenDict, Dict]
     ) -> ARDKernelParameters:
@@ -101,7 +117,6 @@ class ARDKernel(StandardKernel):
         """
         return ARDKernel.Parameters(**parameters)
 
-    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def initialise_random_parameters(
         self,
         key: PRNGKey,
@@ -117,10 +132,7 @@ class ARDKernel(StandardKernel):
         """
         pass
 
-    @decorators.preprocess_inputs
-    @decorators.check_inputs
-    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
-    def calculate_kernel(
+    def _calculate_kernel(
         self, parameters: ARDKernelParameters, x: jnp.ndarray, y: jnp.ndarray = None
     ) -> jnp.ndarray:
         """
@@ -138,10 +150,6 @@ class ARDKernel(StandardKernel):
         Returns: the ARD kernel function evaluated at x and y
 
         """
-        # if y is None, compute for x and x
-        if y is None:
-            y = x
-
         scaling = jnp.exp(jnp.atleast_1d(parameters.log_scaling)) ** 2
         lengthscale_matrix = jnp.diag(
             jnp.exp(jnp.atleast_1d(parameters.log_lengthscales))
@@ -198,10 +206,8 @@ class NeuralNetworkGaussianProcessKernel(Kernel):
         """
         pass
 
-    @decorators.preprocess_inputs
-    @decorators.check_inputs
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
-    def calculate_gram(
+    def _calculate_gram(
         self,
         parameters: NeuralNetworkGaussianProcessKernelParameters,
         x: jnp.ndarray,
@@ -221,8 +227,4 @@ class NeuralNetworkGaussianProcessKernel(Kernel):
         Returns: the kernel gram matrix of shape (n, m)
 
         """
-        # if y is None, compute for x and x
-        if y is None:
-            y = x
-
         return self.ntk_kernel_function(x, y, "nngp")

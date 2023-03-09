@@ -10,7 +10,6 @@ from src.mean_functions.approximate_mean_functions import ApproximateMeanFunctio
 from src.parameters.gaussian_measures.approximate_gaussian_measure import (
     ApproximateGaussianMeasureParameters,
 )
-from src.utils import decorators
 
 
 class ApproximateGaussianMeasure(GaussianMeasure):
@@ -81,7 +80,7 @@ class ApproximateGaussianMeasure(GaussianMeasure):
             kernel=self.kernel.initialise_random_parameters(key),
         )
 
-    def compute_expected_log_likelihood(
+    def _compute_expected_log_likelihood(
         self,
         parameters: Union[Dict, FrozenDict, ApproximateGaussianMeasureParameters],
         x: jnp.ndarray,
@@ -106,7 +105,7 @@ class ApproximateGaussianMeasure(GaussianMeasure):
         if not isinstance(parameters, ApproximateGaussianMeasureParameters):
             parameters = self.generate_parameters(parameters)
 
-        return self._compute_expected_log_likelihood(
+        return self.compute_general_expected_log_likelihood(
             mean=self.calculate_mean(x=x, parameters=parameters),
             covariance=self.calculate_covariance(x=x, parameters=parameters),
             observation_noise=jnp.exp(
@@ -116,8 +115,7 @@ class ApproximateGaussianMeasure(GaussianMeasure):
             y=y,
         )
 
-    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
-    def calculate_mean(
+    def _calculate_mean(
         self, parameters: ApproximateGaussianMeasureParameters, x: jnp.ndarray
     ) -> jnp.ndarray:
         """
@@ -134,10 +132,7 @@ class ApproximateGaussianMeasure(GaussianMeasure):
         """
         return self.mean_function.predict(x=x, parameters=parameters.mean_function)
 
-    @decorators.preprocess_inputs
-    @decorators.check_inputs
-    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
-    def calculate_covariance(
+    def _calculate_covariance(
         self,
         parameters: ApproximateGaussianMeasureParameters,
         x: jnp.ndarray,
@@ -157,8 +152,4 @@ class ApproximateGaussianMeasure(GaussianMeasure):
         Returns: the posterior covariance matrix of shape (n, m)
 
         """
-        # if y is None, compute for x and x
-        if y is None:
-            y = x
-
         return self.kernel.calculate_gram(x=x, y=y, parameters=parameters.kernel)

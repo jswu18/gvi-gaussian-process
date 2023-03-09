@@ -15,7 +15,6 @@ from src.parameters.kernels.approximate_kernels import (
     ApproximateKernelParameters,
     StochasticVariationalGaussianProcessKernelParameters,
 )
-from src.utils import decorators
 from src.utils.matrix_operations import add_diagonal_regulariser
 
 PRNGKey = Any  # pylint: disable=invalid-name
@@ -143,7 +142,6 @@ class StochasticVariationalGaussianProcessKernel(ApproximateKernel):
         pass
 
     @staticmethod
-    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def _calculate_sigma_matrix(
         gram_inducing: jnp.ndarray,
         gram_inducing_train: jnp.ndarray,
@@ -171,9 +169,15 @@ class StochasticVariationalGaussianProcessKernel(ApproximateKernel):
         )
         return el_matrix @ el_matrix.T
 
-    @decorators.preprocess_inputs
-    @decorators.check_inputs
-    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
+    def _calculate_gram(
+        self,
+        parameters: StochasticVariationalGaussianProcessKernelParameters,
+        x: jnp.ndarray,
+        y: jnp.ndarray = None,
+    ) -> jnp.ndarray:
+        # pass because calculate_gram is overridden
+        pass
+
     def calculate_gram(
         self,
         parameters: StochasticVariationalGaussianProcessKernelParameters,

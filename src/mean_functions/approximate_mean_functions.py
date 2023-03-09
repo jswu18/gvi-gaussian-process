@@ -128,8 +128,7 @@ class StochasticVariationalGaussianProcessMeanFunction(ApproximateMeanFunction):
             weights=weights
         )
 
-    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
-    def predict(
+    def _predict(
         self,
         parameters: StochasticVariationalGaussianProcessMeanFunctionParameters,
         x: jnp.ndarray,
@@ -215,8 +214,7 @@ class NeuralNetworkMeanFunction(ApproximateMeanFunction):
             neural_network=self.neural_network.init(key, jnp.zeros((1, 1)))
         )
 
-    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
-    def predict(
+    def _predict(
         self, parameters: NeuralNetworkMeanFunctionParameters, x: jnp.ndarray
     ) -> jnp.ndarray:
         """

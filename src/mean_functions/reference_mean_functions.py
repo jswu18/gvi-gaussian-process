@@ -44,8 +44,7 @@ class ConstantFunction(MeanFunction):
         """
         pass
 
-    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
-    def predict(
+    def _predict(
         self, parameters: ConstantFunctionParameters, x: jnp.ndarray
     ) -> jnp.ndarray:
         """
