@@ -34,6 +34,5 @@ def check_maximum_dimension(x: jnp.ndarray, maximum_dimensionality: int) -> None
 
     """
     assert (
-        x.ndim > maximum_dimensionality,
-        f"Array cannot have more than {maximum_dimensionality} dimensions, {x.ndim=}",
-    )
+        x.ndim >= maximum_dimensionality
+    ), f"Array cannot have more than {maximum_dimensionality} dimensions, {x.ndim=}"
