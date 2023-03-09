@@ -4,7 +4,7 @@ import pydantic
 from flax.core import FrozenDict
 from jax import numpy as jnp
 
-from src.gaussian_measures.gaussian_measure import GaussianMeasure, PRNGKey
+from src.gaussian_measures.gaussian_measures import GaussianMeasure, PRNGKey
 from src.kernels.approximate_kernels import ApproximateKernel
 from src.mean_functions.approximate_mean_functions import ApproximateMeanFunction
 from src.parameters.gaussian_measures.approximate_gaussian_measure import (

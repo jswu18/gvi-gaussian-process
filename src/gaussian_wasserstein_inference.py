@@ -5,10 +5,10 @@ import pydantic
 from flax.core.frozen_dict import FrozenDict
 from jax import jit
 
-from src.gaussian_measures.approximate_gaussian_measure import (
+from src.gaussian_measures.approximate_gaussian_measures import (
     ApproximateGaussianMeasure,
 )
-from src.gaussian_measures.gaussian_measure import GaussianMeasure
+from src.gaussian_measures.gaussian_measures import GaussianMeasure
 from src.gaussian_wasserstein_metric import gaussian_wasserstein_metric
 from src.module import Module
 from src.parameters.gaussian_measures.approximate_gaussian_measure import (
@@ -66,8 +66,7 @@ class GaussianWassersteinInference(Module):
         )
 
         # define a jit-compiled function to compute the negative expected log likelihood
-        # a dictionary of parameters is passed to allow for jit compilation
-        self.compute_negative_expected_log_likelihood = jit(
+        self._jit_compiled_compute_negative_expected_log_likelihood = jit(
             lambda approximate_gaussian_measure_parameters_dict: (
                 approximate_gaussian_measure.compute_expected_log_likelihood(
                     x=x,
@@ -78,8 +77,7 @@ class GaussianWassersteinInference(Module):
         )
 
         # define a jit-compiled function to compute the dissimilarity measure
-        # a dictionary of parameters is passed to allow for jit compilation
-        self.compute_dissimilarity_measure = jit(
+        self._jit_compiled_compute_dissimilarity_measure = jit(
             lambda x_batch, approximate_gaussian_measure_parameters_dict: gaussian_wasserstein_metric(
                 p=reference_gaussian_measure,
                 q=approximate_gaussian_measure,
@@ -90,6 +88,42 @@ class GaussianWassersteinInference(Module):
                 eigenvalue_regularisation=eigenvalue_regularisation,
                 is_eigenvalue_regularisation_absolute_scale=is_eigenvalue_regularisation_absolute_scale,
             )
+        )
+
+    def compute_negative_expected_log_likelihood(
+        self,
+        approximate_gaussian_measure_parameters: ApproximateGaussianMeasureParameters,
+    ) -> float:
+        """
+        Jit needs a dictionary of parameters to be passed to it to allow for jit compilation.
+
+        Args: approximate_gaussian_measure_parameters: the parameters of the approximate gaussian measure
+
+        Returns: the negative expected log likelihood of the approximate gaussian measure
+
+        """
+        return self._jit_compiled_compute_negative_expected_log_likelihood(
+            approximate_gaussian_measure_parameters.dict()
+        )
+
+    def compute_dissimilarity_measure(
+        self,
+        x_batch: jnp.ndarray,
+        approximate_gaussian_measure_parameters: ApproximateGaussianMeasureParameters,
+    ) -> float:
+        """
+        Jit needs a dictionary of parameters to be passed to it to allow for jit compilation.
+
+        Args:
+            x_batch: a batch of points to compute the dissimilarity measure between the reference gaussian measure and
+                     the approximate gaussian measure
+            approximate_gaussian_measure_parameters: the parameters of the approximate gaussian measure
+
+        Returns: the dissimilarity measure between the reference gaussian measure and the approximate gaussian measure
+
+        """
+        return self._jit_compiled_compute_dissimilarity_measure(
+            x_batch, approximate_gaussian_measure_parameters.dict()
         )
 
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
@@ -148,14 +182,13 @@ class GaussianWassersteinInference(Module):
         if not isinstance(parameters, ApproximateGaussianMeasureParameters):
             parameters = self.generate_parameters(parameters)
 
-        # parameters are passed in as a dictionary to allow for jit compilation
         negative_expected_log_likelihood = (
             self.compute_negative_expected_log_likelihood(
-                approximate_gaussian_measure_parameters_dict=parameters.dict()
+                approximate_gaussian_measure_parameters=parameters
             )
         )
         dissimilarity_measure = self.compute_dissimilarity_measure(
             x_batch=x_batch,
-            approximate_gaussian_measure_parameters_dict=parameters.dict(),
+            approximate_gaussian_measure_parameters=parameters,
         )
         return negative_expected_log_likelihood + dissimilarity_measure

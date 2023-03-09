@@ -6,7 +6,7 @@ from jax import numpy as jnp
 from jax import random
 from jax.scipy.linalg import cho_factor, cho_solve
 
-from src.gaussian_measures.gaussian_measure import GaussianMeasure, PRNGKey
+from src.gaussian_measures.gaussian_measures import GaussianMeasure, PRNGKey
 from src.kernels.reference_kernels import StandardKernel
 from src.mean_functions.mean_functions import MeanFunction
 from src.parameters.gaussian_measures.reference_gaussian_measure import (
