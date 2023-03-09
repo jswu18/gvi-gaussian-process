@@ -94,7 +94,7 @@ class GaussianMeasure(Module, ABC):
     @abstractmethod
     def compute_expected_log_likelihood(
         self,
-        parameters_dict: Union[Dict, FrozenDict],
+        parameters: Union[Dict, FrozenDict, GaussianMeasureParameters],
         x: jnp.ndarray,
         y: jnp.ndarray,
     ) -> float:
@@ -104,7 +104,8 @@ class GaussianMeasure(Module, ABC):
             - d is the number of dimensions
 
         Args:
-            parameters_dict: a dictionary containing the parameters, a dictionary is required for jit compilation
+            parameters: a dictionary or Pydantic model containing the parameters,
+                        a dictionary is required for jit compilation which is converted if necessary
             x: design matrix of shape (n, d)
             y: response vector of shape (n, 1)
 

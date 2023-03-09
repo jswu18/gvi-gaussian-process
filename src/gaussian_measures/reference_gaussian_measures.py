@@ -85,7 +85,7 @@ class ReferenceGaussianMeasure(GaussianMeasure):
 
     def compute_expected_log_likelihood(
         self,
-        parameters: Union[Dict, FrozenDict],
+        parameters: Union[Dict, FrozenDict, ReferenceGaussianMeasureParameters],
         x: jnp.ndarray,
         y: jnp.ndarray,
     ) -> float:
