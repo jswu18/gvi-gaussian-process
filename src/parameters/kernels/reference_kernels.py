@@ -1,7 +1,7 @@
 from abc import ABC
 from typing import Literal
 
-from src.parameters.custom_types import ArrayType, JaxFloatType
+from src.parameters.custom_types import JaxArrayType, JaxFloatType
 from src.parameters.kernels.kernels import KernelParameters
 
 
@@ -11,7 +11,7 @@ class StandardKernelParameters(KernelParameters, ABC):
 
 class ARDKernelParameters(StandardKernelParameters):
     log_scaling: JaxFloatType
-    log_lengthscales: ArrayType[Literal["float64"]]
+    log_lengthscales: JaxArrayType[Literal["float64"]]
 
 
 class NeuralNetworkGaussianProcessKernelParameters(KernelParameters):
