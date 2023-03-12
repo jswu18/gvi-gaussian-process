@@ -8,6 +8,7 @@ from flax.core.frozen_dict import FrozenDict
 from src.kernels.kernels import Kernel
 from src.mean_functions.mean_functions import MeanFunction
 from src.module import Module
+from src.parameters.custom_types import JaxFloatType
 from src.parameters.gaussian_measures.gaussian_measure import GaussianMeasureParameters
 
 PRNGKey = Any  # pylint: disable=invalid-name
@@ -132,6 +133,7 @@ class GaussianMeasure(Module, ABC):
         Returns: the posterior covariance matrix of shape (n, m)
 
         """
+        Module.check_parameters(parameters, self.Parameters)
         x, y = self.kernel.preprocess_inputs(x, y)
         self.kernel.check_inputs(x, y)
         return self._calculate_covariance(parameters, x, y)
@@ -153,6 +155,7 @@ class GaussianMeasure(Module, ABC):
         Returns: the mean function evaluations, a vector of shape (n, 1)
 
         """
+        Module.check_parameters(parameters, self.Parameters)
         x = self.mean_function.preprocess_input(x)
         return self._calculate_mean(parameters, x)
 
@@ -181,16 +184,16 @@ class GaussianMeasure(Module, ABC):
         # convert to Pydantic model if necessary
         if not isinstance(parameters, self.Parameters):
             parameters = self.generate_parameters(parameters)
-
+        Module.check_parameters(parameters, self.Parameters)
         x = self.mean_function.preprocess_input(x)
-
         return self._compute_expected_log_likelihood(parameters, x, y)
 
     @staticmethod
-    def compute_general_expected_log_likelihood(
+    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
+    def general_compute_expected_log_likelihood(
         mean: jnp.ndarray,
         covariance: jnp.ndarray,
-        observation_noise: float,
+        observation_noise: JaxFloatType,
         x: jnp.ndarray,
         y: jnp.ndarray,
     ) -> float:

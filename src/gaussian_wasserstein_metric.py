@@ -1,6 +1,7 @@
 from typing import Dict, Union
 
 import jax.numpy as jnp
+import pydantic
 from flax.core.frozen_dict import FrozenDict
 
 from src.gaussian_measures.gaussian_measures import GaussianMeasure
@@ -56,6 +57,7 @@ def _compute_cross_covariance_eigenvalues(
     return compute_covariance_eigenvalues(covariance_p_q_regularised)
 
 
+@pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
 def gaussian_wasserstein_metric(
     p: GaussianMeasure,
     q: GaussianMeasure,

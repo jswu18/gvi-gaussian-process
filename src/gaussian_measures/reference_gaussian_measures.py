@@ -76,7 +76,7 @@ class ReferenceGaussianMeasure(GaussianMeasure):
         Returns: A Pydantic model of the parameters for Reference Gaussian Measures.
 
         """
-        return ReferenceGaussianMeasureParameters(
+        return ReferenceGaussianMeasure.Parameters(
             log_observation_noise=random.normal(key),
             mean_function=self.mean_function.initialise_random_parameters(key),
             kernel=self.kernel.initialise_random_parameters(key),
@@ -106,10 +106,12 @@ class ReferenceGaussianMeasure(GaussianMeasure):
         if not isinstance(parameters, ReferenceGaussianMeasureParameters):
             parameters = self.generate_parameters(parameters)
 
-        return self.compute_general_expected_log_likelihood(
+        return GaussianMeasure.general_compute_expected_log_likelihood(
             mean=self.calculate_mean(x=x, parameters=parameters),
             covariance=self.calculate_covariance(x=x, parameters=parameters),
-            observation_noise=jnp.exp(parameters.log_observation_noise),
+            observation_noise=(jnp.exp(parameters.log_observation_noise)).astype(
+                jnp.float64
+            ),
             x=x,
             y=y,
         )

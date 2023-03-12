@@ -7,6 +7,7 @@ from flax.core.frozen_dict import FrozenDict
 from jax import vmap
 
 from src.kernels.kernels import Kernel
+from src.module import Module
 from src.parameters.kernels.reference_kernels import (
     ARDKernelParameters,
     NeuralNetworkGaussianProcessKernelParameters,
@@ -64,8 +65,7 @@ class StandardKernel(Kernel, ABC):
         """
         x, y = self.preprocess_inputs(x, y)
         self.check_inputs(x, y)
-        self.check_parameters(parameters, self.Parameters)
-
+        Module.check_parameters(parameters, self.Parameters)
         return self._calculate_kernel(parameters, x, y)
 
     def _calculate_gram(
@@ -104,6 +104,7 @@ class ARDKernel(StandardKernel):
     def __init__(self, number_of_dimensions: int):
         self.number_of_dimensions = number_of_dimensions
 
+    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def generate_parameters(
         self, parameters: Union[FrozenDict, Dict]
     ) -> ARDKernelParameters:
@@ -118,6 +119,7 @@ class ARDKernel(StandardKernel):
         """
         return ARDKernel.Parameters(**parameters)
 
+    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def initialise_random_parameters(
         self,
         key: PRNGKey,
@@ -207,7 +209,6 @@ class NeuralNetworkGaussianProcessKernel(Kernel):
         """
         pass
 
-    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def _calculate_gram(
         self,
         parameters: NeuralNetworkGaussianProcessKernelParameters,

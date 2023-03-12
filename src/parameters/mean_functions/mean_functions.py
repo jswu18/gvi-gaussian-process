@@ -1,5 +1,6 @@
 from abc import ABC
 
+from src.parameters.custom_types import JaxFloatType
 from src.parameters.module import ModuleParameters
 
 
@@ -8,4 +9,4 @@ class MeanFunctionParameters(ModuleParameters, ABC):
 
 
 class ConstantFunctionParameters(MeanFunctionParameters):
-    constant: float
+    constant: JaxFloatType

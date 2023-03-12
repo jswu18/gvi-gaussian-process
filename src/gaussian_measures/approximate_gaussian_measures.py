@@ -54,7 +54,7 @@ class ApproximateGaussianMeasure(GaussianMeasure):
         Returns: A Pydantic model of the parameters for Approximate Gaussian Measures.
 
         """
-        return ApproximateGaussianMeasureParameters(
+        return ApproximateGaussianMeasure.Parameters(
             mean_function=self.mean_function.generate_parameters(
                 parameters["mean_function"]
             ),
@@ -101,16 +101,14 @@ class ApproximateGaussianMeasure(GaussianMeasure):
         Returns: a scalar representing the empirical expected log likelihood
 
         """
-        # convert to Pydantic model if necessary
-        if not isinstance(parameters, ApproximateGaussianMeasureParameters):
-            parameters = self.generate_parameters(parameters)
-
-        return self.compute_general_expected_log_likelihood(
+        return GaussianMeasure.general_compute_expected_log_likelihood(
             mean=self.calculate_mean(x=x, parameters=parameters),
             covariance=self.calculate_covariance(x=x, parameters=parameters),
-            observation_noise=jnp.exp(
-                self.kernel.reference_gaussian_measure_parameters.log_observation_noise
-            ),
+            observation_noise=(
+                jnp.exp(
+                    self.kernel.reference_gaussian_measure_parameters.log_observation_noise
+                )
+            ).astype(jnp.float64),
             x=x,
             y=y,
         )
