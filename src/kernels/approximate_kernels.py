@@ -8,6 +8,7 @@ from jax import jit
 from jax.scipy.linalg import cho_factor, cho_solve
 
 from src.kernels.reference_kernels import Kernel
+from src.module import Module
 from src.parameters.gaussian_measures.reference_gaussian_measure import (
     ReferenceGaussianMeasureParameters,
 )
@@ -199,19 +200,22 @@ class StochasticVariationalGaussianProcessKernel(ApproximateKernel):
         Returns: the kernel gram matrix of shape (n, m)
 
         """
+        Module.check_parameters(parameters, self.Parameters)
+        x = jnp.atleast_2d(x)
+
         reference_gram_x_inducing = self.calculate_reference_gram(
             x=x,
             y=self.inducing_points,
         )
-
-        self.check_parameters(parameters, self.Parameters)
 
         # if y is None, compute for x and x
         if y is None:
             y = x
             reference_gram_y_inducing = reference_gram_x_inducing
         else:
+            y = jnp.atleast_2d(y)
             self.check_inputs(x, y)
+
             reference_gram_y_inducing = self.calculate_reference_gram(
                 x=y,
                 y=self.inducing_points,

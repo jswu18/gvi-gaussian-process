@@ -40,7 +40,7 @@ class MeanFunction(Module, ABC):
 
         """
         x = self.preprocess_input(x)
-        self.check_parameters(parameters, self.Parameters)
+        Module.check_parameters(parameters, self.Parameters)
         return self._predict(parameters, x)
 
     @abstractmethod

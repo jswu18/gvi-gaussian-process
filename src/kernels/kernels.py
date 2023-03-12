@@ -13,6 +13,7 @@ class Kernel(Module, ABC):
     Parameters = KernelParameters
 
     @staticmethod
+    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def preprocess_inputs(
         x: jnp.ndarray, y: jnp.ndarray = None
     ) -> Tuple[jnp.ndarray, jnp.ndarray]:
@@ -30,6 +31,7 @@ class Kernel(Module, ABC):
         return jnp.atleast_2d(x), jnp.atleast_2d(y)
 
     @staticmethod
+    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def check_inputs(x: jnp.ndarray, y: jnp.ndarray) -> None:
         """
         Checks the inputs of a kernel function.
@@ -92,5 +94,5 @@ class Kernel(Module, ABC):
         """
         x, y = self.preprocess_inputs(x, y)
         self.check_inputs(x, y)
-        self.check_parameters(parameters, self.Parameters)
+        Module.check_parameters(parameters, self.Parameters)
         return self._calculate_gram(parameters, x, y)
