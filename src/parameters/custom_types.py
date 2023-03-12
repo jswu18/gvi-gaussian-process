@@ -12,7 +12,7 @@ ArrayDType = TypeVar("ArrayDType")
 FloatDType = TypeVar("FloatDType")
 
 
-class ArrayType(jnp.ndarray, Generic[ArrayDType]):
+class JaxArrayType(jnp.ndarray, Generic[ArrayDType]):
     """
     Wrapper class for jax.numpy arrays that stores and validates type information.
     This can be used in place of a jax.numpy array, but when used in a pydantic BaseModel
