@@ -1,7 +1,7 @@
 from abc import ABC
 from typing import Literal
 
-from src.parameters.custom_types import JaxArrayType, JaxFloatType
+from src.utils.custom_types import JaxArrayType, JaxFloatType
 from src.parameters.kernels.kernels import KernelParameters
 
 

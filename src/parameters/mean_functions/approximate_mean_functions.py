@@ -1,6 +1,6 @@
 from typing import Any, Literal
 
-from src.parameters.custom_types import JaxArrayType
+from src.utils.custom_types import JaxArrayType
 from src.parameters.mean_functions.mean_functions import MeanFunctionParameters
 
 
