@@ -1,6 +1,6 @@
 from abc import ABC
 
-from src.parameters.custom_types import JaxFloatType
+from src.utils.custom_types import JaxFloatType
 from src.parameters.module import ModuleParameters
 
 

@@ -2,7 +2,7 @@ from abc import ABC
 
 from pydantic import BaseModel
 
-from src.parameters.custom_types import JSON_ENCODERS
+from src.utils.custom_types import JSON_ENCODERS
 
 
 class ModuleParameters(BaseModel, ABC):
