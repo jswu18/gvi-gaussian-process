@@ -1,7 +1,7 @@
 from typing import Any, Literal
 
-from src.utils.custom_types import JaxArrayType
 from src.parameters.mean_functions.mean_functions import MeanFunctionParameters
+from src.utils.custom_types import JaxArrayType
 
 
 class ApproximateMeanFunctionParameters(MeanFunctionParameters):

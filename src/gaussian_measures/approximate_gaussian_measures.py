@@ -2,14 +2,18 @@ from typing import Dict, Union
 
 import pydantic
 from flax.core import FrozenDict
+from jax import jit
 from jax import numpy as jnp
 
 from src.gaussian_measures.gaussian_measures import GaussianMeasure, PRNGKey
+from src.gaussian_wasserstein_metric import compute_gaussian_wasserstein_metric
 from src.kernels.approximate_kernels import ApproximateKernel
 from src.mean_functions.approximate_mean_functions import ApproximateMeanFunction
-from src.parameters.gaussian_measures.approximate_gaussian_measure import (
+from src.parameters.gaussian_measures.approximate_gaussian_measures import (
     ApproximateGaussianMeasureParameters,
 )
+from src.parameters.gaussian_measures.gaussian_measures import GaussianMeasureParameters
+from src.utils.custom_types import JaxFloatType
 
 
 class ApproximateGaussianMeasure(GaussianMeasure):
@@ -26,6 +30,10 @@ class ApproximateGaussianMeasure(GaussianMeasure):
         y: jnp.ndarray,
         mean_function: ApproximateMeanFunction,
         kernel: ApproximateKernel,
+        reference_gaussian_measure: GaussianMeasure,
+        reference_gaussian_measure_parameters: GaussianMeasureParameters,
+        eigenvalue_regularisation: float = 0.0,
+        is_eigenvalue_regularisation_absolute_scale: bool = False,
     ):
         """
         Defining the training data (x, y), the mean function, and the kernel for the approximate Gaussian measure.
@@ -40,6 +48,19 @@ class ApproximateGaussianMeasure(GaussianMeasure):
         """
         super().__init__(x, y, mean_function, kernel)
         self.kernel = kernel
+        # define a jit-compiled function to compute the dissimilarity measure
+        self._jit_compute_gaussian_wasserstein_metric = jit(
+            lambda x_batch, approximate_gaussian_measure_parameters_dict: compute_gaussian_wasserstein_metric(
+                p=reference_gaussian_measure,
+                q=self,
+                p_parameters=reference_gaussian_measure_parameters.dict(),
+                q_parameters=approximate_gaussian_measure_parameters_dict,
+                x_batch=x_batch,
+                x_train=x,
+                eigenvalue_regularisation=eigenvalue_regularisation,
+                is_eigenvalue_regularisation_absolute_scale=is_eigenvalue_regularisation_absolute_scale,
+            )
+        )
 
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def generate_parameters(
@@ -80,39 +101,6 @@ class ApproximateGaussianMeasure(GaussianMeasure):
             kernel=self.kernel.initialise_random_parameters(key),
         )
 
-    def _compute_expected_log_likelihood(
-        self,
-        parameters: Union[Dict, FrozenDict, ApproximateGaussianMeasureParameters],
-        x: jnp.ndarray,
-        y: jnp.ndarray,
-    ) -> float:
-        """
-        Compute the expected log likelihood of the Gaussian measure at the inputs x and outputs y.
-        The observation noise of the reference kernel is used for the Approximate Gaussian Measure.
-            - n is the number of points in x
-            - d is the number of dimensions
-
-        Args:
-            parameters: a dictionary or Pydantic model containing the parameters,
-                        a dictionary is required for jit compilation which is converted if necessary
-            x: design matrix of shape (n, d)
-            y: response vector of shape (n, 1)
-
-        Returns: a scalar representing the empirical expected log likelihood
-
-        """
-        return GaussianMeasure.general_compute_expected_log_likelihood(
-            mean=self.calculate_mean(x=x, parameters=parameters),
-            covariance=self.calculate_covariance(x=x, parameters=parameters),
-            observation_noise=(
-                jnp.exp(
-                    self.kernel.reference_gaussian_measure_parameters.log_observation_noise
-                )
-            ).astype(jnp.float64),
-            x=x,
-            y=y,
-        )
-
     def _calculate_mean(
         self, parameters: ApproximateGaussianMeasureParameters, x: jnp.ndarray
     ) -> jnp.ndarray:
@@ -151,3 +139,62 @@ class ApproximateGaussianMeasure(GaussianMeasure):
 
         """
         return self.kernel.calculate_gram(x=x, y=y, parameters=parameters.kernel)
+
+    def _calculate_observation_noise(
+        self, parameters: ApproximateGaussianMeasureParameters = None
+    ) -> JaxFloatType:
+        return jnp.exp(
+            self.kernel.reference_gaussian_measure_parameters.log_observation_noise
+        ).astype(float)
+
+    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
+    def compute_gaussian_wasserstein_metric(
+        self,
+        x_batch: jnp.ndarray,
+        parameters: ApproximateGaussianMeasureParameters,
+    ) -> float:
+        """
+        Jit needs a dictionary of parameters to be passed to it to allow for jit compilation.
+
+        Args:
+            x_batch: a batch of points to compute the dissimilarity measure between the reference gaussian measure and
+                     the approximate gaussian measure
+            parameters: the parameters of the approximate gaussian measure
+
+        Returns: the dissimilarity measure between the reference gaussian measure and the approximate gaussian measure
+
+        """
+        return self._jit_compute_gaussian_wasserstein_metric(x_batch, parameters.dict())
+
+    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
+    def compute_gaussian_wasserstein_inference_loss(
+        self,
+        parameters: Union[Dict, FrozenDict, ApproximateGaussianMeasureParameters],
+        x_batch: jnp.ndarray,
+    ) -> float:
+        """
+        Compute the gwi loss of the approximate gaussian measure is computed as the summation of the negative expected
+        log likelihood and the dissimilarity measure
+            - n is the number of points
+            - d is the number of dimensions
+
+        Args:
+            parameters: a dictionary or Pydantic model containing the parameters,
+                        a dictionary is required for jit compilation which is converted if necessary
+            x_batch: the design matrix of the batch of training data points of shape (n, d)
+
+        Returns: The loss of the approximate gaussian measure.
+
+        """
+        # convert to Pydantic model if necessary
+        if not isinstance(parameters, ApproximateGaussianMeasureParameters):
+            parameters = self.generate_parameters(parameters)
+
+        negative_expected_log_likelihood = (
+            self.compute_negative_expected_log_likelihood(parameters=parameters)
+        )
+        gaussian_wasserstein_metric = self.compute_gaussian_wasserstein_metric(
+            x_batch=x_batch,
+            parameters=parameters,
+        )
+        return negative_expected_log_likelihood + gaussian_wasserstein_metric
