@@ -69,7 +69,6 @@ class GaussianMeasure(Module, ABC):
     ) -> jnp.ndarray:
         """
         Calculate the posterior covariance matrix of the Gaussian measure at the sets of points x and y.
-        If y is None, the posterior covariance matrix is computed for x and x.
             - n is the number of points in x
             - m is the number of points in y
             - d is the number of dimensions
@@ -97,7 +96,7 @@ class GaussianMeasure(Module, ABC):
             parameters: parameters of the Gaussian measure
             x: design matrix of shape (n, d)
 
-        Returns: the mean function evaluations, a vector of shape (n, 1)
+        Returns: the mean function evaluations, a vector of shape (n,)
 
         """
         raise NotImplementedError
@@ -176,7 +175,7 @@ class GaussianMeasure(Module, ABC):
             parameters: parameters of the Gaussian measure
             x: design matrix of shape (n, d)
 
-        Returns: the mean function evaluations, a vector of shape (n, 1)
+        Returns: the mean function evaluations, a vector of shape (n,)
 
         """
         Module.check_parameters(parameters, self.Parameters)
@@ -237,6 +236,11 @@ class GaussianMeasure(Module, ABC):
 
 
 class TemperedGaussianMeasure(GaussianMeasure):
+    """
+    Provides a tempered version of the Gaussian measure where the covariance matrix is multiplied by a tempering factor.
+    The tempered Gaussian measure is defined with respect to an existing Gaussian measure.
+    """
+
     Parameters = TemperedGaussianMeasureParameters
 
     def __init__(
@@ -246,6 +250,17 @@ class TemperedGaussianMeasure(GaussianMeasure):
         gaussian_measure: GaussianMeasure,
         gaussian_measure_parameters: GaussianMeasureParameters,
     ):
+        """
+        Defining the training data (x, y), and the untempered Gaussian measure.
+            - n is the number of training points
+            - d is the number of dimensions
+
+        Args:
+            x: the training inputs design matrix of shape (n, d)
+            y: the training outputs response vector of shape (n, 1)
+            gaussian_measure: the untempered Gaussian measure
+            gaussian_measure_parameters: the parameters of the untempered Gaussian measure
+        """
         super().__init__(
             x=x,
             y=y,
@@ -261,6 +276,21 @@ class TemperedGaussianMeasure(GaussianMeasure):
         x: jnp.ndarray,
         y: jnp.ndarray,
     ) -> jnp.ndarray:
+        """
+        Calculate the posterior covariance matrix of the tempered Gaussian measure at the set of points x and y
+        by scaling the untempered Gaussian measure covariance by the tempering factor.
+            - n is the number of points in x
+            - m is the number of points in y
+            - d is the number of dimensions
+
+        Args:
+            parameters: parameters of the Gaussian measure
+            x: design matrix of shape (n, d)
+            y: design matrix of shape (m, d)
+
+        Returns: the posterior covariance matrix of shape (n, m)
+
+        """
         return jnp.exp(
             parameters.log_tempering_factor
         ) * self.gaussian_measure.calculate_covariance(
@@ -272,6 +302,19 @@ class TemperedGaussianMeasure(GaussianMeasure):
     def _calculate_mean(
         self, x: jnp.ndarray, parameters: TemperedGaussianMeasureParameters = None
     ) -> jnp.ndarray:
+        """
+        Calculate the posterior mean of the Gaussian measure at the set of points x by calling the mean function
+        of the untempered Gaussian measure.
+            - n is the number of points in x
+            - d is the number of dimensions
+
+        Args:
+            parameters: parameters of the Gaussian measure
+            x: design matrix of shape (n, d)
+
+        Returns: the mean function evaluations, a vector of shape (n,)
+
+        """
         return self.gaussian_measure.calculate_mean(
             parameters=self.gaussian_measure_parameters, x=x
         )
@@ -280,6 +323,15 @@ class TemperedGaussianMeasure(GaussianMeasure):
     def generate_parameters(
         self, parameters: Union[Dict, FrozenDict]
     ) -> TemperedGaussianMeasureParameters:
+        """
+        Generates a Pydantic model of the parameters for Tempered Gaussian Measures.
+
+        Args:
+            parameters: A dictionary of the parameters for Tempered Gaussian Measures.
+
+        Returns: A Pydantic model of the parameters for Tempered Gaussian Measures.
+
+        """
         return TemperedGaussianMeasure.Parameters(
             log_tempering_factor=parameters["log_tempering_factor"],
         )
@@ -288,11 +340,29 @@ class TemperedGaussianMeasure(GaussianMeasure):
         self,
         key: PRNGKey,
     ) -> TemperedGaussianMeasureParameters:
+        """
+        Initialise each parameter of the Tempered Gaussian measure with the appropriate random initialisation.
+
+        Args:
+            key: A random key used to initialise the parameters.
+
+        Returns: A Pydantic model of the parameters for Tempered Gaussian Measures.
+
+        """
         pass
 
     def _calculate_observation_noise(
         self, parameters: TemperedGaussianMeasureParameters = None
     ) -> JaxFloatType:
+        """
+        Extracts the observation noise of the untempered Gaussian measure its parameters.
+
+        Args:
+            parameters: parameters of the tempered Gaussian measure (unused)
+
+        Returns: the observation noise
+
+        """
         return self.gaussian_measure.calculate_observation_noise(
             parameters=self.gaussian_measure_parameters
         )
