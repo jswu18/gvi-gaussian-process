@@ -68,6 +68,7 @@ class StochasticVariationalGaussianProcessKernel(ApproximateKernel):
         reference_kernel: Kernel,
         inducing_points: jnp.ndarray,
         training_points: jnp.ndarray,
+        log_shift: float = 1e-5,
         diagonal_regularisation: float = 1e-5,
         is_diagonal_regularisation_absolute_scale: bool = False,
     ):
@@ -80,6 +81,7 @@ class StochasticVariationalGaussianProcessKernel(ApproximateKernel):
             reference_kernel: the kernel of the reference Gaussian measure.
             inducing_points: the inducing points of the stochastic variational Gaussian process.
             training_points: the training points of the stochastic variational Gaussian process.
+            log_shift: the shift applied before logarithm of el_matrix and after exponentiation of log_el_matrix
             diagonal_regularisation: the diagonal regularisation used to stabilise the Cholesky decomposition.
             is_diagonal_regularisation_absolute_scale: whether the diagonal regularisation is an absolute scale.
         """
@@ -90,6 +92,7 @@ class StochasticVariationalGaussianProcessKernel(ApproximateKernel):
         self.number_of_dimensions = inducing_points.shape[1]
         self.inducing_points = inducing_points
         self.training_points = training_points
+        self.log_shift = log_shift
         self.diagonal_regularisation = diagonal_regularisation
         self.is_diagonal_regularisation_absolute_scale = (
             is_diagonal_regularisation_absolute_scale
@@ -102,15 +105,8 @@ class StochasticVariationalGaussianProcessKernel(ApproximateKernel):
                 is_diagonal_regularisation_absolute_scale=is_diagonal_regularisation_absolute_scale,
             )
         )
-        self.sigma_matrix = self._calculate_sigma_matrix(
-            gram_inducing=self.reference_gram_inducing,
-            gram_inducing_train=self.calculate_reference_gram(
-                x=inducing_points, y=training_points
-            ),
-            reference_gaussian_measure_observation_precision=1
-            / jnp.exp(reference_gaussian_measure_parameters.log_observation_noise),
-            diagonal_regularisation=diagonal_regularisation,
-            is_diagonal_regularisation_absolute_scale=is_diagonal_regularisation_absolute_scale,
+        self.gram_inducing_train = self.calculate_reference_gram(
+            x=inducing_points, y=training_points
         )
 
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
@@ -129,45 +125,90 @@ class StochasticVariationalGaussianProcessKernel(ApproximateKernel):
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def initialise_random_parameters(
         self,
-        key: PRNGKey,
+        key: PRNGKey = None,
     ) -> StochasticVariationalGaussianProcessKernelParameters:
         """
         Initialise each parameter of the Stochastic Variational Gaussian Process Kernel with the appropriate random initialisation.
 
         Args:
-            key: A random key used to initialise the parameters.
+            key: A random key used to initialise the parameters. Not required in this case becasue
+                the parameters are initialised deterministically.
 
         Returns: A Pydantic model of the parameters for Stochastic Variational Gaussian Process Kernels.
 
         """
-        pass
+        # raise warning if key is not None
 
-    @staticmethod
-    def _calculate_sigma_matrix(
-        gram_inducing: jnp.ndarray,
-        gram_inducing_train: jnp.ndarray,
-        reference_gaussian_measure_observation_precision: float,
-        diagonal_regularisation: float,
-        is_diagonal_regularisation_absolute_scale: bool,
-    ) -> jnp.ndarray:
+        return StochasticVariationalGaussianProcessKernel.Parameters(
+            log_el_matrix=self.initialise_log_el_matrix_matrix(),
+        )
+
+    def initialise_log_el_matrix_matrix(self) -> jnp.ndarray:
+        """
+        Initialise the L matrix where:
+            sigma_matrix = L @ L.T
+
+        Returns: The L matrix.
+
+        """
+        reference_gaussian_measure_observation_precision = 1 / jnp.exp(
+            self.reference_gaussian_measure_parameters.log_observation_noise
+        )
         cholesky_decomposition_and_lower = cho_factor(
             jnp.linalg.cholesky(
                 add_diagonal_regulariser(
                     matrix=(
-                        gram_inducing
+                        self.reference_gram_inducing
                         + reference_gaussian_measure_observation_precision
-                        * gram_inducing_train
-                        @ gram_inducing_train.T
+                        * self.gram_inducing_train
+                        @ self.gram_inducing_train.T
                     ),
-                    diagonal_regularisation=diagonal_regularisation,
-                    is_diagonal_regularisation_absolute_scale=is_diagonal_regularisation_absolute_scale,
+                    diagonal_regularisation=self.diagonal_regularisation,
+                    is_diagonal_regularisation_absolute_scale=self.is_diagonal_regularisation_absolute_scale,
                 )
             )
         )
         el_matrix = cho_solve(
             c_and_lower=cholesky_decomposition_and_lower,
-            b=jnp.eye(gram_inducing.shape[0]),
+            b=jnp.eye(self.reference_gram_inducing.shape[0]),
         )
+        el_matrix = jnp.clip(
+            el_matrix,
+            a_min=self.diagonal_regularisation,
+            a_max=None,
+        )
+        return jnp.log(el_matrix)
+
+    def calculate_sigma_matrix(self, log_el_matrix: jnp.ndarray) -> jnp.ndarray:
+        """
+        Calculate the sigma matrix where:
+            sigma_matrix = L @ L.T
+
+        Args:
+            log_el_matrix: the log of the L matrix.
+
+        Returns: The sigma matrix.
+
+        """
+        el_matrix = jnp.exp(log_el_matrix)
+
+        # ensure lower triangle matrix
+        el_matrix = jnp.tril(el_matrix)
+
+        # add regularisation
+        el_matrix = add_diagonal_regulariser(
+            matrix=el_matrix,
+            diagonal_regularisation=self.diagonal_regularisation,
+            is_diagonal_regularisation_absolute_scale=self.is_diagonal_regularisation_absolute_scale,
+        )
+
+        # clip values to ensure greater than or equal to zero
+        el_matrix = jnp.clip(
+            el_matrix,
+            a_min=self.diagonal_regularisation,
+            a_max=None,
+        )
+
         return el_matrix @ el_matrix.T
 
     def _calculate_gram(
@@ -222,6 +263,9 @@ class StochasticVariationalGaussianProcessKernel(ApproximateKernel):
             )
 
         reference_gram_x_y = self.calculate_reference_gram(x=x, y=y)
+        sigma_matrix = self.calculate_sigma_matrix(
+            log_el_matrix=parameters.log_el_matrix
+        )
         return (
             reference_gram_x_y
             - reference_gram_x_inducing
@@ -229,7 +273,5 @@ class StochasticVariationalGaussianProcessKernel(ApproximateKernel):
                 c_and_lower=self.reference_gram_inducing_cholesky_decomposition_and_lower,
                 b=reference_gram_y_inducing.T,
             )
-            + reference_gram_x_inducing
-            @ self.sigma_matrix
-            @ reference_gram_y_inducing.T
+            + reference_gram_x_inducing @ sigma_matrix @ reference_gram_y_inducing.T
         )

@@ -8,8 +8,8 @@ from flax.core.frozen_dict import FrozenDict
 from src.kernels.kernels import Kernel
 from src.mean_functions.mean_functions import MeanFunction
 from src.module import Module
-from src.utils.custom_types import JaxFloatType
 from src.parameters.gaussian_measures.gaussian_measure import GaussianMeasureParameters
+from src.utils.custom_types import JaxFloatType
 
 PRNGKey = Any  # pylint: disable=invalid-name
 

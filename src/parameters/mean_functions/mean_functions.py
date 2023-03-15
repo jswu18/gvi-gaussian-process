@@ -1,7 +1,7 @@
 from abc import ABC
 
-from src.utils.custom_types import JaxFloatType
 from src.parameters.module import ModuleParameters
+from src.utils.custom_types import JaxFloatType
 
 
 class MeanFunctionParameters(ModuleParameters, ABC):
