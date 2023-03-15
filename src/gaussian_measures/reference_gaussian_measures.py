@@ -9,9 +9,10 @@ from jax.scipy.linalg import cho_factor, cho_solve
 from src.gaussian_measures.gaussian_measures import GaussianMeasure, PRNGKey
 from src.kernels.reference_kernels import StandardKernel
 from src.mean_functions.mean_functions import MeanFunction
-from src.parameters.gaussian_measures.reference_gaussian_measure import (
+from src.parameters.gaussian_measures.reference_gaussian_measures import (
     ReferenceGaussianMeasureParameters,
 )
+from src.utils.custom_types import JaxFloatType
 
 
 class ReferenceGaussianMeasure(GaussianMeasure):
@@ -80,40 +81,6 @@ class ReferenceGaussianMeasure(GaussianMeasure):
             log_observation_noise=random.normal(key),
             mean_function=self.mean_function.initialise_random_parameters(key),
             kernel=self.kernel.initialise_random_parameters(key),
-        )
-
-    def _compute_expected_log_likelihood(
-        self,
-        parameters: Union[Dict, FrozenDict, ReferenceGaussianMeasureParameters],
-        x: jnp.ndarray,
-        y: jnp.ndarray,
-    ) -> float:
-        """
-        Compute the expected log likelihood of the Gaussian measure at the inputs x and outputs y.
-            - n is the number of points in x
-            - d is the number of dimensions
-
-        Args:
-            parameters: a dictionary or Pydantic model containing the parameters,
-                        a dictionary is required for jit compilation which is converted if necessary
-            x: design matrix of shape (n, d)
-            y: response vector of shape (n, 1)
-
-        Returns: a scalar representing the empirical expected log likelihood
-
-        """
-        # convert to Pydantic model if necessary
-        if not isinstance(parameters, ReferenceGaussianMeasureParameters):
-            parameters = self.generate_parameters(parameters)
-
-        return GaussianMeasure.general_compute_expected_log_likelihood(
-            mean=self.calculate_mean(x=x, parameters=parameters),
-            covariance=self.calculate_covariance(x=x, parameters=parameters),
-            observation_noise=(jnp.exp(parameters.log_observation_noise)).astype(
-                jnp.float64
-            ),
-            x=x,
-            y=y,
         )
 
     def _calculate_mean(
@@ -190,3 +157,8 @@ class ReferenceGaussianMeasure(GaussianMeasure):
         return gram_xy - gram_train_x.T @ cho_solve(
             c_and_lower=cholesky_decomposition_and_lower, b=gram_train_y
         )
+
+    def _calculate_observation_noise(
+        self, parameters: ReferenceGaussianMeasureParameters = None
+    ) -> JaxFloatType:
+        return jnp.exp(parameters.log_observation_noise).astype(jnp.float64)

@@ -9,7 +9,7 @@ from jax.scipy.linalg import cho_factor, cho_solve
 
 from src.kernels.reference_kernels import Kernel
 from src.module import Module
-from src.parameters.gaussian_measures.reference_gaussian_measure import (
+from src.parameters.gaussian_measures.reference_gaussian_measures import (
     ReferenceGaussianMeasureParameters,
 )
 from src.parameters.kernels.approximate_kernels import (

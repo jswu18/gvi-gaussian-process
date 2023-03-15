@@ -9,7 +9,7 @@ from jax import jit, random
 
 from src.kernels.reference_kernels import Kernel
 from src.mean_functions.reference_mean_functions import MeanFunction
-from src.parameters.gaussian_measures.reference_gaussian_measure import (
+from src.parameters.gaussian_measures.reference_gaussian_measures import (
     ReferenceGaussianMeasureParameters,
 )
 from src.parameters.mean_functions.approximate_mean_functions import (
