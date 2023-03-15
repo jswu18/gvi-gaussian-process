@@ -48,17 +48,30 @@ class ApproximateGaussianMeasure(GaussianMeasure):
         """
         super().__init__(x, y, mean_function, kernel)
         self.kernel = kernel
-        # define a jit-compiled function to compute the dissimilarity measure
-        self._jit_compute_gaussian_wasserstein_metric = jit(
-            lambda x_batch, approximate_gaussian_measure_parameters_dict: compute_gaussian_wasserstein_metric(
+
+        # define a jit-compiled function to compute the Gaussian Wasserstein metric
+        self._jit_compiled_compute_gaussian_wasserstein_metric = jit(
+            lambda x_batch, gaussian_measure_parameters_dict: compute_gaussian_wasserstein_metric(
                 p=reference_gaussian_measure,
                 q=self,
                 p_parameters=reference_gaussian_measure_parameters.dict(),
-                q_parameters=approximate_gaussian_measure_parameters_dict,
+                q_parameters=gaussian_measure_parameters_dict,
                 x_batch=x_batch,
                 x_train=x,
                 eigenvalue_regularisation=eigenvalue_regularisation,
                 is_eigenvalue_regularisation_absolute_scale=is_eigenvalue_regularisation_absolute_scale,
+            )
+        )
+
+        # define a jit-compiled function to compute the Gaussian Wasserstein inference loss
+        self._jit_compute_gaussian_wasserstein_inference_loss = jit(
+            lambda x_batch, gaussian_measure_parameters_dict: (
+                self._jit_compiled_compute_gaussian_wasserstein_metric(
+                    x_batch, gaussian_measure_parameters_dict
+                )
+                + self._jit_compiled_compute_negative_expected_log_likelihood(
+                    gaussian_measure_parameters_dict
+                )
             )
         )
 
@@ -150,21 +163,28 @@ class ApproximateGaussianMeasure(GaussianMeasure):
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def compute_gaussian_wasserstein_metric(
         self,
+        parameters: Union[Dict, FrozenDict, ApproximateGaussianMeasureParameters],
         x_batch: jnp.ndarray,
-        parameters: ApproximateGaussianMeasureParameters,
     ) -> float:
         """
-        Jit needs a dictionary of parameters to be passed to it to allow for jit compilation.
+        Compute the Gaussian Wasserstein metric between the reference Gaussian measure
+        and the approximate Gaussian measure.
 
         Args:
+            parameters: a dictionary or Pydantic model containing the parameters,
+                        a dictionary is required for jit compilation which is converted if necessary
             x_batch: a batch of points to compute the dissimilarity measure between the reference gaussian measure and
                      the approximate gaussian measure
-            parameters: the parameters of the approximate gaussian measure
 
-        Returns: the dissimilarity measure between the reference gaussian measure and the approximate gaussian measure
+        Returns: the Gaussian Wasserstein metric between the reference and approximate Gaussian measures.
 
         """
-        return self._jit_compute_gaussian_wasserstein_metric(x_batch, parameters.dict())
+        # convert to Pydantic model if necessary
+        if not isinstance(parameters, self.Parameters):
+            parameters = self.generate_parameters(parameters)
+        return self._jit_compiled_compute_gaussian_wasserstein_metric(
+            x_batch, parameters.dict()
+        )
 
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def compute_gaussian_wasserstein_inference_loss(
@@ -173,8 +193,9 @@ class ApproximateGaussianMeasure(GaussianMeasure):
         x_batch: jnp.ndarray,
     ) -> float:
         """
-        Compute the gwi loss of the approximate gaussian measure is computed as the summation of the negative expected
-        log likelihood and the dissimilarity measure
+        Compute the Gaussian Wasserstein Inference loss of the approximate gaussian measure is computed as
+        the summation of the negative expected log likelihood and the Gaussian Wasserstein metric between the
+        reference Gaussian measure and the approximate Gaussian measure.
             - n is the number of points
             - d is the number of dimensions
 
@@ -187,14 +208,8 @@ class ApproximateGaussianMeasure(GaussianMeasure):
 
         """
         # convert to Pydantic model if necessary
-        if not isinstance(parameters, ApproximateGaussianMeasureParameters):
+        if not isinstance(parameters, self.Parameters):
             parameters = self.generate_parameters(parameters)
-
-        negative_expected_log_likelihood = (
-            self.compute_negative_expected_log_likelihood(parameters=parameters)
+        return self._jit_compute_gaussian_wasserstein_inference_loss(
+            x_batch, parameters.dict()
         )
-        gaussian_wasserstein_metric = self.compute_gaussian_wasserstein_metric(
-            x_batch=x_batch,
-            parameters=parameters,
-        )
-        return negative_expected_log_likelihood + gaussian_wasserstein_metric
