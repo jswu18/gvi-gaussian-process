@@ -5,7 +5,7 @@ import pydantic
 from flax.core.frozen_dict import FrozenDict
 
 from src.gaussian_measures.gaussian_measures import GaussianMeasure
-from src.parameters.gaussian_measures.gaussian_measure import GaussianMeasureParameters
+from src.parameters.gaussian_measures.gaussian_measures import GaussianMeasureParameters
 from src.utils.matrix_operations import (
     add_diagonal_regulariser,
     compute_covariance_eigenvalues,
@@ -58,7 +58,7 @@ def _compute_cross_covariance_eigenvalues(
 
 
 @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
-def gaussian_wasserstein_metric(
+def compute_gaussian_wasserstein_metric(
     p: GaussianMeasure,
     q: GaussianMeasure,
     p_parameters: Union[FrozenDict, Dict, GaussianMeasureParameters],

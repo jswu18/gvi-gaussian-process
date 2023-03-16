@@ -30,7 +30,9 @@ class Module(ABC):
 
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     @abstractmethod
-    def generate_parameters(self, parameters: Union[Dict, FrozenDict]) -> Parameters:
+    def generate_parameters(
+        self, parameters: Union[Dict, FrozenDict]
+    ) -> ModuleParameters:
         """
         Generates a Pydantic model of the parameters for the Module.
 
