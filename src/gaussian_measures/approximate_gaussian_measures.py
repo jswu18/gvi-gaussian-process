@@ -160,6 +160,37 @@ class ApproximateGaussianMeasure(GaussianMeasure):
             self.kernel.reference_gaussian_measure_parameters.log_observation_noise
         ).astype(float)
 
+    def _compute_negative_expected_log_likelihood(
+        self,
+        parameters: Union[Dict, FrozenDict, ApproximateGaussianMeasureParameters],
+        x: jnp.ndarray,
+        y: jnp.ndarray,
+    ) -> float:
+        """
+        Compute the expected log likelihood of the Gaussian measure at the inputs x and outputs y.
+            - n is the number of points in x
+            - d is the number of dimensions
+
+        Args:
+            parameters: a dictionary or Pydantic model containing the parameters,
+                        a dictionary is required for jit compilation which is converted if necessary
+            x: design matrix of shape (n, d)
+            y: response vector of shape (n, 1)
+
+        Returns: a scalar representing the empirical expected log likelihood
+
+        """
+        # convert to Pydantic model if necessary
+        if not isinstance(parameters, self.Parameters):
+            parameters = self.generate_parameters(parameters)
+        mean = self.calculate_mean(x=x, parameters=parameters)
+        covariance = self.calculate_covariance(x=x, parameters=parameters)
+        observation_noise = self.calculate_observation_noise(parameters=parameters)
+
+        return (x.shape[0] / 2) * jnp.log(2 * jnp.pi * observation_noise) + (
+            1 / (2 * observation_noise)
+        ) * (jnp.sum((y - mean) ** 2) + jnp.trace(covariance))
+
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def compute_gaussian_wasserstein_metric(
         self,
