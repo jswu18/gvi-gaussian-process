@@ -162,3 +162,39 @@ class ReferenceGaussianMeasure(GaussianMeasure):
         self, parameters: ReferenceGaussianMeasureParameters = None
     ) -> JaxFloatType:
         return jnp.exp(parameters.log_observation_noise).astype(jnp.float64)
+
+    def _compute_negative_expected_log_likelihood(
+        self,
+        parameters: Union[Dict, FrozenDict, ReferenceGaussianMeasureParameters],
+        x: jnp.ndarray,
+        y: jnp.ndarray,
+    ) -> float:
+        """
+        Compute the expected log likelihood of the Gaussian measure at the inputs x and outputs y.
+            - n is the number of points in x
+            - d is the number of dimensions
+
+        Args:
+            parameters: a dictionary or Pydantic model containing the parameters,
+                        a dictionary is required for jit compilation which is converted if necessary
+            x: design matrix of shape (n, d)
+            y: response vector of shape (n, 1)
+
+        Returns: a scalar representing the empirical expected log likelihood
+
+        """
+        # convert to Pydantic model if necessary
+        if not isinstance(parameters, self.Parameters):
+            parameters = self.generate_parameters(parameters)
+        mean = self.calculate_mean(x=x, parameters=parameters)
+        covariance = self.calculate_covariance(x=x, parameters=parameters)
+        observation_noise = self.calculate_observation_noise(parameters=parameters)
+
+        diagonal_covariance = jnp.diag(covariance) + observation_noise
+        error = y - mean
+
+        return (x.shape[0] / 2) * (
+            jnp.log(2 * jnp.pi)
+            + jnp.sum(jnp.log(diagonal_covariance))
+            + error.T @ jnp.diag(1 / diagonal_covariance) @ error
+        )
