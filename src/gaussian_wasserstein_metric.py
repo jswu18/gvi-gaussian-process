@@ -19,8 +19,8 @@ def _compute_cross_covariance_eigenvalues(
     q_parameters: GaussianMeasureParameters,
     x_batch: jnp.ndarray,
     x_train: jnp.ndarray,
-    eigenvalue_regularisation: float = 0.0,
-    is_eigenvalue_regularisation_absolute_scale: bool = False,
+    eigenvalue_regularisation: float,
+    is_eigenvalue_regularisation_absolute_scale: bool,
 ) -> jnp.ndarray:
     """
     Compute the eigenvalues of the covariance matrix of shape (m, m).
