@@ -1,5 +1,5 @@
 from abc import ABC
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, Union
 
 import jax.numpy as jnp
 import pydantic
@@ -28,10 +28,11 @@ class ClassificationModel(Module, ABC):
 
     def __init__(
         self,
-        gaussian_measures: List[GaussianMeasure],
+        gaussian_measures: Dict[Any, GaussianMeasure],
         hermite_polynomial_order: int = 50,
     ):
-        self.gaussian_measures = gaussian_measures
+        self.labels = set(gaussian_measures.keys())
+        self.gaussian_measures = FrozenDict(gaussian_measures)
         self.hermite_roots, self.hermite_weights = roots_hermite(
             hermite_polynomial_order
         )
@@ -81,7 +82,7 @@ class ReferenceClassificationModel(ClassificationModel):
 
     def __init__(
         self,
-        gaussian_measures: List[ReferenceGaussianMeasure],
+        gaussian_measures: Dict[Any, ReferenceGaussianMeasure],
         hermite_polynomial_order: int = 50,
     ):
         super().__init__(
@@ -126,7 +127,7 @@ class ApproximateClassificationModel(Module):
 
     def __init__(
         self,
-        gaussian_measures: List[ApproximateGaussianMeasure],
+        gaussian_measures: Dict[Any, ApproximateGaussianMeasure],
         hermite_polynomial_order: int = 50,
     ):
         super().__init__(
