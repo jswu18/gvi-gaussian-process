@@ -58,7 +58,7 @@ def compute_covariance_eigenvalues(
     Returns: the eigenvalues of the covariance matrix, a vector of shape (n, 1)
 
     """
-    covariance_eigenvalues = jnp.linalg.eigvals(matrix) # doesn't work for GPU
+    covariance_eigenvalues = jnp.linalg.eigvals(matrix)  # doesn't work for GPU
     # covariance_eigenvalues, _ = jnp.linalg.eigh(matrix) # works for GPU but requires symmetric matrix
     minimum_covariance_eigenvalue = jnp.min(covariance_eigenvalues)
     spectrum_ratio = jnp.abs(minimum_covariance_eigenvalue) / jnp.max(
