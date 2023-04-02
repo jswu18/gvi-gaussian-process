@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Union
 import jax.numpy as jnp
 import pydantic
 from flax.core.frozen_dict import FrozenDict
-from jax import jit, vmap
+from jax import jit
 from jax.scipy.stats import norm
 from scipy.special import roots_hermite
 
@@ -28,33 +28,53 @@ class ClassificationModel(Module, ABC):
 
     def __init__(
         self,
+        x: jnp.ndarray,
+        y: jnp.ndarray,
         gaussian_measures: Dict[Any, GaussianMeasure],
         epsilon: float = 0.01,
         hermite_polynomial_order: int = 50,
     ):
+        self.x = x
+        self.y = y
         self.gaussian_measures = gaussian_measures
         self.epsilon = epsilon
         self._hermite_roots, self._hermite_weights = roots_hermite(
             hermite_polynomial_order
         )
         self._calculate_means = jit(
-            lambda x, parameters: vmap(
-                lambda gaussian_measure, parameters_: gaussian_measure.calculate_mean(
-                    parameters=parameters_, x=x
-                )
-            )(self.gaussian_measures, parameters)
+            lambda x, parameters_dict: jnp.array(
+                [
+                    self.gaussian_measures[label].calculate_mean(
+                        x=x, parameters=parameters_dict["gaussian_measures"][label]
+                    )
+                    for label in self.labels
+                ]
+            )
         )
         self._calculate_covariances = jit(
-            lambda x, parameters: vmap(
-                lambda gaussian_measure, parameters_: gaussian_measure.calculate_covariance(
-                    parameters=parameters_, x=x
+            lambda x, parameters_dict: jnp.array(
+                [
+                    self.gaussian_measures[label].calculate_covariance(
+                        x=x, parameters=parameters_dict["gaussian_measures"][label]
+                    )
+                    for label in self.labels
+                ]
+            )
+        )
+        # define a jit-compiled function to compute the negative expected log likelihood
+        self._jit_compiled_compute_negative_expected_log_likelihood = jit(
+            lambda parameters_dict: (
+                self.compute_negative_log_likelihood(
+                    x=x,
+                    y=y,
+                    parameters=parameters_dict,
                 )
-            )(self.gaussian_measures, parameters)
+            )
         )
 
     @property
     def labels(self) -> List[Any]:
-        return list(self.gaussian_measures.keys())
+        return sorted(list(self.gaussian_measures.keys()))
 
     @property
     def number_of_labels(self) -> int:
@@ -80,25 +100,10 @@ class ClassificationModel(Module, ABC):
         """
         Predicts the class of a point x.
         """
-        # means = self._calculate_means(x=x, parameters=parameters.gaussian_measures.values())  # k x n
-        # covariances = self._calculate_covariances(x=x, parameters=parameters.gaussian_measures.values())
-
-        # ugly and slow hack for now
-        means = []
-        covariances = []
-        for i, label in enumerate(self.labels):
-            means.append(
-                self.gaussian_measures[label].calculate_mean(
-                    x=x, parameters=parameters.gaussian_measures[label]
-                )
-            )
-            covariances.append(
-                self.gaussian_measures[label].calculate_covariance(
-                    x=x, parameters=parameters.gaussian_measures[label]
-                )
-            )
-        means = jnp.array(means)
-        covariances = jnp.array(covariances)
+        means = self._calculate_means(x=x, parameters_dict=parameters.dict())  # k x n
+        covariances = self._calculate_covariances(
+            x=x, parameters_dict=parameters.dict()
+        )
 
         # (k, n)
         stdev_diagonal = jnp.sqrt(jnp.diagonal(covariances, axis1=1, axis2=2))
@@ -150,19 +155,30 @@ class ClassificationModel(Module, ABC):
         # (h, k, n) -> (k, n) -> (n, k)
         return ((1 / jnp.sqrt(jnp.pi)) * jnp.sum(hermite_components, axis=0)).T
 
-    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
+    # @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def compute_negative_log_likelihood(
-        self, parameters: ClassificationModelParameters, x: jnp.ndarray, y: jnp.ndarray
+        self,
+        parameters: Union[Dict, FrozenDict, ClassificationModelParameters],
+        x: jnp.ndarray,
+        y: jnp.ndarray,
     ) -> float:
+        # convert to Pydantic model if necessary
+        if not isinstance(parameters, self.Parameters):
+            parameters = self.generate_parameters(parameters)
+
         # (n, k)
         s_matrix = self._calculate_s_matrix(parameters=parameters, x=x)
 
         # (n, k)
-        return -jnp.multiply(
-            jnp.log(1 - self.epsilon) * s_matrix
-            + jnp.log(self.epsilon / (self.number_of_labels - 1)) * (1 - s_matrix),
-            y,  # to mask out the other classes
-        ).sum()
+        return (
+            -jnp.multiply(
+                jnp.log(1 - self.epsilon) * s_matrix
+                + jnp.log(self.epsilon / (self.number_of_labels - 1)) * (1 - s_matrix),
+                y,  # to mask out the other classes
+            )
+            .sum(axis=1)
+            .mean()
+        )
 
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def predict_probability(
@@ -176,34 +192,45 @@ class ClassificationModel(Module, ABC):
             self.epsilon / (self.number_of_labels - 1)
         ) * (1 - s_matrix)
 
+    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
+    def generate_parameters(
+        self, parameters: Union[Dict, FrozenDict]
+    ) -> ClassificationModelParameters:
+        """
+        Generates a Pydantic model of the parameters for the Module.
+
+        Args:
+            parameters: A dictionary of the parameters for the Module.
+
+        Returns: A Pydantic model of the parameters for the Module.
+
+        """
+        return self.Parameters(
+            gaussian_measures={
+                label: self.gaussian_measures[label].generate_parameters(
+                    parameters["gaussian_measures"][label]
+                )
+                for label in self.labels
+            }
+        )
+
 
 class ReferenceClassificationModel(ClassificationModel):
     Parameters = ReferenceClassificationModelParameters
 
     def __init__(
         self,
+        x: jnp.ndarray,
+        y: jnp.ndarray,
         gaussian_measures: Dict[Any, ReferenceGaussianMeasure],
         hermite_polynomial_order: int = 50,
     ):
         super().__init__(
+            x=x,
+            y=y,
             gaussian_measures=gaussian_measures,
             hermite_polynomial_order=hermite_polynomial_order,
         )
-
-    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
-    def generate_parameters(
-        self, parameters: Union[Dict, FrozenDict]
-    ) -> ClassificationModelParameters:
-        """
-        Generates a Pydantic model of the parameters for the Module.
-
-        Args:
-            parameters: A dictionary of the parameters for the Module.
-
-        Returns: A Pydantic model of the parameters for the Module.
-
-        """
-        pass
 
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def initialise_random_parameters(
@@ -222,33 +249,47 @@ class ReferenceClassificationModel(ClassificationModel):
         pass
 
 
-class ApproximateClassificationModel(Module):
+class ApproximateClassificationModel(ClassificationModel):
     Parameters = ApproximateClassificationModelParameters
 
     def __init__(
         self,
+        x: jnp.ndarray,
+        y: jnp.ndarray,
         gaussian_measures: Dict[Any, ApproximateGaussianMeasure],
+        reference_classification_model: ReferenceClassificationModel,
+        reference_classification_model_parameters: ReferenceClassificationModelParameters,
         hermite_polynomial_order: int = 50,
     ):
         super().__init__(
+            x=x,
+            y=y,
             gaussian_measures=gaussian_measures,
             hermite_polynomial_order=hermite_polynomial_order,
         )
-
-    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
-    def generate_parameters(
-        self, parameters: Union[Dict, FrozenDict]
-    ) -> ApproximateClassificationModelParameters:
-        """
-        Generates a Pydantic model of the parameters for the Module.
-
-        Args:
-            parameters: A dictionary of the parameters for the Module.
-
-        Returns: A Pydantic model of the parameters for the Module.
-
-        """
-        pass
+        self.gaussian_measures = gaussian_measures
+        self.reference_classification_model = reference_classification_model
+        self.reference_classification_model_parameters = (
+            reference_classification_model_parameters
+        )
+        self._jit_compiled_compute_gaussian_wasserstein_inference_loss = jit(
+            lambda parameters_dict, x_batch: (
+                self._jit_compiled_compute_negative_expected_log_likelihood(
+                    parameters_dict=parameters_dict
+                )
+                + sum(
+                    [
+                        self.gaussian_measures[
+                            label
+                        ].compute_gaussian_wasserstein_metric(
+                            parameters=parameters_dict["gaussian_measures"][label],
+                            x_batch=x_batch,
+                        )
+                        for label in self.labels
+                    ]
+                )
+            )
+        )
 
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def initialise_random_parameters(
@@ -265,3 +306,16 @@ class ApproximateClassificationModel(Module):
 
         """
         pass
+
+    # @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
+    def compute_gaussian_wasserstein_inference_loss(
+        self,
+        parameters: Union[Dict, FrozenDict, ApproximateClassificationModelParameters],
+        x_batch: jnp.ndarray,
+    ) -> float:
+        # convert to Pydantic model if necessary
+        if not isinstance(parameters, self.Parameters):
+            parameters = self.generate_parameters(parameters)
+        return self._jit_compiled_compute_gaussian_wasserstein_inference_loss(
+            parameters_dict=parameters.dict(), x_batch=x_batch
+        )

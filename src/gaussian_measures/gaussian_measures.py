@@ -159,7 +159,7 @@ class GaussianMeasure(Module, ABC):
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def calculate_covariance(
         self,
-        parameters: GaussianMeasureParameters,
+        parameters: Union[Dict, FrozenDict, GaussianMeasureParameters],
         x: jnp.ndarray,
         y: jnp.ndarray = None,
     ) -> jnp.ndarray:
@@ -179,6 +179,9 @@ class GaussianMeasure(Module, ABC):
         Returns: the posterior covariance matrix of shape (n, m)
 
         """
+        # convert to Pydantic model if necessary
+        if not isinstance(parameters, self.Parameters):
+            parameters = self.generate_parameters(parameters)
         Module.check_parameters(parameters, self.Parameters)
         x, y = self.kernel.preprocess_inputs(x, y)
         self.kernel.check_inputs(x, y)
@@ -186,7 +189,9 @@ class GaussianMeasure(Module, ABC):
 
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def calculate_mean(
-        self, parameters: GaussianMeasureParameters, x: jnp.ndarray
+        self,
+        parameters: Union[Dict, FrozenDict, GaussianMeasureParameters],
+        x: jnp.ndarray,
     ) -> jnp.ndarray:
         """
         Calculate the posterior mean of the Gaussian measure at the set of points x.
@@ -201,6 +206,9 @@ class GaussianMeasure(Module, ABC):
         Returns: the mean function evaluations, a vector of shape (n,)
 
         """
+        # convert to Pydantic model if necessary
+        if not isinstance(parameters, self.Parameters):
+            parameters = self.generate_parameters(parameters)
         Module.check_parameters(parameters, self.Parameters)
         x = self.mean_function.preprocess_input(x)
         return self._calculate_mean(parameters=parameters, x=x)
