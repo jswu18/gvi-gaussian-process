@@ -13,8 +13,9 @@ __pycache__
 .DS_Store
 notebooks/.DS_Store
 
-# Sandbox notebook
+# notebook ignores
 notebooks/sandbox.ipynb
+notebooks/mnist_data
 
 # Pytest
 *pytest_cache
