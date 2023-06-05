@@ -1,7 +1,9 @@
 from abc import ABC, abstractmethod
+from typing import Dict, Union
 
 import jax.numpy as jnp
 import pydantic
+from flax.core.frozen_dict import FrozenDict
 
 from src.module import Module
 from src.parameters.mean_functions.mean_functions import MeanFunctionParameters
@@ -9,6 +11,22 @@ from src.parameters.mean_functions.mean_functions import MeanFunctionParameters
 
 class MeanFunction(Module, ABC):
     Parameters = MeanFunctionParameters
+
+    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @abstractmethod
+    def generate_parameters(
+        self, parameters: Union[Dict, FrozenDict]
+    ) -> MeanFunctionParameters:
+        """
+        Generates a Pydantic model of the parameters for the Module.
+
+        Args:
+            parameters: A dictionary of the parameters for the Module.
+
+        Returns: A Pydantic model of the parameters for the Module.
+
+        """
+        raise NotImplementedError
 
     @staticmethod
     def preprocess_input(x: jnp.ndarray) -> jnp.ndarray:
