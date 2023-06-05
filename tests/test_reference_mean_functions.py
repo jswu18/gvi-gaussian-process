@@ -28,7 +28,7 @@ config.update("jax_enable_x64", True)
         ],
     ],
 )
-def test_standard_kernels(
+def test_reference_mean_functions(
     mean_function: MeanFunction,
     parameters: Dict,
     x: jnp.ndarray,
