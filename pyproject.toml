@@ -24,7 +24,7 @@ neural-tangents = "^0.6.1"
 black = "~22.6"
 ipykernel = "^6.20.1"
 isort = "~5.10"
-mock = "^5.0.2"
+mocker = "^1.1.1"
 pytest = "~7.2"
 
 [tool.isort]

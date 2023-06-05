@@ -1532,6 +1532,17 @@ docs = ["sphinx"]
 test = ["pytest", "pytest-cov"]
 
 [[package]]
+name = "mocker"
+version = "1.1.1"
+description = "Graceful platform for test doubles in Python (mocks, stubs, fakes, and dummies)."
+category = "main"
+optional = false
+python-versions = "*"
+files = [
+    {file = "mocker-1.1.1.tar.bz2", hash = "sha256:2009911707c74b28bdc9959b5224717e45fcb93475b4b7bb4efad3285fcf2919"},
+]
+
+[[package]]
 name = "msgpack"
 version = "1.0.5"
 description = "MessagePack serializer"
@@ -3006,4 +3017,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "~3.10"
-content-hash = "030ec642ead66c5114bd76c4145844e65e3fb182f3293a0e5b6fa486f5b9d8f0"
+content-hash = "eacb94ff87dbe76f7a7ca393e5898f68fbb6d508e9bc8c5d2cf69b6d1c0cea88"
