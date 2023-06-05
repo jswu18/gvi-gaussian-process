@@ -21,15 +21,15 @@ class ReferenceKernelMock(Kernel):
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def generate_parameters(
         self, parameters: Union[Dict, FrozenDict]
-    ) -> ModuleParameters:
-        pass
+    ) -> ReferenceKernelParametersMock:
+        return ReferenceKernelParametersMock()
 
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def initialise_random_parameters(
         self,
         key: PRNGKey,
-    ) -> ModuleParameters:
-        pass
+    ) -> ReferenceKernelParametersMock:
+        return ReferenceKernelParametersMock()
 
     def _calculate_gram(
         self,

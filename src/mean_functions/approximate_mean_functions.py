@@ -9,14 +9,13 @@ from jax import jit, random
 
 from src.kernels.reference_kernels import Kernel
 from src.mean_functions.reference_mean_functions import MeanFunction
-from src.parameters.gaussian_measures.reference_gaussian_measures import (
-    ReferenceGaussianMeasureParameters,
-)
+from src.parameters.kernels.kernels import KernelParameters
 from src.parameters.mean_functions.approximate_mean_functions import (
     ApproximateMeanFunctionParameters,
     NeuralNetworkMeanFunctionParameters,
     StochasticVariationalGaussianProcessMeanFunctionParameters,
 )
+from src.parameters.mean_functions.mean_functions import MeanFunctionParameters
 
 PRNGKey = Any  # pylint: disable=invalid-name
 
@@ -31,24 +30,22 @@ class ApproximateMeanFunction(MeanFunction, ABC):
 
     def __init__(
         self,
-        reference_gaussian_measure_parameters: ReferenceGaussianMeasureParameters,
+        reference_mean_function_parameters: MeanFunctionParameters,
         reference_mean_function: MeanFunction,
     ):
         """
         Defining the reference Gaussian measure and the reference mean function.
 
         Args:
-            reference_gaussian_measure_parameters: the parameters of the reference Gaussian measure.
+            reference_mean_function_parameters: the parameters of the reference mean function.
             reference_mean_function: the mean function of the reference Gaussian measure.
         """
-        self.reference_gaussian_measure_parameters = (
-            reference_gaussian_measure_parameters
-        )
+        self.reference_mean_function_parameters = reference_mean_function_parameters
 
         # define a jit-compiled version of the reference mean function using the reference mean function parameters
         self.reference_mean_func = jit(
             lambda x: reference_mean_function.predict(
-                parameters=reference_gaussian_measure_parameters.mean_function, x=x
+                parameters=reference_mean_function_parameters, x=x
             )
         )
 
@@ -62,8 +59,9 @@ class StochasticVariationalGaussianProcessMeanFunction(ApproximateMeanFunction):
 
     def __init__(
         self,
-        reference_gaussian_measure_parameters: ReferenceGaussianMeasureParameters,
+        reference_mean_function_parameters: MeanFunctionParameters,
         reference_mean_function: MeanFunction,
+        reference_kernel_function_parameters: KernelParameters,
         reference_kernel: Kernel,
         inducing_points: jnp.ndarray,
     ):
@@ -73,19 +71,19 @@ class StochasticVariationalGaussianProcessMeanFunction(ApproximateMeanFunction):
         - d is the number of dimensions
 
         Args:
-            reference_gaussian_measure_parameters: the parameters of the reference Gaussian measure.
+            reference_mean_function_parameters: the parameters of the reference mean function.
             reference_mean_function: the mean function of the reference Gaussian measure.
             reference_kernel: the reference kernel of the reference Gaussian measure.
             inducing_points: the inducing points of the stochastic variational Gaussian process of shape (m, d).
         """
-        super().__init__(reference_gaussian_measure_parameters, reference_mean_function)
+        super().__init__(reference_mean_function_parameters, reference_mean_function)
         self.inducing_points = inducing_points
         self.number_of_inducing_points = inducing_points.shape[0]
 
         # define a jit-compiled version of the reference kernel gram matrix using the reference kernel parameters
         self.calculate_reference_gram = jit(
             lambda x: reference_kernel.calculate_gram(
-                parameters=reference_gaussian_measure_parameters.kernel,
+                parameters=reference_kernel_function_parameters,
                 x=x,
                 y=inducing_points,
             )
@@ -162,7 +160,7 @@ class NeuralNetworkMeanFunction(ApproximateMeanFunction):
 
     def __init__(
         self,
-        reference_gaussian_measure_parameters: ReferenceGaussianMeasureParameters,
+        reference_mean_function_parameters: MeanFunctionParameters,
         reference_mean_function: MeanFunction,
         neural_network: flax.linen.Module,
     ):
@@ -172,11 +170,11 @@ class NeuralNetworkMeanFunction(ApproximateMeanFunction):
             - d is the number of dimensions
 
         Args:
-            reference_gaussian_measure_parameters: the parameters of the reference Gaussian measure.
+            reference_mean_function_parameters: the parameters of the reference mean function.
             reference_mean_function: the mean function of the reference Gaussian measure.
             neural_network: a flax linen module which takes in a design matrix of shape (n, d) and outputs a vector of shape (n, 1)
         """
-        super().__init__(reference_gaussian_measure_parameters, reference_mean_function)
+        super().__init__(reference_mean_function_parameters, reference_mean_function)
         self.neural_network = neural_network
 
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
