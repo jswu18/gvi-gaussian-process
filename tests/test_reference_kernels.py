@@ -4,6 +4,7 @@ import jax.numpy as jnp
 import pydantic
 import pytest
 from jax.config import config
+from mock import Mock
 
 from src.kernels.reference_kernels import (
     ARDKernel,
@@ -77,7 +78,7 @@ def test_standard_kernels(
                     [1.5, 2.5, 3.5],
                 ]
             ),
-            jnp.array([[2.7182818284590455, 1.8095777100611745]]),
+            jnp.ones((1, 2)),
         ],
     ],
 )
@@ -88,6 +89,7 @@ def test_standard_kernel_grams(
     y: jnp.ndarray,
     k: float,
 ):
+    kernel.calculate_kernel = Mock(return_value=1)
     assert jnp.array_equal(
         kernel.calculate_gram(kernel.generate_parameters(parameters), x=x, y=y), k
     )
@@ -98,12 +100,19 @@ def test_standard_kernel_grams(
     [
         [
             NeuralNetworkGaussianProcessKernel(
-                ntk_kernel_function=lambda x, y, *args, **kwargs: jnp.linalg.norm(x - y)
+                ntk_kernel_function=lambda x, y, *args, **kwargs: jnp.ones(
+                    (x.shape[0], y.shape[0])
+                )
             ),
             None,
-            jnp.array([1.0, 2.0, 3.0]),
-            jnp.array([1.5, 2.5, 3.5]),
-            0.8660254037844386,
+            jnp.array([[1.0, 2.0, 3.0]]),
+            jnp.array(
+                [
+                    [1.0, 2.0, 3.0],
+                    [1.5, 2.5, 3.5],
+                ]
+            ),
+            jnp.ones((1, 2)),
         ],
     ],
 )
@@ -116,7 +125,9 @@ def test_nngp_kernel_grams(
 ):
     if parameters is None:
         parameters = {}
-    assert kernel.calculate_gram(kernel.generate_parameters(parameters), x=x, y=y) == k
+    assert jnp.array_equal(
+        kernel.calculate_gram(kernel.generate_parameters(parameters), x=x, y=y), k
+    )
 
 
 @pytest.mark.parametrize(
@@ -132,8 +143,8 @@ def test_nngp_kernel_grams(
         ],
     ],
 )
-def test_missing_standard_kernel_parameter(
-    kernel: StandardKernel,
+def test_missing_ard_kernel_parameter(
+    kernel: ARDKernel,
     parameters: Dict,
     x: jnp.ndarray,
     y: jnp.ndarray,
