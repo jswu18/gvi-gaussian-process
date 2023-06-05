@@ -5,7 +5,11 @@ import pydantic
 import pytest
 from jax.config import config
 
-from src.kernels.reference_kernels import ARDKernel, StandardKernel
+from src.kernels.reference_kernels import (
+    ARDKernel,
+    NeuralNetworkGaussianProcessKernel,
+    StandardKernel,
+)
 
 config.update("jax_enable_x64", True)
 
@@ -90,6 +94,32 @@ def test_standard_kernel_grams(
 
 
 @pytest.mark.parametrize(
+    "kernel,parameters,x,y,k",
+    [
+        [
+            NeuralNetworkGaussianProcessKernel(
+                ntk_kernel_function=lambda x, y, *args, **kwargs: jnp.linalg.norm(x - y)
+            ),
+            None,
+            jnp.array([1.0, 2.0, 3.0]),
+            jnp.array([1.5, 2.5, 3.5]),
+            0.8660254037844386,
+        ],
+    ],
+)
+def test_nngp_kernel_grams(
+    kernel: NeuralNetworkGaussianProcessKernel,
+    parameters: Dict,
+    x: jnp.ndarray,
+    y: jnp.ndarray,
+    k: float,
+):
+    if parameters is None:
+        parameters = {}
+    assert kernel.calculate_gram(kernel.generate_parameters(parameters), x=x, y=y) == k
+
+
+@pytest.mark.parametrize(
     "kernel,parameters,x,y",
     [
         [
@@ -102,7 +132,7 @@ def test_standard_kernel_grams(
         ],
     ],
 )
-def test_missing_kernel_parameter(
+def test_missing_standard_kernel_parameter(
     kernel: StandardKernel,
     parameters: Dict,
     x: jnp.ndarray,
