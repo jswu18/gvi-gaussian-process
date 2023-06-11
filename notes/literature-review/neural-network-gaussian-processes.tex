@@ -1,0 +1,48 @@
+\documentclass[twoside,11pt]{article}
+
+\usepackage{blindtext}
+
+\usepackage{paper}
+
+% Definitions of handy macros can go here
+
+\newcommand{\dataset}{{\cal D}}
+\newcommand{\fracpartial}[2]{\frac{\partial #1}{\partial  #2}}
+
+\usepackage{xcolor}
+\newcommand{\jk}[1]{{\color{blue} [JK: #1]}}
+\newcommand{\jw}[1]{{\color{gray} [JW: #1]}}
+\newcommand{\Cat}{\operatorname{Cat}}
+\newcommand{\Chol}{\operatorname{Chol}}
+\newcommand{\KLD}{\operatorname{KLD}}
+
+\usepackage{lastpage}
+\usepackage{amsmath}
+\usepackage{mathtools}
+\usepackage{enumitem}
+
+\DeclareMathOperator*{\argmax}{arg\,max}
+\DeclareMathOperator*{\argmin}{arg\,min}
+\usepackage[backend=biber,style=nature]{biblatex}
+
+\addbibresource{references.bib}
+\defbibheading{talikarng}{\References}
+% Short headings should be running head and authors last names
+
+\ShortHeadings{Literature Review}{Neural Network Gaussian Processes}
+\firstpageno{1}
+
+\begin{document}
+
+\title{Literature Review: Neural Network Gaussian Processes}
+\maketitle
+
+\section{Single Layer \cite{lee2018deep}}
+
+\begingroup
+\let\clearpage\relax
+\AtNextBibliography{\small}
+\section*{References}
+\printbibliography[heading=talikarng, title = {References}]
+\endgroup
+\end{document}
