@@ -1,0 +1,100 @@
+\documentclass[twoside,11pt]{article}
+
+\usepackage{blindtext}
+
+\usepackage{paper}
+
+% Definitions of handy macros can go here
+
+\newcommand{\dataset}{{\cal D}}
+\newcommand{\fracpartial}[2]{\frac{\partial #1}{\partial  #2}}
+
+\usepackage{xcolor}
+\newcommand{\jk}[1]{{\color{blue} [JK: #1]}}
+\newcommand{\jw}[1]{{\color{gray} [JW: #1]}}
+\newcommand{\Cat}{\operatorname{Cat}}
+\newcommand{\Chol}{\operatorname{Chol}}
+\newcommand{\KLD}{\operatorname{KLD}}
+
+\usepackage{lastpage}
+\usepackage{amsmath}
+\usepackage{mathtools}
+\usepackage{enumitem}
+
+\DeclareMathOperator*{\argmax}{arg\,max}
+\DeclareMathOperator*{\argmin}{arg\,min}
+\usepackage[backend=biber,style=nature]{biblatex}
+
+\addbibresource{references.bib}
+\defbibheading{talikarng}{\References}
+% Short headings should be running head and authors last names
+
+\ShortHeadings{Literature Review}{Sparse Variational Gaussian Processes}
+\firstpageno{1}
+
+\begin{document}
+
+\title{Literature Review: Sparse Variational Gaussian Processes}
+\maketitle
+
+\section{Gaussian Measures in Hilbert Spaces \cite{wild2022generalized}, \cite{Kukush_2019}}
+Gaussian measures are typically defined as a Lebesgue measure on a physical probability space $(\Omega, \mathcal{A}, \mathbb{P})$. However, there does not exist an infinite-dimensional equivalent to the Lebesgue measure. This means that in most cases, we cannot assume the existence of an infinite-dimensional analog of a probability measure that exists in a finite-dimensional space. However, there are special cases where it is possible to define a push-forward measure from $(\Omega, \mathcal{A}, \mathbb{P})$ to an infinite-dimensional space. In the following, we define the infinite-dimensional analog of a Gaussian measure  $\mathbb{P}^{F}(A)$, a push-forward measure constructed from an underlying finite-dimensional $(\Omega, \mathcal{A}, \mathbb{P})$. In particular, we will define $\mathbb{P}^{F}(A)$ on a Hilbert space $\mathcal{H}$ with inner product $\langle \cdot, \cdot \rangle_\mathcal{H}$.
+\subsection{Gaussian Random Elements}
+ Consider a random element $F \in \mathcal{H}$. $F$ is a \textit{Gaussian Random Element} (GRE) if $\forall h \in \mathcal{H}$:
+\begin{align}
+    \langle F, h \rangle_\mathcal{H} \sim \mathcal{N}(\mu(F, h), \sigma^2(F, h))
+\end{align}
+In other words, for each $h \in \mathcal{H}$, $\langle F, h \rangle_\mathcal{H}$ is a Gaussian random variable (possibly with zero variance). The mean can be written as an inner product:
+\begin{align}
+\mu(F, h) = \langle m, h\rangle_{\mathcal{H}}
+\end{align}
+where:
+\begin{align}
+    m \coloneqq \int F(\omega) d \mathbb{P}(\omega)
+\end{align}
+the expectation of $F(\omega)$ with respect to some probability measure $\mathbb{P}$ on a finite dimensional space $\Omega$. The variance can be written as an inner product:
+\begin{align}
+\sigma^2(F, h) = \langle C(h), h\rangle_{\mathcal{H}}
+\end{align}
+where $C$ is the covariance operator:
+\begin{align}
+    C(h) \coloneqq \int \langle F(\omega), h\rangle_{\mathcal{H}} F(\omega)d \mathbb{P}(\omega) - \langle m, h\rangle_{\mathcal{H}} m 
+\end{align}
+Thus, we can denote:
+\begin{align}
+    \langle F, h\rangle_{\mathcal{H}} \sim \mathcal{N}\left(  \langle m, h\rangle_{\mathcal{H}},  \langle C(h), h\rangle_{\mathcal{H}}\right)
+\end{align}
+and we can call $F$ a GRE with:
+\begin{align}
+    F \sim \mathcal{N}(m, C)
+\end{align}
+\subsection{Gaussian Measures \cite{wild2022generalized}}
+We can define the push-forward measure of $\mathbb{P}$ through the mapping $F: \Omega \rightarrow \mathcal{H}$, $F \in \mathcal{H}$ as $\mathbb{P}^{F}(A) \coloneqq \mathbb{P}(F^{-1}(H))$ for all Borel-measurable $H \subset \mathcal{H}$. Moreover, if $F$ is a Gaussian random element, then we can define the distribution $P \coloneqq \mathbb{P}^{F}$, the corresponding push-forward measure, as a Gaussian measure. This formulation us to define a Gaussian distribution $P$ over the infinite-dimensional Hilbert space $\mathcal{H}$. \jw{The ability to define $\mathbb{P}^{F}(A)$ seems to hinge on the existence of GREs in $\mathcal{H}$. Is there a reason why we can't define random elements in a similar fashion for other distributions that aren't Gaussian?}
+\section{Gaussian Processes \cite{wild2022generalized}}
+A Gaussian process $F \sim GP(m, k)$, is a random function mapping $F: \mathcal{X} \rightarrow \mathbb{R}$, defined with respect to a mean function $m: \mathcal{X} \rightarrow \mathbb{R}$ and a positive definite kernel $k: \mathcal{X} \times \mathcal{X} \rightarrow \mathbb{R}$. In particular, for N points $X = (x_1, \dots, x_N) \in \mathcal{X}^N$, the evaluation $F_X \coloneqq (F(x_1), \dots, F(x_N))^T \in \mathbb{R}^N$ will follow a Gaussian distribution $F_X \sim \mathcal{N}(m_X, k_{X, X})$ where $m_X = \left[ m(x_n)\right] \in \mathbb{R}^N$ and $k_{X, X} = \left[ k(x_n, x_{n'})\right] \in \mathbb{R}^{N \times N}$ where $n, n'=1,\dots, N$.
+
+\subsection{Gaussian Measures $\rightarrow$ Gaussian Processes \cite{wild2022generalized}}
+A Gaussian process $F \sim GP(m, k)$ can have many Gaussian measure formulations. To define a corresponding Gaussian \textit{measure} for a GP requires specification of an appropriate \textit{measureable space}. As shown in \cite{wild2022generalized}, a Gaussian process can be specified as a Gaussian measure $P$ on a Hilbert space of square-integrable functions $L^2(\mathcal{X}, \rho, \mathbb{R})$ when the mean $m \in L^2(\mathcal{X}, \rho, \mathbb{R})$ and the kernel $k$ satisfies:
+\begin{align}
+    \int_{\mathcal{X}} k(x, x) d\rho(x) < \infty
+    \label{trace-kernel-condtiion}
+\end{align}
+These conditions guarantee sample functions from $F$ to have square-integrable paths, allowing for a corresponding Gaussian measure $P \coloneqq \mathbb{P}^F \sim \mathcal{N}(m, C)$ defined on the \textit{measureable space} $L^2(\mathcal{X}, \rho, \mathbb{R})$ with the same mean $m$ and a covariance operator $C$:
+\begin{align}
+    C(f(\cdot)) \coloneqq \int k(\cdot, x')f(x')d \rho(x')
+    \label{gm-covariance-operator}
+\end{align}
+for any function $f \in L^2(\mathcal{X}, \rho, \mathbb{R})$. \\
+\newline 
+Although Gaussian processes and Gaussian measures are distinct concepts, (\ref{trace-kernel-condtiion}) is satisfied for most GPs, ensuring the existence of corresponding Gaussian measures. As such, Gaussian measures and Gaussian processes can often be used interchangeably. Working with statistical divergences in the following sections, it will be more appropriate to use Gaussian measures instead of Gaussian processes.
+\jw{Is it trivial to show that the NNGP kernel will satisfy (\ref{trace-kernel-condtiion})?}
+\section{Sparse Variational Gaussian Processes \cite{wild2023connections}}
+
+
+\begingroup
+\let\clearpage\relax
+\AtNextBibliography{\small}
+\section*{References}
+\printbibliography[heading=talikarng, title = {References}]
+\endgroup
+\end{document}
