@@ -36,9 +36,59 @@
 
 \title{Literature Review: Neural Network Gaussian Processes}
 \maketitle
+\section{Central Limit Theorem}
+The Central Limit Theorem states that for $\left\{ X_1, \dots X_N \right\}$ i.i.d. random variables with $\mathbb{E}\left[X_n\right] = \mu$ and $\mathbb{V}\left[X_n\right] = \sigma^2 < \infty$ for all $n=1\dots N$, then as $N \rightarrow \infty$:
+\begin{align}
+    \sqrt{N}\left(\bar{X}_N-\mu\right) \xrightarrow{d} \mathcal{N}\left(0, \sigma^2\right)
+\end{align}
+where $\bar{X}_N = \frac{1}{N}\sum_{n=1}^N X_n$. In other words, the average across $N$ random variables will approach a Gaussian distribution as $N$ approaches infinity.
+\section{Single-layer Neural Network Proof \cite{lee2018deep}}
+We will show that by assume i.i.d Gaussian distributions on the weights and biases of a neural network, we can show that the output of a single layer network is the sum of $N$ i.i.d random variables, where $N$ is the network width. Thus by the central limit theorem, the network output will be Gaussian distributed as the network width $N \rightarrow \infty$.
+\subsection{Single-layer Neural Networks}
+For an input vector $\mathbf{x}^{(in)} \in \mathbb{R}^D$, the $m^{th}$ output of a single layer neural network can be expressed as:
+\begin{align}
+    \label{single-layer}
+    y_m = f_m\left(\textbf{x}^{(in)}\right) = f_m^{post}\left(\mathbf{g^{pre}}\left(\textbf{x}^{(in)}\right)\right) = f_m^{post}\left(g_1^{pre}\left(\textbf{x}^{(in)}\right), \dots, g_{N^{(h)}}^{pre}\left(\textbf{x}^{(in)}\right)\right)
+\end{align}
+with $f_m^{post}$ and $g_{n}^{pre}$ are defined:
+\begin{align}
+    \label{single-layer-out}
+    y_m = f_m^{post}\left(x_{1}^{(h)}, \dots, x_{N^{(h)}}^{(h)}\right) = b_m^{(h)} + \sum_{n = 1}^{N^{(h)}} W_{m, n}^{(h)} x_{n}^{(h)} \\
+    \label{single-layer-hidden}
+    x_{n}^{(h)} = g_{n}^{pre}\left(\mathbf{x}^{(in)}\right) = \phi \left(b_n^{(in)} + \sum_{d=1}^{D} W_{n, d}^{(in)}x_{d}^{(in)}\right)
+\end{align}
+where $N^{(h)}$ is the width of the single hidden layer and $\phi$ is some non-linear activation function. 
+\\\jw{$\downarrow$ Need to double check $\downarrow$}
+\subsection{Infinite-width Limit}
+By assuming $b_n^{(in)}$ and $W_{n, d}^{(in)}$ are i.i.d for all $n=1,\dots, N^{(h)}$ and $d = 1, \dots D$, we can see from (\ref{single-layer-hidden}) that:
+\begin{align}
+    x_{n}^{(h)} \perp x_{n'}^{(h)} \text{, } \forall n \neq n' \text{ and } n, n' = 1, \dots, N^{(h)} 
+\end{align}
+As a result from (\ref{single-layer-out}), $f_m$ is a linear sum of $N^{(h)}$ i.i.d terms, $x_{n}^{(h)}$. In other words, $y_m$ is a sum of i.i.d random variables which by the central limit theorem states that in the infinite limit as $N^{(h)} \rightarrow \infty$, $y_m$ will approach a Gaussian distribution. Moreover, for $K$ inputs $\{\textbf{x}^1, \dots, \textbf{x}^K\}$, the corresponding output set $\{y_m^{(1)}, \dots, y_m^{(K)}\}$ will follow a joint multivariate Gaussian distribution, meaning that the random function $f_m(\cdot)$ is exactly a Gaussian process.
 
-\section{Single Layer \cite{lee2018deep}}
+If we choose $b_m^{(h)}$ and $W_{m, n}^{(h)}$ are i.i.d for all $n=1,\dots, N^{(h)}$ and $m = 1, \dots M$ with zero mean, then the mean $\mu(\textbf{x})$
 
+\\\jw{$\uparrow$ Need to double check $\uparrow$}
+
+
+\section{Multi-layer Neural Network Proof \cite{lee2018deep}}
+Building on the single layer case, we will show that the elements of the $\ell^{th}$ layer of a multi-layer neural network is the sum of $N_{\ell-1}$ i.i.d random variables from the  $(\ell-1)^{th}$ layer and so in the infinite-width limit as $N_{\ell-1} \rightarrow \infty$, the elements of the $\ell^{th}$ layer will be Gaussian distributed. Thus, by successively taking the infinite-width limit for each $\ell=1,...,L$ hidden layer, it is shown that the output of a multi-layer neural network is also Gaussian distributed.
+\\\jw{$\downarrow$ Need to finish $\downarrow$}
+\subsection{Multi-layer Neural Networks}
+We can generalise single-layer neural network formulation:
+\begin{align}
+    \label{single-layer}
+    y_m = f_m\left(\textbf{x}^{(in)}\right) = f_m^{L}\left(\mathbf{g^{L}}\left(\cdots \mathbf{f^{1}}\left(\mathbf{g^{1}}\left(\textbf{x}^{(in)}\right)\right)\cdots\right)\right) 
+\end{align}
+with $f_m^{\ell}$ and $g_{n}^{\ell}$ are defined:
+\begin{align}
+    \label{single-layer-out}
+    y_m = f_m^{post}\left(z_{1}^{L}, \dots, z_{N(L)}^{L}\right) = b_m^{L} + \sum_{n = 1}^{N(L)} W_{m, n_{L}}^{L} z_{n_{L}}^{L} \\
+    \label{single-layer-post}
+    z_{n_{\ell}} = f_m^{post}\left(x_{1}^{(h)}, \dots, x_{N^{(h)}}^{(h)}\right) = b_m^{(h)} + \sum_{n = 1}^{N^{(h)}} W_{m, n}^{(h)} x_{n}^{(h)} \\
+    \label{single-layer-pre}
+    x_{n}^{(h)} = g_{n}^{pre}\left(\mathbf{x}^{(in)}\right) = \phi \left(b_n^{(in)} + \sum_{d=1}^{D} W_{n, d}^{(in)}x_{d}^{(in)}\right)
+\end{align}
 \begingroup
 \let\clearpage\relax
 \AtNextBibliography{\small}

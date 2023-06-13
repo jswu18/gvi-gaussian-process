@@ -64,15 +64,38 @@ Thus, we can denote:
 \begin{align}
     \langle F, h\rangle_{\mathcal{H}} \sim \mathcal{N}\left(  \langle m, h\rangle_{\mathcal{H}},  \langle C(h), h\rangle_{\mathcal{H}}\right)
 \end{align}
-and we can call $F$ a GRE with:
+and we denote that $F$ is a GRE with:
 \begin{align}
     F \sim \mathcal{N}(m, C)
 \end{align}
 \subsection{Gaussian Measures \cite{wild2022generalized}}
-We can define the push-forward measure of $\mathbb{P}$ through the mapping $F: \Omega \rightarrow \mathcal{H}$, $F \in \mathcal{H}$ as $\mathbb{P}^{F}(A) \coloneqq \mathbb{P}(F^{-1}(H))$ for all Borel-measurable $H \subset \mathcal{H}$. Moreover, if $F$ is a Gaussian random element, then we can define the distribution $P \coloneqq \mathbb{P}^{F}$, the corresponding push-forward measure, as a Gaussian measure. This formulation us to define a Gaussian distribution $P$ over the infinite-dimensional Hilbert space $\mathcal{H}$. \jw{The ability to define $\mathbb{P}^{F}(A)$ seems to hinge on the existence of GREs in $\mathcal{H}$. Is there a reason why we can't define random elements in a similar fashion for other distributions that aren't Gaussian?}
-\section{Gaussian Processes \cite{wild2022generalized}}
-A Gaussian process $F \sim GP(m, k)$, is a random function mapping $F: \mathcal{X} \rightarrow \mathbb{R}$, defined with respect to a mean function $m: \mathcal{X} \rightarrow \mathbb{R}$ and a positive definite kernel $k: \mathcal{X} \times \mathcal{X} \rightarrow \mathbb{R}$. In particular, for N points $X = (x_1, \dots, x_N) \in \mathcal{X}^N$, the evaluation $F_X \coloneqq (F(x_1), \dots, F(x_N))^T \in \mathbb{R}^N$ will follow a Gaussian distribution $F_X \sim \mathcal{N}(m_X, k_{X, X})$ where $m_X = \left[ m(x_n)\right] \in \mathbb{R}^N$ and $k_{X, X} = \left[ k(x_n, x_{n'})\right] \in \mathbb{R}^{N \times N}$ where $n, n'=1,\dots, N$.
-
+We can define the push-forward measure of $\mathbb{P}$ through the mapping $F: \Omega \rightarrow \mathcal{H}$, $F \in \mathcal{H}$ as $\mathbb{P}^{F}(A) \coloneqq \mathbb{P}(F^{-1}(H))$ for all Borel-measurable $H \subset \mathcal{H}$. Moreover, if $F$ is a Gaussian random element, then we can define the distribution $P \coloneqq \mathbb{P}^{F}$, the corresponding push-forward measure, as a Gaussian measure. This formulation allows us to define a Gaussian distribution $P$ over the infinite-dimensional Hilbert space $\mathcal{H}$. \jw{The ability to define $\mathbb{P}^{F}(A)$ seems to hinge on the existence of GREs in $\mathcal{H}$. Is there a reason why we can't define random elements in a similar fashion for other distributions that aren't Gaussian?}
+\section{Gaussian Processes \cite{wild2022generalized}, \cite{wild2023connections}}
+A Gaussian process $F \sim GP(m, k)$, is a random function mapping $F: \mathcal{X} \rightarrow \mathbb{R}$, defined with respect to a mean function $m: \mathcal{X} \rightarrow \mathbb{R}$ and a positive definite kernel $k: \mathcal{X} \times \mathcal{X} \rightarrow \mathbb{R}$. In particular, for N points $\mathbf{X} = \left\{ x_n\right\}_{n=1}^N$ such that $x_n \in \mathcal{X}$, the evaluation $F_X \coloneqq \left[F(x_1) \cdots F(x_n)\right]^T \in \mathbb{R}^N$ will follow a Gaussian distribution:
+\begin{align}
+    F_X \sim P_{\mathbf{X}}(\mathbf{Y}) = \mathcal{N}(\mathbf{m}_X, \mathbf{K}_{X, X})
+    \label{gp-prior}
+\end{align}
+where $\mathbf{m}_X = \left[ m(x_1) \cdots m(x_N)\right]^T \in \mathbb{R}^N$ and $\mathbf{K}_{X, X} \in \mathbb{R}^{N \times N}$ having elements $\left[\mathbf{K}_{X, X}\right]_{n, n'} = k(x_n, x_{n'})$ for $n, n'=1,\dots, N$. 
+\subsection{Gaussian Process Regression \cite{wild2023connections}}
+Consider the regression task where we have $N$ observation pairs $\left\{(x_n, y_n)\right\}_{n=1}^N$ such that $x_n \in \mathcal{X}$ and $y_n \in \mathbb{R}$. Using the Gaussian Process formulation in ($\ref{gp-prior}$), we can `predict' for $M$ points $\left\{ x_m\right\}_{m=1}^M$ by using Bayes' Rule to calculate the posterior distribution of $\mathbf{Y}_M$:
+\\\jw{$\downarrow$ Need to fix this $\downarrow$}
+\begin{align}
+    F_{X_M} \vert Y_N \sim P_{\mathbf{X}_M}(\mathbf{Y}_M | \mathbf{Y}_N= \left\{ y_n)\right\}_{n=1}^N) = \frac{ P_{\mathbf{X}_M}(\mathbf{Y}_M)  P_{\mathbf{X}_N}(\mathbf{Y}_N = \left\{ y_n)\right\}_{n=1}^N)}{\int_{\mathbb{R}^N} P_{\mathbf{X}_N}(\mathbf{Y}_N) d\mathbf{Y}_N}
+    \label{gp-posterior}
+\end{align}
+With all terms in (\ref{gp-posterior}) being Gaussian, the posterior has the closed form expression:
+\begin{align}
+    P(\mathbf{X}_M |  \mathbf{Y}_N, \mathbf{X}_N) = \mathcal{N}(\bar{\mathbf{m}}_{X_M}, \bar{\mathbf{K}}_{X_M, X_M})
+\end{align}
+\jw{$\uparrow$ Need to fix this $\uparrow$}\\
+where:
+\begin{align}
+    \label{gp-posterior-mean}
+    \bar{\mathbf{m}}_{X_M} = \mathbf{m}_{X_M} + \mathbf{K}_{X_M, X_N} \left( \mathbf{K}_{X_N, X_N} + \sigma^2 \mathbf{I}_N\right)^{-1} \left( \mathbf{Y}_N - \mathbf{m}_{X_N}\right)\\
+    \label{gp-posterior-covariance}
+    \bar{\mathbf{K}}_{X_M, X_M} = \mathbf{K}_{X_M, X_M} - \mathbf{K}_{X_M, X_N}\left( \mathbf{K}_{X_N, X_N} + \sigma^2 \mathbf{I}_N\right)^{-1}\mathbf{K}_{X_N, X_M}
+\end{align}
 \subsection{Gaussian Measures $\rightarrow$ Gaussian Processes \cite{wild2022generalized}}
 A Gaussian process $F \sim GP(m, k)$ can have many Gaussian measure formulations. To define a corresponding Gaussian \textit{measure} for a GP requires specification of an appropriate \textit{measureable space}. As shown in \cite{wild2022generalized}, a Gaussian process can be specified as a Gaussian measure $P$ on a Hilbert space of square-integrable functions $L^2(\mathcal{X}, \rho, \mathbb{R})$ when the mean $m \in L^2(\mathcal{X}, \rho, \mathbb{R})$ and the kernel $k$ satisfies:
 \begin{align}
@@ -87,9 +110,10 @@ These conditions guarantee sample functions from $F$ to have square-integrable p
 for any function $f \in L^2(\mathcal{X}, \rho, \mathbb{R})$. \\
 \newline 
 Although Gaussian processes and Gaussian measures are distinct concepts, (\ref{trace-kernel-condtiion}) is satisfied for most GPs, ensuring the existence of corresponding Gaussian measures. As such, Gaussian measures and Gaussian processes can often be used interchangeably. Working with statistical divergences in the following sections, it will be more appropriate to use Gaussian measures instead of Gaussian processes.
-\jw{Is it trivial to show that the NNGP kernel will satisfy (\ref{trace-kernel-condtiion})?}
+\\\jw{Is it trivial to show that the NNGP kernel will satisfy (\ref{trace-kernel-condtiion})?}
 \section{Sparse Variational Gaussian Processes \cite{wild2023connections}}
 
+\subsection{Inducing Points \cite{terenin2022numerically}}
 
 \begingroup
 \let\clearpage\relax
