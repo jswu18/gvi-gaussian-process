@@ -4,7 +4,7 @@ import jax.numpy as jnp
 import pydantic
 from flax.core.frozen_dict import FrozenDict
 
-from src.kernels.kernels import Kernel
+from src.kernels.reference_kernels import ReferenceKernel
 from src.parameters.kernels.kernels import KernelParameters
 from src.parameters.module import ModuleParameters
 
@@ -15,7 +15,7 @@ class ReferenceKernelParametersMock(KernelParameters):
     pass
 
 
-class ReferenceKernelMock(Kernel):
+class ReferenceKernelMock(ReferenceKernel):
     sigma_matrix = jnp.ones((5, 5))
 
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
