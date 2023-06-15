@@ -17,7 +17,11 @@ from src.parameters.kernels.reference_kernels import (
 PRNGKey = Any  # pylint: disable=invalid-name
 
 
-class StandardKernel(Kernel, ABC):
+class ReferenceKernel(Kernel, ABC):
+    pass
+
+
+class StandardKernel(ReferenceKernel, ABC):
     """
     Kernels that can be easily defined with a kernel function evaluated at a single pair of points.
     """
@@ -178,7 +182,7 @@ class ARDKernel(StandardKernel):
         ).astype(jnp.float64)
 
 
-class NeuralNetworkGaussianProcessKernel(Kernel):
+class NeuralNetworkGaussianProcessKernel(ReferenceKernel):
     """
     A wrapper class for the kernel function provided by the NTK package.
     """
