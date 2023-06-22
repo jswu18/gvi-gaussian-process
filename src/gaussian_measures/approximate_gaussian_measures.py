@@ -1,4 +1,4 @@
-from typing import Dict, Union
+from typing import Callable, Dict, Tuple, Union
 
 import pydantic
 from flax.core import FrozenDict
@@ -34,6 +34,7 @@ class ApproximateGaussianMeasure(GaussianMeasure):
         reference_gaussian_measure_parameters: GaussianMeasureParameters,
         eigenvalue_regularisation: float = 0.0,
         is_eigenvalue_regularisation_absolute_scale: bool = False,
+        use_symmetric_matrix_eigendecomposition: bool = True,
     ):
         """
         Defining the training data (x, y), the mean function, and the kernel for the approximate Gaussian measure.
@@ -45,26 +46,82 @@ class ApproximateGaussianMeasure(GaussianMeasure):
             y: the training outputs response vector of shape (n, 1)
             mean_function: the approximate mean function of the Gaussian measure
             kernel: the approximate kernel of the Gaussian measure
+            use_symmetric_matrix_eigendecomposition: ensure symmetric matrices for eignedecomposition
         """
         super().__init__(x, y, mean_function, kernel)
         self.kernel = kernel
+        self._reference_gaussian_measure = reference_gaussian_measure
+        self._reference_gaussian_measure_parameters = (
+            reference_gaussian_measure_parameters
+        )
+        self._eigenvalue_regularisation = eigenvalue_regularisation
+        self._is_eigenvalue_regularisation_absolute_scale = (
+            is_eigenvalue_regularisation_absolute_scale
+        )
+        self._use_symmetric_matrix_eigendecomposition = (
+            use_symmetric_matrix_eigendecomposition
+        )
+        (
+            self._jit_compiled_compute_gaussian_wasserstein_metric,
+            self._jit_compute_gaussian_wasserstein_inference_loss,
+        ) = self._build_jit_compiled_functions(
+            x=x,
+            reference_gaussian_measure=reference_gaussian_measure,
+            reference_gaussian_measure_parameters=reference_gaussian_measure_parameters,
+            eigenvalue_regularisation=eigenvalue_regularisation,
+            is_eigenvalue_regularisation_absolute_scale=is_eigenvalue_regularisation_absolute_scale,
+            use_symmetric_matrix_eigendecomposition=use_symmetric_matrix_eigendecomposition,
+        )
 
+    @property
+    def use_symmetric_matrix_eigendecomposition(self) -> bool:
+        return self._use_symmetric_matrix_eigendecomposition
+
+    @use_symmetric_matrix_eigendecomposition.setter
+    def use_symmetric_matrix_eigendecomposition(
+        self, use_symmetric_matrix_eigendecomposition: bool
+    ) -> None:
+        self._use_symmetric_matrix_eigendecomposition = (
+            use_symmetric_matrix_eigendecomposition
+        )
+        (
+            self._jit_compiled_compute_gaussian_wasserstein_metric,
+            self._jit_compute_gaussian_wasserstein_inference_loss,
+        ) = self._build_jit_compiled_functions(
+            x=self.x,
+            reference_gaussian_measure=self._reference_gaussian_measure,
+            reference_gaussian_measure_parameters=self._reference_gaussian_measure_parameters,
+            eigenvalue_regularisation=self._eigenvalue_regularisation,
+            is_eigenvalue_regularisation_absolute_scale=self._is_eigenvalue_regularisation_absolute_scale,
+            use_symmetric_matrix_eigendecomposition=use_symmetric_matrix_eigendecomposition,
+        )
+
+    def _build_jit_compiled_functions(
+        self,
+        x: jnp.ndarray,
+        reference_gaussian_measure: GaussianMeasure,
+        reference_gaussian_measure_parameters: GaussianMeasureParameters,
+        eigenvalue_regularisation: float = 0.0,
+        is_eigenvalue_regularisation_absolute_scale: bool = False,
+        use_symmetric_matrix_eigendecomposition: bool = True,
+    ) -> Tuple[Callable, Callable]:
         # define a jit-compiled function to compute the Gaussian Wasserstein metric
-        self._jit_compiled_compute_gaussian_wasserstein_metric = jit(
+        jit_compiled_compute_gaussian_wasserstein_metric = jit(
             lambda x_batch, gaussian_measure_parameters_dict: compute_gaussian_wasserstein_metric(
                 p=reference_gaussian_measure,
                 q=self,
                 p_parameters=reference_gaussian_measure_parameters.dict(),
                 q_parameters=gaussian_measure_parameters_dict,
                 x_batch=x_batch,
-                x_train=x,
+                x_train=x_batch if use_symmetric_matrix_eigendecomposition else x,
                 eigenvalue_regularisation=eigenvalue_regularisation,
                 is_eigenvalue_regularisation_absolute_scale=is_eigenvalue_regularisation_absolute_scale,
+                use_symmetric_matrix_eigendecomposition=use_symmetric_matrix_eigendecomposition,
             )
         )
 
         # define a jit-compiled function to compute the Gaussian Wasserstein inference loss
-        self._jit_compute_gaussian_wasserstein_inference_loss = jit(
+        jit_compute_gaussian_wasserstein_inference_loss = jit(
             lambda x_batch, gaussian_measure_parameters_dict: (
                 self._jit_compiled_compute_gaussian_wasserstein_metric(
                     x_batch, gaussian_measure_parameters_dict
@@ -73,6 +130,10 @@ class ApproximateGaussianMeasure(GaussianMeasure):
                     gaussian_measure_parameters_dict
                 )
             )
+        )
+        return (
+            jit_compiled_compute_gaussian_wasserstein_metric,
+            jit_compute_gaussian_wasserstein_inference_loss,
         )
 
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
