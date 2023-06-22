@@ -3,13 +3,13 @@ from typing import Dict
 import jax.numpy as jnp
 import pytest
 from jax.config import config
-from mockers.reference_kernel import ReferenceKernelMock, ReferenceKernelParametersMock
-from mockers.reference_mean_function import (
+
+from mockers.kernels import ReferenceKernelMock, ReferenceKernelParametersMock
+from mockers.mean_functions import (
     NeuralNetworkMock,
     ReferenceMeanFunctionMock,
     ReferenceMeanFunctionParametersMock,
 )
-
 from src.mean_functions.approximate_mean_functions import (
     NeuralNetworkMeanFunction,
     StochasticVariationalGaussianProcessMeanFunction,
