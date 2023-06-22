@@ -1,14 +1,12 @@
-from typing import Dict
-
 import jax.numpy as jnp
 import pytest
 from jax.config import config
-from mockers.reference_kernel import ReferenceKernelMock, ReferenceKernelParametersMock
-from mockers.reference_mean_function import (
+
+from mockers.kernels import ReferenceKernelMock, ReferenceKernelParametersMock
+from mockers.mean_functions import (
     ReferenceMeanFunctionMock,
     ReferenceMeanFunctionParametersMock,
 )
-
 from src.gaussian_measures.reference_gaussian_measures import ReferenceGaussianMeasure
 from src.parameters.gaussian_measures.reference_gaussian_measures import (
     ReferenceGaussianMeasureParameters,

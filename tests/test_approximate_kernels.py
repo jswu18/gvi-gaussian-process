@@ -4,12 +4,12 @@ import jax.numpy as jnp
 import pytest
 from jax.config import config
 from mock import MagicMock
-from mockers.reference_kernel import (
+
+from mockers.kernels import (
     ReferenceKernelMock,
     ReferenceKernelParametersMock,
     calculate_reference_gram_mock,
 )
-
 from src.kernels.approximate_kernels import StochasticVariationalGaussianProcessKernel
 from src.parameters.kernels.approximate_kernels import (
     StochasticVariationalGaussianProcessKernelParameters,
