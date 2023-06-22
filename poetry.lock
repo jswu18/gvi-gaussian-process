@@ -2210,6 +2210,18 @@ files = [
 six = ">=1.5"
 
 [[package]]
+name = "python-mnist"
+version = "0.7"
+description = "Simple MNIST and EMNIST data parser written in pure Python"
+category = "main"
+optional = false
+python-versions = "*"
+files = [
+    {file = "python-mnist-0.7.tar.gz", hash = "sha256:a0cced01e83b5b844cff86109280df7a672a8e4e38fc19fa68999a17f8a9fbd8"},
+    {file = "python_mnist-0.7-py2.py3-none-any.whl", hash = "sha256:f5753799787b8ba853ed7b0551a21be14ee3f635aa649e114393c9a5fd58538e"},
+]
+
+[[package]]
 name = "pywin32"
 version = "306"
 description = "Python for Window Extensions"
@@ -3054,4 +3066,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = "~3.10"
-content-hash = "e48ff1cfe6aad091244a91583b63b355159e0f6022cf16c4230f1bde6889e266"
+content-hash = "06b957538a56fe228d596b0a1e94b0fb10c001f7428d956053a7750578d0e7cb"
