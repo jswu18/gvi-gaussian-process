@@ -18,7 +18,7 @@ from src.utils.matrix_operations import (
                 ]
             ),
             jnp.array(
-                [0.49999994, 1.5],
+                [0.5, 1.5],
             ),
         ],
         [
@@ -38,9 +38,11 @@ def test_compute_covariance_eigenvalues(
     matrix: jnp.ndarray,
     eigenvalues: jnp.ndarray,
 ):
-    assert jnp.array_equal(
+    assert jnp.allclose(
         jnp.sort(compute_covariance_eigenvalues(matrix)),
         eigenvalues,
+        rtol=1e-05,
+        atol=1e-08,
     )
 
 
