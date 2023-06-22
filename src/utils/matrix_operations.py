@@ -95,10 +95,6 @@ def compute_product_eigenvalues(
     Returns: the eigenvalues of the product matrix_a*matrix_b
 
     """
-    # check symmetric matrices
-    assert is_symmetric(matrix_a), f"non-symmetric matrix {matrix_a=}"
-    assert is_symmetric(matrix_a), f"non-symmetric matrix {matrix_b=}"
-
     matrix_a_eigenvalues, _ = jnp.linalg.eigh(matrix_a)
     matrix_b_sqrt = jsp.linalg.sqrtm(matrix_b)
     matrix_b_sqrt_eigenvalues, _ = jnp.linalg.eigh(matrix_b_sqrt)
@@ -113,15 +109,3 @@ def compute_product_eigenvalues(
         a_min=0,
         a_max=None,
     ).real
-
-
-def is_symmetric(matrix: jnp.ndarray) -> bool:
-    """
-    Check if matrix is symmetric
-    Args:
-        matrix: array
-
-    Returns: boolean
-
-    """
-    return bool(jnp.allclose(matrix, matrix.T))

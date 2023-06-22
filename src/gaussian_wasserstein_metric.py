@@ -11,7 +11,6 @@ from src.utils.matrix_operations import (
     add_diagonal_regulariser,
     compute_covariance_eigenvalues,
     compute_product_eigenvalues,
-    is_symmetric,
 )
 
 
@@ -24,6 +23,7 @@ def _compute_cross_covariance_eigenvalues(
     x_train: jnp.ndarray,
     eigenvalue_regularisation: float = 0.0,
     is_eigenvalue_regularisation_absolute_scale: bool = False,
+    use_symmetric_matrix_eigendecomposition: bool = True,
 ) -> jnp.ndarray:
     """
     Compute the eigenvalues of the covariance matrix of shape (m, m).
@@ -41,6 +41,7 @@ def _compute_cross_covariance_eigenvalues(
         x_train: the training data points of shape (n, d)
         eigenvalue_regularisation: the regularisation to add to the covariance matrix during eigenvalue computation
         is_eigenvalue_regularisation_absolute_scale: whether the regularisation is an absolute or relative scale
+        use_symmetric_matrix_eigendecomposition: ensure symmetric matrices for eignedecomposition
 
     Returns: the eigenvalues of the covariance matrix, a vector of shape (m, 1)
 
@@ -51,8 +52,8 @@ def _compute_cross_covariance_eigenvalues(
     gram_batch_train_q = q.calculate_covariance(
         x=x_batch, y=x_train, parameters=q_parameters
     )
-    if is_symmetric(gram_batch_train_p) and is_symmetric(gram_batch_train_q):
-        return compute_product_eigenvalues(gram_batch_train_p, gram_batch_train_q)
+    if use_symmetric_matrix_eigendecomposition:
+        return compute_product_eigenvalues(gram_batch_train_q, gram_batch_train_p)
     else:
         warnings.warn(
             "covariance matrices are non-symmetric and cannot utilise GPU resources"
@@ -75,6 +76,7 @@ def compute_gaussian_wasserstein_metric(
     x_train: jnp.ndarray,
     eigenvalue_regularisation: float = 0.0,
     is_eigenvalue_regularisation_absolute_scale: bool = False,
+    use_symmetric_matrix_eigendecomposition: bool = True,
 ) -> float:
     """
     Compute the empirical Gaussian Wasserstein metric between two Gaussian measures.
@@ -93,6 +95,7 @@ def compute_gaussian_wasserstein_metric(
         x_train: the training data points of shape (n, d)
         eigenvalue_regularisation: the regularisation to add to the covariance matrix during eigenvalue computation
         is_eigenvalue_regularisation_absolute_scale: whether the regularisation is an absolute or relative scale
+        use_symmetric_matrix_eigendecomposition: ensure symmetric matrices for eignedecomposition
 
     Returns: the Gaussian Wasserstein metric between the two Gaussian measures, a scalar
 
@@ -121,6 +124,7 @@ def compute_gaussian_wasserstein_metric(
         x_train=x_train,
         eigenvalue_regularisation=eigenvalue_regularisation,
         is_eigenvalue_regularisation_absolute_scale=is_eigenvalue_regularisation_absolute_scale,
+        use_symmetric_matrix_eigendecomposition=use_symmetric_matrix_eigendecomposition,
     )
     return (
         jnp.mean((mean_train_p - mean_train_q) ** 2)

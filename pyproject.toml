@@ -20,6 +20,7 @@ matplotlib = "^3.6.2"
 flax = "^0.6.3"
 neural-tangents = "^0.6.1"
 pydantic = "^1.10.9"
+python-mnist = "^0.7"
 
 [tool.poetry.dev-dependencies]
 black = "~22.6"
