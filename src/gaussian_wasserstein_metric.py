@@ -1,3 +1,4 @@
+import warnings
 from typing import Dict, Union
 
 import jax.numpy as jnp
@@ -9,6 +10,8 @@ from src.parameters.gaussian_measures.gaussian_measures import GaussianMeasurePa
 from src.utils.matrix_operations import (
     add_diagonal_regulariser,
     compute_covariance_eigenvalues,
+    compute_product_eigenvalues,
+    is_symmetric,
 )
 
 
@@ -48,13 +51,18 @@ def _compute_cross_covariance_eigenvalues(
     gram_batch_train_q = q.calculate_covariance(
         x=x_batch, y=x_train, parameters=q_parameters
     )
-    covariance_p_q = gram_batch_train_p @ gram_batch_train_q.T
-    covariance_p_q_regularised = add_diagonal_regulariser(
-        matrix=covariance_p_q,
-        diagonal_regularisation=eigenvalue_regularisation,
-        is_diagonal_regularisation_absolute_scale=is_eigenvalue_regularisation_absolute_scale,
-    )
-    return compute_covariance_eigenvalues(covariance_p_q_regularised)
+    if is_symmetric(gram_batch_train_p) and is_symmetric(gram_batch_train_q):
+        return compute_product_eigenvalues(gram_batch_train_p, gram_batch_train_q)
+    else:
+        warnings.warn(
+            "covariance matrices are non-symmetric and cannot utilise GPU resources"
+        )
+        covariance_p_q_regularised = add_diagonal_regulariser(
+            matrix=gram_batch_train_p @ gram_batch_train_q.T,
+            diagonal_regularisation=eigenvalue_regularisation,
+            is_diagonal_regularisation_absolute_scale=is_eigenvalue_regularisation_absolute_scale,
+        )
+        return compute_covariance_eigenvalues(covariance_p_q_regularised)
 
 
 @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))

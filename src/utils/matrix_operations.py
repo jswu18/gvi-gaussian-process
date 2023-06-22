@@ -2,7 +2,8 @@ import logging
 
 import jax.numpy as jnp
 import jax.scipy as jsp
-from jax.experimental import host_callback
+
+# from jax.experimental import host_callback
 
 
 def add_diagonal_regulariser(
@@ -79,7 +80,7 @@ def compute_covariance_eigenvalues(
 def compute_product_eigenvalues(
     matrix_a: jnp.ndarray,
     matrix_b: jnp.ndarray,
-):
+) -> jnp.ndarray:
     """
     Computes the eigenvalues of a product of two symmetric matrices:
         eig(A*B))
@@ -95,8 +96,8 @@ def compute_product_eigenvalues(
 
     """
     # check symmetric matrices
-    assert jnp.allclose(matrix_a, matrix_a.T), f"non-symmetric matrix {matrix_a=}"
-    assert jnp.allclose(matrix_b, matrix_b.T), f"non-symmetric matrix {matrix_b=}"
+    assert is_symmetric(matrix_a), f"non-symmetric matrix {matrix_a=}"
+    assert is_symmetric(matrix_a), f"non-symmetric matrix {matrix_b=}"
 
     matrix_a_eigenvalues, _ = jnp.linalg.eigh(matrix_a)
     matrix_b_sqrt = jsp.linalg.sqrtm(matrix_b)
@@ -112,3 +113,15 @@ def compute_product_eigenvalues(
         a_min=0,
         a_max=None,
     ).real
+
+
+def is_symmetric(matrix: jnp.ndarray) -> bool:
+    """
+    Check if matrix is symmetric
+    Args:
+        matrix: array
+
+    Returns: boolean
+
+    """
+    return bool(jnp.allclose(matrix, matrix.T))
