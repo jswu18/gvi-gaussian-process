@@ -30,6 +30,8 @@ notebooks/mnist_data
 /**/*.log
 /**/*.synctex.gz
 /**/*.out
+/**/*.bcf
+/**/*.xml
 
 # scripts
 /scripts/regression_toy_example_outputs/*
