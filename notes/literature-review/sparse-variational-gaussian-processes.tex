@@ -36,7 +36,81 @@
 
 \title{Literature Review: Sparse Variational Gaussian Processes}
 \maketitle
-
+\section{Gaussian Processes \cite{wild2022generalized}, \cite{wild2023connections}}
+A Gaussian process $F \sim GP(m, k)$, is a random function mapping $F: \mathcal{X} \rightarrow \mathbb{R}$, defined with respect to a mean function $m: \mathcal{X} \rightarrow \mathbb{R}$ and a positive definite kernel $k: \mathcal{X} \times \mathcal{X} \rightarrow \mathbb{R}$. In particular, for N points $\mathbf{X} = \left\{ x_n\right\}_{n=1}^N$ such that $x_n \in \mathcal{X}$, the evaluation $F_X \coloneqq \left[F(x_1) \cdots F(x_n)\right]^T \in \mathbb{R}^N$ will follow a Gaussian distribution:
+\begin{align}
+    F_X \sim P_{\mathbf{X}}(\mathbf{Y}) = \mathcal{N}(\mathbf{m}_X, \mathbf{K}_{X, X})
+    \label{gp-prior}
+\end{align}
+where $\mathbf{m}_X = \left[ m(x_1) \cdots m(x_N)\right]^T \in \mathbb{R}^N$ and $\mathbf{K}_{X, X} \in \mathbb{R}^{N \times N}$ having elements $\left[\mathbf{K}_{X, X}\right]_{n, n'} = k(x_n, x_{n'})$ for $n, n'=1,\dots, N$. 
+\subsection{Gaussian Process Regression \cite{wild2023connections}}
+Consider the regression task where we have $N$ observation pairs $\left\{(x_n, y_n)\right\}_{n=1}^N$ such that $x_n \in \mathcal{X}$ and $y_n \in \mathbb{R}$. Using the Gaussian Process formulation in ($\ref{gp-prior}$), we can `predict' for $N^*$ points $\mathbf{X}_{N^*} = \left\{ x_{n^*}\right\}_{n^*=1}^{N^*}$ by using Bayes' Rule to calculate the posterior distribution of $\mathbf{Y}_{N^*}$:
+\begin{align}
+    F_{X_{N^*}} \vert Y_N \sim P_{\mathbf{X}_{N^*}}(\mathbf{Y}_{N^*} | \mathbf{Y}_N= \left\{ y_n\right\}_{n=1}^N) = \frac{ P_{\mathbf{X}_N}(\mathbf{Y}_N=\left\{ y_n\right\}_{n=1}^N \vert \mathbf{Y}_{N^*})  P_{\mathbf{X}_{N^*}}(\mathbf{Y}_{N^*})}{ P_{\mathbf{X}_N}(\mathbf{Y}_N= \left\{ y_n\right\}_{n=1}^N)}
+    \label{gp-posterior}
+\end{align}
+% where $\mathbf{X}_N = \left\{ x_n\right\}_{n=1}^N$, $\mathbf{Y}_N = \left\{ y_n\right\}_{n=1}^N$, $\mathbf{X}_{N^*} = \left\{ x_{n^*}\right\}_{n^*=1}^{N^*}$, and $\mathbf{Y}_{N^*} = \left\{ y_{n^*}\right\}_{n^*=1}^{N^*}$.
+which we denote $P^{F \vert \mathbf{Y}_N}$. With all terms in (\ref{gp-posterior}) being Gaussian, the posterior has the closed form expression:
+\begin{align}
+    P^{F \vert \mathbf{Y}_N} =  \mathcal{N}(\bar{\mathbf{m}}_{X_{N^*}}, \bar{\mathbf{K}}_{X_{N^*}, X_{N^*}})
+\end{align}
+where:
+\begin{align}
+    \label{gp-posterior-mean}
+    \bar{\mathbf{m}}_{X_{N^*}} = \mathbf{m}_{X_{N^*}} + \mathbf{K}_{X_{N^*}, X_N} \left( \mathbf{K}_{X_N, X_N} + \sigma^2 \mathbf{I}_N\right)^{-1} \left( \mathbf{Y}_N - \mathbf{m}_{X_N}\right)\\
+    \label{gp-posterior-covariance}
+    \bar{\mathbf{K}}_{X_{N^*}, X_{N^*}} = \mathbf{K}_{X_{N^*}, X_{N^*}} - \mathbf{K}_{X_{N^*}, X_N}\left( \mathbf{K}_{X_N, X_N} + \sigma^2 \mathbf{I}_N\right)^{-1}\mathbf{K}_{X_N, X_{N^*}}
+\end{align}
+\subsection{Sparse Variational Gaussian Processes \cite{wild2023connections}}
+A well-known issue with Gaussian Processes regression is their inability to scale. The posterior covariance matrix in ($\ref{gp-posterior-covariance}$) requires a matrix inversion operation with $\mathcal{O}(N^3)$ computational complexity. A common approach is to assume that $\{x_n, y_n\}_{n=1}^{N}$ provides redundant information. In other words, choosing a subset of \textit{inducing points} $\{x_m, y_m\}_{m=1}^{M} \subset \{x_n, y_n\}_{n=1}^{N}$ where $M << N$ will capture the majority of the relationships in the data. Consider a Gaussian Process $P = GP(m_P, k_P)$ with a computationally intractable posterior (i.e. very large $N$). We can define a variational Gaussian Process:
+\begin{align}
+    Q = GP(m_Q, k_Q)
+    \label{svgp}
+\end{align}
+where the mean function for a test point $x^*$ is defined:
+\begin{align}
+    m_Q(x^*) = m_P(x^*) + \mathbf{\mu}^T\mathbf{K}_{\mathbf{X}_M, x^*}
+    \label{svgp-mean}
+\end{align}
+and the covariance between points $x^*$ and $x^{**}$ is defined:
+\begin{align}
+        k_Q(x^*, x^{**}) = k_P(x^*, x^{**}) - \mathbf{K}_{x^*, \mathbf{X}_M} \left(\mathbf{K}_{\mathbf{X}_M, \mathbf{X}_M}\right)^{-1}\mathbf{K}_{\mathbf{X}_M, x^{**}} + \mathbf{K}_{x^*, \mathbf{X}_M} \mathbf{\Sigma}\mathbf{K}_{\mathbf{X}_M, x^{**}}
+    \label{svgp-covariance}
+\end{align}
+where $\mathbf{\mu} \in \mathbb{R}^{M}$ and $\mathbf{\Sigma} \in \mathbb{R}^{M\times M}_{\succ 0}$ are parameters of $Q$ to be chosen. Note that $\mathbf{K}_{\cdot, \cdot}$ are gram matrices of $k_P$.
+\\\jw{This was from Veit's gwi-fs paper. In other papers, the mean is $m_Q(x) =  m_P(x^*) + \mathbf{K}_{x^*, \mathbf{X}_M} \left(\mathbf{K}_{\mathbf{X}_M, \mathbf{X}_M}\right)^{-1} \mathbf{\mu}$ and the covariance is $k_Q(x^*, x^{**}) = k_P(x^*, x^{**}) - \mathbf{K}_{x^*, \mathbf{X}_M} \left(\mathbf{K}_{\mathbf{X}_M, \mathbf{X}_M}\right)^{-1}\mathbf{K}_{\mathbf{X}_M, x^{**}} + \mathbf{K}_{x^*, \mathbf{X}_M} \left(\mathbf{K}_{\mathbf{X}_M, \mathbf{X}_M}\right)^{-1} \mathbf{\Sigma}\left(\mathbf{K}_{\mathbf{X}_M, \mathbf{X}_M}\right)^{-1}\mathbf{K}_{\mathbf{X}_M, x^{**}}$. Is there no difference because $\left(\mathbf{K}_{\mathbf{X}_M, \mathbf{X}_M}\right)^{-1}$ is constant? Could this be helpful for initialising $\mathbf{\mu}$ and $\mathbf{\Sigma}$?}
+\\The formulation above defines a Gaussian Process with a matrix inversion operation of $\mathcal{O}(M^3)$, providing us a computationally tractable approach. Our variational Gaussian Process is parameterised by $\nu \in \Gamma$ where $\Gamma$ is the set:
+\begin{align}
+    \Gamma = \left\{\mathbf{\mu} \in \mathbb{R}^{M}, \mathbf{\Sigma} \in \mathbb{R}^{M\times M}_{\succ 0}, \left\{x_m, y_m\right\}_{m=1}^{M} \subset \{x_n, y_n\}_{n=1}^{N}\right\}
+    \label{svgp-parameter-set}
+\end{align} 
+defining $Q^{\nu}$. Traditionally, the posterior distribution $P^{F \vert \mathbf{Y}_N}$ is approximated with $Q^{\nu^*}$ by choosing $\nu^* \in \Gamma$ as the minimiser of the Kullback-Leibler divergence:
+\begin{align}
+    \nu^* = \argmin_{\nu \in \Gamma} \KLD\left(Q^{\nu} \Big\| P^{F \vert \mathbf{Y}_N} \right)
+    \label{svgp-minimiser}
+\end{align}
+where:
+\begin{align}
+    \KLD\left(Q^{\nu} \Big\| P^{F \vert \mathbf{Y}_N} \right) = \int \log \left( \frac{dQ^{\nu}}{d P^{F \vert \mathbf{Y}_N}} \right) d Q^{\nu}(f)
+    \label{svgp-kld-loss}
+\end{align}
+The specific construction of $Q^{\nu}$ in ($\ref{svgp}$),  ($\ref{svgp-mean}$), and ($\ref{svgp-covariance}$) ensures the existence of the Radon-Nikodym derivative $\frac{dQ^{\nu}}{d P^{F \vert \mathbf{Y}_N}}$ making this a valid expression \cite{matthews2016sparse}. Moreover, \cite{matthews2016sparse} shows that:
+\begin{align}
+    \KLD\left(Q^{\nu} \Big\| P^{F \vert \mathbf{Y}_N} \right) = \sum_{n=1}^N\log p(y_n) - \mathcal{L}(\nu)
+    \label{svgp-kld-loss-equivalence}
+\end{align}
+where $p(y_n)$ is the marginal likelihood or evidence of observing $y_n$ under the prior $F_P \sim GP(m_P, k_P)$ and observation model $y_n \sim \mathcal{N}(F_P(x_i), \sigma^2)$ with $\sigma^2$ being the aleoteric uncertainty. $\mathcal{L}(\nu)$ is the variational free energy:
+\begin{align}
+    \mathcal{L}(\nu) = \mathbb{E}_{F_Q \sim Q^{\nu}}\left[\sum_{n=1}^{N}\log p\left(y_n \vert \mu=F_Q(x_n), \sigma^2\right)\right] -\KLD\left(Q^{\nu}_{\mathbf{X_M}}\Big\| P_{\mathbf{X_M}}\right) 
+    \label{elbo}
+\end{align}
+also referred to as the evidence lower bound (ELBO). 
+\\We see from (\ref{svgp-kld-loss-equivalence}) that $\mathcal{L}(\nu)$ is the only dependence on $\nu$, so we can rewrite (\ref{svgp-minimiser}):
+\begin{align}
+    \nu^* = \argmin_{\nu \in \Gamma} \left\{\mathbb{E}_{F_Q \sim Q^{\nu}}\left[\sum_{n=1}^{N}\log p\left(y_n \vert \mu=F_Q(x_n), \sigma^2\right)\right] -\KLD\left(Q^{\nu}_{\mathbf{X_M}}\Big\| P_{\mathbf{X_M}}\right)\right\}
+    \label{svgp-minimiser-gvi-kld}
+\end{align}
+It is important to note that the existence of the objectivs in (\ref{svgp-minimiser}) requires $P^{F \vert \mathbf{Y}_N}$ to dominate $Q^{\nu}$, which is \texit{only} guaranteed under the specific formulation of $Q$ in ($\ref{svgp}$),  ($\ref{svgp-mean}$), and ($\ref{svgp-covariance}$). This severely restricts our choices for $m_Q$ and $k_Q$. 
 \section{Gaussian Measures in Hilbert Spaces \cite{wild2022generalized}, \cite{Kukush_2019}}
 Gaussian measures are typically defined as a Lebesgue measure on a physical probability space $(\Omega, \mathcal{A}, \mathbb{P})$. However, there does not exist an infinite-dimensional equivalent to the Lebesgue measure. This means that in most cases, we cannot assume the existence of an infinite-dimensional analog of a probability measure that exists in a finite-dimensional space. However, there are special cases where it is possible to define a \textit{push-forward} measure from $(\Omega, \mathcal{A}, \mathbb{P})$ to an infinite-dimensional space. In the following, we define the infinite-dimensional analog of a Gaussian measure  $\mathbb{P}^{F}(A)$, a push-forward measure constructed from an underlying finite-dimensional $(\Omega, \mathcal{A}, \mathbb{P})$. In particular, we will define $\mathbb{P}^{F}(A)$ on a Hilbert space $\mathcal{H}$ with inner product $\langle \cdot, \cdot \rangle_\mathcal{H}$.
 \subsection{Gaussian Random Elements}
@@ -71,37 +145,12 @@ and
 signifying that $F$ is a GRE.
 \subsection{Gaussian Measures \cite{wild2022generalized}}
 We can define the push-forward measure of $\mathbb{P}$ through the mapping $F: \Omega \rightarrow \mathcal{H}$, $F \in \mathcal{H}$ as $\mathbb{P}^{F}(A) \coloneqq \mathbb{P}(F^{-1}(H))$ for all Borel-measurable $H \subset \mathcal{H}$. Moreover if $F$ is a GRE, then we can define the corresponding push-forward measure $P \coloneqq \mathbb{P}^{F}$, as a Gaussian measure. This formulation allows us to define a Gaussian distribution $P$ over the infinite-dimensional Hilbert space $\mathcal{H}$. \jw{The ability to define $\mathbb{P}^{F}(A)$ seems to hinge on the existence of GREs in $\mathcal{H}$. Is there a reason why we can't define random elements in a similar fashion for other distributions that aren't Gaussian? Is it because of the closed form expressions that exist for $m$ and $C$ above?}
-\section{Gaussian Processes \cite{wild2022generalized}, \cite{wild2023connections}}
-A Gaussian process $F \sim GP(m, k)$, is a random function mapping $F: \mathcal{X} \rightarrow \mathbb{R}$, defined with respect to a mean function $m: \mathcal{X} \rightarrow \mathbb{R}$ and a positive definite kernel $k: \mathcal{X} \times \mathcal{X} \rightarrow \mathbb{R}$. In particular, for N points $\mathbf{X} = \left\{ x_n\right\}_{n=1}^N$ such that $x_n \in \mathcal{X}$, the evaluation $F_X \coloneqq \left[F(x_1) \cdots F(x_n)\right]^T \in \mathbb{R}^N$ will follow a Gaussian distribution:
-\begin{align}
-    F_X \sim P_{\mathbf{X}}(\mathbf{Y}) = \mathcal{N}(\mathbf{m}_X, \mathbf{K}_{X, X})
-    \label{gp-prior}
-\end{align}
-where $\mathbf{m}_X = \left[ m(x_1) \cdots m(x_N)\right]^T \in \mathbb{R}^N$ and $\mathbf{K}_{X, X} \in \mathbb{R}^{N \times N}$ having elements $\left[\mathbf{K}_{X, X}\right]_{n, n'} = k(x_n, x_{n'})$ for $n, n'=1,\dots, N$. 
-\subsection{Gaussian Process Regression \cite{wild2023connections}}
-Consider the regression task where we have $N$ observation pairs $\left\{(x_n, y_n)\right\}_{n=1}^N$ such that $x_n \in \mathcal{X}$ and $y_n \in \mathbb{R}$. Using the Gaussian Process formulation in ($\ref{gp-prior}$), we can `predict' for $M$ points $\left\{ x_m\right\}_{m=1}^M$ by using Bayes' Rule to calculate the posterior distribution of $\mathbf{Y}_M$:
-\begin{align}
-    F_{X_M} \vert Y_N \sim P_{\mathbf{X}_M}(\mathbf{Y}_M | \mathbf{Y}_N= \left\{ y_n\right\}_{n=1}^N) = \frac{ P_{\mathbf{X}_N}(\mathbf{Y}_N=\left\{ y_n\right\}_{n=1}^N \vert \mathbf{Y}_M)  P_{\mathbf{X}_M}(\mathbf{Y}_M)}{ P_{\mathbf{X}_N}(\mathbf{Y}_N= \left\{ y_n\right\}_{n=1}^N)}
-    \label{gp-posterior}
-\end{align}
-where $\mathbf{X}_N = \left\{ x_n\right\}_{n=1}^N$, $\mathbf{Y}_N = \left\{ y_n\right\}_{n=1}^N$, $\mathbf{X}_M = \left\{ x_m\right\}_{m=1}^M$, and $\mathbf{Y}_M = \left\{ y_m\right\}_{m=1}^M$,
-
-With all terms in (\ref{gp-posterior}) being Gaussian, the posterior has the closed form expression:
-\begin{align}
-    P_{\mathbf{X}_M}\left(\mathbf{Y}_M \vert  \mathbf{Y}_N =  \left\{ y_n\right\}_{n=1}^N\right) =  \mathcal{N}(\bar{\mathbf{m}}_{X_M}, \bar{\mathbf{K}}_{X_M, X_M})
-\end{align}
-where:
-\begin{align}
-    \label{gp-posterior-mean}
-    \bar{\mathbf{m}}_{X_M} = \mathbf{m}_{X_M} + \mathbf{K}_{X_M, X_N} \left( \mathbf{K}_{X_N, X_N} + \sigma^2 \mathbf{I}_N\right)^{-1} \left( \mathbf{Y}_N - \mathbf{m}_{X_N}\right)\\
-    \label{gp-posterior-covariance}
-    \bar{\mathbf{K}}_{X_M, X_M} = \mathbf{K}_{X_M, X_M} - \mathbf{K}_{X_M, X_N}\left( \mathbf{K}_{X_N, X_N} + \sigma^2 \mathbf{I}_N\right)^{-1}\mathbf{K}_{X_N, X_M}
-\end{align}
+\section{Gaussian Wasserstein Inference in Function Spaces}
 \subsection{Gaussian Measures $\rightarrow$ Gaussian Processes \cite{wild2022generalized}}
 A Gaussian process $F \sim GP(m, k)$ can have many Gaussian measure formulations. To define a corresponding Gaussian \textit{measure} for a GP requires specification of an appropriate \textit{measureable space}. As shown in \cite{wild2022generalized}, a Gaussian process can be specified as a Gaussian measure $P$ on a Hilbert space of square-integrable functions $L^2(\mathcal{X}, \rho, \mathbb{R})$ if the mean $m \in L^2(\mathcal{X}, \rho, \mathbb{R})$ and the kernel $k$ satisfies:
 \begin{align}
     \int_{\mathcal{X}} k(x, x) d\rho(x) < \infty
-    \label{trace-kernel-condtiion}
+    \label{trace-kernel-condition}
 \end{align}
 These conditions guarantee sample functions from $F$ to have square-integrable paths, allowing for a corresponding Gaussian measure $P \coloneqq \mathbb{P}^F \sim \mathcal{N}(m, C)$ defined on the \textit{measureable space} $L^2(\mathcal{X}, \rho, \mathbb{R})$ with the same mean $m$ and a covariance operator $C$:
 \begin{align}
@@ -110,12 +159,11 @@ These conditions guarantee sample functions from $F$ to have square-integrable p
 \end{align}
 for any function $f \in L^2(\mathcal{X}, \rho, \mathbb{R})$. \\
 \newline 
-Although Gaussian processes and Gaussian measures are distinct concepts, (\ref{trace-kernel-condtiion}) is satisfied for most GPs, ensuring the existence of corresponding Gaussian measures. As such, Gaussian measures and Gaussian processes can often be used interchangeably. Working with statistical divergences in the following sections, it will be more appropriate to use Gaussian measures instead of Gaussian processes.
-\\\jw{Is it trivial to show that the NNGP kernel will satisfy (\ref{trace-kernel-condtiion})?}
-\section{Sparse Variational Gaussian Processes \cite{wild2023connections}}
+Although Gaussian processes and Gaussian measures are distinct concepts, (\ref{trace-kernel-condition}) is satisfied for most GPs, ensuring the existence of corresponding Gaussian measures. As such, Gaussian measures and Gaussian processes can often be used interchangeably. %Working with statistical divergences in the following sections, it will be more appropriate to use Gaussian measures instead of Gaussian processes.
+\\\jw{Is it trivial to show that the NNGP kernel will satisfy (\ref{trace-kernel-condition})?}
 
-\subsection{Inducing Points \cite{terenin2022numerically}}
-
+\subsection{Gaussian Wasserstein Inference}
+\jw{main idea: By viewing GPs as GMs and reformulating \ref{svgp-kld-loss-equivalence} into a GVI problem, we can replace the KLD with the Wasserstein distance between GMs in function spaces. Note that we need to view GPs as GMs to properly define a divergence between them in function space}
 \begingroup
 \let\clearpage\relax
 \AtNextBibliography{\small}
