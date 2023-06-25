@@ -15,6 +15,7 @@
 \newcommand{\Cat}{\operatorname{Cat}}
 \newcommand{\Chol}{\operatorname{Chol}}
 \newcommand{\KLD}{\operatorname{KLD}}
+\newcommand{\tr}{\operatorname{tr}}
 
 \usepackage{lastpage}
 \usepackage{amsmath}
@@ -163,7 +164,27 @@ Although Gaussian processes and Gaussian measures are distinct concepts, (\ref{t
 \\\jw{Is it trivial to show that the NNGP kernel will satisfy (\ref{trace-kernel-condition})?}
 
 \subsection{Gaussian Wasserstein Inference}
-\jw{main idea: By viewing GPs as GMs and reformulating \ref{svgp-kld-loss-equivalence} into a GVI problem, we can replace the KLD with the Wasserstein distance between GMs in function spaces. Note that we need to view GPs as GMs to properly define a divergence between them in function space}
+We can reformulate (\ref{svgp-minimiser-gvi-kld}) as a GVI problem of the form:
+\begin{align}
+    \label{svgp-gwi-gp}
+    \nu^* = \argmin_{\nu \in \Gamma} \left\{ \mathbb{E}_{Q^{\nu}}\left[\sum_{n=1}^N \ell(\nu, x_n)\right] + D(Q^{\nu}\|P)\right\}
+\end{align}
+where $\ell$ is the log-likelihood and $D$ is the KL Divergence, $\KLD(P, Q)$. Having drawn the connection between GPs and GMs, we can also write:
+\begin{align}
+    \label{svgp-gwi-gm}
+    \nu^* = \argmin_{\nu \in \Gamma} \left\{ \mathbb{E}_{\mathbb{Q}^F}\left[\sum_{n=1}^N \ell(\nu, x_n)\right] + D(\mathbb{Q}^F\|\mathbb{P}^F)\right\}
+\end{align}
+where $\mathbb{Q}^F$ and $\mathbb{P}^F$ are push-forward Gaussian measures with corresponding Gaussian process formulations. By reformulating as a GVI problem between Gaussian measures, \cite{wild2022generalized} and \cite{knoblauch2022optimization} argue that we are free to choose any valid discrepancy $D$ to replace the KL-divergence. This frees us from the restrictive approximate GP $Q$ which was necessary to ensure a valid $\KLD(Q,  P)$. By viewing GPs as GMs, we are able to propose distribution discrepancies to replace the KL-divergence. This is exactly how \cite{wild2022generalized} proposes using the Wasserstein distance between Gaussian Measures in function space instead of the KL-divergence. For two Gaussian Measures $P \sim \mathcal{N}(m_P, C_P)$ and $Q \sim \mathcal{N}(m_Q, C_P)$, the Wasserstein distance between $P$ and $Q$ has a closed form expression on (seperable) Hilbert spaces:
+\begin{align}
+    \label{wasserstein-distance}
+    W_2^2(P, Q) = \| m_P - m_Q\|_2^2 + \tr(C_P) + \tr(C_Q) - 2 \cdot \tr \left[ \left( C_P^{1/2} C_Q C_P^{1/2}\right)^{1/2}\right]
+\end{align}
+where $\tr$ is the trace of an operator and $C_P^{1/2}$ is the square root of the positive, self-adjoint operator $C_P$. The Wasserstein distance is an integral probability metric (IPM). Unlike f-divergences which require $P$ to dominate $Q$ to compare two measures as a \textit{ratio}, IPMs compare two measures as a \textit{difference}. Thus $W_2(P, Q)$ is a much more stable discrepancy to use than $\KLD(P, Q)$ in our infinite dimensional setting. This motivates the use of the loss objective from \cite{wild2022generalized}:
+\begin{align}
+    \label{gwi-objective}
+    \mathcal{L} = -\sum_{n=1}^N \mathbb{E}_{Q}\left[\log \mathcal{N}(y_n) \vert F(x_n), \sigma^2\right] + W_2 (P, Q)
+\end{align}
+the Gaussian Wasserstein Inference objective function. Crucially, by replacing the KL-divergence in (\ref{svgp-minimiser-gvi-kld}), we are no longer constrained to the approximate GP formulation of $Q$ in ($\ref{svgp}$),  ($\ref{svgp-mean}$), and ($\ref{svgp-covariance}$) to ensure guarantee the existence of a valid divergence. With the Wasserstein distance, we are free to choose any mean and covariance kernel. Because of this, \cite{wild2022generalized} proposes GWI-net, a convolutional neural network mean function and squared-exponential kernel for image classification tasks with promising results.
 \begingroup
 \let\clearpage\relax
 \AtNextBibliography{\small}
