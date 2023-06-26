@@ -218,7 +218,7 @@ class ApproximateGaussianMeasure(GaussianMeasure):
         self, parameters: ApproximateGaussianMeasureParameters = None
     ) -> JaxFloatType:
         return jnp.exp(
-            self.kernel.reference_gaussian_measure_parameters.log_observation_noise
+            self.kernel.log_observation_noise
         ).astype(float)
 
     def _compute_negative_expected_log_likelihood(
