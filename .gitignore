@@ -32,6 +32,16 @@ notebooks/mnist_data
 /**/*.out
 /**/*.bcf
 /**/*.xml
+/**/**/*.aux
+/**/**/*.bbl
+/**/**/*.blg
+/**/**/*.fdb_latexmk
+/**/**/*.fls
+/**/**/*.log
+/**/**/*.synctex.gz
+/**/**/*.out
+/**/**/*.bcf
+/**/**/*.xml
 
 # scripts
 /scripts/regression_toy_example_outputs/*

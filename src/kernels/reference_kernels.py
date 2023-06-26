@@ -17,12 +17,32 @@ from src.parameters.kernels.reference_kernels import (
 PRNGKey = Any  # pylint: disable=invalid-name
 
 
-class StandardKernel(Kernel, ABC):
+class ReferenceKernel(Kernel, ABC):
+    pass
+
+
+class StandardKernel(ReferenceKernel, ABC):
     """
     Kernels that can be easily defined with a kernel function evaluated at a single pair of points.
     """
 
     Parameters = StandardKernelParameters
+
+    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @abstractmethod
+    def generate_parameters(
+        self, parameters: Union[Dict, FrozenDict]
+    ) -> StandardKernelParameters:
+        """
+        Generates a Pydantic model of the parameters for the Module.
+
+        Args:
+            parameters: A dictionary of the parameters for the Module.
+
+        Returns: A Pydantic model of the parameters for the Module.
+
+        """
+        raise NotImplementedError
 
     @staticmethod
     @abstractmethod
@@ -162,7 +182,7 @@ class ARDKernel(StandardKernel):
         ).astype(jnp.float64)
 
 
-class NeuralNetworkGaussianProcessKernel(Kernel):
+class NeuralNetworkGaussianProcessKernel(ReferenceKernel):
     """
     A wrapper class for the kernel function provided by the NTK package.
     """
