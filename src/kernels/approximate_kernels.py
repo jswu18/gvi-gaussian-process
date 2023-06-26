@@ -30,6 +30,7 @@ class ApproximateKernel(Kernel, ABC):
         self,
         reference_kernel_parameters: KernelParameters,
         reference_kernel: Kernel,
+        log_observation_noise: float,
     ):
         """
         Defining the kernel with respect to a reference Gaussian measure.
@@ -37,9 +38,11 @@ class ApproximateKernel(Kernel, ABC):
         Args:
             reference_kernel_parameters: the parameters of the reference kernel.
             reference_kernel: the kernel of the reference Gaussian measure.
+            log_observation_noise: the log observation noise of the model
         """
 
         self.reference_kernel_parameters = reference_kernel_parameters
+        self.log_observation_noise = log_observation_noise
 
         # define a jit-compiled version of the reference kernel gram matrix using the reference kernel parameters
         self.calculate_reference_gram = jit(
@@ -84,6 +87,7 @@ class StochasticVariationalGaussianProcessKernel(ApproximateKernel):
         super().__init__(
             reference_kernel_parameters,
             reference_kernel,
+            log_observation_noise,
         )
         self.number_of_dimensions = inducing_points.shape[1]
         self.inducing_points = inducing_points
