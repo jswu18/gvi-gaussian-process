@@ -24,9 +24,10 @@ python-mnist = "^0.7"
 
 [tool.poetry.dev-dependencies]
 black = "~22.6"
-isort = "~5.10"
-pytest = "~7.2"
 ipykernel = "^6.20.1"
+isort = "~5.10"
+mock = "^5.0.2"
+pytest = "~7.2"
 
 [tool.isort]
 skip = [".venv"]

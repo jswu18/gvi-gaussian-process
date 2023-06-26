@@ -9,13 +9,11 @@ from jax.scipy.linalg import cho_factor, cho_solve
 
 from src.kernels.reference_kernels import Kernel
 from src.module import Module
-from src.parameters.gaussian_measures.reference_gaussian_measures import (
-    ReferenceGaussianMeasureParameters,
-)
 from src.parameters.kernels.approximate_kernels import (
     ApproximateKernelParameters,
     StochasticVariationalGaussianProcessKernelParameters,
 )
+from src.parameters.kernels.kernels import KernelParameters
 from src.utils.matrix_operations import add_diagonal_regulariser
 
 PRNGKey = Any  # pylint: disable=invalid-name
@@ -30,25 +28,23 @@ class ApproximateKernel(Kernel, ABC):
 
     def __init__(
         self,
-        reference_gaussian_measure_parameters: ReferenceGaussianMeasureParameters,
+        reference_kernel_parameters: KernelParameters,
         reference_kernel: Kernel,
     ):
         """
         Defining the kernel with respect to a reference Gaussian measure.
 
         Args:
-            reference_gaussian_measure_parameters: the parameters of the reference Gaussian measure.
+            reference_kernel_parameters: the parameters of the reference kernel.
             reference_kernel: the kernel of the reference Gaussian measure.
         """
 
-        self.reference_gaussian_measure_parameters = (
-            reference_gaussian_measure_parameters
-        )
+        self.reference_kernel_parameters = reference_kernel_parameters
 
         # define a jit-compiled version of the reference kernel gram matrix using the reference kernel parameters
         self.calculate_reference_gram = jit(
             lambda x, y=None: reference_kernel.calculate_gram(
-                parameters=reference_gaussian_measure_parameters.kernel,
+                parameters=reference_kernel_parameters,
                 x=x,
                 y=y,
             )
@@ -64,7 +60,8 @@ class StochasticVariationalGaussianProcessKernel(ApproximateKernel):
 
     def __init__(
         self,
-        reference_gaussian_measure_parameters: ReferenceGaussianMeasureParameters,
+        reference_kernel_parameters: KernelParameters,
+        log_observation_noise: float,
         reference_kernel: Kernel,
         inducing_points: jnp.ndarray,
         training_points: jnp.ndarray,
@@ -76,7 +73,8 @@ class StochasticVariationalGaussianProcessKernel(ApproximateKernel):
         and inducing points.
 
         Args:
-            reference_gaussian_measure_parameters: the parameters of the reference Gaussian measure.
+            reference_kernel_parameters: the parameters of the reference kernel.
+            log_observation_noise: the log observation noise of the model
             reference_kernel: the kernel of the reference Gaussian measure.
             inducing_points: the inducing points of the stochastic variational Gaussian process.
             training_points: the training points of the stochastic variational Gaussian process.
@@ -84,7 +82,7 @@ class StochasticVariationalGaussianProcessKernel(ApproximateKernel):
             is_diagonal_regularisation_absolute_scale: whether the diagonal regularisation is an absolute scale.
         """
         super().__init__(
-            reference_gaussian_measure_parameters,
+            reference_kernel_parameters,
             reference_kernel,
         )
         self.number_of_dimensions = inducing_points.shape[1]
@@ -108,7 +106,7 @@ class StochasticVariationalGaussianProcessKernel(ApproximateKernel):
                 x=inducing_points, y=training_points
             ),
             reference_gaussian_measure_observation_precision=1
-            / jnp.exp(reference_gaussian_measure_parameters.log_observation_noise),
+            / jnp.exp(log_observation_noise),
             diagonal_regularisation=diagonal_regularisation,
             is_diagonal_regularisation_absolute_scale=is_diagonal_regularisation_absolute_scale,
         )
