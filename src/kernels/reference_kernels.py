@@ -93,6 +93,7 @@ class StandardKernel(ReferenceKernel, ABC):
         parameters: StandardKernelParameters,
         x: jnp.ndarray,
         y: jnp.ndarray = None,
+        full_cov: bool = True,
     ) -> jnp.ndarray:
         """
         Computes the Gram matrix of the kernel. If y is None, the Gram matrix is computed for x and x.
@@ -104,18 +105,28 @@ class StandardKernel(ReferenceKernel, ABC):
             parameters: parameters of the kernel
             x: design matrix of shape (n, d)
             y: design matrix of shape (m, d)
+            full_cov: whether to compute the full covariance matrix or just the diagonal
 
         Returns: the kernel gram matrix of shape (n, m)
         """
-        return vmap(
-            lambda x_: vmap(
-                lambda y_: self.calculate_kernel(
+        if full_cov:
+            return vmap(
+                lambda x_: vmap(
+                    lambda y_: self.calculate_kernel(
+                        parameters=parameters,
+                        x=x_,
+                        y=y_,
+                    )
+                )(y)
+            )(x)
+        else:
+            return vmap(
+                lambda x_, y_: self.calculate_kernel(
                     parameters=parameters,
                     x=x_,
                     y=y_,
                 )
-            )(y)
-        )(x)
+            )(x, y)
 
 
 class ARDKernel(StandardKernel):
@@ -234,6 +245,7 @@ class NeuralNetworkGaussianProcessKernel(ReferenceKernel):
         parameters: NeuralNetworkGaussianProcessKernelParameters,
         x: jnp.ndarray,
         y: jnp.ndarray = None,
+        full_cov: bool = True,
     ) -> jnp.ndarray:
         """
         Computing the Gram matrix using the NNGP kernel function. If y is None, the Gram matrix is computed for x and x.
@@ -245,8 +257,10 @@ class NeuralNetworkGaussianProcessKernel(ReferenceKernel):
             parameters: parameters of the kernel
             x: design matrix of shape (n, d)
             y: design matrix of shape (m, d) if y is None, compute for x and x
+            full_cov: whether to compute the full covariance matrix or just the diagonal
 
         Returns: the kernel gram matrix of shape (n, m)
 
         """
-        return self.ntk_kernel_function(x, y, "nngp")
+        gram = self.ntk_kernel_function(x, y, "nngp")
+        return gram if full_cov else jnp.diagonal(gram)
