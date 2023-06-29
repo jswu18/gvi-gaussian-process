@@ -99,6 +99,42 @@ def test_standard_kernel_grams(
     "kernel,parameters,x,y,k",
     [
         [
+            ARDKernel(number_of_dimensions=3),
+            {
+                "log_scaling": 0.5,
+                "log_lengthscales": jnp.array([-0.5, 0, 0.5]),
+            },
+            jnp.array([[1.0, 2.0, 3.0], [1.0, 2.0, 3.0]]),
+            jnp.array(
+                [
+                    [1.0, 2.0, 3.0],
+                    [1.5, 2.5, 3.5],
+                ]
+            ),
+            jnp.ones((2,)),
+        ],
+    ],
+)
+def test_standard_kernel_gram_diagonal(
+    kernel: StandardKernel,
+    parameters: Dict,
+    x: jnp.ndarray,
+    y: jnp.ndarray,
+    k: float,
+):
+    kernel.calculate_kernel = Mock(return_value=1)
+    assert jnp.array_equal(
+        kernel.calculate_gram(
+            kernel.generate_parameters(parameters), x=x, y=y, full_cov=False
+        ),
+        k,
+    )
+
+
+@pytest.mark.parametrize(
+    "kernel,parameters,x,y,k",
+    [
+        [
             NeuralNetworkGaussianProcessKernel(
                 ntk_kernel_function=lambda x, y, *args, **kwargs: jnp.ones(
                     (x.shape[0], y.shape[0])
