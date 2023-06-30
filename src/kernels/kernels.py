@@ -53,6 +53,7 @@ class Kernel(Module, ABC):
         parameters: KernelParameters,
         x: jnp.ndarray,
         y: jnp.ndarray = None,
+        full_cov: bool = True,
     ) -> jnp.ndarray:
         """
         Computes the Gram matrix of the kernel. If y is None, the Gram matrix is computed for x and x.
@@ -64,6 +65,7 @@ class Kernel(Module, ABC):
             parameters: parameters of the kernel
             x: design matrix of shape (n, d)
             y: design matrix of shape (m, d)
+            full_cov: whether to compute the full covariance matrix or just the diagonal
 
         Returns: the kernel gram matrix of shape (n, m)
         """
@@ -75,6 +77,7 @@ class Kernel(Module, ABC):
         parameters: KernelParameters,
         x: jnp.ndarray,
         y: jnp.ndarray = None,
+        full_cov: bool = True,
     ) -> jnp.ndarray:
         """
         Computes the Gram matrix of the kernel.
@@ -88,6 +91,7 @@ class Kernel(Module, ABC):
             parameters: parameters of the kernel
             x: design matrix of shape (n, d)
             y: design matrix of shape (m, d) if y is None, compute for x and x
+            full_cov: whether to compute the full covariance matrix or just the diagonal
 
         Returns: the kernel gram matrix of shape (n, m)
 
@@ -95,4 +99,4 @@ class Kernel(Module, ABC):
         x, y = self.preprocess_inputs(x, y)
         self.check_inputs(x, y)
         Module.check_parameters(parameters, self.Parameters)
-        return self._calculate_gram(parameters, x, y)
+        return self._calculate_gram(parameters=parameters, x=x, y=y, full_cov=full_cov)

@@ -1,0 +1,88 @@
+\documentclass[twoside,11pt]{article}
+
+\usepackage{blindtext}
+
+\usepackage{paper}
+
+% Definitions of handy macros can go here
+
+\newcommand{\dataset}{{\cal D}}
+\newcommand{\fracpartial}[2]{\frac{\partial #1}{\partial  #2}}
+
+\usepackage{xcolor}
+\newcommand{\jk}[1]{{\color{blue} [JK: #1]}}
+\newcommand{\jw}[1]{{\color{gray} [JW: #1]}}
+\newcommand{\Cat}{\operatorname{Cat}}
+\newcommand{\Chol}{\operatorname{Chol}}
+\newcommand{\KLD}{\operatorname{KLD}}
+
+\usepackage{lastpage}
+\usepackage{amsmath}
+\usepackage{mathtools}
+\usepackage{enumitem}
+
+\DeclareMathOperator*{\argmax}{arg\,max}
+\DeclareMathOperator*{\argmin}{arg\,min}
+\usepackage[backend=biber,style=nature]{biblatex}
+
+\addbibresource{references.bib}
+\defbibheading{talikarng}{\References}
+% Short headings should be running head and authors last names
+
+\ShortHeadings{Literature Review}{Neural Network Gaussian Processes}
+\firstpageno{1}
+
+\begin{document}
+
+\title{Literature Review: Neural Network Gaussian Processes}
+\maketitle
+\section{Central Limit Theorem (multi-variate)}
+The Central Limit Theorem states that for $\left\{ \mathbf{X}_1, \dots \mathbf{X}_N \right\}$ i.i.d. random vectors with $\mathbf{X}_n \in \mathbb{R}^D$, if $\mathbf{X}_N$ has a mean vector $\mathbb{E}\left[\mathbf{X}_n\right] = \boldsymbol{\mu}$ and a covariance matrix $\boldsymbol{\Sigma}$ for all $n=1, \dots, N$ then as $N \rightarrow \infty$:
+\begin{align}
+    \sqrt{N}\left(\bar{\mathbf{X}}_N-\boldsymbol{\mu}\right) \xrightarrow{d} \mathcal{N}\left(\mathbf{0}, \boldsymbol{\Sigma}\right)
+\end{align}
+where $\bar{\mathbf{X}}_N = \frac{1}{N}\sum_{n=1}^N \mathbf{X}_n$. In other words, the average across $N$ random variable vectors will approach a multivariate Gaussian distribution as $N$ approaches infinity.
+\section{Single-layer Neural Network Proof \cite{lee2018deep}}
+We will show that by assuming i.i.d Gaussian distributions on the weights and biases of a neural network, we can show that the output of a single layer network is the sum of $N$ i.i.d random variables, where $N$ is the network width. Thus by the central limit theorem, the network output will be Gaussian distributed as the network width $N \rightarrow \infty$.
+\subsection{Single-layer Neural Networks}
+For an input vector $\mathbf{x}^{(in)} \in \mathbb{R}^{D^{(in)}}$, the output of a neural network with a single hidden layer of width $N$ can be expressed as $\mathbf{z}^{(out)} = f^{NN}\left(\mathbf{x}^{(in)}\right)$ where $\mathbf{z}^{(out)} \in \mathbb{R}^{D^{(out)}}$. We can breakdown $f^{NN}$:
+\begin{align}
+    \label{single-layer-hidden}
+    \mathbf{z}^{(0)} = \mathbf{W}^{(0)} \mathbf{x}^{(in)} + \mathbf{b}^{(0)}\\
+    \label{single-layer-hidden-non-linearity}
+    x_n^{(1)} = \phi(z_n^{(0)})\text{, } \forall n = 1, \dots, N\\
+    \label{single-layer-output}
+    \mathbf{z}^{(out)} = \mathbf{W}^{(out)} \mathbf{x}^{(1)} + \mathbf{b}^{(out)}
+\end{align}
+where $\mathbf{W}^{(out)} \in \mathbb{R}^{D^{(out)} \times N}$, $\mathbf{b}^{(out)} \in \mathbb{R}^{D^{(out)}}$,  $\mathbf{W}^{(0)} \in \mathbb{R}^{N \times D^{(in)}}$, $\mathbf{b}^{(0)} \in \mathbb{R}^{N}$, and $\phi: \mathbb{R} \rightarrow \mathbb{R}$ is some non-linear activation function applied in a point-wise fashion to $\mathbf{z^{(0)}}$. In this formulation, $\mathbf{z}^{(0)} \in \mathbb{R}^N$ is the pre-activation and $\mathbf{x}^{(1)}  \in \mathbb{R}^N$ is the post-activation of the hidden layer.
+\subsection{Infinite-width Limit}
+By assuming all elements of $\mathbf{b}^{(0)}$ and $\mathbf{W}^{(0)}$ are drawn i.i.d where $b^{(0)}_n \sim \mathcal{N}(0, \sigma_{b^{0}}^2)$ and $W^{(0)}_{n, d} \sim \mathcal{N}(0, \frac{\sigma_{w^{0}}^2}{D^{(in)}})$ we can see from (\ref{single-layer-hidden}) that:
+\begin{align}
+    z_{n}^{(0)} \perp z_{n'}^{(0)} \text{, } \forall n \neq n' \text{ and } n, n' = 1, \dots, N
+\end{align}
+Because $\phi(\cdot)$ is applied point-wise in (\ref{single-layer-hidden-non-linearity}), it is also the case that:
+\begin{align}
+    x_{n}^{(1)} \perp x_{n'}^{(1)} \text{, } \forall n \neq n' \text{ and } n, n' = 1, \dots, N
+\end{align}
+If we also assume that all elements of $\mathbf{b}^{(out)}$ and $\mathbf{W}^{(0)}$ are drawn i.i.d where $b^{(out)}_n \sim \mathcal{N}(0, \sigma_b^2)$ and $W^{(out)}_{d, n} \sim \mathcal{N}(0, \frac{\sigma_{w}^2}{N})$ we see that each element $z_d^{(out)}$ in (\ref{single-layer-output}) for $d=1, \dots, D^{(out)}$, is a weighted average of $N$ i.i.d terms, $x_1^{(1)}, \dots, x_N^{(1)}$. The central limit theorem states that in the infinite limit as $N \rightarrow \infty$, $z_d^{(out)}$ will approach a Gaussian distribution. Moreover, for $K$ inputs $\{\textbf{x}^1, \dots, \textbf{x}^K\}$, the corresponding output set $\{z_d^{(1)}, \dots, z_d^{(K)}\}$ will follow a joint multivariate Gaussian distribution, meaning that the random function $f^{NN}(\cdot)$ is exactly a Gaussian process (now a \textit{random} function because weights are random variables).
+\\\jw{Need to add kernel expression for this NN}
+\section{Multi-layer Neural Network Proof \cite{lee2018deep}}
+Building on the single layer case, we will show that the elements of the $\ell^{th}$ layer of a multi-layer neural network is the sum of $N_{\ell-1}$ i.i.d random variables from the  $(\ell-1)^{th}$ layer and so in the infinite-width limit as $N_{\ell-1} \rightarrow \infty$, the elements of the $\ell^{th}$ layer will be Gaussian distributed. Thus, by successively taking the infinite-width limit for each $\ell=1,...,L$ hidden layer, it can be shown that the output of a multi-layer neural network is also Gaussian distributed.
+\subsection{Multi-layer Neural Networks}
+For an input vector $\mathbf{x}^{(in)} \in \mathbb{R}^{D^{(in)}}$, the output of a neural network with $L$ hidden layers, each with width $N^{(\ell)}$ for $\ell = 0, \dots L$ can be expressed iteratively:
+\begin{align}
+    \label{multi-layer-hidden}
+    \mathbf{z}^{(\ell)} = \mathbf{W}^{(\ell)} \mathbf{x}^{(\ell)} + \mathbf{b}^{(\ell)}\\
+    \label{multi-layer-hidden-non-linearity}
+    x_n^{(\ell+1)} = \phi(z_n^{(\ell)})\text{, } \forall n = 1, \dots, N^{(\ell)}
+\end{align}
+where the output of each hidden layer is $\mathbf{z}^{(\ell)} \in \mathbb{R}^{N^{(\ell)}}$, the output of the neural network is $\mathbf{z}^{(out)} = \mathbf{z}^{(\ell=L)} \in \mathbb{R}^{D^{(out)}}$ with $D^{(out)} = N^{(L)}$, and the input of the neural network is $\mathbf{x}^{(in)} = \mathbf{x}^{(\ell = 0)} \in \mathbb{R}^{D^{(in)}}$ with $D^{(in)} = N^{(0)}$.
+\subsection{Infinite-width Limit}
+
+\begingroup
+\let\clearpage\relax
+\AtNextBibliography{\small}
+\section*{References}
+\printbibliography[heading=talikarng, title = {References}]
+\endgroup
+\end{document}
