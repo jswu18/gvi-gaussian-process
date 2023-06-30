@@ -57,6 +57,7 @@ class ConditionalVarianceInducingPointsSelector(InducingPointsSelector):
         number_of_inducing_points: int,
         kernel: Kernel,
         kernel_parameters: KernelParameters,
+        jitter: float = 1e-12,
     ) -> Tuple[jnp.ndarray, jnp.ndarray]:
         """
         Selects inducing points based on the variance of the GP at the training points.
@@ -88,6 +89,7 @@ class ConditionalVarianceInducingPointsSelector(InducingPointsSelector):
                                         may be less than number_of_inducing_points
             kernel: Kernel object, kernel to use for computing variance
             kernel_parameters: KernelParameters object, parameters for kernel
+            jitter: float, jitter to add to diagonal of kernel matrix
 
         Returns:inducing inputs (number_of_inducing_points, D) and indices (number_of_inducing_points,)
 
@@ -107,8 +109,8 @@ class ConditionalVarianceInducingPointsSelector(InducingPointsSelector):
             kernel.calculate_gram(
                 parameters=kernel_parameters, x=training_inputs, full_cov=False
             )
-            + 1e-12
-        )  # jitter
+            + jitter
+        )
         if self.sample:
             key, subkey = random.split(key)
             indices[0] = sample_discrete_unnormalised_distribution(subkey, di)
@@ -136,7 +138,7 @@ class ConditionalVarianceInducingPointsSelector(InducingPointsSelector):
                 )
             )
             gram_matrix = np.round(np.squeeze(gram_matrix_raw), 20)  # [N]
-            gram_matrix[j] += 1e-12  # jitter
+            gram_matrix[j] += jitter
             ei = (gram_matrix - jnp.dot(cj, ci[:m])) / dj
             ci[m, :] = ei
             try:
