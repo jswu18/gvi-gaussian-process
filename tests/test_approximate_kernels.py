@@ -81,7 +81,7 @@ def test_calculate_sigma_matrix(
                     [1.5, 2.5, 3.5],
                 ]
             ),
-            jnp.array([[12500.312502250054, 12500.312502250054]]),
+            jnp.array([[12500.440870133007, 12500.440870133007]]),
         ],
     ],
 )
@@ -104,7 +104,7 @@ def test_svgp_kernel_grams(
     assert jnp.array_equal(
         approximate_kernel.calculate_gram(
             StochasticVariationalGaussianProcessKernelParameters(
-                log_el_matrix=approximate_kernel.initialise_random_parameters()
+                log_el_matrix=approximate_kernel.initialise_random_parameters().log_el_matrix
             ),
             x=x,
             y=y,
