@@ -177,6 +177,7 @@ class StochasticVariationalGaussianProcessKernel(ApproximateKernel):
         parameters: StochasticVariationalGaussianProcessKernelParameters,
         x: jnp.ndarray,
         y: jnp.ndarray = None,
+        full_cov: bool = False,
     ) -> jnp.ndarray:
         # pass because calculate_gram is overridden
         pass
@@ -186,6 +187,7 @@ class StochasticVariationalGaussianProcessKernel(ApproximateKernel):
         parameters: StochasticVariationalGaussianProcessKernelParameters,
         x: jnp.ndarray,
         y: jnp.ndarray = None,
+        full_cov: bool = True,
     ) -> jnp.ndarray:
         """
         Computing the Gram matrix using for the SVGP which depends on the reference kernel.
@@ -198,6 +200,7 @@ class StochasticVariationalGaussianProcessKernel(ApproximateKernel):
             parameters: parameters of the kernel
             x: design matrix of shape (n, d)
             y: design matrix of shape (m, d)
+            full_cov: whether to compute the full covariance matrix or just the diagonal
 
         Returns: the kernel gram matrix of shape (n, m)
 
@@ -224,7 +227,8 @@ class StochasticVariationalGaussianProcessKernel(ApproximateKernel):
             )
 
         reference_gram_x_y = self.calculate_reference_gram(x=x, y=y)
-        return (
+
+        gram = (
             reference_gram_x_y
             - reference_gram_x_inducing
             @ cho_solve(
@@ -235,3 +239,4 @@ class StochasticVariationalGaussianProcessKernel(ApproximateKernel):
             @ self.sigma_matrix
             @ reference_gram_y_inducing.T
         )
+        return gram if full_cov else jnp.diagonal(gram)

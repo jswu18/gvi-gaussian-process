@@ -64,6 +64,7 @@ def test_approximate_gaussian_measure_mean(
         kernel=ApproximateKernelMock(
             reference_kernel=ReferenceKernelMock(),
             reference_kernel_parameters=ReferenceKernelParametersMock(),
+            log_observation_noise=log_observation_noise,
         ),
         reference_gaussian_measure=GaussianMeasureMock(),
         reference_gaussian_measure_parameters=GaussianMeasureParametersMock(),
@@ -120,6 +121,7 @@ def test_approximate_gaussian_measure_covariance(
         kernel=ApproximateKernelMock(
             reference_kernel=ReferenceKernelMock(),
             reference_kernel_parameters=ReferenceKernelParametersMock(),
+            log_observation_noise=log_observation_noise,
         ),
         reference_gaussian_measure=GaussianMeasureMock(),
         reference_gaussian_measure_parameters=GaussianMeasureParametersMock(),

@@ -39,8 +39,10 @@ class ReferenceKernelMock(ReferenceKernel):
         x: jnp.ndarray,
         y: jnp.ndarray = None,
         parameters: ReferenceKernelParametersMock = None,
+        full_cov: bool = True,
     ) -> jnp.ndarray:
-        return jnp.ones((x.shape[0], y.shape[0]))
+        gram = jnp.ones((x.shape[0], y.shape[0]))
+        return gram if full_cov else jnp.diagonal(gram)
 
 
 def calculate_reference_gram_mock(
@@ -75,5 +77,7 @@ class ApproximateKernelMock(ApproximateKernel):
         x: jnp.ndarray,
         y: jnp.ndarray = None,
         parameters: ApproximateKernelParametersMock = None,
+        full_cov: bool = True,
     ) -> jnp.ndarray:
-        return jnp.ones((x.shape[0], y.shape[0]))
+        gram = jnp.ones((x.shape[0], y.shape[0]))
+        return gram if full_cov else jnp.diagonal(gram)
