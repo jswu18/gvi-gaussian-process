@@ -22,7 +22,7 @@ class InducingPointsSelector(ABC):
         number_of_inducing_points: int,
         kernel: Kernel,
         kernel_parameters: KernelParameters,
-    ):
+    ) -> Tuple[jnp.ndarray, jnp.ndarray]:
         """
         Adapted from https://github.com/markvdw/RobustGP/blob/master/robustgp/init_methods/methods.py
         """
