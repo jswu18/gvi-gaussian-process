@@ -17,12 +17,32 @@ from src.parameters.kernels.reference_kernels import (
 PRNGKey = Any  # pylint: disable=invalid-name
 
 
-class StandardKernel(Kernel, ABC):
+class ReferenceKernel(Kernel, ABC):
+    pass
+
+
+class StandardKernel(ReferenceKernel, ABC):
     """
     Kernels that can be easily defined with a kernel function evaluated at a single pair of points.
     """
 
     Parameters = StandardKernelParameters
+
+    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @abstractmethod
+    def generate_parameters(
+        self, parameters: Union[Dict, FrozenDict]
+    ) -> StandardKernelParameters:
+        """
+        Generates a Pydantic model of the parameters for the Module.
+
+        Args:
+            parameters: A dictionary of the parameters for the Module.
+
+        Returns: A Pydantic model of the parameters for the Module.
+
+        """
+        raise NotImplementedError
 
     @staticmethod
     @abstractmethod
@@ -73,6 +93,7 @@ class StandardKernel(Kernel, ABC):
         parameters: StandardKernelParameters,
         x: jnp.ndarray,
         y: jnp.ndarray = None,
+        full_cov: bool = True,
     ) -> jnp.ndarray:
         """
         Computes the Gram matrix of the kernel. If y is None, the Gram matrix is computed for x and x.
@@ -84,18 +105,28 @@ class StandardKernel(Kernel, ABC):
             parameters: parameters of the kernel
             x: design matrix of shape (n, d)
             y: design matrix of shape (m, d)
+            full_cov: whether to compute the full covariance matrix or just the diagonal
 
         Returns: the kernel gram matrix of shape (n, m)
         """
-        return vmap(
-            lambda x_: vmap(
-                lambda y_: self.calculate_kernel(
+        if full_cov:
+            return vmap(
+                lambda x_: vmap(
+                    lambda y_: self.calculate_kernel(
+                        parameters=parameters,
+                        x=x_,
+                        y=y_,
+                    )
+                )(y)
+            )(x)
+        else:
+            return vmap(
+                lambda x_, y_: self.calculate_kernel(
                     parameters=parameters,
                     x=x_,
                     y=y_,
                 )
-            )(y)
-        )(x)
+            )(x, y)
 
 
 class ARDKernel(StandardKernel):
@@ -162,7 +193,7 @@ class ARDKernel(StandardKernel):
         ).astype(jnp.float64)
 
 
-class NeuralNetworkGaussianProcessKernel(Kernel):
+class NeuralNetworkGaussianProcessKernel(ReferenceKernel):
     """
     A wrapper class for the kernel function provided by the NTK package.
     """
@@ -214,6 +245,7 @@ class NeuralNetworkGaussianProcessKernel(Kernel):
         parameters: NeuralNetworkGaussianProcessKernelParameters,
         x: jnp.ndarray,
         y: jnp.ndarray = None,
+        full_cov: bool = True,
     ) -> jnp.ndarray:
         """
         Computing the Gram matrix using the NNGP kernel function. If y is None, the Gram matrix is computed for x and x.
@@ -225,8 +257,10 @@ class NeuralNetworkGaussianProcessKernel(Kernel):
             parameters: parameters of the kernel
             x: design matrix of shape (n, d)
             y: design matrix of shape (m, d) if y is None, compute for x and x
+            full_cov: whether to compute the full covariance matrix or just the diagonal
 
         Returns: the kernel gram matrix of shape (n, m)
 
         """
-        return self.ntk_kernel_function(x, y, "nngp")
+        gram = self.ntk_kernel_function(x, y, "nngp")
+        return gram if full_cov else jnp.diagonal(gram)

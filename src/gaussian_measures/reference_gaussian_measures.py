@@ -7,7 +7,7 @@ from jax import random
 from jax.scipy.linalg import cho_factor, cho_solve
 
 from src.gaussian_measures.gaussian_measures import GaussianMeasure, PRNGKey
-from src.kernels.reference_kernels import StandardKernel
+from src.kernels.reference_kernels import ReferenceKernel
 from src.mean_functions.mean_functions import MeanFunction
 from src.parameters.gaussian_measures.reference_gaussian_measures import (
     ReferenceGaussianMeasureParameters,
@@ -27,7 +27,7 @@ class ReferenceGaussianMeasure(GaussianMeasure):
         x: jnp.ndarray,
         y: jnp.ndarray,
         mean_function: MeanFunction,
-        kernel: StandardKernel,
+        kernel: ReferenceKernel,
     ):
         """
         Defining the training data (x, y), the mean function, and the kernel for the Gaussian measure.

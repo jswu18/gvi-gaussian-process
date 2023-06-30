@@ -9,13 +9,11 @@ from jax.scipy.linalg import cho_factor, cho_solve
 
 from src.kernels.reference_kernels import Kernel
 from src.module import Module
-from src.parameters.gaussian_measures.reference_gaussian_measures import (
-    ReferenceGaussianMeasureParameters,
-)
 from src.parameters.kernels.approximate_kernels import (
     ApproximateKernelParameters,
     StochasticVariationalGaussianProcessKernelParameters,
 )
+from src.parameters.kernels.kernels import KernelParameters
 from src.utils.matrix_operations import add_diagonal_regulariser
 
 PRNGKey = Any  # pylint: disable=invalid-name
@@ -30,25 +28,26 @@ class ApproximateKernel(Kernel, ABC):
 
     def __init__(
         self,
-        reference_gaussian_measure_parameters: ReferenceGaussianMeasureParameters,
+        reference_kernel_parameters: KernelParameters,
         reference_kernel: Kernel,
+        log_observation_noise: float,
     ):
         """
         Defining the kernel with respect to a reference Gaussian measure.
 
         Args:
-            reference_gaussian_measure_parameters: the parameters of the reference Gaussian measure.
+            reference_kernel_parameters: the parameters of the reference kernel.
             reference_kernel: the kernel of the reference Gaussian measure.
+            log_observation_noise: the log observation noise of the model
         """
 
-        self.reference_gaussian_measure_parameters = (
-            reference_gaussian_measure_parameters
-        )
+        self.reference_kernel_parameters = reference_kernel_parameters
+        self.log_observation_noise = log_observation_noise
 
         # define a jit-compiled version of the reference kernel gram matrix using the reference kernel parameters
         self.calculate_reference_gram = jit(
             lambda x, y=None: reference_kernel.calculate_gram(
-                parameters=reference_gaussian_measure_parameters.kernel,
+                parameters=reference_kernel_parameters,
                 x=x,
                 y=y,
             )
@@ -64,11 +63,11 @@ class StochasticVariationalGaussianProcessKernel(ApproximateKernel):
 
     def __init__(
         self,
-        reference_gaussian_measure_parameters: ReferenceGaussianMeasureParameters,
+        reference_kernel_parameters: KernelParameters,
+        log_observation_noise: float,
         reference_kernel: Kernel,
         inducing_points: jnp.ndarray,
         training_points: jnp.ndarray,
-        log_shift: float = 1e-5,
         diagonal_regularisation: float = 1e-5,
         is_diagonal_regularisation_absolute_scale: bool = False,
     ):
@@ -77,22 +76,22 @@ class StochasticVariationalGaussianProcessKernel(ApproximateKernel):
         and inducing points.
 
         Args:
-            reference_gaussian_measure_parameters: the parameters of the reference Gaussian measure.
+            reference_kernel_parameters: the parameters of the reference kernel.
+            log_observation_noise: the log observation noise of the model
             reference_kernel: the kernel of the reference Gaussian measure.
             inducing_points: the inducing points of the stochastic variational Gaussian process.
             training_points: the training points of the stochastic variational Gaussian process.
-            log_shift: the shift applied before logarithm of el_matrix and after exponentiation of log_el_matrix
             diagonal_regularisation: the diagonal regularisation used to stabilise the Cholesky decomposition.
             is_diagonal_regularisation_absolute_scale: whether the diagonal regularisation is an absolute scale.
         """
         super().__init__(
-            reference_gaussian_measure_parameters,
+            reference_kernel_parameters,
             reference_kernel,
+            log_observation_noise,
         )
         self.number_of_dimensions = inducing_points.shape[1]
         self.inducing_points = inducing_points
         self.training_points = training_points
-        self.log_shift = log_shift
         self.diagonal_regularisation = diagonal_regularisation
         self.is_diagonal_regularisation_absolute_scale = (
             is_diagonal_regularisation_absolute_scale
@@ -152,7 +151,7 @@ class StochasticVariationalGaussianProcessKernel(ApproximateKernel):
 
         """
         reference_gaussian_measure_observation_precision = 1 / jnp.exp(
-            self.reference_gaussian_measure_parameters.log_observation_noise
+            self.log_observation_noise
         )
         cholesky_decomposition_and_lower = cho_factor(
             jnp.linalg.cholesky(
@@ -216,6 +215,7 @@ class StochasticVariationalGaussianProcessKernel(ApproximateKernel):
         parameters: StochasticVariationalGaussianProcessKernelParameters,
         x: jnp.ndarray,
         y: jnp.ndarray = None,
+        full_cov: bool = False,
     ) -> jnp.ndarray:
         # pass because calculate_gram is overridden
         pass
@@ -225,6 +225,7 @@ class StochasticVariationalGaussianProcessKernel(ApproximateKernel):
         parameters: StochasticVariationalGaussianProcessKernelParameters,
         x: jnp.ndarray,
         y: jnp.ndarray = None,
+        full_cov: bool = True,
     ) -> jnp.ndarray:
         """
         Computing the Gram matrix using for the SVGP which depends on the reference kernel.
@@ -237,6 +238,7 @@ class StochasticVariationalGaussianProcessKernel(ApproximateKernel):
             parameters: parameters of the kernel
             x: design matrix of shape (n, d)
             y: design matrix of shape (m, d)
+            full_cov: whether to compute the full covariance matrix or just the diagonal
 
         Returns: the kernel gram matrix of shape (n, m)
 
@@ -266,7 +268,7 @@ class StochasticVariationalGaussianProcessKernel(ApproximateKernel):
         sigma_matrix = self.calculate_sigma_matrix(
             log_el_matrix=parameters.log_el_matrix
         )
-        return (
+        gram = (
             reference_gram_x_y
             - reference_gram_x_inducing
             @ cho_solve(
@@ -275,3 +277,4 @@ class StochasticVariationalGaussianProcessKernel(ApproximateKernel):
             )
             + reference_gram_x_inducing @ sigma_matrix @ reference_gram_y_inducing.T
         )
+        return gram if full_cov else jnp.diagonal(gram)
