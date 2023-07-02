@@ -84,14 +84,16 @@ class ConditionalVarianceInducingPointsSelector(InducingPointsSelector):
 
         Args:
             key: PRNGKey, random key
-            training_inputs: [N,D] numpy array,
+            training_inputs: [N,D1,...,DN] numpy array,
             number_of_inducing_points: int, number of points desired. If threshold is None actual number returned
                                         may be less than number_of_inducing_points
             kernel: Kernel object, kernel to use for computing variance
             kernel_parameters: KernelParameters object, parameters for kernel
             jitter: float, jitter to add to diagonal of kernel matrix
 
-        Returns:inducing inputs (number_of_inducing_points, D) and indices (number_of_inducing_points,)
+        Returns:
+            inducing inputs (number_of_inducing_points, D1, ..., DN)
+            indices (number_of_inducing_points,)
 
         """
         assert number_of_inducing_points > 1, "Must have at least 2 inducing points"
@@ -100,7 +102,7 @@ class ConditionalVarianceInducingPointsSelector(InducingPointsSelector):
         perm = random.permutation(
             subkey, number_of_training_points
         )  # permute entries so tie-breaking is random
-        training_inputs = training_inputs[perm]
+        training_inputs = training_inputs[perm, ...]
         # note this will throw an out of bounds exception if we do not update each entry
         indices = (
             np.zeros(number_of_inducing_points, dtype=int) + number_of_training_points

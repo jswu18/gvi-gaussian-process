@@ -104,15 +104,8 @@ class StochasticVariationalGaussianProcessKernel(ApproximateKernel):
                 is_diagonal_regularisation_absolute_scale=is_diagonal_regularisation_absolute_scale,
             )
         )
-        self.sigma_matrix = self._calculate_sigma_matrix(
-            gram_inducing=self.reference_gram_inducing,
-            gram_inducing_train=self.calculate_reference_gram(
-                x=inducing_points, y=training_points
-            ),
-            reference_gaussian_measure_observation_precision=1
-            / jnp.exp(log_observation_noise),
-            diagonal_regularisation=diagonal_regularisation,
-            is_diagonal_regularisation_absolute_scale=is_diagonal_regularisation_absolute_scale,
+        self.gram_inducing_train = self.calculate_reference_gram(
+            x=inducing_points, y=training_points
         )
 
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
@@ -131,46 +124,42 @@ class StochasticVariationalGaussianProcessKernel(ApproximateKernel):
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def initialise_random_parameters(
         self,
-        key: PRNGKey,
+        key: PRNGKey = None,
     ) -> StochasticVariationalGaussianProcessKernelParameters:
         """
         Initialise each parameter of the Stochastic Variational Gaussian Process Kernel with the appropriate random initialisation.
 
         Args:
-            key: A random key used to initialise the parameters.
+            key: A random key used to initialise the parameters. Not required in this case becasue
+                the parameters are initialised deterministically.
 
         Returns: A Pydantic model of the parameters for Stochastic Variational Gaussian Process Kernels.
 
         """
-        pass
+        # raise warning if key is not None
 
-    @staticmethod
-    def _calculate_sigma_matrix(
-        gram_inducing: jnp.ndarray,
-        gram_inducing_train: jnp.ndarray,
-        reference_gaussian_measure_observation_precision: float,
-        diagonal_regularisation: float,
-        is_diagonal_regularisation_absolute_scale: bool,
-    ) -> jnp.ndarray:
-        cholesky_decomposition_and_lower = cho_factor(
-            jnp.linalg.cholesky(
-                add_diagonal_regulariser(
-                    matrix=(
-                        gram_inducing
-                        + reference_gaussian_measure_observation_precision
-                        * gram_inducing_train
-                        @ gram_inducing_train.T
-                    ),
-                    diagonal_regularisation=diagonal_regularisation,
-                    is_diagonal_regularisation_absolute_scale=is_diagonal_regularisation_absolute_scale,
-                )
-            )
+        return StochasticVariationalGaussianProcessKernel.Parameters(
+            log_el_matrix=self.initialise_log_el_matrix(),
         )
-        el_matrix = cho_solve(
-            c_and_lower=cholesky_decomposition_and_lower,
-            b=jnp.eye(gram_inducing.shape[0]),
+
+    def initialise_log_el_matrix(self, jitter: float = 1e-10) -> jnp.ndarray:
+        """
+        Initialise the L matrix where:
+            sigma_matrix = L @ L.T
+
+        Returns: The L matrix.
+
+        """
+        reference_gaussian_measure_observation_precision = 1 / jnp.exp(
+            self.log_observation_noise
         )
-        return el_matrix @ el_matrix.T
+        cholesky_decomposition = jnp.linalg.cholesky(
+            self.reference_gram_inducing
+            + reference_gaussian_measure_observation_precision
+            * self.gram_inducing_train
+            @ self.gram_inducing_train.T,
+        )
+        return jnp.log(jnp.clip(jnp.linalg.inv(cholesky_decomposition), jitter, None))
 
     def _calculate_gram(
         self,
@@ -227,16 +216,18 @@ class StochasticVariationalGaussianProcessKernel(ApproximateKernel):
             )
 
         reference_gram_x_y = self.calculate_reference_gram(x=x, y=y)
-
+        sigma_matrix = jnp.exp(parameters.log_el_matrix).T @ jnp.exp(
+            parameters.log_el_matrix
+        )
         gram = (
             reference_gram_x_y
-            - reference_gram_x_inducing
-            @ cho_solve(
-                c_and_lower=self.reference_gram_inducing_cholesky_decomposition_and_lower,
-                b=reference_gram_y_inducing.T,
+            - (
+                reference_gram_x_inducing
+                @ cho_solve(
+                    c_and_lower=self.reference_gram_inducing_cholesky_decomposition_and_lower,
+                    b=reference_gram_y_inducing.T,
+                )
             )
-            + reference_gram_x_inducing
-            @ self.sigma_matrix
-            @ reference_gram_y_inducing.T
+            + reference_gram_x_inducing @ sigma_matrix @ reference_gram_y_inducing.T
         )
         return gram if full_cov else jnp.diagonal(gram)
