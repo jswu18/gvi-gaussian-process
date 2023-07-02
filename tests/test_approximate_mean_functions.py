@@ -6,12 +6,10 @@ from jax.config import config
 
 from mockers.kernels import ReferenceKernelMock, ReferenceKernelParametersMock
 from mockers.mean_functions import (
-    NeuralNetworkMock,
     ReferenceMeanFunctionMock,
     ReferenceMeanFunctionParametersMock,
 )
 from src.mean_functions.approximate_mean_functions import (
-    NeuralNetworkMeanFunction,
     StochasticVariationalGaussianProcessMeanFunction,
 )
 
@@ -50,37 +48,6 @@ def test_svgp_mean_functions(
     assert jnp.array_equal(
         svgp_mean_function.predict(
             svgp_mean_function.generate_parameters(parameters), x=x
-        ),
-        mean,
-    )
-
-
-@pytest.mark.parametrize(
-    "x,mean",
-    [
-        [
-            jnp.array(
-                [
-                    [1.0, 2.0, 3.0],
-                    [1.5, 2.5, 3.5],
-                ]
-            ),
-            jnp.array([2, 2]),
-        ],
-    ],
-)
-def test_nn_mean_functions(
-    x: jnp.ndarray,
-    mean: float,
-):
-    nn_mean_function = NeuralNetworkMeanFunction(
-        reference_mean_function_parameters=ReferenceMeanFunctionParametersMock(),
-        reference_mean_function=ReferenceMeanFunctionMock(),
-        neural_network=NeuralNetworkMock(),
-    )
-    assert jnp.array_equal(
-        nn_mean_function.predict(
-            nn_mean_function.generate_parameters({"neural_network": None}), x=x
         ),
         mean,
     )

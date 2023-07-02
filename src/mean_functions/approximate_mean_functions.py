@@ -1,18 +1,16 @@
 from abc import ABC
 from typing import Any, Dict, Union
 
-import flax
 import jax.numpy as jnp
 import pydantic
 from flax.core.frozen_dict import FrozenDict
 from jax import jit, random
 
 from src.kernels.reference_kernels import Kernel
-from src.mean_functions.reference_mean_functions import MeanFunction
+from src.mean_functions.mean_functions import MeanFunction
 from src.parameters.kernels.kernels import KernelParameters
 from src.parameters.mean_functions.approximate_mean_functions import (
     ApproximateMeanFunctionParameters,
-    NeuralNetworkMeanFunctionParameters,
     StochasticVariationalGaussianProcessMeanFunctionParameters,
 )
 from src.parameters.mean_functions.mean_functions import MeanFunctionParameters
@@ -149,85 +147,3 @@ class StochasticVariationalGaussianProcessMeanFunction(ApproximateMeanFunction):
             self.reference_mean_func(x)
             + (self.calculate_reference_gram(x) @ parameters.weights).T
         ).reshape(-1)
-
-
-class NeuralNetworkMeanFunction(ApproximateMeanFunction):
-    """
-    A Mean Function which is defined by a neural network.
-    """
-
-    Parameters = NeuralNetworkMeanFunctionParameters
-
-    def __init__(
-        self,
-        reference_mean_function_parameters: MeanFunctionParameters,
-        reference_mean_function: MeanFunction,
-        neural_network: flax.linen.Module,
-    ):
-        """
-        Using a neural network to act as the mean function of the Gaussian measure.
-            - n is the number of points in x
-            - d is the number of dimensions
-
-        Args:
-            reference_mean_function_parameters: the parameters of the reference mean function.
-            reference_mean_function: the mean function of the reference Gaussian measure.
-            neural_network: a flax linen module which takes in a design matrix of shape (n, d) and outputs a vector of shape (n, 1)
-        """
-        super().__init__(reference_mean_function_parameters, reference_mean_function)
-        self.neural_network = neural_network
-
-    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
-    def generate_parameters(
-        self, parameters: Union[FrozenDict, Dict]
-    ) -> NeuralNetworkMeanFunctionParameters:
-        """
-        Generates a Pydantic model of the parameters for Neural Network Mean Functions.
-
-        Args:
-            parameters: A dictionary of the parameters for Neural Network Mean Functions.
-
-        Returns: A Pydantic model of the parameters for Neural Network Mean Functions.
-
-        """
-        return NeuralNetworkMeanFunction.Parameters(
-            neural_network=parameters["neural_network"]
-        )
-
-    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
-    def initialise_random_parameters(
-        self,
-        key: PRNGKey,
-    ) -> NeuralNetworkMeanFunctionParameters:
-        """
-        Initialise the parameters of the ARD Kernel using a random key.
-
-        Args:
-            key: A random key used to initialise the parameters.
-
-        Returns: A Pydantic model of the parameters for Neural Network Mean Functions.
-
-        """
-        return NeuralNetworkMeanFunctionParameters(
-            neural_network=self.neural_network.init(key, jnp.zeros((1, 1)))
-        )
-
-    def _predict(
-        self, parameters: NeuralNetworkMeanFunctionParameters, x: jnp.ndarray
-    ) -> jnp.ndarray:
-        """
-        Predict the mean function at the provided points x by adding the reference mean function to the
-        output of the neural network.
-            - n is the number of points in x
-            - d is the number of dimensions
-
-        Args:
-            parameters: parameters of the mean function
-            x: design matrix of shape (n, d)
-
-        Returns: the mean function evaluated at the provided points x of shape (n, 1).
-
-        """
-        return self.reference_mean_func(x) + self.neural_network.apply(
-            parameters.neural_network, x
-        )
