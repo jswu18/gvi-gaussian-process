@@ -7,12 +7,10 @@ from flax.core.frozen_dict import FrozenDict
 from jax import numpy as jnp
 
 from src.module import Module
-from src.parameters.mean_functions.approximate_mean_functions import (
-    NeuralNetworkMeanFunctionParameters,
-)
 from src.parameters.mean_functions.mean_functions import (
     ConstantFunctionParameters,
     MeanFunctionParameters,
+    NeuralNetworkMeanFunctionParameters,
 )
 
 PRNGKey = Any  # pylint: disable=invalid-name

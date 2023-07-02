@@ -13,5 +13,9 @@ class ConstantFunctionParameters(MeanFunctionParameters):
     constant: JaxFloatType
 
 
+class NeuralNetworkMeanFunctionParameters(MeanFunctionParameters):
+    neural_network: Any  # hack fix for now
+
+
 class NeuralNetworkSharedMeanFunctionParameters(MeanFunctionParameters):
     neural_network: Any  # hack fix for now
