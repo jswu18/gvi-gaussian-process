@@ -4,8 +4,7 @@ import jax.numpy as jnp
 import pytest
 from jax.config import config
 
-from src.mean_functions.mean_functions import MeanFunction
-from src.mean_functions.reference_mean_functions import ConstantFunction
+from src.mean_functions.mean_functions import ConstantFunction, MeanFunction
 
 config.update("jax_enable_x64", True)
 

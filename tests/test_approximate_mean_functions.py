@@ -11,9 +11,9 @@ from mockers.mean_functions import (
     ReferenceMeanFunctionParametersMock,
 )
 from src.mean_functions.approximate_mean_functions import (
-    NeuralNetworkMeanFunction,
     StochasticVariationalGaussianProcessMeanFunction,
 )
+from src.mean_functions.mean_functions import NeuralNetworkMeanFunction
 
 config.update("jax_enable_x64", True)
 
@@ -65,7 +65,7 @@ def test_svgp_mean_functions(
                     [1.5, 2.5, 3.5],
                 ]
             ),
-            jnp.array([2, 2]),
+            jnp.array([1, 1]),
         ],
     ],
 )
