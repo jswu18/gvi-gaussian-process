@@ -126,10 +126,11 @@ def compute_gaussian_wasserstein_metric(
         is_eigenvalue_regularisation_absolute_scale=is_eigenvalue_regularisation_absolute_scale,
         use_symmetric_matrix_eigendecomposition=use_symmetric_matrix_eigendecomposition,
     )
-    return (
+    return jnp.float64(
         jnp.mean((mean_train_p - mean_train_q) ** 2)
         + jnp.mean(jnp.diagonal(covariance_train_p))
         + jnp.mean(jnp.diagonal(covariance_train_q))
-        - (2 / jnp.sqrt(batch_size * train_size))
-        * jnp.sum(jnp.sqrt(cross_covariance_eigenvalues))
+        # commented because gradient can't be computed for this term at the moment
+        # - (2 / jnp.sqrt(batch_size * train_size))
+        # * jnp.sum(jnp.sqrt(cross_covariance_eigenvalues))
     )
