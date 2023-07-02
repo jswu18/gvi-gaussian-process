@@ -21,6 +21,7 @@ flax = "^0.6.3"
 neural-tangents = "^0.6.1"
 pydantic = "^1.10.9"
 python-mnist = "^0.7"
+tqdm = "^4.65.0"
 
 [tool.poetry.dev-dependencies]
 black = "~22.6"
