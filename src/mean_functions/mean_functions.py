@@ -96,8 +96,6 @@ class NeuralNetworkMeanFunction(MeanFunction):
 
     def __init__(
         self,
-        reference_mean_function_parameters: MeanFunctionParameters,
-        reference_mean_function: MeanFunction,
         neural_network: flax.linen.Module,
     ):
         """
@@ -106,8 +104,6 @@ class NeuralNetworkMeanFunction(MeanFunction):
             - d is the number of dimensions
 
         Args:
-            reference_mean_function_parameters: the parameters of the reference mean function.
-            reference_mean_function: the mean function of the reference Gaussian measure.
             neural_network: a flax linen module which takes in a design matrix of shape (n, d) and outputs a vector of shape (n, 1)
         """
         super().__init__()

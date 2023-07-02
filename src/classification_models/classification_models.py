@@ -80,8 +80,8 @@ class ClassificationModel(Module, ABC):
     @abstractmethod
     def _calculate_means(
         self,
-        x: jnp.ndarray,
         parameters: ClassificationModelParameters,
+        x: jnp.ndarray,
     ) -> jnp.ndarray:
         """
         Calculates the means of the Gaussian measures for the classification model.
@@ -90,8 +90,8 @@ class ClassificationModel(Module, ABC):
             - d is the number of dimensions
 
         Args:
-            x: design matrix of shape (n, d)
             parameters: parameters of the classification model
+            x: design matrix of shape (n, d)
 
         Returns: means of the Gaussian measures for the classification model of shape (k, n)
 
@@ -100,19 +100,22 @@ class ClassificationModel(Module, ABC):
 
     def _calculate_covariances(
         self,
-        x: jnp.ndarray,
         parameters: ClassificationModelParameters,
+        x: jnp.ndarray,
+        y: jnp.ndarray = None,
     ) -> jnp.ndarray:
         """
         Calculates the covariances of the Gaussian measures for the classification model.
             - k is the number of classes
             - n is the number of points in x
+            - m is the number of points in y
             - d is the number of dimensions
         Args:
-            x: design matrix of shape (n, d)
             parameters: parameters of the classification model
+            x: design matrix of shape (n, d)
+            y: design matrix of shape (m, d)
 
-        Returns: covariances of the Gaussian measures for the classification model of shape (k, n, n)
+        Returns: covariances of the Gaussian measures for the classification model of shape (k, n, m)
 
         """
         raise NotImplementedError
@@ -120,8 +123,8 @@ class ClassificationModel(Module, ABC):
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def calculate_means(
         self,
-        x: jnp.ndarray,
         parameters: Union[Dict, FrozenDict, ClassificationModelParameters],
+        x: jnp.ndarray,
     ) -> jnp.ndarray:
         if not isinstance(parameters, self.Parameters):
             parameters = self.generate_parameters(parameters)
@@ -131,13 +134,14 @@ class ClassificationModel(Module, ABC):
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def calculate_covariances(
         self,
-        x: jnp.ndarray,
         parameters: Union[Dict, FrozenDict, ClassificationModelParameters],
+        x: jnp.ndarray,
+        y: jnp.ndarray = None,
     ) -> jnp.ndarray:
         if not isinstance(parameters, self.Parameters):
             parameters = self.generate_parameters(parameters)
         Module.check_parameters(parameters, self.Parameters)
-        return self._calculate_covariances(x=x, parameters=parameters)
+        return self._calculate_covariances(x=x, y=y, parameters=parameters)
 
     def _calculate_s_matrix(
         self, parameters: ClassificationModelParameters, x: jnp.ndarray
@@ -212,7 +216,7 @@ class ClassificationModel(Module, ABC):
         # (h, k, n) -> (k, n) -> (n, k)
         return ((1 / jnp.sqrt(jnp.pi)) * jnp.sum(hermite_components, axis=0)).T
 
-    # @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def compute_negative_log_likelihood(
         self,
         parameters: Union[Dict, FrozenDict, ClassificationModelParameters],
