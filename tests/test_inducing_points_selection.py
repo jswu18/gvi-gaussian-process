@@ -62,6 +62,16 @@ def test_inducing_points_selection(
             ),
             jnp.array([2, 3]),
         ],
+        [
+            jnp.stack(
+                [
+                    2 * jnp.ones((28, 28, 1)),
+                    4 * jnp.ones((28, 28, 1)),
+                    5 * jnp.ones((28, 28, 1)),
+                ]
+            ),
+            jnp.array([2, 0]),
+        ],
     ],
 )
 def test_inducing_points_indices_selection(

@@ -139,10 +139,10 @@ class StochasticVariationalGaussianProcessKernel(ApproximateKernel):
         # raise warning if key is not None
 
         return StochasticVariationalGaussianProcessKernel.Parameters(
-            log_el_matrix=self.initialise_log_el_matrix_matrix(),
+            log_el_matrix=self.initialise_log_el_matrix(),
         )
 
-    def initialise_log_el_matrix_matrix(self) -> jnp.ndarray:
+    def initialise_log_el_matrix(self, jitter: float = 1e-10) -> jnp.ndarray:
         """
         Initialise the L matrix where:
             sigma_matrix = L @ L.T
@@ -153,62 +153,13 @@ class StochasticVariationalGaussianProcessKernel(ApproximateKernel):
         reference_gaussian_measure_observation_precision = 1 / jnp.exp(
             self.log_observation_noise
         )
-        cholesky_decomposition_and_lower = cho_factor(
-            jnp.linalg.cholesky(
-                add_diagonal_regulariser(
-                    matrix=(
-                        self.reference_gram_inducing
-                        + reference_gaussian_measure_observation_precision
-                        * self.gram_inducing_train
-                        @ self.gram_inducing_train.T
-                    ),
-                    diagonal_regularisation=self.diagonal_regularisation,
-                    is_diagonal_regularisation_absolute_scale=self.is_diagonal_regularisation_absolute_scale,
-                )
-            )
+        cholesky_decomposition = jnp.linalg.cholesky(
+            self.reference_gram_inducing
+            + reference_gaussian_measure_observation_precision
+            * self.gram_inducing_train
+            @ self.gram_inducing_train.T,
         )
-        el_matrix = cho_solve(
-            c_and_lower=cholesky_decomposition_and_lower,
-            b=jnp.eye(self.reference_gram_inducing.shape[0]),
-        )
-        el_matrix = jnp.clip(
-            el_matrix,
-            a_min=self.diagonal_regularisation,
-            a_max=None,
-        )
-        return jnp.log(el_matrix)
-
-    def calculate_sigma_matrix(self, log_el_matrix: jnp.ndarray) -> jnp.ndarray:
-        """
-        Calculate the sigma matrix where:
-            sigma_matrix = L @ L.T
-
-        Args:
-            log_el_matrix: the log of the L matrix.
-
-        Returns: The sigma matrix.
-
-        """
-        el_matrix = jnp.exp(log_el_matrix)
-
-        # ensure lower triangle matrix
-        el_matrix = jnp.tril(el_matrix)
-
-        # add regularisation
-        el_matrix = add_diagonal_regulariser(
-            matrix=el_matrix,
-            diagonal_regularisation=self.diagonal_regularisation,
-            is_diagonal_regularisation_absolute_scale=self.is_diagonal_regularisation_absolute_scale,
-        )
-
-        # clip values to ensure greater than or equal to zero
-        el_matrix = jnp.clip(
-            el_matrix,
-            a_min=self.diagonal_regularisation,
-            a_max=None,
-        )
-
-        return el_matrix @ el_matrix.T
+        return jnp.log(jnp.clip(jnp.linalg.inv(cholesky_decomposition), jitter, None))
 
     def _calculate_gram(
         self,
@@ -265,15 +216,17 @@ class StochasticVariationalGaussianProcessKernel(ApproximateKernel):
             )
 
         reference_gram_x_y = self.calculate_reference_gram(x=x, y=y)
-        sigma_matrix = self.calculate_sigma_matrix(
-            log_el_matrix=parameters.log_el_matrix
+        sigma_matrix = jnp.exp(parameters.log_el_matrix).T @ jnp.exp(
+            parameters.log_el_matrix
         )
         gram = (
             reference_gram_x_y
-            - reference_gram_x_inducing
-            @ cho_solve(
-                c_and_lower=self.reference_gram_inducing_cholesky_decomposition_and_lower,
-                b=reference_gram_y_inducing.T,
+            - (
+                reference_gram_x_inducing
+                @ cho_solve(
+                    c_and_lower=self.reference_gram_inducing_cholesky_decomposition_and_lower,
+                    b=reference_gram_y_inducing.T,
+                )
             )
             + reference_gram_x_inducing @ sigma_matrix @ reference_gram_y_inducing.T
         )
