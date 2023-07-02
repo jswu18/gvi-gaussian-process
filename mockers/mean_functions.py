@@ -11,7 +11,6 @@ from src.parameters.mean_functions.approximate_mean_functions import (
     ApproximateMeanFunctionParameters,
 )
 from src.parameters.mean_functions.mean_functions import MeanFunctionParameters
-from src.parameters.module import ModuleParameters
 
 PRNGKey = Any  # pylint: disable=invalid-name
 
@@ -53,7 +52,7 @@ class NeuralNetworkMock(flax.linen.Module):
             return jnp.ones((args[0].shape[0]))
 
 
-class ApproximateMeanFunctionParametersMock(MeanFunctionParameters):
+class ApproximateMeanFunctionParametersMock(ApproximateMeanFunctionParameters):
     pass
 
 
