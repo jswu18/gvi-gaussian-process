@@ -116,25 +116,30 @@ class DistinctMeansClassificationModel(ClassificationModel, ABC):
 
     def _calculate_covariances(
         self,
-        x: jnp.ndarray,
         parameters: DistinctMeansClassificationModelParameters,
+        x: jnp.ndarray,
+        y: jnp.ndarray = None,
     ) -> jnp.ndarray:
         """
         Calculates the covariances of the Gaussian measures for the classification model.
             - k is the number of classes
             - n is the number of points in x
+            - m is the number of points in y
             - d is the number of dimensions
         Args:
-            x: design matrix of shape (n, d)
             parameters: parameters of the classification model
+            x: design matrix of shape (n, d)
+            y: design matrix of shape (m, d)
 
-        Returns: covariances of the Gaussian measures for the classification model of shape (k, n, n)
+        Returns: covariances of the Gaussian measures for the classification model of shape (k, n, m)
 
         """
         return jnp.array(
             [
                 self.gaussian_measures[label].calculate_covariance(
-                    parameters=parameters.gaussian_measures[label], x=x
+                    parameters=parameters.gaussian_measures[label],
+                    x=x,
+                    y=y,
                 )
                 for label in self.labels
             ]
@@ -205,7 +210,7 @@ class ApproximateDistinctMeansClassificationModel(DistinctMeansClassificationMod
             )
         )
 
-    # @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def compute_gaussian_wasserstein_inference_loss(
         self,
         parameters: Union[

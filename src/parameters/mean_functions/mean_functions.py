@@ -15,7 +15,3 @@ class ConstantFunctionParameters(MeanFunctionParameters):
 
 class NeuralNetworkMeanFunctionParameters(MeanFunctionParameters):
     neural_network: Any  # hack fix for now
-
-
-class NeuralNetworkSharedMeanFunctionParameters(MeanFunctionParameters):
-    neural_network: Any  # hack fix for now
