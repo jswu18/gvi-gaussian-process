@@ -104,7 +104,7 @@ class SharedMeansClassificationModel(ClassificationModel):
             x: design matrix of shape (n, d)
             parameters: parameters of the classification model
 
-        Returns: means of the the classification model of shape (k, n)
+        Returns: means of the classification model of shape (k, n)
 
         """
         return self.mean_function.predict(x=x, parameters=parameters.mean_function)
