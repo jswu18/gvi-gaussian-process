@@ -32,7 +32,7 @@ class ApproximateGaussianMeasure(GaussianMeasure):
         kernel: ApproximateKernel,
         reference_gaussian_measure: GaussianMeasure,
         reference_gaussian_measure_parameters: GaussianMeasureParameters,
-        eigenvalue_regularisation: float = 0.0,
+        eigenvalue_regularisation: float = 1e-8,
         is_eigenvalue_regularisation_absolute_scale: bool = False,
         use_symmetric_matrix_eigendecomposition: bool = True,
     ):
@@ -101,7 +101,7 @@ class ApproximateGaussianMeasure(GaussianMeasure):
         x: jnp.ndarray,
         reference_gaussian_measure: GaussianMeasure,
         reference_gaussian_measure_parameters: GaussianMeasureParameters,
-        eigenvalue_regularisation: float = 0.0,
+        eigenvalue_regularisation: float = 1e-8,
         is_eigenvalue_regularisation_absolute_scale: bool = False,
         use_symmetric_matrix_eigendecomposition: bool = True,
     ) -> Tuple[Callable, Callable]:
