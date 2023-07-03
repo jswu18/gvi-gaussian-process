@@ -4,8 +4,11 @@ import jax.numpy as jnp
 import pydantic
 from flax.core.frozen_dict import FrozenDict
 
-from mockers.kernels import ReferenceKernelMock
-from mockers.mean_functions import ReferenceMeanFunctionMock
+from mockers.kernels import ReferenceKernelMock, ReferenceKernelParametersMock
+from mockers.mean_functions import (
+    ReferenceMeanFunctionMock,
+    ReferenceMeanFunctionParametersMock,
+)
 from src.gaussian_measures.gaussian_measures import GaussianMeasure
 from src.parameters.gaussian_measures.gaussian_measures import GaussianMeasureParameters
 from src.utils.custom_types import JaxFloatType
@@ -14,7 +17,10 @@ PRNGKey = Any  # pylint: disable=invalid-name
 
 
 class GaussianMeasureParametersMock(GaussianMeasureParameters):
-    pass
+    mean_function: ReferenceMeanFunctionParametersMock = (
+        ReferenceMeanFunctionParametersMock()
+    )
+    kernel: ReferenceKernelParametersMock = ReferenceKernelParametersMock()
 
 
 class GaussianMeasureMock(GaussianMeasure):
@@ -39,20 +45,20 @@ class GaussianMeasureMock(GaussianMeasure):
     def _calculate_mean(
         self,
         x: jnp.ndarray,
-        parameters: GaussianMeasureParametersMock = None,
+        parameters: GaussianMeasureParametersMock,
     ) -> jnp.ndarray:
-        return jnp.ones((x.shape[0]))
+        return self.mean_function.predict(parameters.mean_function, x)
 
     def _calculate_covariance(
         self,
+        parameters: GaussianMeasureParametersMock,
         x: jnp.ndarray,
         y: jnp.ndarray = None,
-        parameters: GaussianMeasureParametersMock = None,
     ) -> jnp.ndarray:
-        return jnp.ones((x.shape[0], y.shape[0]))
+        return self.kernel.calculate_gram(parameters.kernel, x, y)
 
     def _calculate_observation_noise(
-        self, parameters: GaussianMeasureParametersMock = None
+        self, parameters: GaussianMeasureParametersMock
     ) -> JaxFloatType:
         return jnp.float64(1)
 
