@@ -154,7 +154,7 @@ class ApproximateSharedMeansClassificationModel(SharedMeansClassificationModel):
         reference_classification_model_parameters: ClassificationModelParameters,
         epsilon: float = 0.01,
         hermite_polynomial_order: int = 50,
-        eigenvalue_regularisation: float = 0.0,
+        eigenvalue_regularisation: float = 1e-8,
         is_eigenvalue_regularisation_absolute_scale: bool = False,
         use_symmetric_matrix_eigendecomposition: bool = True,
     ):
