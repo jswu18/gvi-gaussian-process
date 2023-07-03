@@ -17,7 +17,7 @@ from src.utils.matrix_operations import (
 def _compute_cross_covariance_eigenvalues(
     gram_batch_train_p: jnp.ndarray,
     gram_batch_train_q: jnp.ndarray,
-    eigenvalue_regularisation: float = 0.0,
+    eigenvalue_regularisation: float = 1e-8,
     is_eigenvalue_regularisation_absolute_scale: bool = False,
     use_symmetric_matrix_eigendecomposition: bool = True,
 ) -> jnp.ndarray:
@@ -41,7 +41,18 @@ def _compute_cross_covariance_eigenvalues(
 
     """
     if use_symmetric_matrix_eigendecomposition:
-        return compute_product_eigenvalues(gram_batch_train_q, gram_batch_train_p)
+        return compute_product_eigenvalues(
+            matrix_a=add_diagonal_regulariser(
+                matrix=gram_batch_train_q,
+                diagonal_regularisation=eigenvalue_regularisation,
+                is_diagonal_regularisation_absolute_scale=is_eigenvalue_regularisation_absolute_scale,
+            ),
+            matrix_b=add_diagonal_regulariser(
+                matrix=gram_batch_train_p,
+                diagonal_regularisation=eigenvalue_regularisation,
+                is_diagonal_regularisation_absolute_scale=is_eigenvalue_regularisation_absolute_scale,
+            ),
+        )
     else:
         warnings.warn(
             "covariance matrices are non-symmetric and cannot utilise GPU resources"
@@ -62,7 +73,7 @@ def compute_gaussian_wasserstein_metric_from_grams(
     covariance_train_q: jnp.ndarray,
     gram_batch_train_p: jnp.ndarray,
     gram_batch_train_q: jnp.ndarray,
-    eigenvalue_regularisation: float = 0.0,
+    eigenvalue_regularisation: float = 1e-8,
     is_eigenvalue_regularisation_absolute_scale: bool = False,
     use_symmetric_matrix_eigendecomposition: bool = True,
 ) -> float:
@@ -88,22 +99,20 @@ def compute_gaussian_wasserstein_metric_from_grams(
     Returns: the empirical Gaussian Wasserstein metric
 
     """
-    # commented because gradient can't be computed for this term at the moment
-    # cross_covariance_eigenvalues = _compute_cross_covariance_eigenvalues(
-    #     gram_batch_train_p,
-    #     gram_batch_train_q,
-    #     eigenvalue_regularisation=eigenvalue_regularisation,
-    #     is_eigenvalue_regularisation_absolute_scale=is_eigenvalue_regularisation_absolute_scale,
-    #     use_symmetric_matrix_eigendecomposition=use_symmetric_matrix_eigendecomposition,
-    # )
-    # batch_size, train_size = gram_batch_train_p.shape
+    cross_covariance_eigenvalues = _compute_cross_covariance_eigenvalues(
+        gram_batch_train_p,
+        gram_batch_train_q,
+        eigenvalue_regularisation=eigenvalue_regularisation,
+        is_eigenvalue_regularisation_absolute_scale=is_eigenvalue_regularisation_absolute_scale,
+        use_symmetric_matrix_eigendecomposition=use_symmetric_matrix_eigendecomposition,
+    )
+    batch_size, train_size = gram_batch_train_p.shape
     return jnp.float64(
         jnp.mean((mean_train_p - mean_train_q) ** 2)
         + jnp.mean(jnp.diagonal(covariance_train_p))
         + jnp.mean(jnp.diagonal(covariance_train_q))
-        # commented because gradient can't be computed for this term at the moment
-        # - (2 / jnp.sqrt(batch_size * train_size))
-        # * jnp.sum(jnp.sqrt(cross_covariance_eigenvalues))
+        - (2 / jnp.sqrt(batch_size * train_size))
+        * jnp.sum(jnp.sqrt(cross_covariance_eigenvalues))
     )
 
 
@@ -115,7 +124,7 @@ def compute_gaussian_wasserstein_metric(
     q_parameters: Union[FrozenDict, Dict, GaussianMeasureParameters],
     x_batch: jnp.ndarray,
     x_train: jnp.ndarray,
-    eigenvalue_regularisation: float = 0.0,
+    eigenvalue_regularisation: float = 1e-8,
     is_eigenvalue_regularisation_absolute_scale: bool = False,
     use_symmetric_matrix_eigendecomposition: bool = True,
 ) -> float:
