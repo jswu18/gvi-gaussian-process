@@ -11,6 +11,7 @@ from scipy.special import roots_hermite
 from src.module import Module
 from src.parameters.classification_models.classification_models import (
     ClassificationModelParameters,
+    TemperedClassificationModelParameters,
 )
 
 PRNGKey = Any  # pylint: disable=invalid-name
@@ -98,6 +99,7 @@ class ClassificationModel(Module, ABC):
         """
         raise NotImplementedError
 
+    @abstractmethod
     def _calculate_covariances(
         self,
         parameters: ClassificationModelParameters,
@@ -143,8 +145,12 @@ class ClassificationModel(Module, ABC):
         Module.check_parameters(parameters, self.Parameters)
         return self._calculate_covariances(x=x, y=y, parameters=parameters)
 
-    def _calculate_s_matrix(
-        self, parameters: ClassificationModelParameters, x: jnp.ndarray
+    @staticmethod
+    def calculate_s_matrix(
+        means: jnp.ndarray,
+        covariances: jnp.ndarray,
+        hermite_weights: jnp.ndarray,
+        hermite_roots: jnp.ndarray,
     ) -> jnp.ndarray:
         """
         Computes the probabilities of each class
@@ -154,8 +160,10 @@ class ClassificationModel(Module, ABC):
             - h is the number of Hermite roots and weights
 
         Args:
-            parameters: parameters of the classification model
-            x: design matrix of shape (n, d)
+            means: means of the Gaussian measures for the classification model of shape (k, n)
+            covariances: covariances of the Gaussian measures for the classification model of shape (k, n, n)
+            hermite_weights: weights of the Hermite polynomials of shape (h,)
+            hermite_roots: roots of the Hermite polynomials of shape (h,)
 
         Returns: the mean function evaluated at the points in x of shape (n, k)
 
@@ -163,8 +171,6 @@ class ClassificationModel(Module, ABC):
         """
         Predicts the class of a point x.
         """
-        means = self._calculate_means(x=x, parameters=parameters)  # k x n
-        covariances = self._calculate_covariances(x=x, parameters=parameters)
 
         # (k, n)
         stdev_diagonal = jnp.sqrt(jnp.diagonal(covariances, axis1=1, axis2=2))
@@ -175,7 +181,7 @@ class ClassificationModel(Module, ABC):
                 # (h, None, None, None), (None, k_j, None, n) -> (h, k_j, k_l, n)
                 jnp.sqrt(2)
                 * jnp.multiply(
-                    self._hermite_roots[:, None, None, None],
+                    hermite_roots[:, None, None, None],
                     stdev_diagonal[None, :, None, :],
                 )
                 # (None, k_j, None, n) -> (h, k_j, k_l, n)
@@ -200,7 +206,7 @@ class ClassificationModel(Module, ABC):
         # (h, k, n)
         hermite_components = jnp.multiply(
             # (h, None, None) -> (h, k_j, n)
-            self._hermite_weights[:, None, None],
+            hermite_weights[:, None, None],
             # (h, k_j, n)
             jnp.exp(
                 # (h, k_j, k_l, n) -> (h, k_j, n)
@@ -228,7 +234,12 @@ class ClassificationModel(Module, ABC):
             parameters = self.generate_parameters(parameters)
 
         # (n, k)
-        s_matrix = self._calculate_s_matrix(parameters=parameters, x=x)
+        s_matrix = self.calculate_s_matrix(
+            means=self._calculate_means(parameters=parameters, x=x),
+            covariances=self._calculate_covariances(parameters=parameters, x=x),
+            hermite_weights=self._hermite_weights,
+            hermite_roots=self._hermite_roots,
+        )
 
         # (n, k)
         return (
@@ -243,12 +254,118 @@ class ClassificationModel(Module, ABC):
 
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def predict_probability(
-        self, parameters: ClassificationModelParameters, x: jnp.ndarray
+        self,
+        parameters: Union[Dict, FrozenDict, ClassificationModelParameters],
+        x: jnp.ndarray,
     ) -> jnp.ndarray:
+        # convert to Pydantic model if necessary
+        if not isinstance(parameters, self.Parameters):
+            parameters = self.generate_parameters(parameters)
+
         # (n, k)
-        s_matrix = self._calculate_s_matrix(parameters=parameters, x=x)
+        s_matrix = self.calculate_s_matrix(
+            means=self._calculate_means(parameters=parameters, x=x),
+            covariances=self._calculate_covariances(parameters=parameters, x=x),
+            hermite_weights=self._hermite_weights,
+            hermite_roots=self._hermite_roots,
+        )
 
         # (n, k)
         return (1 - self.epsilon) * s_matrix + (
             self.epsilon / (self.number_of_labels - 1)
         ) * (1 - s_matrix)
+
+
+class TemperedClassificationModel(ClassificationModel):
+    Parameters = TemperedClassificationModelParameters
+
+    def __init__(
+        self,
+        x: jnp.ndarray,
+        y: jnp.ndarray,
+        classification_model: ClassificationModel,
+        classification_model_parameters: ClassificationModelParameters,
+        epsilon: float = 0.01,
+        hermite_polynomial_order: int = 50,
+    ):
+        super().__init__(
+            x=x,
+            y=y,
+            epsilon=epsilon,
+            hermite_polynomial_order=hermite_polynomial_order,
+        )
+        self.classification_model = classification_model
+        self.classification_model_parameters = classification_model_parameters
+
+    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
+    def generate_parameters(
+        self, parameters: Union[Dict, FrozenDict]
+    ) -> TemperedClassificationModelParameters:
+        """
+        Generates a Pydantic model of the parameters for the Module.
+
+        Args:
+            parameters: A dictionary of the parameters for the Module.
+
+        Returns: A Pydantic model of the parameters for the Module.
+
+        """
+        return self.Parameters(
+            log_tempering_factors=parameters["log_tempering_factors"],
+        )
+
+    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
+    def initialise_random_parameters(
+        self,
+        key: PRNGKey,
+    ) -> TemperedClassificationModelParameters:
+        """
+        Initialise each parameter of the Module with the appropriate random initialisation.
+
+        Args:
+            key: A random key used to initialise the parameters.
+
+        Returns: A Pydantic model of the parameters for the Module.
+
+        """
+        pass
+
+    @property
+    def labels(self) -> List[Any]:
+        """
+        Returns a list of the labels for the classification model.
+        Returns: A list of the labels for the classification model.
+
+        """
+        return self.classification_model.labels
+
+    @property
+    def number_of_labels(self) -> int:
+        """
+        Returns the number of labels for the classification model.
+        Returns: The number of labels for the classification model.
+
+        """
+        return self.classification_model.number_of_labels
+
+    def _calculate_covariances(
+        self,
+        parameters: TemperedClassificationModelParameters,
+        x: jnp.ndarray,
+        y: jnp.ndarray = None,
+    ):
+        return jnp.multiply(
+            jnp.exp(parameters.log_tempering_factors)[:, None, None],
+            self.classification_model.calculate_covariances(
+                x=x, y=y, parameters=self.classification_model_parameters
+            ),
+        )
+
+    def _calculate_means(
+        self,
+        parameters: TemperedClassificationModelParameters,
+        x: jnp.ndarray,
+    ) -> jnp.ndarray:
+        return self.classification_model.calculate_means(
+            x=x, parameters=self.classification_model_parameters
+        )
