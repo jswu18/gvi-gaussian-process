@@ -7,6 +7,10 @@ __pycache__
 # IDE
 .idea
 
+# Model checkpoints
+*.ckpt
+/**/*.ckpt
+
 # Notebook checkpoints
 *ipynb_checkpoints
 /**/*ipynb_checkpoints
