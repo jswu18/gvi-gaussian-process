@@ -181,6 +181,7 @@ where $Q^{\nu}$ and $P$ are push-forward Gaussian measures with corresponding Ga
     W_2^2(P, Q) = \| m_P - m_Q\|_2^2 + \tr(C_P) + \tr(C_Q) - 2 \cdot \tr \left[ \left( \left(C_P\right)^{1/2} C_Q \left(C_P\right)^{1/2}\right)^{1/2}\right]
 \end{align}
 where $\tr$ is the trace of an operator and $\left(C_P\right)^{1/2}$ is the square root of the positive, self-adjoint operator $C_P$. 
+\\\jw{mis-match of support}
 \\The Wasserstein distance is an integral probability metric (IPM). Unlike f-divergences which compares two measures as a \textit{ratio} (requiring $P$ to dominate $Q$), IPMs compare two measures as a \textit{difference}. Thus $W_2(P, Q)$ is a much more stable discrepancy to use than $\KLD(P, Q)$ in our infinite dimensional setting. This motivates the use the Gaussian Wasserstein Inference objective from \cite{wild2022generalized}:
 \begin{align}
     \label{gwi-objective}
