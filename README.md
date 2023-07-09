@@ -4,7 +4,7 @@ Leveraging Generalised Variational Inference (GVI) to build a loss objective wit
 
 For a quick overview of GVI, see <a href="https://jswu18.github.io/posts/2023/07/generalised-variational-inference/">my blog post</a>.
 
-Gaussian Wasserstein Inference is developed in the <a href="https://arxiv.org/pdf/2205.06342.pdf">this paper</a> by Veit Wild.
+Gaussian Wasserstein Inference is developed in <a href="https://arxiv.org/pdf/2205.06342.pdf">this paper</a> by Veit Wild.
 
 
 
