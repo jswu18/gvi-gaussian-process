@@ -135,7 +135,7 @@ By defining $q_t = (1-t)\delta_{\theta_A} + t\delta_{\theta_B}$ for $t \in [0, 1
     \label{show-linear-minimisers}
     &= \min_{Q \in \mathcal{P}(\mathbb{R}^J)} \int \left( \sum_{n=1}^N\ell_n(x_n, \theta)\right) dq(\theta)
 \end{align}
-where ($\ref{show-linear-linear-operator}$) follows by linearity and ($\ref{show-linear-minimisers}$) follows from ($\ref{ex-risk-minimisers}$). Thus ($\ref{risk-minimisation}$) is a linear problem in $q$. 
+where ($\ref{show-linear-linear-operator}$) follows by linearity of the integral operator and ($\ref{show-linear-minimisers}$) follows from ($\ref{ex-risk-minimisers}$). Thus ($\ref{risk-minimisation}$) is a linear problem in $q$. 
 \subsection{Convexification through Regularisation}
 By adding a strictly convex and positive regulariser $D_r(q\| \pi)$ to our linear objective ($\ref{risk-minimisation}$), we ensure a strictly convex objective, guaranteeing the existence of a $\textit{unique}$ minimiser:
 \begin{align}
