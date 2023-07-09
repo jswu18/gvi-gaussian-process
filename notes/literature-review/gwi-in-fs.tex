@@ -103,7 +103,7 @@ It is shown in \cite{matthews2016sparse} that:
     \KLD\left(Q_{GP}^{\nu} \Big\| P_{GP}^{F \vert \mathbf{Y}_N} \right) = \sum_{n=1}^N\log p(y_n) - \mathcal{L}(\nu)
     \label{svgp-kld-loss-equivalence}
 \end{align}
-where $p(y_n)$ is the marginal likelihood or evidence of observing $y_n$ under the prior $F_P \sim GP(m_P, k_P)$ and observation model $y_n \sim \mathcal{N}(F_P(x_i), \sigma^2)$ with $\sigma^2$ being the aleoteric uncertainty. $\mathcal{L}(\nu)$ is the variational free energy:
+where $p(y_n)$ is the marginal likelihood or evidence of observing $yx_n$ under the prior $F_P \sim GP(m_P, k_P)$ and observation model $y_n \sim \mathcal{N}(F_P(x_i), \sigma^2)$ with $\sigma^2$ being the aleoteric uncertainty. $\mathcal{L}(\nu)$ is the variational free energy:
 \begin{align}
     \mathcal{L}(\nu) = \mathbb{E}_{F_Q \sim Q_{GP}^{\nu}}\left[\sum_{n=1}^{N}\log p\left(y_n \vert \mu=F_Q(x_n), \sigma^2\right)\right] -\KLD\left(Q^{\nu}_{GP}\Big\| P_{GP}\right) 
     \label{elbo}
