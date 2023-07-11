@@ -16,6 +16,7 @@
 \newcommand{\Chol}{\operatorname{Chol}}
 \newcommand{\KLD}{\operatorname{KLD}}
 \newcommand{\tr}{\operatorname{tr}}
+\newcommand{\diag}{\operatorname{diag}}
 
 \usepackage{lastpage}
 \usepackage{amsmath}
@@ -102,17 +103,34 @@ It is shown in \cite{matthews2016sparse} that:
     \KLD\left(Q_{GP}^{\nu} \Big\| P_{GP}^{F \vert \mathbf{Y}_N} \right) = \sum_{n=1}^N\log p(y_n) - \mathcal{L}(\nu)
     \label{svgp-kld-loss-equivalence}
 \end{align}
-where $p(y_n)$ is the marginal likelihood or evidence of observing $y_n$ under the prior $F_P \sim GP(m_P, k_P)$ and observation model $y_n \sim \mathcal{N}(F_P(x_i), \sigma^2)$ with $\sigma^2$ being the aleoteric uncertainty. $\mathcal{L}(\nu)$ is the variational free energy:
+where $p(y_n)$ is the marginal likelihood or evidence of observing $yx_n$ under the prior $F_P \sim GP(m_P, k_P)$ and observation model $y_n \sim \mathcal{N}(F_P(x_i), \sigma^2)$ with $\sigma^2$ being the aleoteric uncertainty. $\mathcal{L}(\nu)$ is the variational free energy:
 \begin{align}
     \mathcal{L}(\nu) = \mathbb{E}_{F_Q \sim Q_{GP}^{\nu}}\left[\sum_{n=1}^{N}\log p\left(y_n \vert \mu=F_Q(x_n), \sigma^2\right)\right] -\KLD\left(Q^{\nu}_{GP}\Big\| P_{GP}\right) 
     \label{elbo}
 \end{align}
-also referred to as the evidence lower bound (ELBO). We see from (\ref{svgp-kld-loss-equivalence}) that $\mathcal{L}(\nu)$ is the only dependence on $\nu$, so we can rewrite our minimisation objective in (\ref{svgp-minimiser}):
+also referred to as the evidence lower bound (ELBO). 
+\\We see from (\ref{svgp-kld-loss-equivalence}) that $\mathcal{L}(\nu)$ is the only dependence on $\nu$, so we can rewrite our minimisation objective in (\ref{svgp-minimiser}):
 \begin{align}
     \nu^* = \argmin_{\nu \in \Gamma} \left\{\mathbb{E}_{F_Q \sim Q^{\nu}}\left[\sum_{n=1}^{N}\log p\left(y_n \vert \mu=F_Q(x_n), \sigma^2\right)\right] -\KLD\left(Q^{\nu}_{GP}\Big\| P_{GP}\right)\right\}
     \label{svgp-minimiser-gvi-kld}
 \end{align}
-It is important to note that the existence of the objectives in (\ref{svgp-minimiser}) and (\ref{svgp-minimiser-gvi-kld}) \textit{requires} $P_{GP}^{F \vert \mathbf{Y}_N}$ to dominate $Q_{GP}^{\nu}$, which is \texit{only} guaranteed under the specific formulation of $Q$ in ($\ref{svgp-mean}$) and ($\ref{svgp-covariance}$). This severely restricts our choices for $m_Q$ and $k_Q$. 
+\\With this specific formulation, \cite{titsias2009variational} shows that there exists a closed form optimums $\mu^*$ and $\mathbf{\Sigma}^*$ of the form:
+\begin{align}
+    \label{svgp-optimal-mean}
+    \mu^* = \mathbf{K}_{\mathbf{X}_M, \mathbf{X}_M} \left( \sigma^2 \mathbf{K}_{\mathbf{X}_M, \mathbf{X}_M} + \mathbf{K}_{\mathbf{X}_M, \mathbf{X}_N}\mathbf{K}_{\mathbf{X}_N, \mathbf{X}_M}\right)^{-1}\mathbf{K}_{\mathbf{X}_M, \mathbf{X}_N} \mathbf{Y}_N\\
+    \label{svgp-optimal-covariance}
+    \mathbf{\Sigma}^* = \mathbf{K}_{\mathbf{X}_M, \mathbf{X}_M} \left(\mathbf{K}_{\mathbf{X}_M, \mathbf{X}_M} +  \sigma^{-2}\mathbf{K}_{\mathbf{X}_M, \mathbf{X}_N}\mathbf{K}_{\mathbf{X}_N, \mathbf{X}_M}\right)^{-1}\mathbf{K}_{\mathbf{X}_M, \mathbf{X}_M}
+\end{align}
+Moreover, the lower bound objective in ($\ref{elbo}$) will have the form:
+\begin{align}
+    \label{svgp-optimal-elbo}
+    \mathcal{L}(\nu^*) = &-\frac{N}{2} \log\left(2\pi \right)\\
+    &-\frac{1}{2} \log \left(\det\left( \mathbf{K}_{\mathbf{X}_N, \mathbf{X}_M}\left(\mathbf{K}_{\mathbf{X}_M, \mathbf{X}_M}\right)^{-1} \mathbf{K}_{\mathbf{X}_M, \mathbf{X}_N}\right)\right)\\
+    & -\frac{1}{2} \left(\mathbf{Y}_N\right)^T \left( \mathbf{K}_{\mathbf{X}_N, \mathbf{X}_M}\left(\mathbf{K}_{\mathbf{X}_M, \mathbf{X}_M}\right)^{-1} \mathbf{K}_{\mathbf{X}_M, \mathbf{X}_N}\right)^{-1} \mathbf{Y}_N \\
+    &  - \frac{1}{2\sigma^2}\tr\left(\mathbf{K}_{\mathbf{X}_N, \mathbf{X}_N} - \mathbf{K}_{\mathbf{X}_N, \mathbf{X}_M}\left(\mathbf{K}_{\mathbf{X}_M, \mathbf{X}_M}\right)^{-1} \mathbf{K}_{\mathbf{X}_M, \mathbf{X}_N}\right)
+\end{align}
+where we assume an optimal selection of inducing points $\left\{x_m, y_m\right\}_{m=1}^{M} \subset \{x_n, y_n\}_{n=1}^{N}$.
+\\It is important to note that the existence of the objectives in (\ref{svgp-minimiser}) and (\ref{svgp-minimiser-gvi-kld}) \textit{requires} $P_{GP}^{F \vert \mathbf{Y}_N}$ to dominate $Q_{GP}^{\nu}$, which is \texit{only} guaranteed under the specific formulation of $Q$ in ($\ref{svgp-mean}$) and ($\ref{svgp-covariance}$). This severely restricts our choices for $m_Q$ and $k_Q$. 
 \section{Gaussian Measures in Hilbert Spaces \cite{wild2022generalized}, \cite{Kukush_2019}}
 Gaussian measures are typically defined as a Lebesgue measure on a physical probability space $(\Omega, \mathcal{A}, \mathbb{P})$. However, there does not exist an infinite-dimensional equivalent to the Lebesgue measure. This means that in most cases, we cannot assume the existence of an infinite-dimensional analog of a probability measure that exists in a finite-dimensional space. However, there are special cases where it is possible to define a \textit{push-forward} measure from $(\Omega, \mathcal{A}, \mathbb{P})$ to an infinite-dimensional space. In the following, we define the infinite-dimensional analog of a Gaussian measure  $\mathbb{P}^{F}(A)$, a push-forward measure constructed from an underlying finite-dimensional $(\Omega, \mathcal{A}, \mathbb{P})$. In particular, we will define $\mathbb{P}^{F}(A)$ on a Hilbert space $\mathcal{H}$ with inner product $\langle \cdot, \cdot \rangle_\mathcal{H}$.
 \subsection{Gaussian Random Elements}
@@ -188,6 +206,29 @@ where $\tr$ is the trace of an operator and $\left(C_P\right)^{1/2}$ is the squa
     \mathcal{L} = -\sum_{n=1}^N \mathbb{E}_{Q}\left[\log \mathcal{N}(y_n) \vert F(x_n), \sigma^2\right] + W_2 (P, Q)
 \end{align}
 Crucially, by replacing the KL-divergence in (\ref{svgp-minimiser-gvi-kld}), we are no longer constrained to the approximate GP formulation of $Q$ in  ($\ref{svgp-mean}$) and ($\ref{svgp-covariance}$). With the Wasserstein distance, we are free to choose any mean and covariance kernel. Because of this, \cite{wild2022generalized} proposes GWI-net, a convolutional neural network mean function and squared-exponential kernel for image classification tasks showing that this approach has promising potential.
+
+\section{Numerical Stability \cite{burt2020convergence}}
+In addition to the scaling issues of Gaussian Process, stable matrix inversion is also a practical consideration that must be taken into account. In particular in the sparse Gaussian Process setting,  ($\ref{svgp-covariance}$)  inverts a matrix containing the inducing points  $\mathbf{K}_{\mathbf{X}_M, \mathbf{X}_M}$. A matrix having its smallest and largest eigenvalues many orders of magnitude apart can lead to an ill-conditioned inverse. This means that for $\mathbf{y} = \left(\mathbf{K}_{\mathbf{X}_M, \mathbf{X}_M}\right)^{-1}\mathbf{x}$, small perturbations in $\mathbf{x}$ will result in large changes in $\mathbf{y}$. In the context of sparse GPs, this means that small differences in function values will result in large changes in the probability density. 
+\subsection{Jitter for Matrix Inversion}
+One approach is to apply a spectral shift to 
+$\mathbf{K}_{\mathbf{X}_M, \mathbf{X}_M}$ to increase its smallest eigenvalue. This can be done by adding a `jitter' term $\epsilon$ such that the matrix inversion becomes $\left(\mathbf{K}_{\mathbf{X}_M, \mathbf{X}_M}+\epsilon\mathbf{I}_M\right)^{-1}$, raising the lowest eigenvalue $\lambda_1$ to $\lambda_1 + \epsilon$. \cite{burt2020convergence} shows that the evidence lower bound in ($\ref{svgp-optimal-elbo}$) is monotonically decreasing in $\epsilon$ where:
+\begin{align}
+    \label{svgp-optimal-elbo-jitter}
+    \mathcal{L}(\nu^*) \geq \mathcal{L}_{\epsilon}(\nu^*) = & -\frac{N}{2} \log\left(2\pi \right) \\
+    & -\frac{1}{2} \log \left(\det\left( \mathbf{K}_{\mathbf{X}_N, \mathbf{X}_M}\left(\mathbf{K}_{\mathbf{X}_M, \mathbf{X}_M} +\epsilon\mathbf{I}_M\right)^{-1} \mathbf{K}_{\mathbf{X}_M, \mathbf{X}_N}\right)\right)\\
+    & -\frac{1}{2} \left(\mathbf{Y}_N\right)^T \left( \mathbf{K}_{\mathbf{X}_N, \mathbf{X}_M}\left(\mathbf{K}_{\mathbf{X}_M, \mathbf{X}_M}+\epsilon\mathbf{I}_M\right)^{-1} \mathbf{K}_{\mathbf{X}_M, \mathbf{X}_N}\right)^{-1} \mathbf{Y}_N \\
+    & - \frac{1}{2\sigma^2}\tr\left(\mathbf{K}_{\mathbf{X}_N, \mathbf{X}_N} - \mathbf{K}_{\mathbf{X}_N, \mathbf{X}_M}\left(\mathbf{K}_{\mathbf{X}_M, \mathbf{X}_M}+\epsilon\mathbf{I}_M\right)^{-1} \mathbf{K}_{\mathbf{X}_M, \mathbf{X}_N}\right)
+\end{align}
+showing that adding jitter introduces a gap between the small gap on the loss objective, though in practice this impact is typically negligable \cite{burt2020convergence}.
+\subsection{Inducing Points Selection}
+Careful selection of $\mathbf{X}_M$ can also ensure numerical stability of the matrix inversion. Additionally, finding the optimal inducing points $\left\{x_m, y_m\right\}_{m=1}^{M} \subset \{x_n, y_n\}_{n=1}^{N}$ that optimise the loss objective $\mathcal{L}(\nu)$ in ($\ref{elbo}$) can be computationally expensive. \cite{burt2020convergence} proposes a \textit{greedy variance selection} method which iteratively selects the next inducing point based on the highest marginal variance in the prior conditioned on the current set of inducing points:
+\begin{align}
+    \label{greedy-varaince-selection}
+    \text{index}_{m+1} = \argmax \left(\diag \left(\mathbf{K}_{\mathbf{X}_N, \mathbf{X}_N} - \mathbf{K}_{\mathbf{X}_N, \mathbf{X}_{m}} \left(\mathbf{K}_{\mathbf{X}_{m}, \mathbf{X}_{m}} \right) \mathbf{K}_{\mathbf{X}_{m}, \mathbf{X}_N}\right)\right)
+\end{align}
+where $m < M$, $\mathbf{X}_{m}$ are the $m$ inducing points already chosen, and $\text{index}_{m+1}$ is the index of the next inducing point.
+\\\jw{It doesn't seem like \cite{burt2020convergence} explicitly mentions how this will help with matrix inversion. Need to more carefully read this though.}
+
 \begingroup
 \let\clearpage\relax
 \AtNextBibliography{\small}
