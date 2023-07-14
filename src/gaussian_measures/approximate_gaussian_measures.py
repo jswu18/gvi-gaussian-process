@@ -245,12 +245,14 @@ class ApproximateGaussianMeasure(GaussianMeasure):
         if not isinstance(parameters, self.Parameters):
             parameters = self.generate_parameters(parameters)
         mean = self.calculate_mean(x=x, parameters=parameters)
-        covariance = self.calculate_covariance(x=x, parameters=parameters)
+        covariance_diagonal = self.calculate_covariance(
+            x=x, parameters=parameters, full_cov=False
+        )
         observation_noise = self.calculate_observation_noise(parameters=parameters)
 
         return (x.shape[0] / 2) * jnp.log(2 * jnp.pi * observation_noise) + (
             1 / (2 * observation_noise)
-        ) * (jnp.sum((y - mean) ** 2) + jnp.trace(covariance))
+        ) * (jnp.sum((y - mean) ** 2) + jnp.sum(covariance_diagonal))
 
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def compute_gaussian_wasserstein_metric(

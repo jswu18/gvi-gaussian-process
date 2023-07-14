@@ -68,9 +68,9 @@ def _compute_cross_covariance_eigenvalues(
 @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
 def compute_gaussian_wasserstein_metric_from_grams(
     mean_train_p: jnp.ndarray,
-    covariance_train_p: jnp.ndarray,
+    covariance_train_p_diagonal: jnp.ndarray,
     mean_train_q: jnp.ndarray,
-    covariance_train_q: jnp.ndarray,
+    covariance_train_q_diagonal: jnp.ndarray,
     gram_batch_train_p: jnp.ndarray,
     gram_batch_train_q: jnp.ndarray,
     eigenvalue_regularisation: float = 1e-8,
@@ -85,9 +85,9 @@ def compute_gaussian_wasserstein_metric_from_grams(
             - d is the number of dimensions
     Args:
         mean_train_p: the mean of the first Gaussian measure of shape (n, 1)
-        covariance_train_p: the covariance of the first Gaussian measure of shape (n, n)
+        covariance_train_p_diagonal: the covariance diagonal of the first Gaussian measure of shape (n, n)
         mean_train_q: the mean of the second Gaussian measure of shape (n, 1)
-        covariance_train_q: the covariance of the second Gaussian measure of shape (n, n)
+        covariance_train_q_diagonal: the covariance diagonal of the second Gaussian measure of shape (n, n)
         gram_batch_train_p: the gram matrix of the first Gaussian measure with the batch points and training points
                             of shape (m, n)
         gram_batch_train_q: the gram matrix of the second Gaussian measure with the batch points and training points
@@ -109,8 +109,8 @@ def compute_gaussian_wasserstein_metric_from_grams(
     batch_size, train_size = gram_batch_train_p.shape
     return jnp.float64(
         jnp.mean((mean_train_p - mean_train_q) ** 2)
-        + jnp.mean(jnp.diagonal(covariance_train_p))
-        + jnp.mean(jnp.diagonal(covariance_train_q))
+        + jnp.mean(covariance_train_p_diagonal)
+        + jnp.mean(covariance_train_q_diagonal)
         - (2 / jnp.sqrt(batch_size * train_size))
         * jnp.sum(jnp.sqrt(cross_covariance_eigenvalues))
     )
@@ -159,9 +159,13 @@ def compute_gaussian_wasserstein_metric(
 
     return compute_gaussian_wasserstein_metric_from_grams(
         mean_train_p=p.calculate_mean(x=x_train, parameters=p_parameters),
-        covariance_train_p=p.calculate_covariance(x=x_train, parameters=p_parameters),
+        covariance_train_p_diagonal=p.calculate_covariance(
+            x=x_train, parameters=p_parameters, full_cov=False
+        ),
         mean_train_q=q.calculate_mean(x=x_train, parameters=q_parameters),
-        covariance_train_q=q.calculate_covariance(x=x_train, parameters=q_parameters),
+        covariance_train_q_diagonal=q.calculate_covariance(
+            x=x_train, parameters=q_parameters, full_cov=False
+        ),
         gram_batch_train_p=p.calculate_covariance(
             x=x_batch, y=x_train, parameters=p_parameters
         ),

@@ -4,7 +4,7 @@ from typing import Any, Dict, Union
 import jax.numpy as jnp
 import pydantic
 from flax.core.frozen_dict import FrozenDict
-from jax import jit
+from jax import jit, vmap
 from jax.scipy.linalg import cho_factor, cho_solve
 
 from src.kernels.reference_kernels import Kernel
@@ -165,38 +165,9 @@ class StochasticVariationalGaussianProcessKernel(ApproximateKernel):
         self,
         parameters: StochasticVariationalGaussianProcessKernelParameters,
         x: jnp.ndarray,
-        y: jnp.ndarray = None,
-        full_cov: bool = False,
-    ) -> jnp.ndarray:
-        # pass because calculate_gram is overridden
-        pass
-
-    def calculate_gram(
-        self,
-        parameters: StochasticVariationalGaussianProcessKernelParameters,
-        x: jnp.ndarray,
-        y: jnp.ndarray = None,
+        y: jnp.ndarray,
         full_cov: bool = True,
     ) -> jnp.ndarray:
-        """
-        Computing the Gram matrix using for the SVGP which depends on the reference kernel.
-
-        If y is None, the Gram matrix is computed for x and x.
-            - n is the number of points in x
-            - m is the number of points in y
-            - d is the number of dimensions
-        Args:
-            parameters: parameters of the kernel
-            x: design matrix of shape (n, d)
-            y: design matrix of shape (m, d)
-            full_cov: whether to compute the full covariance matrix or just the diagonal
-
-        Returns: the kernel gram matrix of shape (n, m)
-
-        """
-        Module.check_parameters(parameters, self.Parameters)
-        x = jnp.atleast_2d(x)
-
         reference_gram_x_inducing = self.calculate_reference_gram(
             x=x,
             y=self.inducing_points,
@@ -230,4 +201,46 @@ class StochasticVariationalGaussianProcessKernel(ApproximateKernel):
             )
             + reference_gram_x_inducing @ sigma_matrix @ reference_gram_y_inducing.T
         )
-        return gram if full_cov else jnp.diagonal(gram)
+        return gram
+
+    def calculate_gram(
+        self,
+        parameters: StochasticVariationalGaussianProcessKernelParameters,
+        x: jnp.ndarray,
+        y: jnp.ndarray = None,
+        full_cov: bool = True,
+    ) -> jnp.ndarray:
+        """
+        Computing the Gram matrix using for the SVGP which depends on the reference kernel.
+
+        If y is None, the Gram matrix is computed for x and x.
+            - n is the number of points in x
+            - m is the number of points in y
+            - d is the number of dimensions
+        Args:
+            parameters: parameters of the kernel
+            x: design matrix of shape (n, d)
+            y: design matrix of shape (m, d)
+            full_cov: whether to compute the full covariance matrix or just the diagonal
+
+        Returns: the kernel gram matrix of shape (n, m)
+
+        """
+        Module.check_parameters(parameters, self.Parameters)
+        x = jnp.atleast_2d(x)
+        if full_cov:
+            return self._calculate_gram(
+                parameters=parameters,
+                x=x,
+                y=y,
+            )
+        else:
+            return jnp.squeeze(
+                vmap(
+                    lambda x_, y_: self._calculate_gram(
+                        parameters=parameters,
+                        x=x_,
+                        y=y_,
+                    )
+                )(x, y)
+            )

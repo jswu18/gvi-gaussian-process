@@ -114,6 +114,7 @@ class SharedMeansClassificationModel(ClassificationModel):
         parameters: SharedMeansClassificationModelParameters,
         x: jnp.ndarray,
         y: jnp.ndarray = None,
+        full_cov: bool = True,
     ) -> jnp.ndarray:
         """
         Calculates the covariances of the Gaussian measures for the classification model.
@@ -125,8 +126,9 @@ class SharedMeansClassificationModel(ClassificationModel):
             parameters: parameters of the classification model
             x: design matrix of shape (n, d)
             y: design matrix of shape (m, d)
+            full_cov: whether to calculate the full covariance matrices
 
-        Returns: covariances of the Gaussian measures for the classification model of shape (k, n, m)
+        Returns: covariances of the Gaussian measures for the classification model of shape (k, n, m) or (k, n)
 
         """
         return jnp.array(
@@ -135,6 +137,7 @@ class SharedMeansClassificationModel(ClassificationModel):
                     parameters=parameters.kernels[label],
                     x=x,
                     y=y,
+                    full_cov=full_cov,
                 )
                 for label in self.labels
             ]
@@ -181,9 +184,9 @@ class ApproximateSharedMeansClassificationModel(SharedMeansClassificationModel):
                     vmap(
                         lambda m_p, c_p, m_q, c_q, c_bt_p, c_bt_q: compute_gaussian_wasserstein_metric_from_grams(
                             mean_train_p=m_p,
-                            covariance_train_p=c_p,
+                            covariance_train_p_diagonal=c_p,
                             mean_train_q=m_q,
-                            covariance_train_q=c_q,
+                            covariance_train_q_diagonal=c_q,
                             gram_batch_train_p=c_bt_p,
                             gram_batch_train_q=c_bt_q,
                             eigenvalue_regularisation=eigenvalue_regularisation,
@@ -198,6 +201,7 @@ class ApproximateSharedMeansClassificationModel(SharedMeansClassificationModel):
                         reference_classification_model.calculate_covariances(
                             x=x,
                             parameters=reference_classification_model_parameters,
+                            full_cov=False,
                         ),
                         self.calculate_means(
                             x=x,
@@ -206,6 +210,7 @@ class ApproximateSharedMeansClassificationModel(SharedMeansClassificationModel):
                         self.calculate_covariances(
                             x=x,
                             parameters=parameters_dict,
+                            full_cov=False,
                         ),
                         reference_classification_model.calculate_covariances(
                             x=x_batch,

@@ -244,7 +244,7 @@ class NeuralNetworkGaussianProcessKernel(ReferenceKernel):
         self,
         parameters: NeuralNetworkGaussianProcessKernelParameters,
         x: jnp.ndarray,
-        y: jnp.ndarray = None,
+        y: jnp.ndarray,
         full_cov: bool = True,
     ) -> jnp.ndarray:
         """
@@ -256,11 +256,19 @@ class NeuralNetworkGaussianProcessKernel(ReferenceKernel):
         Args:
             parameters: parameters of the kernel
             x: design matrix of shape (n, d)
-            y: design matrix of shape (m, d) if y is None, compute for x and x
+            y: design matrix of shape (m, d)
             full_cov: whether to compute the full covariance matrix or just the diagonal
 
         Returns: the kernel gram matrix of shape (n, m)
 
         """
-        gram = self.ntk_kernel_function(x, y, "nngp")
-        return gram if full_cov else jnp.diagonal(gram)
+        if full_cov:
+            return self.ntk_kernel_function(x, y, "nngp")
+        else:
+            return jnp.squeeze(
+                vmap(
+                    lambda x_, y_: self.ntk_kernel_function(
+                        jnp.atleast_2d(x_), jnp.atleast_2d(y_), "nngp"
+                    )
+                )(x, y)
+            )

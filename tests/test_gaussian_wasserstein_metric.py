@@ -182,26 +182,26 @@ def test_gwi_different_gaussian_measure_non_symmetric(
 
 @pytest.mark.parametrize(
     """
-    mean_train_p,covariance_train_p,
-    mean_train_q,covariance_train_q,
+    mean_train_p,covariance_train_p_diagonal,
+    mean_train_q,covariance_train_q_diagonal,
     gram_batch_train_p,gram_batch_train_q,
     gaussian_wasserstein_metric
     """,
     [
         [
             jnp.ones((3,)),
-            jnp.eye(3),
             jnp.ones((3,)),
-            jnp.eye(3),
+            jnp.ones((3,)),
+            jnp.ones((3,)),
             jnp.ones((3, 3)),
             jnp.ones((3, 3)),
             -1.999999810209374e-08,
         ],
         [
             -jnp.ones((3,)),
-            jnp.eye(3),
+            jnp.ones((3,)),
             3.7 * jnp.ones((3,)),
-            0.4 * jnp.eye(3),
+            0.4 * jnp.ones((3,)),
             jnp.ones((3, 3)),
             2.1 * jnp.ones((3, 3)),
             20.591724621779363,
@@ -210,9 +210,9 @@ def test_gwi_different_gaussian_measure_non_symmetric(
 )
 def test_gwi_gaussian_measure_from_grams_symmetric(
     mean_train_p: jnp.ndarray,
-    covariance_train_p: jnp.ndarray,
+    covariance_train_p_diagonal: jnp.ndarray,
     mean_train_q: jnp.ndarray,
-    covariance_train_q: jnp.ndarray,
+    covariance_train_q_diagonal: jnp.ndarray,
     gram_batch_train_p: jnp.ndarray,
     gram_batch_train_q: jnp.ndarray,
     gaussian_wasserstein_metric: float,
@@ -220,9 +220,9 @@ def test_gwi_gaussian_measure_from_grams_symmetric(
     assert (
         compute_gaussian_wasserstein_metric_from_grams(
             mean_train_p=mean_train_p,
-            covariance_train_p=covariance_train_p,
+            covariance_train_p_diagonal=covariance_train_p_diagonal,
             mean_train_q=mean_train_q,
-            covariance_train_q=covariance_train_q,
+            covariance_train_q_diagonal=covariance_train_q_diagonal,
             gram_batch_train_p=gram_batch_train_p,
             gram_batch_train_q=gram_batch_train_q,
             eigenvalue_regularisation=1e-8,
@@ -235,26 +235,26 @@ def test_gwi_gaussian_measure_from_grams_symmetric(
 
 @pytest.mark.parametrize(
     """
-    mean_train_p,covariance_train_p,
-    mean_train_q,covariance_train_q,
+    mean_train_p,covariance_train_p_diagonal,
+    mean_train_q,covariance_train_q_diagonal,
     gram_batch_train_p,gram_batch_train_q,
     gaussian_wasserstein_metric
     """,
     [
         [
             jnp.ones((3,)),
-            jnp.eye(3),
             jnp.ones((3,)),
-            jnp.eye(3),
+            jnp.ones((3,)),
+            jnp.ones((3,)),
             jnp.ones((2, 3)),
             jnp.ones((2, 3)),
             -0.00014142635423741723,
         ],
         [
             -jnp.ones((3,)),
-            jnp.eye(3),
+            jnp.ones((3,)),
             3.7 * jnp.ones((3,)),
-            0.4 * jnp.eye(3),
+            0.4 * jnp.ones((3,)),
             jnp.ones((2, 3)),
             2.1 * jnp.ones((2, 3)),
             20.591519704503572,
@@ -263,9 +263,9 @@ def test_gwi_gaussian_measure_from_grams_symmetric(
 )
 def test_gwi_gaussian_measure_from_grams_non_symmetric(
     mean_train_p: jnp.ndarray,
-    covariance_train_p: jnp.ndarray,
+    covariance_train_p_diagonal: jnp.ndarray,
     mean_train_q: jnp.ndarray,
-    covariance_train_q: jnp.ndarray,
+    covariance_train_q_diagonal: jnp.ndarray,
     gram_batch_train_p: jnp.ndarray,
     gram_batch_train_q: jnp.ndarray,
     gaussian_wasserstein_metric: float,
@@ -274,9 +274,9 @@ def test_gwi_gaussian_measure_from_grams_non_symmetric(
     assert (
         compute_gaussian_wasserstein_metric_from_grams(
             mean_train_p=mean_train_p,
-            covariance_train_p=covariance_train_p,
+            covariance_train_p_diagonal=covariance_train_p_diagonal,
             mean_train_q=mean_train_q,
-            covariance_train_q=covariance_train_q,
+            covariance_train_q_diagonal=covariance_train_q_diagonal,
             gram_batch_train_p=gram_batch_train_p,
             gram_batch_train_q=gram_batch_train_q,
             eigenvalue_regularisation=1e-8,
