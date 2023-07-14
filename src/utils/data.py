@@ -50,6 +50,8 @@ def generate_batch(
         steps_per_epoch = math.floor(dataset_size / batch_size)
     else:
         steps_per_epoch = math.ceil(dataset_size / batch_size)
+    # Ensure at least one step
+    steps_per_epoch = max(steps_per_epoch, 1)
 
     for idx in range(steps_per_epoch):
         curr_idx = batch_idx[idx * batch_size : (idx + 1) * batch_size]

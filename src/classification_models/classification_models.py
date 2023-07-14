@@ -49,7 +49,7 @@ class ClassificationModel(Module, ABC):
         )
         # define a jit-compiled function to compute the negative expected log likelihood
         self._jit_compiled_compute_negative_expected_log_likelihood = jit(
-            lambda parameters_dict: (
+            lambda parameters_dict, x, y: (
                 self.compute_negative_log_likelihood(
                     x=x,
                     y=y,
