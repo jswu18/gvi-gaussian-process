@@ -119,6 +119,7 @@ class DistinctMeansClassificationModel(ClassificationModel, ABC):
         parameters: DistinctMeansClassificationModelParameters,
         x: jnp.ndarray,
         y: jnp.ndarray = None,
+        full_cov: bool = True,
     ) -> jnp.ndarray:
         """
         Calculates the covariances of the Gaussian measures for the classification model.
@@ -130,8 +131,9 @@ class DistinctMeansClassificationModel(ClassificationModel, ABC):
             parameters: parameters of the classification model
             x: design matrix of shape (n, d)
             y: design matrix of shape (m, d)
+            full_cov: whether to calculate the full covariance matrices
 
-        Returns: covariances of the Gaussian measures for the classification model of shape (k, n, m)
+        Returns: covariances of the Gaussian measures for the classification model of shape (k, n, m) or (k, n)
 
         """
         return jnp.array(
@@ -140,6 +142,7 @@ class DistinctMeansClassificationModel(ClassificationModel, ABC):
                     parameters=parameters.gaussian_measures[label],
                     x=x,
                     y=y,
+                    full_cov=full_cov,
                 )
                 for label in self.labels
             ]

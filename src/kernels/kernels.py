@@ -52,7 +52,7 @@ class Kernel(Module, ABC):
         self,
         parameters: KernelParameters,
         x: jnp.ndarray,
-        y: jnp.ndarray = None,
+        y: jnp.ndarray,
         full_cov: bool = True,
     ) -> jnp.ndarray:
         """

@@ -105,6 +105,7 @@ class ClassificationModel(Module, ABC):
         parameters: ClassificationModelParameters,
         x: jnp.ndarray,
         y: jnp.ndarray = None,
+        full_cov: bool = True,
     ) -> jnp.ndarray:
         """
         Calculates the covariances of the Gaussian measures for the classification model.
@@ -116,8 +117,9 @@ class ClassificationModel(Module, ABC):
             parameters: parameters of the classification model
             x: design matrix of shape (n, d)
             y: design matrix of shape (m, d)
+            full_cov: whether to calculate the full covariance matrices
 
-        Returns: covariances of the Gaussian measures for the classification model of shape (k, n, m)
+        Returns: covariances of the Gaussian measures for the classification model of shape (k, n, m) or (k, n)
 
         """
         raise NotImplementedError
@@ -139,16 +141,19 @@ class ClassificationModel(Module, ABC):
         parameters: Union[Dict, FrozenDict, ClassificationModelParameters],
         x: jnp.ndarray,
         y: jnp.ndarray = None,
+        full_cov: bool = True,
     ) -> jnp.ndarray:
         if not isinstance(parameters, self.Parameters):
             parameters = self.generate_parameters(parameters)
         Module.check_parameters(parameters, self.Parameters)
-        return self._calculate_covariances(x=x, y=y, parameters=parameters)
+        return self._calculate_covariances(
+            x=x, y=y, parameters=parameters, full_cov=full_cov
+        )
 
     @staticmethod
     def calculate_s_matrix(
         means: jnp.ndarray,
-        covariances: jnp.ndarray,
+        covariance_diagonals: jnp.ndarray,
         hermite_weights: jnp.ndarray,
         hermite_roots: jnp.ndarray,
     ) -> jnp.ndarray:
@@ -161,7 +166,7 @@ class ClassificationModel(Module, ABC):
 
         Args:
             means: means of the Gaussian measures for the classification model of shape (k, n)
-            covariances: covariances of the Gaussian measures for the classification model of shape (k, n, n)
+            covariance_diagonals: covariances diagonal of the Gaussian measures for the classification model of shape (k, n)
             hermite_weights: weights of the Hermite polynomials of shape (h,)
             hermite_roots: roots of the Hermite polynomials of shape (h,)
 
@@ -173,7 +178,7 @@ class ClassificationModel(Module, ABC):
         """
 
         # (k, n)
-        stdev_diagonal = jnp.sqrt(jnp.diagonal(covariances, axis1=1, axis2=2))
+        stdev_diagonals = jnp.sqrt(covariance_diagonals)
 
         # (h, k_j, k_l, n) where k_j = k_l = k, used to keep track of the indices
         cdf_input = jnp.divide(
@@ -182,7 +187,7 @@ class ClassificationModel(Module, ABC):
                 jnp.sqrt(2)
                 * jnp.multiply(
                     hermite_roots[:, None, None, None],
-                    stdev_diagonal[None, :, None, :],
+                    stdev_diagonals[None, :, None, :],
                 )
                 # (None, k_j, None, n) -> (h, k_j, k_l, n)
                 + means[None, :, None, :]
@@ -194,7 +199,7 @@ class ClassificationModel(Module, ABC):
                 ]
             ),
             # (None, None, k_l, n) -> (h, k_j, k_l, n)
-            stdev_diagonal[
+            stdev_diagonals[
                 None,
                 None,
                 :,
@@ -236,7 +241,9 @@ class ClassificationModel(Module, ABC):
         # (n, k)
         s_matrix = self.calculate_s_matrix(
             means=self._calculate_means(parameters=parameters, x=x),
-            covariances=self._calculate_covariances(parameters=parameters, x=x),
+            covariance_diagonals=self._calculate_covariances(
+                parameters=parameters, x=x, full_cov=False
+            ),
             hermite_weights=self._hermite_weights,
             hermite_roots=self._hermite_roots,
         )
@@ -265,7 +272,9 @@ class ClassificationModel(Module, ABC):
         # (n, k)
         s_matrix = self.calculate_s_matrix(
             means=self._calculate_means(parameters=parameters, x=x),
-            covariances=self._calculate_covariances(parameters=parameters, x=x),
+            covariance_diagonals=self._calculate_covariances(
+                parameters=parameters, x=x, full_cov=False
+            ),
             hermite_weights=self._hermite_weights,
             hermite_roots=self._hermite_roots,
         )
@@ -353,13 +362,28 @@ class TemperedClassificationModel(ClassificationModel):
         parameters: TemperedClassificationModelParameters,
         x: jnp.ndarray,
         y: jnp.ndarray = None,
+        full_cov=False,
     ):
-        return jnp.multiply(
-            jnp.exp(parameters.log_tempering_factors)[:, None, None],
-            self.classification_model.calculate_covariances(
-                x=x, y=y, parameters=self.classification_model_parameters
-            ),
-        )
+        if full_cov:
+            return jnp.multiply(
+                jnp.exp(parameters.log_tempering_factors)[:, None, None],
+                self.classification_model.calculate_covariances(
+                    x=x,
+                    y=y,
+                    parameters=self.classification_model_parameters,
+                    full_cov=full_cov,
+                ),
+            )
+        else:
+            return jnp.multiply(
+                jnp.exp(parameters.log_tempering_factors)[:, None],
+                self.classification_model.calculate_covariances(
+                    x=x,
+                    y=y,
+                    parameters=self.classification_model_parameters,
+                    full_cov=full_cov,
+                ),
+            )
 
     def _calculate_means(
         self,

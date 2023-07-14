@@ -122,7 +122,7 @@ class ReferenceGaussianMeasure(GaussianMeasure):
         self,
         parameters: ReferenceGaussianMeasureParameters,
         x: jnp.ndarray,
-        y: jnp.ndarray = None,
+        y: jnp.ndarray,
     ) -> jnp.ndarray:
         """
         Calculate the posterior covariance using the formula for the posterior covariance of a Gaussian process which is
@@ -187,14 +187,15 @@ class ReferenceGaussianMeasure(GaussianMeasure):
         if not isinstance(parameters, self.Parameters):
             parameters = self.generate_parameters(parameters)
         mean = self.calculate_mean(x=x, parameters=parameters)
-        covariance = self.calculate_covariance(x=x, parameters=parameters)
+        covariance_diagonal = self.calculate_covariance(
+            x=x, parameters=parameters, full_cov=False
+        )
         observation_noise = self.calculate_observation_noise(parameters=parameters)
 
-        diagonal_covariance = jnp.diag(covariance) + observation_noise
+        diagonal_covariance_with_noise = covariance_diagonal + observation_noise
         error = y - mean
-
         return (x.shape[0] / 2) * (
             jnp.log(2 * jnp.pi)
-            + jnp.sum(jnp.log(diagonal_covariance))
-            + error.T @ jnp.diag(1 / diagonal_covariance) @ error
+            + jnp.sum(jnp.log(diagonal_covariance_with_noise))
+            + (1 / diagonal_covariance_with_noise) @ jnp.square(error)
         )

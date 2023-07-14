@@ -4,7 +4,7 @@ from typing import Any, Dict, Union
 import jax.numpy as jnp
 import pydantic
 from flax.core.frozen_dict import FrozenDict
-from jax import jit
+from jax import jit, vmap
 
 from src.kernels.kernels import Kernel
 from src.mean_functions.mean_functions import MeanFunction
@@ -162,6 +162,7 @@ class GaussianMeasure(Module, ABC):
         parameters: Union[Dict, FrozenDict, GaussianMeasureParameters],
         x: jnp.ndarray,
         y: jnp.ndarray = None,
+        full_cov: bool = True,
     ) -> jnp.ndarray:
         """
         Calculate the posterior covariance matrix of the Gaussian measure at the sets of points x and y.
@@ -175,6 +176,7 @@ class GaussianMeasure(Module, ABC):
             parameters: parameters of the Gaussian measure
             x: design matrix of shape (n, d)
             y: design matrix of shape (m, d)
+            full_cov: Whether to calculate full covariance matrix or just the diagonal
 
         Returns: the posterior covariance matrix of shape (n, m)
 
@@ -185,7 +187,18 @@ class GaussianMeasure(Module, ABC):
         Module.check_parameters(parameters, self.Parameters)
         x, y = self.kernel.preprocess_inputs(x, y)
         self.kernel.check_inputs(x, y)
-        return self._calculate_covariance(parameters=parameters, x=x, y=y)
+        if full_cov:
+            return self._calculate_covariance(parameters=parameters, x=x, y=y)
+        else:
+            return vmap(
+                lambda x_, y_: self._calculate_covariance(
+                    parameters=parameters,
+                    x=x_,
+                    y=y_,
+                )
+            )(x, y).reshape(
+                -1,
+            )
 
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def calculate_mean(
