@@ -176,6 +176,6 @@ def test_reference_gaussian_measure_negative_expected_log_likelihood(
         kernel=ReferenceKernelParametersMock(),
     )
     assert (
-        gm.compute_negative_expected_log_likelihood(parameters)
+        gm.compute_negative_expected_log_likelihood(parameters=parameters, x=x, y=y)
         == negative_expected_log_likelihood
     )

@@ -51,7 +51,7 @@ class GaussianMeasure(Module, ABC):
 
         # define a jit-compiled function to compute the negative expected log likelihood
         self._jit_compiled_compute_negative_expected_log_likelihood = jit(
-            lambda parameters_dict: (
+            lambda parameters_dict, x, y: (
                 self._compute_negative_expected_log_likelihood(
                     x=x,
                     y=y,
@@ -217,12 +217,16 @@ class GaussianMeasure(Module, ABC):
     def compute_negative_expected_log_likelihood(
         self,
         parameters: Union[Dict, FrozenDict, GaussianMeasureParameters],
+        x: jnp.ndarray,
+        y: jnp.ndarray,
     ) -> float:
         """
         Jit needs a dictionary of parameters to be passed to it to allow for jit compilation.
 
             parameters: a dictionary or Pydantic model containing the parameters,
                         a dictionary is required for jit compilation which is converted if necessary
+            x: design matrix of shape (n, d)
+            y: response vector of shape (n, 1)
 
         Returns: the negative expected log likelihood of the gaussian measure
 
@@ -231,7 +235,9 @@ class GaussianMeasure(Module, ABC):
         if not isinstance(parameters, self.Parameters):
             parameters = self.generate_parameters(parameters)
         return self._jit_compiled_compute_negative_expected_log_likelihood(
-            parameters.dict()
+            parameters_dict=parameters.dict(),
+            x=x,
+            y=y,
         )
 
 

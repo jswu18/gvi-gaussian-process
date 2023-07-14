@@ -194,7 +194,9 @@ class ApproximateDistinctMeansClassificationModel(DistinctMeansClassificationMod
         self._jit_compiled_compute_gaussian_wasserstein_inference_loss = jit(
             lambda parameters_dict, x_batch: (
                 self._jit_compiled_compute_negative_expected_log_likelihood(
-                    parameters_dict=parameters_dict
+                    parameters_dict=parameters_dict,
+                    x=self.x,
+                    y=self.y,
                 )
                 + sum(
                     [

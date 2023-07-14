@@ -127,7 +127,9 @@ class ApproximateGaussianMeasure(GaussianMeasure):
                     x_batch, gaussian_measure_parameters_dict
                 )
                 + self._jit_compiled_compute_negative_expected_log_likelihood(
-                    gaussian_measure_parameters_dict
+                    parameters_dict=gaussian_measure_parameters_dict,
+                    x=self.x,
+                    y=self.y,
                 )
             )
         )
