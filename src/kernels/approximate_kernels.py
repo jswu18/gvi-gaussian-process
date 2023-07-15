@@ -1,5 +1,5 @@
 from abc import ABC
-from typing import Any, Dict, Union
+from typing import Any, Dict, Tuple, Union
 
 import jax.numpy as jnp
 import pydantic
@@ -137,17 +137,25 @@ class StochasticVariationalGaussianProcessKernel(ApproximateKernel):
 
         """
         # raise warning if key is not None
-
+        (
+            el_matrix_lower_triangle,
+            el_matrix_log_diagonal,
+        ) = self.initialise_el_matrix_parameters()
         return StochasticVariationalGaussianProcessKernel.Parameters(
-            log_el_matrix=self.initialise_log_el_matrix(),
+            el_matrix_lower_triangle=el_matrix_lower_triangle,
+            el_matrix_log_diagonal=el_matrix_log_diagonal,
         )
 
-    def initialise_log_el_matrix(self, jitter: float = 1e-10) -> jnp.ndarray:
+    def initialise_el_matrix_parameters(
+        self, jitter: float = 1e-10
+    ) -> Tuple[jnp.ndarray, jnp.ndarray]:
         """
         Initialise the L matrix where:
             sigma_matrix = L @ L.T
 
-        Returns: The L matrix.
+        Returns:
+            el_matrix_lower_triangle
+            el_matrix_log_diagonal
 
         """
         reference_gaussian_measure_observation_precision = 1 / jnp.exp(
@@ -157,9 +165,14 @@ class StochasticVariationalGaussianProcessKernel(ApproximateKernel):
             self.reference_gram_inducing
             + reference_gaussian_measure_observation_precision
             * self.gram_inducing_train
-            @ self.gram_inducing_train.T,
+            @ self.gram_inducing_train.T
         )
-        return jnp.log(jnp.clip(jnp.linalg.inv(cholesky_decomposition), jitter, None))
+        inverse_cholesky_decomposition = jnp.linalg.inv(cholesky_decomposition)
+        el_matrix_lower_triangle = jnp.tril(inverse_cholesky_decomposition, k=-1)
+        el_matrix_log_diagonal = jnp.log(
+            jnp.clip(jnp.diag(inverse_cholesky_decomposition), jitter, None)
+        )
+        return el_matrix_lower_triangle, el_matrix_log_diagonal
 
     def _calculate_gram(
         self,
@@ -187,9 +200,11 @@ class StochasticVariationalGaussianProcessKernel(ApproximateKernel):
             )
 
         reference_gram_x_y = self.calculate_reference_gram(x=x, y=y)
-        sigma_matrix = jnp.exp(parameters.log_el_matrix).T @ jnp.exp(
-            parameters.log_el_matrix
+        el_matrix_lower_triangle = jnp.tril(parameters.el_matrix_lower_triangle, k=-1)
+        el_matrix = el_matrix_lower_triangle + jnp.diag(
+            jnp.exp(parameters.el_matrix_log_diagonal)
         )
+        sigma_matrix = el_matrix.T @ el_matrix
         gram = (
             reference_gram_x_y
             - (
