@@ -114,8 +114,8 @@ class StandardKernel(ReferenceKernel, ABC):
                 lambda x_: vmap(
                     lambda y_: self.calculate_kernel(
                         parameters=parameters,
-                        x=x_,
-                        y=y_,
+                        x=x_[None, ...],
+                        y=y_[None, ...],
                     )
                 )(y)
             )(x)
@@ -123,8 +123,8 @@ class StandardKernel(ReferenceKernel, ABC):
             return vmap(
                 lambda x_, y_: self.calculate_kernel(
                     parameters=parameters,
-                    x=x_,
-                    y=y_,
+                    x=x_[None, ...],
+                    y=y_[None, ...],
                 )
             )(x, y)
 
@@ -268,7 +268,7 @@ class NeuralNetworkGaussianProcessKernel(ReferenceKernel):
             return jnp.squeeze(
                 vmap(
                     lambda x_, y_: self.ntk_kernel_function(
-                        jnp.atleast_2d(x_), jnp.atleast_2d(y_), "nngp"
-                    )
+                        x_[None, ...], y_[None, ...], "nngp"
+                    ),
                 )(x, y)
             )

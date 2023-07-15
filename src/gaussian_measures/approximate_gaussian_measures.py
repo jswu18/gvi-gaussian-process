@@ -198,7 +198,7 @@ class ApproximateGaussianMeasure(GaussianMeasure):
         self,
         parameters: ApproximateGaussianMeasureParameters,
         x: jnp.ndarray,
-        y: jnp.ndarray = None,
+        y: jnp.ndarray,
     ) -> jnp.ndarray:
         """
         Calculate the posterior covariance by evaluating the kernel gram matrix at the test points.
