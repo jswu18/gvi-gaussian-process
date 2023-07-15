@@ -69,6 +69,7 @@ class StochasticVariationalGaussianProcessKernel(ApproximateKernel):
         inducing_points: jnp.ndarray,
         training_points: jnp.ndarray,
         diagonal_regularisation: float = 1e-5,
+        el_matrix_diagonal_lower_bound: float = 1e-3,
         is_diagonal_regularisation_absolute_scale: bool = False,
     ):
         """
@@ -82,6 +83,7 @@ class StochasticVariationalGaussianProcessKernel(ApproximateKernel):
             inducing_points: the inducing points of the stochastic variational Gaussian process.
             training_points: the training points of the stochastic variational Gaussian process.
             diagonal_regularisation: the diagonal regularisation used to stabilise the Cholesky decomposition.
+            el_matrix_diagonal_lower_bound: lower bound (clip) the diagonals of the L parameter matrix for Sigma = LL^T
             is_diagonal_regularisation_absolute_scale: whether the diagonal regularisation is an absolute scale.
         """
         super().__init__(
@@ -93,6 +95,7 @@ class StochasticVariationalGaussianProcessKernel(ApproximateKernel):
         self.inducing_points = inducing_points
         self.training_points = training_points
         self.diagonal_regularisation = diagonal_regularisation
+        self.el_matrix_diagonal_lower_bound = el_matrix_diagonal_lower_bound
         self.is_diagonal_regularisation_absolute_scale = (
             is_diagonal_regularisation_absolute_scale
         )
@@ -147,7 +150,7 @@ class StochasticVariationalGaussianProcessKernel(ApproximateKernel):
         )
 
     def initialise_el_matrix_parameters(
-        self, jitter: float = 1e-10
+        self,
     ) -> Tuple[jnp.ndarray, jnp.ndarray]:
         """
         Initialise the L matrix where:
@@ -170,7 +173,11 @@ class StochasticVariationalGaussianProcessKernel(ApproximateKernel):
         inverse_cholesky_decomposition = jnp.linalg.inv(cholesky_decomposition)
         el_matrix_lower_triangle = jnp.tril(inverse_cholesky_decomposition, k=-1)
         el_matrix_log_diagonal = jnp.log(
-            jnp.clip(jnp.diag(inverse_cholesky_decomposition), jitter, None)
+            jnp.clip(
+                jnp.diag(inverse_cholesky_decomposition),
+                self.el_matrix_diagonal_lower_bound,
+                None,
+            )
         )
         return el_matrix_lower_triangle, el_matrix_log_diagonal
 
@@ -202,7 +209,11 @@ class StochasticVariationalGaussianProcessKernel(ApproximateKernel):
         reference_gram_x_y = self.calculate_reference_gram(x=x, y=y)
         el_matrix_lower_triangle = jnp.tril(parameters.el_matrix_lower_triangle, k=-1)
         el_matrix = el_matrix_lower_triangle + jnp.diag(
-            jnp.exp(parameters.el_matrix_log_diagonal)
+            jnp.clip(
+                jnp.exp(parameters.el_matrix_log_diagonal),
+                self.el_matrix_diagonal_lower_bound,
+                None,
+            )
         )
         sigma_matrix = el_matrix.T @ el_matrix
         gram = (
