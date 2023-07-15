@@ -226,8 +226,9 @@ class StochasticVariationalGaussianProcessKernel(ApproximateKernel):
         Returns: the kernel gram matrix of shape (n, m)
 
         """
+        x, y = self.preprocess_inputs(x, y)
+        self.check_inputs(x, y)
         Module.check_parameters(parameters, self.Parameters)
-        x = jnp.atleast_2d(x)
         if full_cov:
             return self._calculate_gram(
                 parameters=parameters,
@@ -239,8 +240,8 @@ class StochasticVariationalGaussianProcessKernel(ApproximateKernel):
                 vmap(
                     lambda x_, y_: self._calculate_gram(
                         parameters=parameters,
-                        x=x_,
-                        y=y_,
+                        x=x_[None, ...],
+                        y=y_[None, ...],
                     )
                 )(x, y)
             )

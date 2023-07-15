@@ -193,8 +193,8 @@ class GaussianMeasure(Module, ABC):
             return vmap(
                 lambda x_, y_: self._calculate_covariance(
                     parameters=parameters,
-                    x=x_,
-                    y=y_,
+                    x=x_[None, ...],
+                    y=y_[None, ...],
                 )
             )(x, y).reshape(
                 -1,
