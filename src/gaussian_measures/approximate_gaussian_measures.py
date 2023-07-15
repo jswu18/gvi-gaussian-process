@@ -35,6 +35,7 @@ class ApproximateGaussianMeasure(GaussianMeasure):
         eigenvalue_regularisation: float = 1e-8,
         is_eigenvalue_regularisation_absolute_scale: bool = False,
         use_symmetric_matrix_eigendecomposition: bool = True,
+        include_eigendecomposition: bool = False,
     ):
         """
         Defining the training data (x, y), the mean function, and the kernel for the approximate Gaussian measure.
@@ -47,6 +48,7 @@ class ApproximateGaussianMeasure(GaussianMeasure):
             mean_function: the approximate mean function of the Gaussian measure
             kernel: the approximate kernel of the Gaussian measure
             use_symmetric_matrix_eigendecomposition: ensure symmetric matrices for eignedecomposition
+            include_eigendecomposition: whether to include the eigendecomposition term of the Gaussian wasserstein metric
         """
         super().__init__(x, y, mean_function, kernel)
         self.kernel = kernel
@@ -61,6 +63,7 @@ class ApproximateGaussianMeasure(GaussianMeasure):
         self._use_symmetric_matrix_eigendecomposition = (
             use_symmetric_matrix_eigendecomposition
         )
+        self._include_eigendecomposition = include_eigendecomposition
         (
             self._jit_compiled_compute_gaussian_wasserstein_metric,
             self._jit_compute_gaussian_wasserstein_inference_loss,
@@ -71,6 +74,7 @@ class ApproximateGaussianMeasure(GaussianMeasure):
             eigenvalue_regularisation=eigenvalue_regularisation,
             is_eigenvalue_regularisation_absolute_scale=is_eigenvalue_regularisation_absolute_scale,
             use_symmetric_matrix_eigendecomposition=use_symmetric_matrix_eigendecomposition,
+            include_eigendecomposition=include_eigendecomposition,
         )
 
     @property
@@ -94,6 +98,7 @@ class ApproximateGaussianMeasure(GaussianMeasure):
             eigenvalue_regularisation=self._eigenvalue_regularisation,
             is_eigenvalue_regularisation_absolute_scale=self._is_eigenvalue_regularisation_absolute_scale,
             use_symmetric_matrix_eigendecomposition=use_symmetric_matrix_eigendecomposition,
+            include_eigendecomposition=self._include_eigendecomposition,
         )
 
     def _build_jit_compiled_functions(
@@ -101,9 +106,10 @@ class ApproximateGaussianMeasure(GaussianMeasure):
         x: jnp.ndarray,
         reference_gaussian_measure: GaussianMeasure,
         reference_gaussian_measure_parameters: GaussianMeasureParameters,
-        eigenvalue_regularisation: float = 1e-8,
-        is_eigenvalue_regularisation_absolute_scale: bool = False,
-        use_symmetric_matrix_eigendecomposition: bool = True,
+        eigenvalue_regularisation: float,
+        is_eigenvalue_regularisation_absolute_scale: bool,
+        use_symmetric_matrix_eigendecomposition: bool,
+        include_eigendecomposition: bool,
     ) -> Tuple[Callable, Callable]:
         # define a jit-compiled function to compute the Gaussian Wasserstein metric
         jit_compiled_compute_gaussian_wasserstein_metric = jit(
@@ -117,6 +123,7 @@ class ApproximateGaussianMeasure(GaussianMeasure):
                 eigenvalue_regularisation=eigenvalue_regularisation,
                 is_eigenvalue_regularisation_absolute_scale=is_eigenvalue_regularisation_absolute_scale,
                 use_symmetric_matrix_eigendecomposition=use_symmetric_matrix_eigendecomposition,
+                include_eigendecomposition=include_eigendecomposition,
             )
         )
 

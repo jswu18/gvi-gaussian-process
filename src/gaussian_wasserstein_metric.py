@@ -76,6 +76,7 @@ def compute_gaussian_wasserstein_metric_from_grams(
     eigenvalue_regularisation: float = 1e-8,
     is_eigenvalue_regularisation_absolute_scale: bool = False,
     use_symmetric_matrix_eigendecomposition: bool = True,
+    include_eigendecomposition: bool = True,
 ) -> float:
     """
     Compute the empirical Gaussian Wasserstein metric between two Gaussian measures using
@@ -95,6 +96,7 @@ def compute_gaussian_wasserstein_metric_from_grams(
         eigenvalue_regularisation: the regularisation to add to the covariance matrix during eigenvalue computation
         is_eigenvalue_regularisation_absolute_scale: whether the regularisation is an absolute or relative scale
         use_symmetric_matrix_eigendecomposition: ensure symmetric matrices for eignedecomposition
+        include_eigendecomposition: whether to include the eigendecomposition term of the Gaussian wasserstein metric
 
     Returns: the empirical Gaussian Wasserstein metric
 
@@ -107,13 +109,16 @@ def compute_gaussian_wasserstein_metric_from_grams(
         use_symmetric_matrix_eigendecomposition=use_symmetric_matrix_eigendecomposition,
     )
     batch_size, train_size = gram_batch_train_p.shape
-    return jnp.float64(
+    gaussian_wasserstein_metric = (
         jnp.mean((mean_train_p - mean_train_q) ** 2)
         + jnp.mean(covariance_train_p_diagonal)
         + jnp.mean(covariance_train_q_diagonal)
-        - (2 / jnp.sqrt(batch_size * train_size))
-        * jnp.sum(jnp.sqrt(cross_covariance_eigenvalues))
     )
+    if include_eigendecomposition:
+        gaussian_wasserstein_metric -= (
+            2 / jnp.sqrt(batch_size * train_size)
+        ) * jnp.sum(jnp.sqrt(cross_covariance_eigenvalues))
+    return jnp.float64(gaussian_wasserstein_metric)
 
 
 @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
@@ -127,6 +132,7 @@ def compute_gaussian_wasserstein_metric(
     eigenvalue_regularisation: float = 1e-8,
     is_eigenvalue_regularisation_absolute_scale: bool = False,
     use_symmetric_matrix_eigendecomposition: bool = True,
+    include_eigendecomposition: bool = True,
 ) -> float:
     """
     Compute the empirical Gaussian Wasserstein metric between two Gaussian measures.
@@ -146,6 +152,7 @@ def compute_gaussian_wasserstein_metric(
         eigenvalue_regularisation: the regularisation to add to the covariance matrix during eigenvalue computation
         is_eigenvalue_regularisation_absolute_scale: whether the regularisation is an absolute or relative scale
         use_symmetric_matrix_eigendecomposition: ensure symmetric matrices for eignedecomposition
+        include_eigendecomposition: whether to include the eigendecomposition term of the Gaussian wasserstein metric
 
     Returns: the Gaussian Wasserstein metric between the two Gaussian measures, a scalar
 
@@ -175,4 +182,5 @@ def compute_gaussian_wasserstein_metric(
         eigenvalue_regularisation=eigenvalue_regularisation,
         is_eigenvalue_regularisation_absolute_scale=is_eigenvalue_regularisation_absolute_scale,
         use_symmetric_matrix_eigendecomposition=use_symmetric_matrix_eigendecomposition,
+        include_eigendecomposition=include_eigendecomposition,
     )
