@@ -214,12 +214,12 @@ class ApproximateSharedMeansClassificationModel(SharedMeansClassificationModel):
                         ),
                         reference_classification_model.calculate_covariances(
                             x=x_batch,
-                            y=x,
+                            y=x_batch if use_symmetric_matrix_eigendecomposition else x,
                             parameters=reference_classification_model_parameters,
                         ),
                         self.calculate_covariances(
                             x=x_batch,
-                            y=x,
+                            y=x_batch if use_symmetric_matrix_eigendecomposition else x,
                             parameters=parameters_dict,
                         ),
                     )
