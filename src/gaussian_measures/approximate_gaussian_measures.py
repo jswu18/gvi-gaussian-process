@@ -64,6 +64,8 @@ class ApproximateGaussianMeasure(GaussianMeasure):
             use_symmetric_matrix_eigendecomposition
         )
         self._include_eigendecomposition = include_eigendecomposition
+        self._is_jit_gaussian_wasserstein_metric_warmed_up = False
+        self._is_jit_gaussian_wasserstein_inference_loss_warmed_up = False
         (
             self._jit_compiled_compute_gaussian_wasserstein_metric,
             self._jit_compute_gaussian_wasserstein_inference_loss,
@@ -283,6 +285,11 @@ class ApproximateGaussianMeasure(GaussianMeasure):
         # convert to Pydantic model if necessary
         if not isinstance(parameters, self.Parameters):
             parameters = self.generate_parameters(parameters)
+        if not self._is_jit_gaussian_wasserstein_metric_warmed_up:
+            _ = self._jit_compiled_compute_gaussian_wasserstein_metric(
+                x_batch[:2, ...], parameters.dict()
+            )
+            self._is_jit_gaussian_wasserstein_metric_warmed_up = True
         return self._jit_compiled_compute_gaussian_wasserstein_metric(
             x_batch, parameters.dict()
         )
@@ -311,6 +318,11 @@ class ApproximateGaussianMeasure(GaussianMeasure):
         # convert to Pydantic model if necessary
         if not isinstance(parameters, self.Parameters):
             parameters = self.generate_parameters(parameters)
+        if not self._is_jit_gaussian_wasserstein_inference_loss_warmed_up:
+            _ = self._jit_compute_gaussian_wasserstein_inference_loss(
+                x_batch[:2, ...], parameters.dict()
+            )
+            self._is_jit_gaussian_wasserstein_inference_loss_warmed_up = True
         return self._jit_compute_gaussian_wasserstein_inference_loss(
             x_batch, parameters.dict()
         )

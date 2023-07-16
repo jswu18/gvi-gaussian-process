@@ -160,6 +160,7 @@ class ApproximateSharedMeansClassificationModel(SharedMeansClassificationModel):
         eigenvalue_regularisation: float = 1e-8,
         is_eigenvalue_regularisation_absolute_scale: bool = False,
         use_symmetric_matrix_eigendecomposition: bool = True,
+        batch_log_likelihood: bool = False,
     ):
         super().__init__(
             x=x,
@@ -173,6 +174,7 @@ class ApproximateSharedMeansClassificationModel(SharedMeansClassificationModel):
         self.reference_classification_model_parameters = (
             reference_classification_model_parameters
         )
+        self._is_jit_gaussian_wasserstein_inference_loss_warmed_up = False
         self._jit_compiled_compute_gaussian_wasserstein_inference_loss = jit(
             lambda parameters_dict, x_batch: (
                 self._jit_compiled_compute_negative_expected_log_likelihood(
@@ -195,11 +197,11 @@ class ApproximateSharedMeansClassificationModel(SharedMeansClassificationModel):
                         )
                     )(
                         reference_classification_model.calculate_means(
-                            x=x,
+                            x=x_batch if batch_log_likelihood else x,
                             parameters=reference_classification_model_parameters,
                         ),
                         reference_classification_model.calculate_covariances(
-                            x=x,
+                            x=x_batch if batch_log_likelihood else x,
                             parameters=reference_classification_model_parameters,
                             full_cov=False,
                         ),
@@ -236,6 +238,11 @@ class ApproximateSharedMeansClassificationModel(SharedMeansClassificationModel):
         # convert to Pydantic model if necessary
         if not isinstance(parameters, self.Parameters):
             parameters = self.generate_parameters(parameters)
+        if not self._is_jit_gaussian_wasserstein_inference_loss_warmed_up:
+            _ = self._jit_compiled_compute_gaussian_wasserstein_inference_loss(
+                parameters_dict=parameters.dict(), x_batch=x_batch[:2, ...]
+            )
+            self._is_jit_gaussian_wasserstein_inference_loss_warmed_up = True
         return self._jit_compiled_compute_gaussian_wasserstein_inference_loss(
             parameters_dict=parameters.dict(), x_batch=x_batch
         )

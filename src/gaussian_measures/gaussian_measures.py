@@ -50,6 +50,7 @@ class GaussianMeasure(Module, ABC):
         self.kernel = kernel
 
         # define a jit-compiled function to compute the negative expected log likelihood
+        self._is_jit_negative_expected_log_likelihood_warmed_up = False
         self._jit_compiled_compute_negative_expected_log_likelihood = jit(
             lambda parameters_dict, x, y: (
                 self._compute_negative_expected_log_likelihood(
@@ -247,6 +248,11 @@ class GaussianMeasure(Module, ABC):
         # convert to Pydantic model if necessary
         if not isinstance(parameters, self.Parameters):
             parameters = self.generate_parameters(parameters)
+        if not self._is_jit_negative_expected_log_likelihood_warmed_up:
+            self._jit_compiled_compute_negative_expected_log_likelihood(
+                parameters.dict(), x[:2, ...], y[:2, ...]
+            )
+            self._is_jit_negative_expected_log_likelihood_warmed_up = True
         return self._jit_compiled_compute_negative_expected_log_likelihood(
             parameters_dict=parameters.dict(),
             x=x,

@@ -48,11 +48,22 @@ class ClassificationModel(Module, ABC):
             )
         )
         # define a jit-compiled function to compute the negative expected log likelihood
+        self._is_jit_negative_expected_log_likelihood_warmed_up = False
         self._jit_compiled_compute_negative_expected_log_likelihood = jit(
             lambda parameters_dict, x, y: (
-                self.compute_negative_log_likelihood(
+                self._compute_negative_log_likelihood(
                     x=x,
                     y=y,
+                    parameters=parameters_dict,
+                )
+            )
+        )
+
+        self._is_jit_predict_probability_warmed_up = False
+        self._jit_compiled_predict_probability = jit(
+            lambda parameters_dict, x: (
+                self._predict_probability(
+                    x=x,
                     parameters=parameters_dict,
                 )
             )
@@ -227,8 +238,7 @@ class ClassificationModel(Module, ABC):
         # (h, k, n) -> (k, n) -> (n, k)
         return ((1 / jnp.sqrt(jnp.pi)) * jnp.sum(hermite_components, axis=0)).T
 
-    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
-    def compute_negative_log_likelihood(
+    def _compute_negative_log_likelihood(
         self,
         parameters: Union[Dict, FrozenDict, ClassificationModelParameters],
         x: jnp.ndarray,
@@ -237,7 +247,6 @@ class ClassificationModel(Module, ABC):
         # convert to Pydantic model if necessary
         if not isinstance(parameters, self.Parameters):
             parameters = self.generate_parameters(parameters)
-
         # (n, k)
         s_matrix = self.calculate_s_matrix(
             means=self._calculate_means(parameters=parameters, x=x),
@@ -260,15 +269,33 @@ class ClassificationModel(Module, ABC):
         )
 
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
-    def predict_probability(
+    def compute_negative_log_likelihood(
+        self,
+        parameters: Union[Dict, FrozenDict, ClassificationModelParameters],
+        x: jnp.ndarray,
+        y: jnp.ndarray,
+    ) -> float:
+        # convert to Pydantic model if necessary
+        if not isinstance(parameters, self.Parameters):
+            parameters = self.generate_parameters(parameters)
+        if not self._is_jit_negative_expected_log_likelihood_warmed_up:
+            self._jit_compiled_compute_negative_expected_log_likelihood(
+                parameters.dict(), x[:2, ...], y[:2, ...]
+            )
+            self._is_jit_negative_expected_log_likelihood_warmed_up = True
+        return self._jit_compiled_compute_negative_expected_log_likelihood(
+            parameters.dict(),
+            x,
+            y,
+        )
+
+    def _predict_probability(
         self,
         parameters: Union[Dict, FrozenDict, ClassificationModelParameters],
         x: jnp.ndarray,
     ) -> jnp.ndarray:
-        # convert to Pydantic model if necessary
         if not isinstance(parameters, self.Parameters):
             parameters = self.generate_parameters(parameters)
-
         # (n, k)
         s_matrix = self.calculate_s_matrix(
             means=self._calculate_means(parameters=parameters, x=x),
@@ -283,6 +310,20 @@ class ClassificationModel(Module, ABC):
         return (1 - self.epsilon) * s_matrix + (
             self.epsilon / (self.number_of_labels - 1)
         ) * (1 - s_matrix)
+
+    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
+    def predict_probability(
+        self,
+        parameters: Union[Dict, FrozenDict, ClassificationModelParameters],
+        x: jnp.ndarray,
+    ) -> jnp.ndarray:
+        # convert to Pydantic model if necessary
+        if not isinstance(parameters, self.Parameters):
+            parameters = self.generate_parameters(parameters)
+        if not self._is_jit_predict_probability_warmed_up:
+            self._jit_compiled_predict_probability(parameters.dict(), x[:2, ...])
+            self._is_jit_predict_probability_warmed_up = True
+        return self._jit_compiled_predict_probability(parameters.dict(), x)
 
 
 class TemperedClassificationModel(ClassificationModel):
