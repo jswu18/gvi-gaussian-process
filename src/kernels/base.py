@@ -5,9 +5,12 @@ import jax
 import jax.numpy as jnp
 import pydantic
 
-from src.module import Module
-from src.parameters.kernels.base import KernelBaseParameters
+from src.module import Module, ModuleParameters
 from src.utils.checks import check_matching_dimensions, check_maximum_dimension
+
+
+class KernelBaseParameters(ModuleParameters):
+    pass
 
 
 class KernelBase(Module, ABC):

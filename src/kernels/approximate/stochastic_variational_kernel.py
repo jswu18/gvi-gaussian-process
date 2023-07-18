@@ -1,71 +1,47 @@
-from abc import ABC
-from typing import Any, Dict, Tuple, Union
+from typing import Any, Dict, Literal, Tuple, Union
 
 import jax.numpy as jnp
 import pydantic
 from flax.core.frozen_dict import FrozenDict
-from jax import jit, vmap
 from jax.scipy.linalg import cho_factor, cho_solve
 
-from src.kernels.reference_kernels import Kernel
-from src.module import Module
-from src.parameters.kernels.approximate_kernels import (
-    ApproximateKernelParameters,
-    StochasticVariationalGaussianProcessKernelParameters,
+from src.kernels.approximate.base import (
+    ApproximateBaseKernel,
+    ApproximateBaseKernelParameters,
 )
-from src.parameters.kernels.kernels import KernelParameters
+from src.kernels.base import KernelBase, KernelBaseParameters
+from src.utils.custom_types import JaxArrayType
 from src.utils.matrix_operations import add_diagonal_regulariser
 
 PRNGKey = Any  # pylint: disable=invalid-name
 
 
-class ApproximateKernel(Kernel, ABC):
+class StochasticVariationalKernelParameters(ApproximateBaseKernelParameters):
     """
-    Approximate kernels which are defined with respect to a reference Gaussian measure.
+    el_matrix_lower_triangle is a lower triangle of the L matrix
+    el_matrix_log_diagonal is the logarithm of the diagonal of the L matrix
+    combining them such that:
+        L = el_matrix_lower_triangle + diagonalise(exp(el_matrix_log_diagonal))
+    and
+        sigma_matrix = L @ L.T
     """
 
-    Parameters = ApproximateKernelParameters
-
-    def __init__(
-        self,
-        reference_kernel_parameters: KernelParameters,
-        reference_kernel: Kernel,
-        log_observation_noise: float,
-    ):
-        """
-        Defining the kernel with respect to a reference Gaussian measure.
-
-        Args:
-            reference_kernel_parameters: the parameters of the reference kernel.
-            reference_kernel: the kernel of the reference Gaussian measure.
-            log_observation_noise: the log observation noise of the model
-        """
-
-        self.reference_kernel_parameters = reference_kernel_parameters
-        self.log_observation_noise = log_observation_noise
-
-        # define a jit-compiled version of the reference kernel gram matrix using the reference kernel parameters
-        self.calculate_reference_gram = jit(
-            lambda x, y=None: reference_kernel.calculate_gram(
-                parameters=reference_kernel_parameters,
-                x=x,
-                y=y,
-            )
-        )
+    el_matrix_lower_triangle: JaxArrayType[Literal["float64"]]
+    el_matrix_log_diagonal: JaxArrayType[Literal["float64"]]
 
 
-class StochasticVariationalGaussianProcessKernel(ApproximateKernel):
+class StochasticVariationalKernel(ApproximateBaseKernel):
     """
     The stochastic variational Gaussian process kernel as defined in Titsias (2009).
     """
 
-    Parameters = StochasticVariationalGaussianProcessKernelParameters
+    Parameters = StochasticVariationalKernelParameters
 
     def __init__(
         self,
-        reference_kernel_parameters: KernelParameters,
+        reference_kernel: KernelBase,
+        reference_kernel_parameters: KernelBaseParameters,
         log_observation_noise: float,
-        reference_kernel: Kernel,
         inducing_points: jnp.ndarray,
         training_points: jnp.ndarray,
         diagonal_regularisation: float = 1e-5,
@@ -89,8 +65,8 @@ class StochasticVariationalGaussianProcessKernel(ApproximateKernel):
         super().__init__(
             reference_kernel_parameters,
             reference_kernel,
-            log_observation_noise,
         )
+        self.log_observation_noise = log_observation_noise
         self.number_of_dimensions = inducing_points.shape[1]
         self.inducing_points = inducing_points
         self.training_points = training_points
@@ -99,7 +75,9 @@ class StochasticVariationalGaussianProcessKernel(ApproximateKernel):
         self.is_diagonal_regularisation_absolute_scale = (
             is_diagonal_regularisation_absolute_scale
         )
-        self.reference_gram_inducing = self.calculate_reference_gram(x=inducing_points)
+        self.reference_gram_inducing = self.reference_kernel.calculate_gram(
+            x=inducing_points
+        )
         self.reference_gram_inducing_cholesky_decomposition_and_lower = cho_factor(
             add_diagonal_regulariser(
                 matrix=self.reference_gram_inducing,
@@ -107,7 +85,7 @@ class StochasticVariationalGaussianProcessKernel(ApproximateKernel):
                 is_diagonal_regularisation_absolute_scale=is_diagonal_regularisation_absolute_scale,
             )
         )
-        self.gram_inducing_train = self.calculate_reference_gram(
+        self.gram_inducing_train = self.reference_kernel.calculate_gram(
             x=inducing_points, y=training_points
         )
 
@@ -122,13 +100,13 @@ class StochasticVariationalGaussianProcessKernel(ApproximateKernel):
         Returns: A Pydantic model of the parameters for Stochastic Variational Gaussian Process Kernels.
 
         """
-        return StochasticVariationalGaussianProcessKernel.Parameters(**parameters)
+        return StochasticVariationalKernel.Parameters(**parameters)
 
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def initialise_random_parameters(
         self,
         key: PRNGKey = None,
-    ) -> StochasticVariationalGaussianProcessKernelParameters:
+    ) -> StochasticVariationalKernelParameters:
         """
         Initialise each parameter of the Stochastic Variational Gaussian Process Kernel with the appropriate random initialisation.
 
@@ -144,7 +122,7 @@ class StochasticVariationalGaussianProcessKernel(ApproximateKernel):
             el_matrix_lower_triangle,
             el_matrix_log_diagonal,
         ) = self.initialise_el_matrix_parameters()
-        return StochasticVariationalGaussianProcessKernel.Parameters(
+        return StochasticVariationalKernel.Parameters(
             el_matrix_lower_triangle=el_matrix_lower_triangle,
             el_matrix_log_diagonal=el_matrix_log_diagonal,
         )
@@ -183,30 +161,25 @@ class StochasticVariationalGaussianProcessKernel(ApproximateKernel):
 
     def _calculate_gram(
         self,
-        parameters: StochasticVariationalGaussianProcessKernelParameters,
-        x: jnp.ndarray,
-        y: jnp.ndarray,
-        full_cov: bool = True,
+        parameters: StochasticVariationalKernelParameters,
+        x1: jnp.ndarray,
+        x2: jnp.ndarray,
     ) -> jnp.ndarray:
-        reference_gram_x_inducing = self.calculate_reference_gram(
+        reference_gram_x1_inducing = self.reference_kernel.calculate_gram(
             x=x,
             y=self.inducing_points,
         )
 
         # if y is None, compute for x and x
-        if y is None:
-            y = x
-            reference_gram_y_inducing = reference_gram_x_inducing
+        if jnp.array_equal(x1, x2):
+            reference_gram_x2_inducing = reference_gram_x1_inducing
         else:
-            y = jnp.atleast_2d(y)
-            self.check_inputs(x, y)
-
-            reference_gram_y_inducing = self.calculate_reference_gram(
-                x=y,
-                y=self.inducing_points,
+            reference_gram_x2_inducing = self.reference_kernel.calculate_gram(
+                x1=x1,
+                x2=self.inducing_points,
             )
 
-        reference_gram_x_y = self.calculate_reference_gram(x=x, y=y)
+        reference_gram_x1_x2 = self.reference_kernel.calculate_gram(x1=x1, x2=x2)
         el_matrix_lower_triangle = jnp.tril(parameters.el_matrix_lower_triangle, k=-1)
         el_matrix = el_matrix_lower_triangle + jnp.diag(
             jnp.clip(
@@ -216,58 +189,14 @@ class StochasticVariationalGaussianProcessKernel(ApproximateKernel):
             )
         )
         sigma_matrix = el_matrix.T @ el_matrix
-        gram = (
-            reference_gram_x_y
+        return (
+            reference_gram_x1_x2
             - (
-                reference_gram_x_inducing
+                reference_gram_x1_inducing
                 @ cho_solve(
                     c_and_lower=self.reference_gram_inducing_cholesky_decomposition_and_lower,
-                    b=reference_gram_y_inducing.T,
+                    b=reference_gram_x2_inducing.T,
                 )
             )
-            + reference_gram_x_inducing @ sigma_matrix @ reference_gram_y_inducing.T
+            + reference_gram_x1_inducing @ sigma_matrix @ reference_gram_x2_inducing.T
         )
-        return gram
-
-    def calculate_gram(
-        self,
-        parameters: StochasticVariationalGaussianProcessKernelParameters,
-        x: jnp.ndarray,
-        y: jnp.ndarray = None,
-        full_cov: bool = True,
-    ) -> jnp.ndarray:
-        """
-        Computing the Gram matrix using for the SVGP which depends on the reference kernel.
-
-        If y is None, the Gram matrix is computed for x and x.
-            - n is the number of points in x
-            - m is the number of points in y
-            - d is the number of dimensions
-        Args:
-            parameters: parameters of the kernel
-            x: design matrix of shape (n, d)
-            y: design matrix of shape (m, d)
-            full_cov: whether to compute the full covariance matrix or just the diagonal
-
-        Returns: the kernel gram matrix of shape (n, m)
-
-        """
-        x, y = self.preprocess_inputs(x, y)
-        self.check_inputs(x, y)
-        Module.check_parameters(parameters, self.Parameters)
-        if full_cov:
-            return self._calculate_gram(
-                parameters=parameters,
-                x=x,
-                y=y,
-            )
-        else:
-            return jnp.squeeze(
-                vmap(
-                    lambda x_, y_: self._calculate_gram(
-                        parameters=parameters,
-                        x=x_[None, ...],
-                        y=y_[None, ...],
-                    )
-                )(x, y)
-            )
