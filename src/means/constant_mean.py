@@ -10,45 +10,47 @@ from src.utils.custom_types import JaxArrayType, JaxFloatType
 PRNGKey = Any  # pylint: disable=invalid-name
 
 
-class ConstantParameters(MeanBaseParameters):
+class ConstantMeanParameters(MeanBaseParameters):
     constant: Union[JaxFloatType, JaxArrayType[Literal["float64"]]]
 
 
-class Constant(MeanBase):
-    Parameters = ConstantParameters
+class ConstantMean(MeanBase):
+    Parameters = ConstantMeanParameters
 
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def generate_parameters(
         self, parameters: Union[FrozenDict, Dict]
-    ) -> ConstantParameters:
+    ) -> ConstantMeanParameters:
         """
-        Generates a Pydantic model of the parameters for Constant Functions.
+        Generates a Pydantic model of the parameters for ConstantMean Functions.
 
         Args:
-            parameters: A dictionary of the parameters for Constant Functions.
+            parameters: A dictionary of the parameters for ConstantMean Functions.
 
-        Returns: A Pydantic model of the parameters for Constant Functions.
+        Returns: A Pydantic model of the parameters for ConstantMean Functions.
 
         """
-        return Constant.Parameters(**parameters)
+        return ConstantMean.Parameters(**parameters)
 
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def initialise_random_parameters(
         self,
         key: PRNGKey,
-    ) -> ConstantParameters:
+    ) -> ConstantMeanParameters:
         """
-        Initialise the parameters of the Constant Function using a random key.
+        Initialise the parameters of the ConstantMean Function using a random key.
 
         Args:
             key: A random key used to initialise the parameters.
 
-        Returns: A Pydantic model of the parameters for Constant Functions.
+        Returns: A Pydantic model of the parameters for ConstantMean Functions.
 
         """
         pass
 
-    def _predict(self, parameters: ConstantParameters, x: jnp.ndarray) -> jnp.ndarray:
+    def _predict(
+        self, parameters: ConstantMeanParameters, x: jnp.ndarray
+    ) -> jnp.ndarray:
         """
         Returns a constant value for all points of x.
             - k is the number of outputs
