@@ -3,10 +3,16 @@ from typing import Any, Dict, Type, Union
 
 import pydantic
 from flax.core.frozen_dict import FrozenDict
+from pydantic import BaseModel
 
-from src.parameters.module import ModuleParameters
+from src.utils.custom_types import JSON_ENCODERS
 
 PRNGKey = Any  # pylint: disable=invalid-name
+
+
+class ModuleParameters(BaseModel, ABC):
+    class Config:
+        json_encoders = JSON_ENCODERS
 
 
 class Module(ABC):

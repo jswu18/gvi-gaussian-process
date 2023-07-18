@@ -8,13 +8,19 @@ import pydantic
 from flax.core.frozen_dict import FrozenDict
 
 from src.distributions import Distribution, Gaussian
-from src.kernels.base import KernelBase
-from src.means.base import MeanBase
-from src.module import Module
-from src.parameters.gaussian_processes.base import GaussianProcessBaseParameters
+from src.kernels.base import KernelBase, KernelBaseParameters
+from src.means.base import MeanBase, MeanBaseParameters
+from src.module import Module, ModuleParameters
+from src.utils.custom_types import JaxFloatType
 from src.utils.jit_compiler import JitCompiler
 
 PRNGKey = Any  # pylint: disable=invalid-name
+
+
+class GaussianProcessBaseParameters(ModuleParameters, ABC):
+    log_observation_noise: JaxFloatType
+    mean: MeanBaseParameters
+    kernel: KernelBaseParameters
 
 
 class GaussianProcessBase(Module, ABC):

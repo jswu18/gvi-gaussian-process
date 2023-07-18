@@ -5,10 +5,13 @@ import pydantic
 from flax.core.frozen_dict import FrozenDict
 from jax import numpy as jnp
 
-from src.module import Module
-from src.parameters.mean.base import MeanBaseParameters
+from src.module import Module, ModuleParameters
 
 PRNGKey = Any  # pylint: disable=invalid-name
+
+
+class MeanBaseParameters(ModuleParameters, ABC):
+    pass
 
 
 class MeanBase(Module, ABC):
@@ -26,16 +29,6 @@ class MeanBase(Module, ABC):
             parameters: A dictionary of the parameters for the Module.
 
         Returns: A Pydantic model of the parameters for the Module.
-
-        """
-        raise NotImplementedError
-
-    @property
-    @abstractmethod
-    def output_dimension(self) -> int:
-        """
-        Returns the output dimension of the mean function.
-        Returns: The output dimension of the mean function.
 
         """
         raise NotImplementedError
