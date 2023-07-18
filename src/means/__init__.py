@@ -1,15 +1,15 @@
-from .constant import Constant, ConstantParameters
-from .neural_network import NeuralNetwork, NeuralNetworkParameters
+from .constant_mean import ConstantMean, ConstantMeanParameters
+from .neural_network_mean import NeuralNetworkMean, NeuralNetworkMeanParameters
 from .stochastic_variational_mean import (
     StochasticVariationalMean,
     StochasticVariationalMeanParameters,
 )
 
 __all__ = [
-    "Constant",
-    "ConstantParameters",
-    "NeuralNetwork",
-    "NeuralNetworkParameters",
+    "ConstantMean",
+    "ConstantMeanParameters",
+    "NeuralNetworkMean",
+    "NeuralNetworkMeanParameters",
     "StochasticVariationalMean",
     "StochasticVariationalMeanParameters",
 ]

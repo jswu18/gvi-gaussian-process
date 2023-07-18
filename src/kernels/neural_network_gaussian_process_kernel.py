@@ -9,16 +9,16 @@ from src.kernels.base import KernelBase, KernelBaseParameters
 PRNGKey = Any  # pylint: disable=invalid-name
 
 
-class NeuralNetworkGaussianProcessParameters(KernelBaseParameters):
+class NeuralNetworkGaussianProcessKernelParameters(KernelBaseParameters):
     pass
 
 
-class NeuralNetworkGaussianProcess(KernelBase):
+class NeuralNetworkGaussianProcessKernel(KernelBase):
     """
     A wrapper class for the kernel function provided by the NTK package.
     """
 
-    Parameters = NeuralNetworkGaussianProcessParameters
+    Parameters = NeuralNetworkGaussianProcessKernelParameters
 
     def __init__(self, kernel_function: Callable):
         """
@@ -32,7 +32,7 @@ class NeuralNetworkGaussianProcess(KernelBase):
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def generate_parameters(
         self, parameters: Union[FrozenDict, Dict]
-    ) -> NeuralNetworkGaussianProcessParameters:
+    ) -> NeuralNetworkGaussianProcessKernelParameters:
         """
         Generates a Pydantic model of the parameters for Neural Network Gaussian Process Kernel.
 
@@ -42,13 +42,13 @@ class NeuralNetworkGaussianProcess(KernelBase):
         Returns: A Pydantic model of the parameters for Neural Network Gaussian Process Kernel.
 
         """
-        return NeuralNetworkGaussianProcess.Parameters(**parameters)
+        return NeuralNetworkGaussianProcessKernel.Parameters(**parameters)
 
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def initialise_random_parameters(
         self,
         key: PRNGKey,
-    ) -> NeuralNetworkGaussianProcessParameters:
+    ) -> NeuralNetworkGaussianProcessKernelParameters:
         """
         Initialise the parameters of the Neural Network Gaussian Process Kernel using a random key.
 
@@ -62,7 +62,7 @@ class NeuralNetworkGaussianProcess(KernelBase):
 
     def _calculate_gram(
         self,
-        parameters: NeuralNetworkGaussianProcessParameters,
+        parameters: NeuralNetworkGaussianProcessKernelParameters,
         x1: jnp.ndarray,
         x2: jnp.ndarray,
     ) -> jnp.ndarray:

@@ -1,13 +1,13 @@
 import approximate
 import standard
-from neural_network_gaussian_process import (
-    NeuralNetworkGaussianProcess,
-    NeuralNetworkGaussianProcessParameters,
+from neural_network_gaussian_process_kernel import (
+    NeuralNetworkGaussianProcessKernel,
+    NeuralNetworkGaussianProcessKernelParameters,
 )
 
 __all__ = [
     "approximate",
     "standard",
-    "NeuralNetworkGaussianProcess",
-    "NeuralNetworkGaussianProcessParameters",
+    "NeuralNetworkGaussianProcessKernel",
+    "NeuralNetworkGaussianProcessKernelParameters",
 ]

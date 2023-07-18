@@ -10,16 +10,16 @@ from src.means.base import MeanBase, MeanBaseParameters
 PRNGKey = Any  # pylint: disable=invalid-name
 
 
-class NeuralNetworkParameters(MeanBaseParameters):
+class NeuralNetworkMeanParameters(MeanBaseParameters):
     neural_network: Any  # hack fix for now
 
 
-class NeuralNetwork(MeanBase):
+class NeuralNetworkMean(MeanBase):
     """
     A Mean Function which is defined by a neural network.
     """
 
-    Parameters = NeuralNetworkParameters
+    Parameters = NeuralNetworkMeanParameters
 
     def __init__(
         self,
@@ -39,7 +39,7 @@ class NeuralNetwork(MeanBase):
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def generate_parameters(
         self, parameters: Union[FrozenDict, Dict]
-    ) -> NeuralNetworkParameters:
+    ) -> NeuralNetworkMeanParameters:
         """
         Generates a Pydantic model of the parameters for Neural Network Mean Functions.
 
@@ -49,13 +49,13 @@ class NeuralNetwork(MeanBase):
         Returns: A Pydantic model of the parameters for Neural Network Mean Functions.
 
         """
-        return NeuralNetwork.Parameters(neural_network=parameters["neural_network"])
+        return NeuralNetworkMean.Parameters(neural_network=parameters["neural_network"])
 
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def initialise_random_parameters(
         self,
         key: PRNGKey,
-    ) -> NeuralNetworkParameters:
+    ) -> NeuralNetworkMeanParameters:
         """
         Initialise the parameters of the ARD Kernel using a random key.
 
@@ -65,12 +65,12 @@ class NeuralNetwork(MeanBase):
         Returns: A Pydantic model of the parameters for Neural Network Mean Functions.
 
         """
-        return NeuralNetworkParameters(
+        return NeuralNetworkMeanParameters(
             neural_network=self.neural_network.init(key, jnp.zeros((1, 1)))
         )
 
     def _predict(
-        self, parameters: NeuralNetworkParameters, x: jnp.ndarray
+        self, parameters: NeuralNetworkMeanParameters, x: jnp.ndarray
     ) -> jnp.ndarray:
         """
         Predict the mean function at the provided points x by adding the reference mean function to the
