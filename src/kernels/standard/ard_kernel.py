@@ -77,6 +77,8 @@ class ARDKernel(StandardKernelBase):
         return jnp.sum(
             scaling
             * jnp.exp(
-                -0.5 * jnp.atleast_1d(parameters.log_lengthscales) @ jnp.square(x1 - x2)
+                -0.5
+                * jnp.atleast_1d(jnp.exp(parameters.log_lengthscales))
+                @ jnp.square(x1 - x2).T
             )
         ).astype(jnp.float64)

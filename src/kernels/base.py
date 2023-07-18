@@ -111,4 +111,4 @@ class KernelBase(Module, ABC):
                     x1=x1_,
                     x2=x2_,
                 )
-            )(x1[:, None, ...], x2[:, None, ...])
+            )(x1[:, None, ...], x2[:, None, ...]).reshape(-1)
