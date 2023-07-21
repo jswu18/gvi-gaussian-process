@@ -1,4 +1,4 @@
-from typing import Any, Dict, Literal, Tuple, Union
+from typing import Any, Callable, Dict, Literal, Tuple, Union
 
 import jax.numpy as jnp
 import pydantic
@@ -47,6 +47,7 @@ class StochasticVariationalKernel(ApproximateBaseKernel):
         diagonal_regularisation: float = 1e-5,
         el_matrix_diagonal_lower_bound: float = 1e-3,
         is_diagonal_regularisation_absolute_scale: bool = False,
+        preprocess_function: Callable[[jnp.ndarray], jnp.ndarray] = None,
     ):
         """
         Defining the stochastic variational Gaussian process kernel using the reference Gaussian measure
@@ -62,10 +63,6 @@ class StochasticVariationalKernel(ApproximateBaseKernel):
             el_matrix_diagonal_lower_bound: lower bound (clip) the diagonals of the L parameter matrix for Sigma = LL^T
             is_diagonal_regularisation_absolute_scale: whether the diagonal regularisation is an absolute scale.
         """
-        super().__init__(
-            reference_kernel_parameters,
-            reference_kernel,
-        )
         self.log_observation_noise = log_observation_noise
         self.number_of_dimensions = inducing_points.shape[1]
         self.inducing_points = inducing_points
@@ -91,6 +88,11 @@ class StochasticVariationalKernel(ApproximateBaseKernel):
             parameters=reference_kernel_parameters,
             x1=inducing_points,
             x2=training_points,
+        )
+        super().__init__(
+            reference_kernel_parameters=reference_kernel_parameters,
+            reference_kernel=reference_kernel,
+            preprocess_function=preprocess_function,
         )
 
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))

@@ -1,4 +1,4 @@
-from typing import Any, Dict, Union
+from typing import Any, Callable, Dict, Union
 
 import flax
 import pydantic
@@ -24,6 +24,7 @@ class NeuralNetworkMean(MeanBase):
     def __init__(
         self,
         neural_network: flax.linen.Module,
+        preprocess_function: Callable[[jnp.ndarray], jnp.ndarray] = None,
     ):
         """
         Using a neural network to act as the mean function of the Gaussian measure.
@@ -33,8 +34,8 @@ class NeuralNetworkMean(MeanBase):
         Args:
             neural_network: a flax linen module which takes in a design matrix of shape (n, d) and outputs a vector of shape (n, 1)
         """
-        super().__init__()
         self.neural_network = neural_network
+        super().__init__(preprocess_function=preprocess_function)
 
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def generate_parameters(
