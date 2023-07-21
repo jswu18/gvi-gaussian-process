@@ -8,7 +8,7 @@ from src.kernels.base import KernelBase
 from src.means.base import MeanBase
 
 
-class ApproximateGPBase(ABC, GPBase):
+class ApproximateGPBase(GPBase, ABC):
     def __init__(
         self,
         mean: MeanBase,
@@ -17,6 +17,11 @@ class ApproximateGPBase(ABC, GPBase):
         super().__init__(mean=mean, kernel=kernel)
 
     def _calculate_prediction_distribution(
-        self, parameters: GPBaseParameters, x: jnp.ndarray
+        self,
+        parameters: GPBaseParameters,
+        x: jnp.ndarray,
+        full_covariance: bool,
     ) -> Gaussian:
-        return self.calculate_prior_distribution(parameters=parameters, x=x)
+        return self.calculate_prior_distribution(
+            parameters=parameters, x=x, full_covariance=full_covariance
+        )

@@ -8,7 +8,7 @@ from src.kernels.base import KernelBase
 from src.means.base import MeanBase
 
 
-class GPRegressionBase(ABC, GPBase):
+class GPRegressionBase(GPBase, ABC):
     def __init__(
         self,
         mean: MeanBase,
@@ -17,6 +17,10 @@ class GPRegressionBase(ABC, GPBase):
         super().__init__(mean=mean, kernel=kernel)
 
     def _predict_probability(
-        self, parameters: GPBaseParameters, x: jnp.ndarray
+        self, parameters: GPBaseParameters, x: jnp.ndarray,
     ) -> Gaussian:
-        return self._calculate_prediction_distribution(parameters=parameters, x=x)
+        return self._calculate_prediction_distribution(
+            parameters=parameters,
+               x=x,
+       full_covariance=False,
+        )
