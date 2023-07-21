@@ -29,6 +29,7 @@ class GPBase(Module, ABC):
     """
 
     Parameters = GPBaseParameters
+    PredictDistribution = Distribution
 
     def __init__(
         self,
@@ -71,7 +72,8 @@ class GPBase(Module, ABC):
         if not isinstance(parameters, self.Parameters):
             parameters = self.generate_parameters(parameters)
         Module.check_parameters(parameters, self.Parameters)
-        return self._jit_compiled_predict_probability(parameters, x)
+        probabilities = self._jit_compiled_predict_probability(parameters.dict(), x)
+        return self.PredictDistribution(*probabilities)
 
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def calculate_prior_distribution(

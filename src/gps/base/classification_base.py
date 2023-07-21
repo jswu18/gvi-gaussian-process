@@ -10,7 +10,7 @@ from src.kernels.base import KernelBase
 from src.means.base import MeanBase
 
 
-class GPClassificationBase(ABC, GPBase):
+class GPClassificationBase(GPBase, ABC):
     def __init__(
         self,
         mean: MeanBase,
@@ -28,7 +28,7 @@ class GPClassificationBase(ABC, GPBase):
         self, parameters: GPBaseParameters, x: jnp.ndarray
     ) -> Multinomial:
         gaussian_distribution = self._calculate_prediction_distribution(
-            parameters=parameters, x=x, full_coviarance=False
+            parameters=parameters, x=x, full_covariance=False
         )
         s_matrix = self._calculate_s_matrix(
             means=gaussian_distribution.mean,
