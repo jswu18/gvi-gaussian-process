@@ -9,30 +9,32 @@ from src.kernels.base import KernelBase, KernelBaseParameters
 PRNGKey = Any  # pylint: disable=invalid-name
 
 
-class NeuralNetworkGaussianProcessKernelParameters(KernelBaseParameters):
+class NNGPKernelParameters(KernelBaseParameters):
     pass
 
 
-class NeuralNetworkGaussianProcessKernel(KernelBase):
+class NNGPKernel(KernelBase):
     """
     A wrapper class for the kernel function provided by the NTK package.
     """
 
-    Parameters = NeuralNetworkGaussianProcessKernelParameters
+    Parameters = NNGPKernelParameters
 
-    def __init__(self, kernel_function: Callable):
+    def __init__(self, kernel_function: Callable, preprocess_function: Callable = None):
         """
         Define a Neural Network Gaussian Process Kernel using the kernel function provided by the NTK package.
 
         Args:
             kernel_function: The kernel function provided by the NTK package.
+            preprocess_function: preprocess inputs before passing to kernel function
         """
         self.kernel_function = kernel_function
+        super().__init__(preprocess_function)
 
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def generate_parameters(
         self, parameters: Union[FrozenDict, Dict]
-    ) -> NeuralNetworkGaussianProcessKernelParameters:
+    ) -> NNGPKernelParameters:
         """
         Generates a Pydantic model of the parameters for Neural Network Gaussian Process Kernel.
 
@@ -42,13 +44,13 @@ class NeuralNetworkGaussianProcessKernel(KernelBase):
         Returns: A Pydantic model of the parameters for Neural Network Gaussian Process Kernel.
 
         """
-        return NeuralNetworkGaussianProcessKernel.Parameters(**parameters)
+        return NNGPKernel.Parameters(**parameters)
 
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def initialise_random_parameters(
         self,
         key: PRNGKey,
-    ) -> NeuralNetworkGaussianProcessKernelParameters:
+    ) -> NNGPKernelParameters:
         """
         Initialise the parameters of the Neural Network Gaussian Process Kernel using a random key.
 
@@ -62,7 +64,7 @@ class NeuralNetworkGaussianProcessKernel(KernelBase):
 
     def _calculate_gram(
         self,
-        parameters: NeuralNetworkGaussianProcessKernelParameters,
+        parameters: NNGPKernelParameters,
         x1: jnp.ndarray,
         x2: jnp.ndarray,
     ) -> jnp.ndarray:
@@ -80,4 +82,8 @@ class NeuralNetworkGaussianProcessKernel(KernelBase):
         Returns: the kernel gram matrix of shape (m_1, m_2)
 
         """
-        return self.kernel_function(x1, x2, "nngp")
+        return self.kernel_function(
+            x1,
+            x2,
+            "nngp",
+        )

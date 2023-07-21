@@ -44,15 +44,15 @@ class StochasticVariationalMean(MeanBase):
         self, parameters: Union[FrozenDict, Dict]
     ) -> StochasticVariationalMeanParameters:
         """
-        Generates a Pydantic model of the parameters for Constant Functions.
+        Generates a Pydantic model of the parameters for SVGP Mean Functions.
 
         Args:
-            parameters: A dictionary of the parameters for Constant Functions.
+            parameters: A dictionary of the parameters for SVGP Mean Functions.
 
-        Returns: A Pydantic model of the parameters for Constant Functions.
+        Returns: A Pydantic model of the parameters for SVGP Mean Functions.
 
         """
-        return Constant.Parameters(**parameters)
+        return StochasticVariationalMean.Parameters(**parameters)
 
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def initialise_random_parameters(
@@ -97,9 +97,10 @@ class StochasticVariationalMean(MeanBase):
             + (
                 self.reference_kernel.calculate_gram(
                     parameters=self.reference_kernel_parameters,
-                    x=x,
+                    x1=x,
+                    x2=x,
                     full_covariance=True,
                 )
                 @ parameters.weights
             ).T
-        ).reshape(-1)
+        ).reshape(-1, 1)

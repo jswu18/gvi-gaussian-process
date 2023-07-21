@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import Any, Callable
 
 import jax.numpy as jnp
 import pydantic
@@ -19,6 +19,11 @@ class StandardKernelBase(KernelBase, ABC):
     """
     Kernels that can be easily defined with a kernel function evaluated at a single pair of points.
     """
+
+    def __init__(
+        self, preprocess_function: Callable[[jnp.ndarray], jnp.ndarray] = None
+    ):
+        super().__init__(preprocess_function=preprocess_function)
 
     @staticmethod
     @abstractmethod

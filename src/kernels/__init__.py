@@ -1,9 +1,6 @@
-from src.kernels.neural_network_gaussian_process_kernel import (
-    NeuralNetworkGaussianProcessKernel,
-    NeuralNetworkGaussianProcessKernelParameters,
-)
+from src.kernels.nngp_kernel import NNGPKernel, NNGPKernelParameters
 
 __all__ = [
-    "NeuralNetworkGaussianProcessKernel",
-    "NeuralNetworkGaussianProcessKernelParameters",
+    "NNGPKernel",
+    "NNGPKernelParameters",
 ]

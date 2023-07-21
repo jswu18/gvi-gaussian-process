@@ -5,74 +5,73 @@ import jax.numpy as jnp
 import pydantic
 from flax.core.frozen_dict import FrozenDict
 
-from src.mean_functions.approximate_mean_functions import ApproximateMeanFunction
-from src.mean_functions.mean_functions import MeanFunction
-from src.parameters.mean_functions.approximate_mean_functions import (
-    ApproximateMeanFunctionParameters,
+from src.means.base import MeanBase, MeanBaseParameters
+from src.means.stochastic_variational_mean import (
+    StochasticVariationalMean,
+    StochasticVariationalMeanParameters,
 )
-from src.parameters.mean_functions.mean_functions import MeanFunctionParameters
 
 PRNGKey = Any  # pylint: disable=invalid-name
 
 
-class ReferenceMeanFunctionParametersMock(MeanFunctionParameters):
+class MockMeanParameters(MeanBaseParameters):
     pass
 
 
-class ReferenceMeanFunctionMock(MeanFunction):
+class MockMean(MeanBase):
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def generate_parameters(
         self, parameters: Union[Dict, FrozenDict]
-    ) -> ReferenceMeanFunctionParametersMock:
-        return ReferenceMeanFunctionParametersMock()
+    ) -> MockMeanParameters:
+        return MockMeanParameters()
 
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def initialise_random_parameters(
         self,
         key: PRNGKey,
-    ) -> ReferenceMeanFunctionParametersMock:
-        return ReferenceMeanFunctionParametersMock()
+    ) -> MockMeanParameters:
+        return MockMeanParameters()
 
     def _predict(
         self,
         x: jnp.ndarray,
-        parameters: ReferenceMeanFunctionParametersMock = None,
+        parameters: MockMeanParameters = None,
     ) -> jnp.ndarray:
         return jnp.ones((x.shape[0]))
 
 
-class NeuralNetworkMock(flax.linen.Module):
+class MockNeuralNetwork(flax.linen.Module):
     def init(self, *args, **kwargs):
         return None
 
     def apply(self, variables, *args, **kwargs):
         if "x" in kwargs:
-            return jnp.ones((kwargs["x"].shape[0]))
+            return jnp.ones((kwargs["x"].shape[0], 1))
         else:
-            return jnp.ones((args[0].shape[0]))
+            return jnp.ones((args[0].shape[0], 1))
 
 
-class ApproximateMeanFunctionParametersMock(ApproximateMeanFunctionParameters):
+class MockStochasticVariationalMeanParameter(StochasticVariationalMeanParameters):
     pass
 
 
-class ApproximateMeanFunctionMock(ApproximateMeanFunction):
+class MockStochasticVariationalMean(StochasticVariationalMean):
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def generate_parameters(
         self, parameters: Union[Dict, FrozenDict]
-    ) -> ApproximateMeanFunctionParametersMock:
-        return ApproximateMeanFunctionParametersMock()
+    ) -> MockStochasticVariationalMeanParameter:
+        return MockStochasticVariationalMeanParameter()
 
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def initialise_random_parameters(
         self,
         key: PRNGKey,
-    ) -> ApproximateMeanFunctionParametersMock:
-        return ApproximateMeanFunctionParametersMock()
+    ) -> MockStochasticVariationalMeanParameter:
+        return MockStochasticVariationalMeanParameter()
 
     def _predict(
         self,
         x: jnp.ndarray,
-        parameters: ApproximateMeanFunctionParametersMock = None,
+        parameters: MockStochasticVariationalMeanParameter = None,
     ) -> jnp.ndarray:
         return jnp.ones((x.shape[0]))

@@ -76,7 +76,9 @@ class StochasticVariationalKernel(ApproximateBaseKernel):
             is_diagonal_regularisation_absolute_scale
         )
         self.reference_gram_inducing = self.reference_kernel.calculate_gram(
-            x=inducing_points
+            parameters=reference_kernel_parameters,
+            x1=inducing_points,
+            x2=inducing_points,
         )
         self.reference_gram_inducing_cholesky_decomposition_and_lower = cho_factor(
             add_diagonal_regulariser(
@@ -86,7 +88,9 @@ class StochasticVariationalKernel(ApproximateBaseKernel):
             )
         )
         self.gram_inducing_train = self.reference_kernel.calculate_gram(
-            x=inducing_points, y=training_points
+            parameters=reference_kernel_parameters,
+            x1=inducing_points,
+            x2=training_points,
         )
 
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))

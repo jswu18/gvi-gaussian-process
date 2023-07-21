@@ -1,4 +1,4 @@
-from typing import Any, Dict, Literal, Union
+from typing import Any, Callable, Dict, Literal, Union
 
 import jax.numpy as jnp
 import pydantic
@@ -18,8 +18,13 @@ class ARDKernelParameters(StandardKernelBaseParameters):
 class ARDKernel(StandardKernelBase):
     Parameters = ARDKernelParameters
 
-    def __init__(self, number_of_dimensions: int):
+    def __init__(
+        self,
+        number_of_dimensions: int,
+        preprocess_function: Callable[[jnp.ndarray], jnp.ndarray] = None,
+    ):
         self.number_of_dimensions = number_of_dimensions
+        super().__init__(preprocess_function=preprocess_function)
 
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def generate_parameters(

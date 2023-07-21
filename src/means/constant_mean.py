@@ -61,10 +61,7 @@ class ConstantMean(MeanBase):
             parameters: parameters of the mean function
             x: design matrix of shape (n, d)
 
-        Returns: a constant vector of shape (n,) if k is one or (n, k)
+        Returns: a constant vector of shape (n, k)
 
         """
-        if isinstance(parameters.constant, jnp.ndarray):
-            return jnp.tile(parameters.constant, x.shape[0]).reshape(x.shape[0], -1).T
-        else:
-            return parameters.constant * jnp.ones((x.shape[0],))
+        return jnp.tile(parameters.constant, x.shape[0]).reshape(x.shape[0], -1)
