@@ -5,13 +5,12 @@ import jax.scipy as jsp
 from scipy.special import roots_hermite
 
 from src.distributions import Multinomial
-from src.gaussian_processes.base.base import GaussianProcessBase
+from src.gps.base.base import GPBase, GPBaseParameters
 from src.kernels.base import KernelBase
 from src.means.base import MeanBase
-from src.parameters.gaussian_processes.base import GaussianProcessBaseParameters
 
 
-class GaussianProcessClassificationBase(ABC, GaussianProcessBase):
+class GPClassificationBase(ABC, GPBase):
     def __init__(
         self,
         mean: MeanBase,
@@ -26,7 +25,7 @@ class GaussianProcessClassificationBase(ABC, GaussianProcessBase):
         super().__init__(mean=mean, kernel=kernel)
 
     def _predict_probability(
-        self, parameters: GaussianProcessBaseParameters, x: jnp.ndarray
+        self, parameters: GPBaseParameters, x: jnp.ndarray
     ) -> Multinomial:
         gaussian_distribution = self._calculate_prediction_distribution(
             parameters=parameters, x=x, full_coviarance=False
