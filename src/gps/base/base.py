@@ -17,18 +17,18 @@ from src.utils.jit_compiler import JitCompiler
 PRNGKey = Any  # pylint: disable=invalid-name
 
 
-class GaussianProcessBaseParameters(ModuleParameters, ABC):
+class GPBaseParameters(ModuleParameters, ABC):
     log_observation_noise: JaxFloatType
     mean: MeanBaseParameters
     kernel: KernelBaseParameters
 
 
-class GaussianProcessBase(Module, ABC):
+class GPBase(Module, ABC):
     """
     A Gaussian measure defined with respect to a mean function and a kernel.
     """
 
-    Parameters = GaussianProcessBaseParameters
+    Parameters = GPBaseParameters
 
     def __init__(
         self,
@@ -45,11 +45,12 @@ class GaussianProcessBase(Module, ABC):
         self.mean = mean
         self.kernel = kernel
         self._jit_compiled_predict_probability = JitCompiler(self._predict_probability)
+        super().__init__(preprocess_function=None)
 
     @abstractmethod
     def _calculate_prediction_distribution(
         self,
-        parameters: GaussianProcessBaseParameters,
+        parameters: GPBaseParameters,
         x: jnp.ndarray,
         full_covariance: bool,
     ) -> Gaussian:
@@ -57,14 +58,14 @@ class GaussianProcessBase(Module, ABC):
 
     @abstractmethod
     def _predict_probability(
-        self, parameters: GaussianProcessBaseParameters, x: jnp.ndarray
+        self, parameters: GPBaseParameters, x: jnp.ndarray
     ) -> Distribution:
         raise NotImplementedError
 
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def predict_probability(
         self,
-        parameters: Union[Dict, FrozenDict, GaussianProcessBaseParameters],
+        parameters: Union[Dict, FrozenDict, GPBaseParameters],
         x: jnp.ndarray,
     ) -> Distribution:
         if not isinstance(parameters, self.Parameters):
@@ -75,7 +76,7 @@ class GaussianProcessBase(Module, ABC):
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def calculate_prior_distribution(
         self,
-        parameters: Union[Dict, FrozenDict, GaussianProcessBaseParameters],
+        parameters: Union[Dict, FrozenDict, GPBaseParameters],
         x: jnp.ndarray,
         full_covariance: bool = True,
     ) -> Gaussian:
@@ -109,7 +110,7 @@ class GaussianProcessBase(Module, ABC):
 
     def _calculate_posterior_distribution(
         self,
-        parameters: GaussianProcessBaseParameters,
+        parameters: GPBaseParameters,
         x_train: jnp.ndarray,
         y_train: jnp.ndarray,
         x: jnp.ndarray,
@@ -167,7 +168,7 @@ class GaussianProcessBase(Module, ABC):
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def calculate_posterior_distribution(
         self,
-        parameters: Union[Dict, FrozenDict, GaussianProcessBaseParameters],
+        parameters: Union[Dict, FrozenDict, GPBaseParameters],
         x_train: jnp.ndarray,
         y_train: jnp.ndarray,
         x: jnp.ndarray,

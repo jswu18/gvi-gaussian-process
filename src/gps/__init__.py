@@ -1,15 +1,11 @@
-from .approximate_gaussian_process_classification import (
-    ApproximateGaussianProcessClassification,
-)
-from .approximate_gaussian_process_regression import (
-    ApproximateGaussianProcessRegression,
-)
-from .gaussian_process_classification import GaussianProcessClassification
-from .gaussian_process_regression import GaussianProcessRegression
+from src.gps.approximate_gp_classification import ApproximateGPClassification
+from src.gps.approximate_gp_regression import ApproximateGPRegression
+from src.gps.gp_classification import GPClassification
+from src.gps.gp_regression import GPRegression
 
 __all__ = [
-    "ApproximateGaussianProcessClassification",
-    "ApproximateGaussianProcessRegression",
-    "GaussianProcessClassification",
-    "GaussianProcessRegression",
+    "ApproximateGPClassification",
+    "ApproximateGPRegression",
+    "GPClassification",
+    "GPRegression",
 ]
