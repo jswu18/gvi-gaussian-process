@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Union
+from typing import Any, Callable, Dict, Union
 
 import pydantic
 from flax.core.frozen_dict import FrozenDict
@@ -16,6 +16,11 @@ class MeanBaseParameters(ModuleParameters, ABC):
 
 class MeanBase(Module, ABC):
     Parameters = MeanBaseParameters
+
+    def __init__(
+        self, preprocess_function: Callable[[jnp.ndarray], jnp.ndarray] = None
+    ):
+        super().__init__(preprocess_function=preprocess_function)
 
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     @abstractmethod
@@ -50,8 +55,7 @@ class MeanBase(Module, ABC):
         """
         raise NotImplementedError
 
-    @staticmethod
-    def preprocess_input(x: jnp.ndarray) -> jnp.ndarray:
+    def preprocess_input(self, x: jnp.ndarray) -> jnp.ndarray:
         """
         Preprocesses the inputs of the kernel function.
             - n is the number of points in x
@@ -60,7 +64,7 @@ class MeanBase(Module, ABC):
         Args:
             x: design matrix of shape (n, d)
         """
-        return jnp.atleast_2d(x)
+        return jnp.atleast_2d(self.preprocess_function(x))
 
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def predict(self, parameters: MeanBaseParameters, x: jnp.ndarray) -> jnp.ndarray:

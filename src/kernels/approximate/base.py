@@ -1,5 +1,7 @@
 from abc import ABC
-from typing import Any
+from typing import Any, Callable
+
+import jax.numpy as jnp
 
 from src.kernels.base import KernelBase, KernelBaseParameters
 
@@ -21,6 +23,7 @@ class ApproximateBaseKernel(KernelBase, ABC):
         self,
         reference_kernel_parameters: KernelBaseParameters,
         reference_kernel: KernelBase,
+        preprocess_function: Callable[[jnp.ndarray], jnp.ndarray] = None,
     ):
         """
         Defining the kernel with respect to a reference Gaussian measure.
@@ -31,3 +34,4 @@ class ApproximateBaseKernel(KernelBase, ABC):
         """
         self.reference_kernel = reference_kernel
         self.reference_kernel_parameters = reference_kernel_parameters
+        super().__init__(preprocess_function=preprocess_function)

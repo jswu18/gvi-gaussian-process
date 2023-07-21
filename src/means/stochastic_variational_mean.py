@@ -1,4 +1,4 @@
-from typing import Any, Dict, Literal, Union
+from typing import Any, Callable, Dict, Literal, Union
 
 import pydantic
 from flax.core.frozen_dict import FrozenDict
@@ -25,6 +25,7 @@ class StochasticVariationalMean(MeanBase):
         reference_kernel_parameters: KernelBaseParameters,
         reference_kernel: KernelBase,
         inducing_points: jnp.ndarray,
+        preprocess_function: Callable[[jnp.ndarray], jnp.ndarray] = None,
     ):
         """
         Defining the reference Gaussian measure and the reference mean function.
@@ -38,6 +39,7 @@ class StochasticVariationalMean(MeanBase):
         self.reference_kernel_parameters = reference_kernel_parameters
         self.reference_kernel = reference_kernel
         self.inducing_points = inducing_points
+        super().__init__(preprocess_function=preprocess_function)
 
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def generate_parameters(

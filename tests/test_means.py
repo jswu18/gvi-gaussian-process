@@ -40,6 +40,14 @@ config.update("jax_enable_x64", True)
             ),
             jnp.ones((2, 5)),
         ],
+        [
+            ConstantMean(preprocess_function=lambda x: x.reshape(x.shape[0], -1)),
+            {
+                "constant": jnp.ones((5,)),
+            },
+            jnp.ones((2, 3, 3, 1)),
+            jnp.ones((2, 5)),
+        ],
     ],
 )
 def test_constant_mean(
@@ -67,7 +75,7 @@ def test_constant_mean(
         ],
     ],
 )
-def test_nn_mean_functions(
+def test_nn_mean(
     x: jnp.ndarray,
     mean: float,
 ):
@@ -96,7 +104,7 @@ def test_nn_mean_functions(
         ],
     ],
 )
-def test_svgp_mean_functions(
+def test_svgp_mean(
     parameters: Dict,
     inducing_points: jnp.ndarray,
     x: jnp.ndarray,

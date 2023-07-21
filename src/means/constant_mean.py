@@ -1,4 +1,4 @@
-from typing import Any, Dict, Literal, Union
+from typing import Any, Callable, Dict, Literal, Union
 
 import pydantic
 from flax.core.frozen_dict import FrozenDict
@@ -16,6 +16,12 @@ class ConstantMeanParameters(MeanBaseParameters):
 
 class ConstantMean(MeanBase):
     Parameters = ConstantMeanParameters
+
+    def __init__(
+        self,
+        preprocess_function: Callable[[jnp.ndarray], jnp.ndarray] = None,
+    ):
+        super().__init__(preprocess_function=preprocess_function)
 
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def generate_parameters(
