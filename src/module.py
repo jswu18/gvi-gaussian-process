@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Type, Union
+from typing import Any, Callable, Dict, Type, Union
 
+import jax.numpy as jnp
 import pydantic
 from flax.core.frozen_dict import FrozenDict
 from pydantic import BaseModel
@@ -17,6 +18,14 @@ class ModuleParameters(BaseModel, ABC):
 
 class Module(ABC):
     Parameters: ModuleParameters = ModuleParameters
+
+    def __init__(
+        self, preprocess_function: Callable[[jnp.ndarray], jnp.ndarray] = None
+    ):
+        if preprocess_function is None:
+            self.preprocess_function = lambda x: x
+        else:
+            self.preprocess_function = preprocess_function
 
     @staticmethod
     def check_parameters(

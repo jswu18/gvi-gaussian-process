@@ -4,36 +4,35 @@ import jax.numpy as jnp
 import pydantic
 from flax.core.frozen_dict import FrozenDict
 
-from src.kernels.approximate_kernels import ApproximateKernel
-from src.kernels.reference_kernels import ReferenceKernel
-from src.parameters.kernels.approximate_kernels import ApproximateKernelParameters
-from src.parameters.kernels.reference_kernels import (
-    KernelParameters as ReferenceKernelParameters,
+from src.kernels.approximate.base import (
+    ApproximateBaseKernel,
+    ApproximateBaseKernelParameters,
 )
+from src.kernels.base import KernelBase, KernelBaseParameters
 
 PRNGKey = Any  # pylint: disable=invalid-name
 
 
 def calculate_reference_gram_mock(
-    x: jnp.ndarray,
-    y: jnp.ndarray = None,
+    x1: jnp.ndarray,
+    x2: jnp.ndarray = None,
 ) -> jnp.ndarray:
-    return jnp.ones((x.shape[0], y.shape[0]))
+    return jnp.ones((x1.shape[0], x2.shape[0]))
 
 
 def calculate_reference_gram_eye_mock(
-    x: jnp.ndarray,
-    y: jnp.ndarray = None,
+    x1: jnp.ndarray,
+    x2: jnp.ndarray = None,
 ) -> jnp.ndarray:
-    gram = jnp.eye(max(x.shape[0], y.shape[0]))
-    return gram[: x.shape[0], : y.shape[0]]
+    gram = jnp.eye(max(x1.shape[0], x2.shape[0]))
+    return gram[: x1.shape[0], : x2.shape[0]]
 
 
-class ReferenceKernelParametersMock(ReferenceKernelParameters):
+class MockKernelParameters(KernelBaseParameters):
     pass
 
 
-class ReferenceKernelMock(ReferenceKernel):
+class MockKernel(KernelBase):
     sigma_matrix = jnp.ones((5, 5))
 
     def __init__(self, kernel_func: Callable = calculate_reference_gram_mock):
@@ -43,53 +42,53 @@ class ReferenceKernelMock(ReferenceKernel):
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def generate_parameters(
         self, parameters: Union[Dict, FrozenDict]
-    ) -> ReferenceKernelParametersMock:
-        return ReferenceKernelParametersMock()
+    ) -> MockKernelParameters:
+        return MockKernelParameters()
 
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def initialise_random_parameters(
         self,
         key: PRNGKey,
-    ) -> ReferenceKernelParametersMock:
-        return ReferenceKernelParametersMock()
+    ) -> MockKernelParameters:
+        return MockKernelParameters()
 
     def _calculate_gram(
         self,
-        x: jnp.ndarray,
-        y: jnp.ndarray = None,
-        parameters: ReferenceKernelParametersMock = None,
+        x1: jnp.ndarray,
+        x2: jnp.ndarray = None,
+        parameters: MockKernelParameters = None,
         full_cov: bool = True,
     ) -> jnp.ndarray:
-        gram = self.kernel_func(x, y)
+        gram = self.kernel_func(x1, x2)
         return gram if full_cov else jnp.diagonal(gram)
 
 
-class ApproximateKernelParametersMock(ApproximateKernelParameters):
+class MockApproximateKernelParameters(ApproximateBaseKernelParameters):
     pass
 
 
-class ApproximateKernelMock(ApproximateKernel):
+class MockApproximateKernel(ApproximateBaseKernel):
     sigma_matrix = jnp.ones((5, 5))
 
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def generate_parameters(
         self, parameters: Union[Dict, FrozenDict]
-    ) -> ApproximateKernelParametersMock:
-        return ApproximateKernelParametersMock()
+    ) -> MockApproximateKernelParameters:
+        return MockApproximateKernelParameters()
 
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def initialise_random_parameters(
         self,
         key: PRNGKey,
-    ) -> ApproximateKernelParametersMock:
-        return ApproximateKernelParametersMock()
+    ) -> MockApproximateKernelParameters:
+        return MockApproximateKernelParameters()
 
+    @staticmethod
     def _calculate_gram(
-        self,
-        x: jnp.ndarray,
-        y: jnp.ndarray = None,
-        parameters: ApproximateKernelParametersMock = None,
+        x1: jnp.ndarray,
+        x2: jnp.ndarray = None,
+        parameters: MockApproximateKernelParameters = None,
         full_cov: bool = True,
     ) -> jnp.ndarray:
-        gram = jnp.ones((x.shape[0], y.shape[0]))
+        gram = jnp.ones((x1.shape[0], x2.shape[0]))
         return gram if full_cov else jnp.diagonal(gram)

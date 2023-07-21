@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Tuple
+from typing import Callable, Tuple
 
 import jax
 import jax.numpy as jnp
@@ -16,10 +16,14 @@ class KernelBaseParameters(ModuleParameters):
 class KernelBase(Module, ABC):
     Parameters = KernelBaseParameters
 
-    @staticmethod
+    def __init__(
+        self, preprocess_function: Callable[[jnp.ndarray], jnp.ndarray] = None
+    ):
+        super().__init__(preprocess_function=preprocess_function)
+
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def preprocess_inputs(
-        x: jnp.ndarray, y: jnp.ndarray = None
+        self, x: jnp.ndarray, y: jnp.ndarray = None
     ) -> Tuple[jnp.ndarray, jnp.ndarray]:
         """
         Preprocesses the inputs of the kernel function.
@@ -32,7 +36,10 @@ class KernelBase(Module, ABC):
             y: design matrix of shape (m, d)
         """
         y = x if y is None else y
-        return jnp.atleast_2d(x), jnp.atleast_2d(y)
+        return (
+            jnp.atleast_2d(self.preprocess_function(x)),
+            jnp.atleast_2d(self.preprocess_function(y)),
+        )
 
     @staticmethod
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
