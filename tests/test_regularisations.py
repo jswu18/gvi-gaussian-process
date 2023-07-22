@@ -11,7 +11,7 @@ from src.gps import (
     GPRegression,
 )
 from src.kernels import MultiOutputKernel, MultiOutputKernelParameters
-from src.regularisation import WassersteinRegularisation
+from src.regularisations import WassersteinRegularisation
 
 config.update("jax_enable_x64", True)
 
