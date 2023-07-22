@@ -19,9 +19,13 @@ class ConstantMean(MeanBase):
 
     def __init__(
         self,
+        number_output_dimensions: int = 1,
         preprocess_function: Callable[[jnp.ndarray], jnp.ndarray] = None,
     ):
-        super().__init__(preprocess_function=preprocess_function)
+        super().__init__(
+            number_output_dimensions=number_output_dimensions,
+            preprocess_function=preprocess_function,
+        )
 
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def generate_parameters(
@@ -36,6 +40,8 @@ class ConstantMean(MeanBase):
         Returns: A Pydantic model of the parameters for ConstantMean Functions.
 
         """
+        if self.number_output_dimensions > 1:
+            assert parameters["constant"].shape[0] == self.number_output_dimensions
         return ConstantMean.Parameters(**parameters)
 
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
@@ -70,4 +76,4 @@ class ConstantMean(MeanBase):
         Returns: a constant vector of shape (n, k)
 
         """
-        return jnp.tile(parameters.constant, x.shape[0]).reshape(x.shape[0], -1)
+        return jnp.tile(parameters.constant, x.shape[0])

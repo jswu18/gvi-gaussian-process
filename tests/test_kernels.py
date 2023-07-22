@@ -11,7 +11,7 @@ from mockers.kernels import (
     MockKernelParameters,
     calculate_reference_gram_eye_mock,
 )
-from src.kernels import NNGPKernel
+from src.kernels import MultiOutputKernel, NNGPKernel
 from src.kernels.approximate import StochasticVariationalKernel
 from src.kernels.standard import ARDKernel
 
@@ -161,22 +161,22 @@ def test_missing_ard_kernel_parameter(
 @pytest.mark.parametrize(
     "kernel,parameters,x1,x2,k",
     [
-        # [
-        #     NNGPKernel(
-        #         kernel_function=lambda x, y, *args, **kwargs: jnp.ones(
-        #             (x.shape[0], y.shape[0])
-        #         )
-        #     ),
-        #     None,
-        #     jnp.array([[1.0, 2.0, 3.0]]),
-        #     jnp.array(
-        #         [
-        #             [1.0, 2.0, 3.0],
-        #             [1.5, 2.5, 3.5],
-        #         ]
-        #     ),
-        #     jnp.ones((1, 2)),
-        # ],
+        [
+            NNGPKernel(
+                kernel_function=lambda x, y, *args, **kwargs: jnp.ones(
+                    (x.shape[0], y.shape[0])
+                )
+            ),
+            None,
+            jnp.array([[1.0, 2.0, 3.0]]),
+            jnp.array(
+                [
+                    [1.0, 2.0, 3.0],
+                    [1.5, 2.5, 3.5],
+                ]
+            ),
+            jnp.ones((1, 2)),
+        ],
         [
             NNGPKernel(
                 kernel_function=lambda x, y, *args, **kwargs: jnp.ones(
@@ -207,6 +207,96 @@ def test_nngp_kernel_grams(
         parameters = {}
     assert jnp.array_equal(
         kernel.calculate_gram(kernel.generate_parameters(parameters), x1=x1, x2=x2), k
+    )
+
+
+@pytest.mark.parametrize(
+    "kernel,parameters,x1,x2,k",
+    [
+        [
+            MultiOutputKernel(
+                kernels=[
+                    MockKernel(),
+                    MockKernel(),
+                    MockKernel(),
+                ]
+            ),
+            {
+                "kernels": [
+                    MockKernelParameters(),
+                    MockKernelParameters(),
+                    MockKernelParameters(),
+                ]
+            },
+            jnp.array([[1.0, 2.0, 3.0]]),
+            jnp.array(
+                [
+                    [1.0, 2.0, 3.0],
+                    [1.5, 2.5, 3.5],
+                ]
+            ),
+            jnp.ones((3, 1, 2)),
+        ],
+    ],
+)
+def test_multi_output_kernel_grams(
+    kernel: NNGPKernel,
+    parameters: Dict,
+    x1: jnp.ndarray,
+    x2: jnp.ndarray,
+    k: float,
+):
+    if parameters is None:
+        parameters = {}
+    assert jnp.array_equal(
+        kernel.calculate_gram(kernel.generate_parameters(parameters), x1=x1, x2=x2), k
+    )
+
+
+@pytest.mark.parametrize(
+    "kernel,parameters,x,k",
+    [
+        [
+            MultiOutputKernel(
+                kernels=[
+                    MockKernel(),
+                    MockKernel(),
+                    MockKernel(),
+                ]
+            ),
+            {
+                "kernels": [
+                    MockKernelParameters(),
+                    MockKernelParameters(),
+                    MockKernelParameters(),
+                ]
+            },
+            jnp.array(
+                [
+                    [1.0, 2.0, 3.0],
+                    [1.5, 2.5, 3.5],
+                ]
+            ),
+            jnp.ones((3, 2)),
+        ],
+    ],
+)
+def test_multi_output_kernel_diagonal_grams(
+    kernel: NNGPKernel,
+    parameters: Dict,
+    x: jnp.ndarray,
+    k: float,
+):
+    if parameters is None:
+        parameters = {}
+    assert jnp.array_equal(
+        kernel.calculate_gram(
+            kernel.generate_parameters(parameters),
+            x1=x,
+            x2=x,
+            full_covariance=False,
+        ),
+        k,
     )
 
 

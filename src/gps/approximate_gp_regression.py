@@ -33,7 +33,16 @@ class ApproximateGPRegression(ApproximateGPBase, GPRegressionBase):
             mean: the mean function of the Gaussian process
             kernel: the kernel of the Gaussian process
         """
-        super().__init__(mean=mean, kernel=kernel)
+        ApproximateGPBase.__init__(
+            self,
+            mean=mean,
+            kernel=kernel,
+        )
+        GPRegressionBase.__init__(
+            self,
+            mean=mean,
+            kernel=kernel,
+        )
 
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def generate_parameters(

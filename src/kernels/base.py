@@ -17,8 +17,11 @@ class KernelBase(Module, ABC):
     Parameters = KernelBaseParameters
 
     def __init__(
-        self, preprocess_function: Callable[[jnp.ndarray], jnp.ndarray] = None
+        self,
+        number_output_dimensions: int = 1,
+        preprocess_function: Callable[[jnp.ndarray], jnp.ndarray] = None,
     ):
+        self.number_output_dimensions = number_output_dimensions
         super().__init__(preprocess_function=preprocess_function)
 
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
@@ -112,10 +115,15 @@ class KernelBase(Module, ABC):
                 x1.shape[0] == x2.shape[0],
                 f"{x1.shape[0]=} must be equal to {x2.shape[0]=} for {full_covariance=}",
             )
-            return jax.vmap(
-                lambda x1_, x2_: self._calculate_gram(
-                    parameters=parameters,
-                    x1=x1_,
-                    x2=x2_,
-                )
-            )(x1[:, None, ...], x2[:, None, ...]).reshape(-1)
+            return (
+                jax.vmap(
+                    lambda x1_, x2_: self._calculate_gram(
+                        parameters=parameters,
+                        x1=x1_,
+                        x2=x2_,
+                    )
+                )(x1[:, None, ...], x2[:, None, ...])
+                .squeeze(axis=-1)
+                .squeeze(axis=-1)
+                .T
+            )

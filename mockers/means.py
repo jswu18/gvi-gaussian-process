@@ -1,4 +1,4 @@
-from typing import Any, Dict, Union
+from typing import Any, Callable, Dict, Union
 
 import flax
 import jax.numpy as jnp
@@ -19,6 +19,18 @@ class MockMeanParameters(MeanBaseParameters):
 
 
 class MockMean(MeanBase):
+    Parameters = MockMeanParameters
+
+    def __init__(
+        self,
+        number_output_dimensions: int = 1,
+        preprocess_function: Callable[[jnp.ndarray], jnp.ndarray] = None,
+    ):
+        super().__init__(
+            number_output_dimensions=number_output_dimensions,
+            preprocess_function=preprocess_function,
+        )
+
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def generate_parameters(
         self, parameters: Union[Dict, FrozenDict]
@@ -37,7 +49,7 @@ class MockMean(MeanBase):
         x: jnp.ndarray,
         parameters: MockMeanParameters = None,
     ) -> jnp.ndarray:
-        return jnp.ones((x.shape[0]))
+        return jnp.ones((x.shape[0], self.number_output_dimensions))
 
 
 class MockNeuralNetwork(flax.linen.Module):

@@ -24,6 +24,7 @@ class NeuralNetworkMean(MeanBase):
     def __init__(
         self,
         neural_network: flax.linen.Module,
+        number_output_dimensions: int = 1,
         preprocess_function: Callable[[jnp.ndarray], jnp.ndarray] = None,
     ):
         """
@@ -35,7 +36,10 @@ class NeuralNetworkMean(MeanBase):
             neural_network: a flax linen module which takes in a design matrix of shape (n, d) and outputs a vector of shape (n, 1)
         """
         self.neural_network = neural_network
-        super().__init__(preprocess_function=preprocess_function)
+        super().__init__(
+            number_output_dimensions=number_output_dimensions,
+            preprocess_function=preprocess_function,
+        )
 
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def generate_parameters(

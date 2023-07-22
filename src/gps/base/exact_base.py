@@ -1,5 +1,5 @@
 from abc import ABC
-from typing import Any
+from typing import Any, Tuple
 
 import jax.numpy as jnp
 
@@ -17,15 +17,29 @@ class ExactGPBase(GPBase, ABC):
     ):
         self.x = x
         self.y = y
-        super().__init__(mean=mean, kernel=kernel)
+        GPBase.__init__(self, mean=mean, kernel=kernel)
 
-    def _calculate_prediction_distribution(
+    def _calculate_prediction_gaussian(
         self,
         parameters: GPBaseParameters,
         x: jnp.ndarray,
         full_covariance: bool,
-    ) -> Gaussian:
-        return self.calculate_posterior_distribution(
+    ) -> Tuple[jnp.ndarray, jnp.ndarray]:
+        return self.calculate_posterior(
+            parameters=parameters,
+            x_train=self.x,
+            y_train=self.y,
+            x=x,
+            full_covariance=full_covariance,
+        )
+
+    def _calculate_prediction_gaussian_covariance(
+        self,
+        parameters: GPBaseParameters,
+        x: jnp.ndarray,
+        full_covariance: bool,
+    ) -> jnp.ndarray:
+        return self.calculate_posterior_covariance(
             parameters=parameters,
             x_train=self.x,
             y_train=self.y,

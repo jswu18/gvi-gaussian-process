@@ -1,5 +1,6 @@
-from typing import Any, Callable, Dict, Union
+from typing import Any, Dict, List, Union
 
+import jax
 import jax.numpy as jnp
 import pydantic
 from flax.core.frozen_dict import FrozenDict
@@ -9,32 +10,25 @@ from src.kernels.base import KernelBase, KernelBaseParameters
 PRNGKey = Any  # pylint: disable=invalid-name
 
 
-class NNGPKernelParameters(KernelBaseParameters):
-    pass
+class MultiOutputKernelParameters(KernelBaseParameters):
+    kernels: List[KernelBaseParameters]
 
 
-class NNGPKernel(KernelBase):
-    """
-    A wrapper class for the kernel function provided by the NTK package.
-    """
+class MultiOutputKernel(KernelBase):
+    Parameters = MultiOutputKernelParameters
 
-    Parameters = NNGPKernelParameters
-
-    def __init__(self, kernel_function: Callable, preprocess_function: Callable = None):
-        """
-        Define a Neural Network Gaussian Process Kernel using the kernel function provided by the NTK package.
-
-        Args:
-            kernel_function: The kernel function provided by the NTK package.
-            preprocess_function: preprocess inputs before passing to kernel function
-        """
-        self.kernel_function = kernel_function
-        super().__init__(preprocess_function=preprocess_function)
+    def __init__(self, kernels: List[KernelBase]):
+        assert all(kernel.number_output_dimensions == 1 for kernel in kernels)
+        self.kernels = kernels
+        super().__init__(
+            number_output_dimensions=len(kernels),
+            preprocess_function=None,
+        )
 
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def generate_parameters(
         self, parameters: Union[FrozenDict, Dict]
-    ) -> NNGPKernelParameters:
+    ) -> MultiOutputKernelParameters:
         """
         Generates a Pydantic model of the parameters for Neural Network Gaussian Process Kernel.
 
@@ -44,13 +38,14 @@ class NNGPKernel(KernelBase):
         Returns: A Pydantic model of the parameters for Neural Network Gaussian Process Kernel.
 
         """
-        return NNGPKernel.Parameters(**parameters)
+        assert len(parameters["kernels"]) == self.number_output_dimensions
+        return MultiOutputKernel.Parameters(**parameters)
 
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def initialise_random_parameters(
         self,
         key: PRNGKey,
-    ) -> NNGPKernelParameters:
+    ) -> MultiOutputKernelParameters:
         """
         Initialise the parameters of the Neural Network Gaussian Process Kernel using a random key.
 
@@ -64,12 +59,13 @@ class NNGPKernel(KernelBase):
 
     def _calculate_gram(
         self,
-        parameters: NNGPKernelParameters,
+        parameters: MultiOutputKernelParameters,
         x1: jnp.ndarray,
         x2: jnp.ndarray,
     ) -> jnp.ndarray:
         """
-        Computing the Gram matrix using the NNGP kernel function. If y is None, the Gram matrix is computed for x and x.
+        Computes the prior gram matrix of multiple kernels.
+            - k is the number of kernels
             - m1 is the number of points in x1
             - m2 is the number of points in x2
             - d is the number of dimensions
@@ -79,11 +75,15 @@ class NNGPKernel(KernelBase):
             x1: design matrix of shape (m1, d)
             x2: design matrix of shape (m2, d)
 
-        Returns: the kernel gram matrix of shape (m_1, m_2)
-
+        Returns: the kernel a stacked gram matrix of shape (k, m_1, m_2)
         """
-        return self.kernel_function(
-            x1,
-            x2,
-            "nngp",
+        return jnp.array(
+            [
+                kernel_.calculate_gram(
+                    parameters=parameters_,
+                    x1=x1,
+                    x2=x2,
+                )
+                for kernel_, parameters_ in zip(self.kernels, parameters.kernels)
+            ]
         )

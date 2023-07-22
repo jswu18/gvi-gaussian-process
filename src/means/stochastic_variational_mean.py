@@ -25,6 +25,7 @@ class StochasticVariationalMean(MeanBase):
         reference_kernel_parameters: KernelBaseParameters,
         reference_kernel: KernelBase,
         inducing_points: jnp.ndarray,
+        number_output_dimensions: int = 1,
         preprocess_function: Callable[[jnp.ndarray], jnp.ndarray] = None,
     ):
         """
@@ -39,7 +40,10 @@ class StochasticVariationalMean(MeanBase):
         self.reference_kernel_parameters = reference_kernel_parameters
         self.reference_kernel = reference_kernel
         self.inducing_points = inducing_points
-        super().__init__(preprocess_function=preprocess_function)
+        super().__init__(
+            number_output_dimensions=number_output_dimensions,
+            preprocess_function=preprocess_function,
+        )
 
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def generate_parameters(
@@ -105,4 +109,4 @@ class StochasticVariationalMean(MeanBase):
                 )
                 @ parameters.weights
             ).T
-        ).reshape(-1, 1)
+        )
