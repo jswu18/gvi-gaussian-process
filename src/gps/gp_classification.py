@@ -6,15 +6,18 @@ import pydantic
 from flax.core import FrozenDict
 
 from src.gps.base.base import GPBaseParameters
-from src.gps.base.classification_base import GPClassificationBase
+from src.gps.base.classification_base import (
+    GPClassificationBase,
+    GPClassificationBaseParameters,
+)
 from src.gps.base.exact_base import ExactGPBase
-from src.kernels.base import KernelBase
+from src.kernels.multi_output_kernel import MultiOutputKernel
 from src.means.base import MeanBase
 
 PRNGKey = Any  # pylint: disable=invalid-name
 
 
-class GPClassificationParameters(GPBaseParameters):
+class GPClassificationParameters(GPClassificationBaseParameters):
     pass
 
 
@@ -25,12 +28,12 @@ class GPClassification(ExactGPBase, GPClassificationBase):
     def __init__(
         self,
         mean: MeanBase,
-        kernel: KernelBase,
+        kernel: MultiOutputKernel,
         x: jnp.ndarray,
         y: jnp.ndarray,
-        epsilon: float,
-        hermite_polynomial_order: int,
-    ):
+        epsilon: float = 0.01,
+        hermite_polynomial_order: int = 50,
+    ) -> object:
         """
         Defining the mean function, and the kernel for the Gaussian process.
 
@@ -38,13 +41,15 @@ class GPClassification(ExactGPBase, GPClassificationBase):
             mean: the mean function of the Gaussian process
             kernel: the kernel of the Gaussian process
         """
-        super().__init__(
+        ExactGPBase.__init__(
+            self,
             mean=mean,
             kernel=kernel,
             x=x,
             y=y,
         )
-        super().__init__(
+        GPClassificationBase.__init__(
+            self,
             mean=mean,
             kernel=kernel,
             epsilon=epsilon,

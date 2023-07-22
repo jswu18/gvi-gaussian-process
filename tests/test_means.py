@@ -5,8 +5,13 @@ from jax import numpy as jnp
 from jax.config import config
 
 from mockers.kernels import MockKernel, MockKernelParameters
-from mockers.mean_functions import MockMean, MockMeanParameters, MockNeuralNetwork
-from src.means import ConstantMean, NeuralNetworkMean, StochasticVariationalMean
+from mockers.means import MockMean, MockMeanParameters, MockNeuralNetwork
+from src.means import (
+    ConstantMean,
+    MultiOutputMean,
+    NeuralNetworkMean,
+    StochasticVariationalMean,
+)
 
 config.update("jax_enable_x64", True)
 
@@ -25,10 +30,12 @@ config.update("jax_enable_x64", True)
                     [1.5, 2.5, 3.5],
                 ]
             ),
-            jnp.zeros((2, 1)),
+            jnp.zeros((2,)),
         ],
         [
-            ConstantMean(),
+            ConstantMean(
+                number_output_dimensions=5,
+            ),
             {
                 "constant": jnp.ones((5,)),
             },
@@ -38,15 +45,18 @@ config.update("jax_enable_x64", True)
                     [1.5, 2.5, 3.5],
                 ]
             ),
-            jnp.ones((2, 5)),
+            jnp.ones((5, 2)),
         ],
         [
-            ConstantMean(preprocess_function=lambda x: x.reshape(x.shape[0], -1)),
+            ConstantMean(
+                number_output_dimensions=5,
+                preprocess_function=lambda x: x.reshape(x.shape[0], -1),
+            ),
             {
                 "constant": jnp.ones((5,)),
             },
             jnp.ones((2, 3, 3, 1)),
-            jnp.ones((2, 5)),
+            jnp.ones((5, 2)),
         ],
     ],
 )
@@ -71,7 +81,7 @@ def test_constant_mean(
                     [1.5, 2.5, 3.5],
                 ]
             ),
-            jnp.ones((2, 1)),
+            jnp.ones((2,)),
         ],
     ],
 )
@@ -100,7 +110,7 @@ def test_nn_mean(
                     [1.5, 2.5, 3.5],
                 ]
             ),
-            4 * jnp.ones((2, 1)),
+            4 * jnp.ones((2,)),
         ],
     ],
 )
@@ -119,5 +129,39 @@ def test_svgp_mean(
     )
     assert jnp.array_equal(
         svgp_mean.predict(parameters=svgp_mean.generate_parameters(parameters), x=x),
+        mean,
+    )
+
+
+@pytest.mark.parametrize(
+    "number_of_outputs,x,mean",
+    [
+        [
+            4,
+            jnp.array(
+                [
+                    [1.0, 2.0, 3.0],
+                    [1.5, 2.5, 3.5],
+                ]
+            ),
+            jnp.ones((4, 2)),
+        ],
+    ],
+)
+def test_multi_output_mean(
+    number_of_outputs: int,
+    x: jnp.ndarray,
+    mean: float,
+):
+    multi_output_mean = MultiOutputMean(
+        means=[MockMean()] * number_of_outputs,
+    )
+    assert jnp.array_equal(
+        multi_output_mean.predict(
+            parameters=multi_output_mean.Parameters(
+                means=[MockMeanParameters()] * number_of_outputs
+            ),
+            x=x,
+        ),
         mean,
     )

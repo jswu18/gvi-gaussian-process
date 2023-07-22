@@ -1,4 +1,5 @@
 from abc import ABC
+from typing import Tuple
 
 import jax.numpy as jnp
 
@@ -16,11 +17,23 @@ class GPRegressionBase(GPBase, ABC):
     ):
         super().__init__(mean=mean, kernel=kernel)
 
+    def _construct_distribution(
+        self,
+        probabilities: Tuple[jnp.ndarray, jnp.ndarray],
+        full_covariance: bool = False,
+    ):
+        mean, covariance = probabilities
+        return Gaussian(
+            mean=mean, covariance=covariance, full_covariance=full_covariance
+        )
+
     def _predict_probability(
-        self, parameters: GPBaseParameters, x: jnp.ndarray,
-    ) -> Gaussian:
-        return self._calculate_prediction_distribution(
+        self,
+        parameters: GPBaseParameters,
+        x: jnp.ndarray,
+    ) -> Tuple[jnp.ndarray, jnp.ndarray]:
+        return self._calculate_prediction_gaussian(
             parameters=parameters,
-               x=x,
-       full_covariance=False,
+            x=x,
+            full_covariance=False,
         )

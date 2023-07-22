@@ -1,21 +1,29 @@
 from abc import ABC
-from dataclasses import dataclass
+from typing import Literal
 
 import jax.numpy as jnp
 
+from src.module import ModuleParameters
+from src.utils.custom_types import JaxArrayType
 
-@dataclass
-class Distribution(ABC):
+
+class Distribution(ModuleParameters, ABC):
     pass
 
 
-@dataclass
 class Gaussian(Distribution):
-    mean: jnp.ndarray
-    covariance: jnp.ndarray
+    mean: JaxArrayType[Literal["float64"]]
+    covariance: JaxArrayType[Literal["float64"]]
     full_covariance: bool = True
 
+    @staticmethod
+    def calculate_log_likelihood(
+        mean: jnp.ndarray,
+        covariance_diagonal: jnp.ndarray,
+        y: jnp.ndarray,
+    ) -> jnp.float64:
+        return -0.5 * jnp.sum(jnp.multiply(covariance_diagonal, jnp.square(y - mean)))
 
-@dataclass
+
 class Multinomial(Distribution):
-    probabilities: jnp.ndarray
+    probabilities: JaxArrayType[Literal["float64"]]

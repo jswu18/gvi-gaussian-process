@@ -72,6 +72,11 @@ class StochasticVariationalKernel(ApproximateBaseKernel):
         self.is_diagonal_regularisation_absolute_scale = (
             is_diagonal_regularisation_absolute_scale
         )
+        super().__init__(
+            reference_kernel_parameters=reference_kernel_parameters,
+            reference_kernel=reference_kernel,
+            preprocess_function=preprocess_function,
+        )
         self.reference_gram_inducing = self.reference_kernel.calculate_gram(
             parameters=reference_kernel_parameters,
             x1=inducing_points,
@@ -88,11 +93,6 @@ class StochasticVariationalKernel(ApproximateBaseKernel):
             parameters=reference_kernel_parameters,
             x1=inducing_points,
             x2=training_points,
-        )
-        super().__init__(
-            reference_kernel_parameters=reference_kernel_parameters,
-            reference_kernel=reference_kernel,
-            preprocess_function=preprocess_function,
         )
 
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))

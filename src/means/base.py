@@ -18,8 +18,11 @@ class MeanBase(Module, ABC):
     Parameters = MeanBaseParameters
 
     def __init__(
-        self, preprocess_function: Callable[[jnp.ndarray], jnp.ndarray] = None
+        self,
+        number_output_dimensions: int = 1,
+        preprocess_function: Callable[[jnp.ndarray], jnp.ndarray] = None,
     ):
+        self.number_output_dimensions = number_output_dimensions
         super().__init__(preprocess_function=preprocess_function)
 
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
@@ -78,9 +81,14 @@ class MeanBase(Module, ABC):
             parameters: parameters of the mean function
             x: design matrix of shape (n, d)
 
-        Returns: the mean function evaluated at the points in x of shape (n, k)
+        Returns: the mean function evaluated at the points in x of shape (k, n)
 
         """
         x = self.preprocess_input(x)
         Module.check_parameters(parameters, self.Parameters)
-        return self._predict(parameters=parameters, x=x)
+        if self.number_output_dimensions == 1:
+            return self._predict(parameters=parameters, x=x).reshape(-1)
+        else:
+            return self._predict(parameters=parameters, x=x).reshape(
+                self.number_output_dimensions, -1
+            )

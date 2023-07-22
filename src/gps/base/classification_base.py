@@ -1,46 +1,69 @@
 from abc import ABC
+from typing import Dict, Union
 
+import jax
 import jax.numpy as jnp
 import jax.scipy as jsp
+from flax.core.frozen_dict import FrozenDict
 from scipy.special import roots_hermite
 
 from src.distributions import Multinomial
 from src.gps.base.base import GPBase, GPBaseParameters
-from src.kernels.base import KernelBase
+from src.kernels.multi_output_kernel import (
+    MultiOutputKernel,
+    MultiOutputKernelParameters,
+)
 from src.means.base import MeanBase
 
 
+class GPClassificationBaseParameters(GPBaseParameters):
+    kernel: MultiOutputKernelParameters
+
+
 class GPClassificationBase(GPBase, ABC):
+
+    Parameters = GPClassificationBaseParameters
+
     def __init__(
         self,
         mean: MeanBase,
-        kernel: KernelBase,
+        kernel: MultiOutputKernel,
         epsilon: float,
         hermite_polynomial_order: int,
     ):
+        assert mean.number_output_dimensions > 1
+        assert mean.number_output_dimensions == kernel.number_output_dimensions
+        self.number_output_dimensions = mean.number_output_dimensions
         self.epsilon = epsilon
         self._hermite_roots, self._hermite_weights = roots_hermite(
             hermite_polynomial_order
         )
-        super().__init__(mean=mean, kernel=kernel)
+        GPBase.__init__(self, mean=mean, kernel=kernel)
+
+    def _construct_distribution(self, probabilities: jnp.ndarray):
+        return Multinomial(probabilities=probabilities)
 
     def _predict_probability(
-        self, parameters: GPBaseParameters, x: jnp.ndarray
-    ) -> Multinomial:
-        gaussian_distribution = self._calculate_prediction_distribution(
-            parameters=parameters, x=x, full_covariance=False
+        self,
+        parameters: Union[Dict, FrozenDict, GPClassificationBaseParameters],
+        x: jnp.ndarray,
+    ) -> jnp.ndarray:
+        mean, covariance_diagonals = self._calculate_prediction_gaussian(
+            parameters=parameters,
+            x=x,
+            full_covariance=False,
         )
         s_matrix = self._calculate_s_matrix(
-            means=gaussian_distribution.mean,
-            covariance_diagonals=gaussian_distribution.covariance,
+            means=mean,
+            covariance_diagonals=covariance_diagonals,
             hermite_weights=self._hermite_weights,
             hermite_roots=self._hermite_roots,
         )
         # (n, k)
         probabilities = (1 - self.epsilon) * s_matrix + (
-            self.epsilon / (self.number_of_labels - 1)
+            self.epsilon / (self.number_output_dimensions - 1)
         ) * (1 - s_matrix)
-        return Multinomial(probabilities=probabilities)
+        return probabilities
 
     @staticmethod
     def _calculate_s_matrix(
@@ -98,9 +121,7 @@ class GPClassificationBase(GPBase, ABC):
             ],
         )
 
-        log_cdf_values = jnp.log(
-            jsp.scipy.stats.norm.cdf(cdf_input)
-        )  # (h, k_j, k_l, n)
+        log_cdf_values = jnp.log(jsp.stats.norm.cdf(cdf_input))  # (h, k_j, k_l, n)
 
         # (h, k, n)
         hermite_components = jnp.multiply(
