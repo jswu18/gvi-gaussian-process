@@ -5,7 +5,7 @@ import jax.numpy as jnp
 import pydantic
 
 from src.gps.base.base import GPBase, GPBaseParameters
-from src.regularisation.base import RegularisationBase
+from src.regularisations.base import RegularisationBase
 from src.utils.matrix_operations import (
     add_diagonal_regulariser,
     compute_covariance_eigenvalues,
