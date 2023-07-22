@@ -70,9 +70,8 @@ Although model mis-specification occurs in traditional Bayesian inference, techn
 \subsection{The Normaliser is Intractability}
 The use of conjugate priors is the only case when there exists closed form expressions for $\int_{\Theta} p(x_{1:N}|\theta) d \pi(\theta)$ to ensure tractable evaluation of $q_B^*(\theta)$. For over-parameterised black-box models, $q_B^*(\theta)$ will need to be approximated either through sampling approximations of the normaliser or variational approximations of $q_B^*(\theta)$.
 \newline
-\\Samplers such as Metropolis Hastings or Markov Chain Monte Carlo only have convergence guarantees in the infinite limit. Acheiving this limit would require access to infinite computational resources and time, clearly impractical. 
-\jk{Well, you don't literally need infinite computation---usually, large enough $N$ is fine (and that's why MCMC/HMC are popular if your models are moderately/small sized)}
-
+\\Samplers such as Metropolis Hastings or Markov Chain Monte Carlo only have convergence guarantees in the infinite limit. For small/moderately sized models, large enough samples will practically converge to the desired posterior. However, larger-scaled models generally require access to much more computational resources and time that is often impractical.  
+% \jk{Well, you don't literally need infinite computation---usually, large enough $N$ is fine (and that's why MCMC/HMC are popular if your models are moderately/small sized)}
 \newline
 \\Approximating $q_B^*(\theta)$ involves solving for $q_A^*(\theta) \in \mathcal{Q}_{A}$, where $\mathcal{Q}_{A}$ is often viewed as distributions of a simpler form. For example mean field approximations define a family of distributions $\mathcal{Q}_{MF} = \left\{\prod_i q_i(\theta_i)\right\}$, a product of independent distributions. Variational inference is motivated to finding a $q_A^*(\theta) \in \mathcal{Q}_{A}$ that \textit{approximates} $q_B^*(\theta)$, through the minimisation of some divergence between the two, $D(q_A^*(\theta)\| q_B^*(\theta))$. However the space of distributions $\mathcal{Q}_{A}$ is usually severely restrictive in its expressiveness and $q_A^*(\theta)$ is almost never a fair depiction of the structure of $q_B^*(\theta)$. Realistically, $\mathcal{Q}_{A}$ is chosen purely for computational convenience. With larger-scaled models, it is often no longer reasonable to assume that the normaliser of the Bayesian posterior will be tractable or that $q_B^*(\theta)$ can be reasonably approximated in a tractable manner.
 
@@ -88,9 +87,10 @@ where $q_B^*(\theta)$ is recovered by choosing the negative log-likelihood loss 
 In the optimisation context of (\ref{general-posterior}), we can see that the prior $\pi$ only exists in the divergence term. As such, $\pi$ defines the regulariser of an empirical risk minimisation optimisation problem which is solved by the Bayesian posterior $q_B^*(\theta)$. The choice of prior controls model complexity and prevents overfitting to the empirical risk. Unlike in the Bayesian interpretation, in this optimisation setup $\pi$ is no longer required to be a well-specified prior. Thus in larger-scaled models where prior mis-specification is almost guaranteed, it is more appropriate to view the prior as a regulariser on model complexity rather than a prior belief in the model parameters.
 
 \subsection{The Likelihood is a Loss}
-From (\ref{general-posterior}), the likelihood term exists only in the expectation. Note that the empirical risk \jk{If it's an empirical risk, it should be written as an average (rather than a sum)} is defined as:
+From (\ref{general-posterior}), the likelihood term exists only in the expectation. Note that the empirical risk is defined as:
+% \jk{If it's an empirical risk, it should be written as an average (rather than a sum)}
 \begin{align}
-\mathcal{E}(\theta) = \mathbb{E}_{q(\theta)}\left[\sum_{n=1}^N \ell\left(x_n, \theta\right)\right]
+\mathcal{E}(\theta) = \mathbb{E}_{q(\theta)}\left[\frac{1}{N}\sum_{n=1}^N \ell\left(x_n, \theta\right)\right]
 \label{empirical-risk}
 \end{align}
 where $\ell$ is some loss function. We can see that defining $\ell$ as the negative log-likelihood, we recover an empirical risk of the model over empirical data that is equivalent to the expectation term of (\ref{general-posterior}). This interprets the likelihood function as a special loss definition for an optimisation problem. In other words, $q_B^*(\theta)$ is the minimiser of a regularised empirical risk with a log-likelihood loss, defined with respect to its predictive performance rather than its belief updates on model parameters. By pivoting from the Bayesian interpretation of $q_B^*(\theta)$, we no longer need to have a well-specified likelihood function because we can view the posterior as empirical risk minimisation for a special loss definition.
@@ -109,11 +109,12 @@ Loss minimisation of larger-scaled machine learning models is typically over a h
 \min_{\theta \in \Theta} \sum_{n=1}^N\ell_n(x_n, \theta)
 \label{loss-minimisation}
 \end{align}
-where $\ell_n(x_n, \theta)$ quantifies the predictive performance of a model's parameterisation $\theta$ for training observation $(x_n, y_n)$, such as the squared loss $\ell_{sq}(\theta) = \sum_{n=1}^N \left(y_n - f_{\theta}(x_n)\right)^2$. Typically $\theta^*$, the minimiser of (\ref{loss-minimisation}) \jk{Notation: usually, we wwould write $\theta_n$ for the finite-sample minimiser and $\theta^*$ for the infinite-sample/population minimiser}, is in $ \mathbb{R}^J$ a finite dimensional space where $J$ is the number of parameters in $f_{\theta}$.\\
+where $\ell_n(x_n, \theta)$ quantifies the predictive performance of a model's parameterisation $\theta$ for training observation $(x_n, y_n)$, such as the squared loss $\ell_{sq}(\theta) = \sum_{n=1}^N \left(y_n - f_{\theta}(x_n)\right)^2$. Typically $\theta_N^*$, the minimiser of empirical loss in (\ref{loss-minimisation}), is in $ \mathbb{R}^J$ a finite dimensional space where $J$ is the number of parameters in $f_{\theta}$.\\
+% \jk{Notation: usually, we wwould write $\theta_n$ for the finite-sample minimiser and $\theta^*$ for the infinite-sample/population minimiser}
 \newline
-In practice a reasonable local minima can achieve high predictive performance, and so the non-convex nature of the parameter space is often ignored.
+In practice a reasonable local minima can achieve high predictive performance, and so the non-convex nature of the loss space is often ignored.
 %
-\jk{You're confusing convexity of a space with convexity of a function! Even in Neural networks, the parameter space (i.e., $\mathbb{R}^d$) is convex (but the loss function on which you train isn't!).} 
+% \jk{You're confusing convexity of a space with convexity of a function! Even in Neural networks, the parameter space (i.e., $\mathbb{R}^d$) is convex (but the loss function on which you train isn't!).} 
 %
 However without the guaranteed existence of a unique minimiser, learning theory is unable to make theoretical claims about these larger-scaled models. By convexifying (\ref{loss-minimisation}), we recover the minimisation problem of the form ($\ref{general-posterior}$). Thus the GVI posterior is also a reframing of modern machine learning models sp that we can understand them in the context of learning theory.
 \subsection{Probabilistic Lifting}
