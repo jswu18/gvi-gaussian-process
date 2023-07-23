@@ -1,8 +1,8 @@
 import jax.numpy as jnp
 import pytest
 
-from mockers.kernels import MockKernel, MockKernelParameters
-from mockers.means import MockMean, MockMeanParameters
+from mockers.kernel import MockKernel, MockKernelParameters
+from mockers.mean import MockMean, MockMeanParameters
 from src.empirical_risks import NegativeLogLikelihood
 from src.gps import (
     ApproximateGPClassification,

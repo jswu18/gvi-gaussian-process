@@ -7,7 +7,6 @@ import numpy as np
 from jax import random
 
 from src.kernels.base import KernelBase, KernelBaseParameters
-from src.utils.samplers import sample_discrete_unnormalised_distribution
 
 PRNGKey = Any  # pylint: disable=invalid-name
 
@@ -35,18 +34,14 @@ class ConditionalVarianceInducingPointsSelector(InducingPointsSelector):
 
     def __init__(
         self,
-        sample: Optional[bool] = False,
         threshold: Optional[int] = 0.0,
     ):
         """
 
         Args:
-            sample: bool, if True, sample points into subset to use with weights based on variance, if False choose
-                    point with highest variance at each iteration
             threshold: float or None, if not None, if tr(Kff-Qff)<threshold, stop choosing inducing points as the approx
                        has converged.
         """
-        self.sample = sample
         self.threshold = threshold
 
     def compute_inducing_points(
@@ -115,11 +110,7 @@ class ConditionalVarianceInducingPointsSelector(InducingPointsSelector):
             )
             + jitter
         )
-        if self.sample:
-            key, subkey = random.split(key)
-            indices[0] = sample_discrete_unnormalised_distribution(subkey, di)
-        else:
-            indices[0] = jnp.argmax(di)  # select first point, add to index 0
+        indices[0] = jnp.argmax(di)  # select first point, add to index 0
         if number_of_inducing_points == 1:
             indices = indices.astype(int)
             inducing_points = training_inputs[indices]
@@ -150,11 +141,7 @@ class ConditionalVarianceInducingPointsSelector(InducingPointsSelector):
             except FloatingPointError:
                 pass
             di = jnp.clip(di, 0, None)
-            if self.sample:
-                key, subkey = random.split(key)
-                indices[m + 1] = sample_discrete_unnormalised_distribution(subkey, di)
-            else:
-                indices[m + 1] = jnp.argmax(di)  # select first point, add to index 0
+            indices[m + 1] = jnp.argmax(di)  # select first point, add to index 0
             # sum of di is tr(Kff-Qff), if this is small things are ok
             if jnp.sum(jnp.clip(di, 0, None)) < self.threshold:
                 indices = indices[:m]

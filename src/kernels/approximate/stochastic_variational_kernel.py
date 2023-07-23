@@ -172,8 +172,9 @@ class StochasticVariationalKernel(ApproximateBaseKernel):
         x2: jnp.ndarray,
     ) -> jnp.ndarray:
         reference_gram_x1_inducing = self.reference_kernel.calculate_gram(
-            x=x,
-            y=self.inducing_points,
+            parameters=self.reference_kernel_parameters,
+            x1=x1,
+            x2=self.inducing_points,
         )
 
         # if y is None, compute for x and x
@@ -181,11 +182,16 @@ class StochasticVariationalKernel(ApproximateBaseKernel):
             reference_gram_x2_inducing = reference_gram_x1_inducing
         else:
             reference_gram_x2_inducing = self.reference_kernel.calculate_gram(
+                parameters=self.reference_kernel_parameters,
                 x1=x1,
                 x2=self.inducing_points,
             )
 
-        reference_gram_x1_x2 = self.reference_kernel.calculate_gram(x1=x1, x2=x2)
+        reference_gram_x1_x2 = self.reference_kernel.calculate_gram(
+            parameters=self.reference_kernel_parameters,
+            x1=x1,
+            x2=x2,
+        )
         el_matrix_lower_triangle = jnp.tril(parameters.el_matrix_lower_triangle, k=-1)
         el_matrix = el_matrix_lower_triangle + jnp.diag(
             jnp.clip(
