@@ -5,7 +5,8 @@ from jax import numpy as jnp
 from jax.config import config
 
 from mockers.kernel import MockKernel, MockKernelParameters
-from mockers.mean import MockMean, MockMeanParameters, MockNeuralNetwork
+from mockers.mean import MockMean, MockMeanParameters
+from mockers.neural_network import MockNeuralNetwork
 from src.means import (
     ConstantMean,
     MultiOutputMean,

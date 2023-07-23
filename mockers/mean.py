@@ -1,6 +1,5 @@
 from typing import Any, Callable, Dict, Union
 
-import flax
 import jax.numpy as jnp
 import pydantic
 from flax.core.frozen_dict import FrozenDict
@@ -50,17 +49,6 @@ class MockMean(MeanBase):
         parameters: MockMeanParameters = None,
     ) -> jnp.ndarray:
         return jnp.ones((x.shape[0], self.number_output_dimensions))
-
-
-class MockNeuralNetwork(flax.linen.Module):
-    def init(self, *args, **kwargs):
-        return None
-
-    def apply(self, variables, *args, **kwargs):
-        if "x" in kwargs:
-            return jnp.ones((kwargs["x"].shape[0], 1))
-        else:
-            return jnp.ones((args[0].shape[0], 1))
 
 
 class MockStochasticVariationalMeanParameter(StochasticVariationalMeanParameters):
