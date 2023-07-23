@@ -6,7 +6,7 @@ import pytest
 from jax.config import config
 from mock import Mock
 
-from mockers.kernels import (
+from mockers.kernel import (
     MockKernel,
     MockKernelParameters,
     calculate_reference_gram_eye_mock,
@@ -342,4 +342,100 @@ def test_svgp_sigma_lower_triangle_matrix(
     assert jnp.array_equal(
         el_matrix_lower_triangle,
         target_el_matrix_lower_triangle,
+    )
+
+
+@pytest.mark.parametrize(
+    "x_train,x_inducing,target_el_matrix_log_diagonal",
+    [
+        [
+            jnp.array(
+                [
+                    [1.0, 2.0, 3.0],
+                    [5.0, 1.0, 9.0],
+                    [1.5, 2.5, 3.5],
+                ]
+            ),
+            jnp.array(
+                [
+                    [5.0, 1.0, 9.0],
+                    [1.5, 2.5, 3.5],
+                ]
+            ),
+            jnp.array(
+                [-0.34657359027997275, -0.34657359027997275],
+            ),
+        ],
+    ],
+)
+def test_svgp_sigma_log_diagonal(
+    x_train: jnp.ndarray,
+    x_inducing: jnp.ndarray,
+    target_el_matrix_log_diagonal: jnp.ndarray,
+):
+    approximate_kernel = StochasticVariationalKernel(
+        reference_kernel_parameters=MockKernelParameters(),
+        log_observation_noise=jnp.log(1),
+        reference_kernel=MockKernel(calculate_reference_gram_eye_mock),
+        inducing_points=x_inducing,
+        training_points=x_train,
+    )
+    _, el_matrix_log_diagonal = approximate_kernel.initialise_el_matrix_parameters()
+    assert jnp.array_equal(
+        el_matrix_log_diagonal,
+        target_el_matrix_log_diagonal,
+    )
+
+
+@pytest.mark.parametrize(
+    "x_train,x_inducing,x,k",
+    [
+        [
+            jnp.array(
+                [
+                    [1.0, 2.0, 3.0],
+                    [5.0, 1.0, 9.0],
+                    [1.5, 2.5, 3.5],
+                ]
+            ),
+            jnp.array(
+                [
+                    [5.0, 1.0, 9.0],
+                    [1.5, 2.5, 3.5],
+                ]
+            ),
+            jnp.array(
+                [
+                    [5.3, 5.0, 6.0],
+                    [2.5, 4.5, 2.5],
+                ]
+            ),
+            jnp.array(
+                [
+                    [0.5000099999000007, 0],
+                    [0, 0.5000099999000007],
+                ]
+            ),
+        ],
+    ],
+)
+def test_svgp_kernel_grams(
+    x_train: jnp.ndarray,
+    x_inducing: jnp.ndarray,
+    x: jnp.ndarray,
+    k: jnp.ndarray,
+):
+    approximate_kernel = StochasticVariationalKernel(
+        reference_kernel_parameters=MockKernelParameters(),
+        log_observation_noise=jnp.log(1),
+        reference_kernel=MockKernel(calculate_reference_gram_eye_mock),
+        inducing_points=x_inducing,
+        training_points=x_train,
+    )
+    parameters = approximate_kernel.initialise_random_parameters()
+    assert jnp.array_equal(
+        approximate_kernel.calculate_gram(
+            parameters=parameters, x1=x, x2=x, full_covariance=True
+        ),
+        k,
     )

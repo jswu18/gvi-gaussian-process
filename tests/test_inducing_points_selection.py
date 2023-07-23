@@ -3,7 +3,7 @@ import pytest
 from jax import random
 from jax.config import config
 
-from mockers.kernels import MockKernel, MockKernelParameters
+from mockers.kernel import MockKernel, MockKernelParameters
 from src.inducing_points_selection import ConditionalVarianceInducingPointsSelector
 
 config.update("jax_enable_x64", True)

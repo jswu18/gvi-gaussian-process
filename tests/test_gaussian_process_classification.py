@@ -2,8 +2,8 @@ import jax.numpy as jnp
 import pytest
 from jax.config import config
 
-from mockers.kernels import MockKernel, MockKernelParameters
-from mockers.means import MockMean, MockMeanParameters
+from mockers.kernel import MockKernel, MockKernelParameters
+from mockers.mean import MockMean, MockMeanParameters
 from src.distributions import Multinomial
 from src.gps import ApproximateGPClassification, GPClassification
 from src.kernels import MultiOutputKernel, MultiOutputKernelParameters

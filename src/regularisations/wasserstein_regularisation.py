@@ -91,7 +91,7 @@ class WassersteinRegularisation(RegularisationBase):
 
     @staticmethod
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
-    def compute_gaussian_wasserstein_metric_from_grams(
+    def calculate_gaussian_wasserstein_metric(
         mean_train_p: jnp.ndarray,
         covariance_train_p_diagonal: jnp.ndarray,
         mean_train_q: jnp.ndarray,
@@ -180,7 +180,7 @@ class WassersteinRegularisation(RegularisationBase):
         )
         return jnp.sum(
             jax.vmap(
-                lambda m_p, c_p, m_q, c_q, c_bt_p, c_bt_q: WassersteinRegularisation.compute_gaussian_wasserstein_metric_from_grams(
+                lambda m_p, c_p, m_q, c_q, c_bt_p, c_bt_q: WassersteinRegularisation.calculate_gaussian_wasserstein_metric(
                     mean_train_p=m_p,
                     covariance_train_p_diagonal=c_p,
                     mean_train_q=m_q,

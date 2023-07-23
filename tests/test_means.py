@@ -4,8 +4,8 @@ import pytest
 from jax import numpy as jnp
 from jax.config import config
 
-from mockers.kernels import MockKernel, MockKernelParameters
-from mockers.means import MockMean, MockMeanParameters, MockNeuralNetwork
+from mockers.kernel import MockKernel, MockKernelParameters
+from mockers.mean import MockMean, MockMeanParameters, MockNeuralNetwork
 from src.means import (
     ConstantMean,
     MultiOutputMean,
