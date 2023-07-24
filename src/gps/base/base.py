@@ -126,6 +126,8 @@ class GPBase(Module, ABC):
                 covariance.reshape(self.kernel.number_output_dimensions, x.shape[0])
                 + jnp.atleast_1d(jnp.exp(parameters.log_observation_noise))[:, None]
             )
+            if self.kernel.number_output_dimensions == 1:
+                covariance = covariance.squeeze(axis=0)
         return covariance
 
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))

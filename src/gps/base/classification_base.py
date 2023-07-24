@@ -1,7 +1,6 @@
 from abc import ABC
 from typing import Dict, Union
 
-import jax
 import jax.numpy as jnp
 import jax.scipy as jsp
 from flax.core.frozen_dict import FrozenDict
@@ -9,6 +8,7 @@ from scipy.special import roots_hermite
 
 from src.distributions import Multinomial
 from src.gps.base.base import GPBase, GPBaseParameters
+from src.kernels import TemperedKernelParameters
 from src.kernels.multi_output_kernel import (
     MultiOutputKernel,
     MultiOutputKernelParameters,
@@ -17,7 +17,7 @@ from src.means.base import MeanBase
 
 
 class GPClassificationBaseParameters(GPBaseParameters):
-    kernel: MultiOutputKernelParameters
+    kernel: Union[MultiOutputKernelParameters, TemperedKernelParameters]
 
 
 class GPClassificationBase(GPBase, ABC):

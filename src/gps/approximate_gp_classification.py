@@ -9,10 +9,7 @@ from src.gps.base.classification_base import (
     GPClassificationBase,
     GPClassificationBaseParameters,
 )
-from src.kernels.multi_output_kernel import (
-    MultiOutputKernel,
-    MultiOutputKernelParameters,
-)
+from src.kernels.multi_output_kernel import MultiOutputKernel
 from src.means.base import MeanBase
 
 PRNGKey = Any  # pylint: disable=invalid-name
