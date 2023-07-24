@@ -22,11 +22,15 @@ class TemperedKernel(KernelBase):
         self,
         base_kernel: KernelBase,
         base_kernel_parameters: KernelBaseParameters,
+        number_output_dimensions: int,
         preprocess_function: Callable = None,
     ):
         self.base_kernel = base_kernel
         self.base_kernel_parameters = base_kernel_parameters
-        super().__init__(preprocess_function=preprocess_function)
+        super().__init__(
+            preprocess_function=preprocess_function,
+            number_output_dimensions=number_output_dimensions,
+        )
 
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def generate_parameters(

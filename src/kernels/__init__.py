@@ -3,10 +3,13 @@ from src.kernels.multi_output_kernel import (
     MultiOutputKernel,
     MultiOutputKernelParameters,
 )
+from src.kernels.tempered_kernel import TemperedKernel, TemperedKernelParameters
 
 __all__ = [
     "CustomKernel",
     "CustomKernelParameters",
     "MultiOutputKernel",
     "MultiOutputKernelParameters",
+    "TemperedKernel",
+    "TemperedKernelParameters",
 ]
