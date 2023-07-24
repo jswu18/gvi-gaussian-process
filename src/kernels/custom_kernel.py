@@ -1,5 +1,6 @@
 from typing import Any, Callable, Dict, Union
 
+import jax
 import jax.numpy as jnp
 import pydantic
 from flax.core.frozen_dict import FrozenDict
@@ -9,20 +10,24 @@ from src.kernels.base import KernelBase, KernelBaseParameters
 PRNGKey = Any  # pylint: disable=invalid-name
 
 
-class NNGPKernelParameters(KernelBaseParameters):
-    pass
+class CustomKernelParameters(KernelBaseParameters):
+    custom: Any = None
 
 
-class NNGPKernel(KernelBase):
+class CustomKernel(KernelBase):
     """
     A wrapper class for the kernel function provided by the NTK package.
     """
 
-    Parameters = NNGPKernelParameters
+    Parameters = CustomKernelParameters
 
-    def __init__(self, kernel_function: Callable, preprocess_function: Callable = None):
+    def __init__(
+        self,
+        kernel_function: Callable[[jnp.ndarray, jnp.ndarray], jnp.float64],
+        preprocess_function: Callable = None,
+    ):
         """
-        Define a Neural Network Gaussian Process Kernel using the kernel function provided by the NTK package.
+        Define a kernel using a custom kernel function.
 
         Args:
             kernel_function: The kernel function provided by the NTK package.
@@ -34,7 +39,7 @@ class NNGPKernel(KernelBase):
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def generate_parameters(
         self, parameters: Union[FrozenDict, Dict]
-    ) -> NNGPKernelParameters:
+    ) -> CustomKernelParameters:
         """
         Generates a Pydantic model of the parameters for Neural Network Gaussian Process Kernel.
 
@@ -44,13 +49,13 @@ class NNGPKernel(KernelBase):
         Returns: A Pydantic model of the parameters for Neural Network Gaussian Process Kernel.
 
         """
-        return NNGPKernel.Parameters(**parameters)
+        return CustomKernel.Parameters(**parameters)
 
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def initialise_random_parameters(
         self,
         key: PRNGKey,
-    ) -> NNGPKernelParameters:
+    ) -> CustomKernelParameters:
         """
         Initialise the parameters of the Neural Network Gaussian Process Kernel using a random key.
 
@@ -64,7 +69,7 @@ class NNGPKernel(KernelBase):
 
     def _calculate_gram(
         self,
-        parameters: NNGPKernelParameters,
+        parameters: CustomKernelParameters,
         x1: jnp.ndarray,
         x2: jnp.ndarray,
     ) -> jnp.ndarray:
@@ -82,8 +87,10 @@ class NNGPKernel(KernelBase):
         Returns: the kernel gram matrix of shape (m_1, m_2)
 
         """
-        return self.kernel_function(
-            x1,
-            x2,
-            "nngp",
-        )
+        return (
+            jax.vmap(
+                lambda x1_: jax.vmap(lambda x2_: self.kernel_function(x1_, x2_))(
+                    x2[:, None, ...]
+                )
+            )(x1[:, None, ...])
+        ).reshape(x1.shape[0], x2.shape[0])

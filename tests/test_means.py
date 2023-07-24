@@ -9,8 +9,8 @@ from mockers.mean import MockMean, MockMeanParameters
 from mockers.neural_network import MockNeuralNetwork
 from src.means import (
     ConstantMean,
+    CustomMean,
     MultiOutputMean,
-    NeuralNetworkMean,
     StochasticVariationalMean,
 )
 
@@ -90,13 +90,14 @@ def test_nn_mean(
     x: jnp.ndarray,
     mean: float,
 ):
-    nn_mean = NeuralNetworkMean(
-        neural_network=MockNeuralNetwork(),
+    neural_network = MockNeuralNetwork()
+    nn_mean = CustomMean(
+        mean_function=lambda parameters, x: neural_network.apply(parameters, x=x),
     )
-    assert jnp.array_equal(
-        nn_mean.predict(nn_mean.generate_parameters({"neural_network": None}), x=x),
-        mean,
+    nn_parameters = nn_mean.generate_parameters(
+        {"custom": nn_mean.generate_parameters({"neural_network": None})}
     )
+    assert jnp.array_equal(nn_mean.predict(parameters=nn_parameters, x=x), mean)
 
 
 @pytest.mark.parametrize(

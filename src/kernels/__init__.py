@@ -1,12 +1,12 @@
+from src.kernels.custom_kernel import CustomKernel, CustomKernelParameters
 from src.kernels.multi_output_kernel import (
     MultiOutputKernel,
     MultiOutputKernelParameters,
 )
-from src.kernels.nngp_kernel import NNGPKernel, NNGPKernelParameters
 
 __all__ = [
-    "NNGPKernel",
-    "NNGPKernelParameters",
+    "CustomKernel",
+    "CustomKernelParameters",
     "MultiOutputKernel",
     "MultiOutputKernelParameters",
 ]
