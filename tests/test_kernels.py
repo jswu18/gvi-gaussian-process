@@ -11,7 +11,7 @@ from mockers.kernel import (
     MockKernelParameters,
     calculate_reference_gram_eye_mock,
 )
-from src.kernels import MultiOutputKernel, NNGPKernel
+from src.kernels import CustomKernel, MultiOutputKernel
 from src.kernels.approximate import StochasticVariationalKernel
 from src.kernels.standard import ARDKernel
 
@@ -162,7 +162,7 @@ def test_missing_ard_kernel_parameter(
     "kernel,parameters,x1,x2,k",
     [
         [
-            NNGPKernel(
+            CustomKernel(
                 kernel_function=lambda x, y, *args, **kwargs: jnp.ones(
                     (x.shape[0], y.shape[0])
                 )
@@ -178,7 +178,7 @@ def test_missing_ard_kernel_parameter(
             jnp.ones((1, 2)),
         ],
         [
-            NNGPKernel(
+            CustomKernel(
                 kernel_function=lambda x, y, *args, **kwargs: jnp.ones(
                     (x.shape[0], y.shape[0])
                 ),
@@ -196,8 +196,8 @@ def test_missing_ard_kernel_parameter(
         ],
     ],
 )
-def test_nngp_kernel_grams(
-    kernel: NNGPKernel,
+def test_custom_kernel_grams(
+    kernel: CustomKernel,
     parameters: Dict,
     x1: jnp.ndarray,
     x2: jnp.ndarray,
@@ -240,7 +240,7 @@ def test_nngp_kernel_grams(
     ],
 )
 def test_multi_output_kernel_grams(
-    kernel: NNGPKernel,
+    kernel: CustomKernel,
     parameters: Dict,
     x1: jnp.ndarray,
     x2: jnp.ndarray,
@@ -282,7 +282,7 @@ def test_multi_output_kernel_grams(
     ],
 )
 def test_multi_output_kernel_diagonal_grams(
-    kernel: NNGPKernel,
+    kernel: CustomKernel,
     parameters: Dict,
     x: jnp.ndarray,
     k: float,
