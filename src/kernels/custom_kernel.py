@@ -11,7 +11,7 @@ PRNGKey = Any  # pylint: disable=invalid-name
 
 
 class CustomKernelParameters(KernelBaseParameters):
-    custom: Any = None
+    custom: Any
 
 
 class CustomKernel(KernelBase):
