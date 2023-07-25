@@ -32,7 +32,7 @@ from src.kernels import MultiOutputKernel, MultiOutputKernelParameters
                 ]
             ),
             jnp.ones((2,)),
-            0.23148146,
+            0.11574074,
         ],
     ],
 )
@@ -80,7 +80,7 @@ def test_gp_regression_nll(
                 ]
             ),
             jnp.array([1.2, 4.2]),
-            10.279999,
+            5.14,
         ],
     ],
 )
@@ -142,7 +142,7 @@ def test_approximate_gp_regression_nll(
                     [0.1, 0.2, 0.3, 0.4],
                 ]
             ),
-            0.6253299,
+            0.07816624,
         ],
     ],
 )
@@ -199,7 +199,7 @@ def test_gp_classification_nll(
                     [0.1, 0.2, 0.3, 0.4],
                 ]
             ),
-            3.5559998,
+            0.4445,
         ],
     ],
 )

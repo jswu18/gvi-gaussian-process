@@ -22,7 +22,7 @@ class Gaussian(Distribution):
         covariance_diagonal: jnp.ndarray,
         y: jnp.ndarray,
     ) -> jnp.float64:
-        return -0.5 * jnp.sum(jnp.multiply(covariance_diagonal, jnp.square(y - mean)))
+        return -0.5 * jnp.mean(jnp.multiply(covariance_diagonal, jnp.square(y - mean)))
 
 
 class Multinomial(Distribution):

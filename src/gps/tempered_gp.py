@@ -23,9 +23,10 @@ class TemperedGP(GPBase):
     Parameters = TemperedGPParameters
 
     def __init__(self, base_gp: GPBase, base_gp_parameters: GPBaseParameters):
+        self.base_gp = base_gp
         self.tempered_base_gp = base_gp
         self.tempered_base_gp.kernel = TemperedKernel(
-            base_kernel=base_gp.kernel,
+            base_kernel=self.base_gp.kernel,
             base_kernel_parameters=base_gp_parameters.kernel,
             number_output_dimensions=base_gp.kernel.number_output_dimensions,
         )

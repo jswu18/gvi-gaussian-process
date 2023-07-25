@@ -177,15 +177,11 @@ class StochasticVariationalKernel(ApproximateBaseKernel):
             x2=self.inducing_points,
         )
 
-        # if y is None, compute for x and x
-        if jnp.array_equal(x1, x2):
-            reference_gram_x2_inducing = reference_gram_x1_inducing
-        else:
-            reference_gram_x2_inducing = self.reference_kernel.calculate_gram(
-                parameters=self.reference_kernel_parameters,
-                x1=x1,
-                x2=self.inducing_points,
-            )
+        reference_gram_x2_inducing = self.reference_kernel.calculate_gram(
+            parameters=self.reference_kernel_parameters,
+            x1=x2,
+            x2=self.inducing_points,
+        )
 
         reference_gram_x1_x2 = self.reference_kernel.calculate_gram(
             parameters=self.reference_kernel_parameters,
