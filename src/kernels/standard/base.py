@@ -94,8 +94,8 @@ class StandardKernelBase(KernelBase, ABC):
             lambda x1_: vmap(
                 lambda x2_: self.calculate_kernel(
                     parameters=parameters,
-                    x=x1_,
-                    y=x2_,
+                    x1=x1_,
+                    x2=x2_,
                 )
             )(x2[:, None, ...])
         )(x1[:, None, ...])

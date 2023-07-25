@@ -37,7 +37,7 @@ class CustomMean(MeanBase):
     def generate_parameters(
         self, parameters: Union[FrozenDict, Dict]
     ) -> CustomMeanParameters:
-        return CustomMean.Parameters(custom=parameters)
+        return CustomMean.Parameters(custom=parameters["custom"])
 
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def initialise_random_parameters(
