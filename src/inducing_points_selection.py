@@ -1,14 +1,13 @@
 import warnings
 from abc import ABC, abstractmethod
-from typing import Any, Optional, Tuple
+from typing import Optional, Tuple
 
 import jax.numpy as jnp
 import numpy as np
 from jax import random
 
 from src.kernels.base import KernelBase, KernelBaseParameters
-
-PRNGKey = Any  # pylint: disable=invalid-name
+from src.utils.custom_types import PRNGKey
 
 
 class InducingPointsSelector(ABC):

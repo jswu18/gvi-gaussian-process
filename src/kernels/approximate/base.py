@@ -1,11 +1,9 @@
 from abc import ABC
-from typing import Any, Callable
+from typing import Callable
 
 import jax.numpy as jnp
 
 from src.kernels.base import KernelBase, KernelBaseParameters
-
-PRNGKey = Any  # pylint: disable=invalid-name
 
 
 class ApproximateBaseKernelParameters(KernelBaseParameters):

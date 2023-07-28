@@ -5,9 +5,7 @@ from flax.core.frozen_dict import FrozenDict
 from jax import numpy as jnp
 
 from src.means.base import MeanBase, MeanBaseParameters
-from src.utils.custom_types import JaxArrayType, JaxFloatType
-
-PRNGKey = Any  # pylint: disable=invalid-name
+from src.utils.custom_types import JaxArrayType, JaxFloatType, PRNGKey
 
 
 class ConstantMeanParameters(MeanBaseParameters):

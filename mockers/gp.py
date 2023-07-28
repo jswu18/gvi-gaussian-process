@@ -8,9 +8,7 @@ from mockers.kernel import MockKernel, MockKernelParameters
 from mockers.mean import MockMean, MockMeanParameters
 from src.distributions import Distribution
 from src.gps.base.base import GPBase, GPBaseParameters
-from src.utils.custom_types import JaxFloatType
-
-PRNGKey = Any  # pylint: disable=invalid-name
+from src.utils.custom_types import JaxFloatType, PRNGKey
 
 
 class MockGPParameters(GPBaseParameters):

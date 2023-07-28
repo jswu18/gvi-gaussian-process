@@ -1,13 +1,11 @@
-from typing import Any, Dict, List, Union
+from typing import Dict, List, Union
 
-import jax
 import jax.numpy as jnp
 import pydantic
 from flax.core.frozen_dict import FrozenDict
 
 from src.kernels.base import KernelBase, KernelBaseParameters
-
-PRNGKey = Any  # pylint: disable=invalid-name
+from src.utils.custom_types import PRNGKey
 
 
 class MultiOutputKernelParameters(KernelBaseParameters):

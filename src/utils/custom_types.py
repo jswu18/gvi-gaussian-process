@@ -1,7 +1,7 @@
 # Modified for JAX types from
 # https://gist.github.com/danielhfrank/00e6b8556eed73fb4053450e602d2434
 
-from typing import Generic, TypeVar
+from typing import Any, Generic, TypeVar
 
 import jax.numpy as jnp
 from pydantic.fields import ModelField
@@ -10,6 +10,7 @@ JSON_ENCODERS = {jnp.ndarray: lambda arr: arr.tolist()}
 
 ArrayDType = TypeVar("ArrayDType")
 FloatDType = TypeVar("FloatDType")
+PRNGKey = Any  # pylint: disable=invalid-name
 
 
 class JaxArrayType(jnp.ndarray, Generic[ArrayDType]):

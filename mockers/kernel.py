@@ -9,8 +9,7 @@ from src.kernels.approximate.base import (
     ApproximateBaseKernelParameters,
 )
 from src.kernels.base import KernelBase, KernelBaseParameters
-
-PRNGKey = Any  # pylint: disable=invalid-name
+from src.utils.custom_types import PRNGKey
 
 
 def calculate_reference_gram_mock(

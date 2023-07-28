@@ -1,4 +1,4 @@
-from typing import Any, Dict, Union
+from typing import Dict, Union
 
 import jax
 import jax.numpy as jnp
@@ -10,8 +10,7 @@ from src.gps.base.exact_base import ExactGPBase
 from src.gps.base.regression_base import GPRegressionBase
 from src.kernels.base import KernelBase
 from src.means.base import MeanBase
-
-PRNGKey = Any  # pylint: disable=invalid-name
+from src.utils.custom_types import PRNGKey
 
 
 class GPRegressionParameters(GPBaseParameters):
