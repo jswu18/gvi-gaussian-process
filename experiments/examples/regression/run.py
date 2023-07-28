@@ -11,7 +11,7 @@ from neural_tangents import stax
 from tqdm import tqdm
 
 from experiments.examples.regression.plotters import plot_losses, plot_regression
-from experiments.examples.regression.toy_problems import CURVE_FUNCTIONS, Curve
+from experiments.examples.regression.toy_regression_curves import CURVE_FUNCTIONS, Curve
 from experiments.examples.regression.utils import (
     split_train_test_data,
     split_train_test_data_intervals,
