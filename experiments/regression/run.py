@@ -267,7 +267,7 @@ def run_tempered_gp(
             gp_parameters=tempered_gp_parameters,
             base_gp_parameters=gp_parameters,
             x=experiment_data.x_validation,
-            y=experiment_data.x_validation,
+            y=experiment_data.y_validation,
             learning_rate=lr,
             number_of_epochs=training_epochs,
             save_checkpoint_frequency=save_checkpoint_frequency,
