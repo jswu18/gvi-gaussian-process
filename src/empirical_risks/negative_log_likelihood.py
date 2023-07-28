@@ -1,8 +1,10 @@
+import jax
 import jax.numpy as jnp
+import jax.scipy as jsp
 
-from src.distributions import Gaussian
 from src.empirical_risks.base import EmpiricalRiskBase
 from src.gps.base.base import GPBase, GPBaseParameters
+from src.utils.custom_types import JaxFloatType
 
 
 class NegativeLogLikelihood(EmpiricalRiskBase):
@@ -14,12 +16,39 @@ class NegativeLogLikelihood(EmpiricalRiskBase):
         parameters: GPBaseParameters,
         x: jnp.ndarray,
         y: jnp.ndarray,
-    ) -> float:
+    ) -> JaxFloatType:
         gaussian = self.gp.calculate_prediction_gaussian(
             parameters, x=x, full_covariance=False
         )
-        return -Gaussian.calculate_log_likelihood(
-            mean=gaussian.mean,
-            covariance_diagonal=gaussian.covariance.reshape(gaussian.mean.shape),
-            y=y.reshape(gaussian.mean.shape),
-        )
+        if self.gp.kernel.number_output_dimensions > 1:
+            return jnp.float64(
+                jnp.mean(
+                    jax.vmap(
+                        lambda y_class, mean_class, covariance_class: jnp.mean(
+                            jax.vmap(
+                                lambda y_, loc_, scale_: -jsp.stats.norm.logpdf(
+                                    y_,
+                                    loc=loc_,
+                                    scale=scale_,
+                                )
+                            )(y_class, mean_class, jnp.sqrt(covariance_class))
+                        )
+                    )(y.T, gaussian.mean, gaussian.covariance)
+                )
+            )
+        else:
+            return jnp.float64(
+                jnp.mean(
+                    jax.vmap(
+                        lambda y_, loc_, scale_: -jsp.stats.norm.logpdf(
+                            y_,
+                            loc=loc_,
+                            scale=scale_,
+                        )
+                    )(
+                        y.reshape(-1, 1),
+                        gaussian.mean.reshape(-1, 1),
+                        jnp.sqrt(gaussian.covariance.reshape(-1, 1)),
+                    )
+                )
+            )

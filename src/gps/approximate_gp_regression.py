@@ -4,8 +4,7 @@ import jax
 import pydantic
 from flax.core import FrozenDict
 
-from src.gps.base.approximate_base import ApproximateGPBase
-from src.gps.base.base import GPBaseParameters
+from src.gps.base.approximate_base import ApproximateGPBase, ApproximateGPBaseParameters
 from src.gps.base.regression_base import GPRegressionBase
 from src.kernels.base import KernelBase
 from src.means.base import MeanBase
@@ -13,7 +12,7 @@ from src.means.base import MeanBase
 PRNGKey = Any  # pylint: disable=invalid-name
 
 
-class ApproximateGPRegressionParameters(GPBaseParameters):
+class ApproximateGPRegressionParameters(ApproximateGPBaseParameters):
     pass
 
 
@@ -58,7 +57,6 @@ class ApproximateGPRegression(ApproximateGPBase, GPRegressionBase):
 
         """
         return ApproximateGPRegression.Parameters(
-            log_observation_noise=parameters["log_observation_noise"],
             mean=self.mean.generate_parameters(parameters["mean"]),
             kernel=self.kernel.generate_parameters(parameters["kernel"]),
         )
@@ -78,7 +76,6 @@ class ApproximateGPRegression(ApproximateGPBase, GPRegressionBase):
 
         """
         return ApproximateGPRegression.Parameters(
-            log_observation_noise=jax.random.normal(key),
             mean=self.mean.initialise_random_parameters(key),
             kernel=self.kernel.initialise_random_parameters(key),
         )

@@ -52,3 +52,6 @@ notebooks/mnist_data
 
 # covereage
 .coverage
+
+# experiment outputs
+/experiments/examples/regression/outputs

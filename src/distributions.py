@@ -19,10 +19,10 @@ class Gaussian(Distribution):
     @staticmethod
     def calculate_log_likelihood(
         mean: jnp.ndarray,
-        covariance_diagonal: jnp.ndarray,
+        covariance: jnp.ndarray,
         y: jnp.ndarray,
     ) -> jnp.float64:
-        return -0.5 * jnp.mean(jnp.multiply(covariance_diagonal, jnp.square(y - mean)))
+        return
 
 
 class Multinomial(Distribution):

@@ -5,13 +5,8 @@ from jax.config import config
 from mockers.kernel import MockKernel, MockKernelParameters
 from mockers.mean import MockMean, MockMeanParameters
 from src.distributions import Gaussian
-from src.gps import (
-    ApproximateGPRegression,
-    GPRegression,
-    TemperedGP,
-    TemperedGPParameters,
-)
-from src.kernels import TemperedKernelParameters
+from src.gps import ApproximateGPRegression, GPRegression
+from src.kernels import TemperedKernel, TemperedKernelParameters
 
 config.update("jax_enable_x64", True)
 
@@ -224,7 +219,7 @@ def test_exact_gp_regression_prediction_covariance(
                 ]
             ),
             jnp.array(
-                [2, 2],
+                [1, 1],
             ),
         ],
     ],
@@ -298,14 +293,20 @@ def test_tempered_exact_gp_regression_prediction_covariance(
         mean=MockMeanParameters(),
         kernel=MockKernelParameters(),
     )
-    tempered_gp = TemperedGP(
-        base_gp=gp,
-        base_gp_parameters=parameters,
+    tempered_gp = type(gp)(
+        mean=gp.mean,
+        kernel=TemperedKernel(
+            base_kernel=gp.kernel,
+            base_kernel_parameters=parameters.kernel,
+            number_output_dimensions=gp.kernel.number_output_dimensions,
+        ),
+        x=x,
+        y=y,
     )
-    tempered_gp_parameters = TemperedGPParameters(
-        kernel=TemperedKernelParameters(
-            log_tempering_factor=log_tempering_factor,
-        )
+    tempered_gp_parameters = tempered_gp.Parameters(
+        log_observation_noise=parameters.log_observation_noise,
+        mean=parameters.mean,
+        kernel=TemperedKernelParameters(log_tempering_factor=log_tempering_factor),
     )
     gaussian = Gaussian(
         **tempered_gp.predict_probability(
@@ -329,7 +330,7 @@ def test_tempered_exact_gp_regression_prediction_covariance(
                 ]
             ),
             jnp.array(
-                [2 + 1, 2 + 1],
+                [2, 2],
             ),
         ],
     ],
@@ -349,14 +350,18 @@ def test_tempered_approximate_gp_regression_prediction_covariance(
         mean=MockMeanParameters(),
         kernel=MockKernelParameters(),
     )
-    tempered_gp = TemperedGP(
-        base_gp=gp,
-        base_gp_parameters=parameters,
+    tempered_gp = type(gp)(
+        mean=gp.mean,
+        kernel=TemperedKernel(
+            base_kernel=gp.kernel,
+            base_kernel_parameters=parameters.kernel,
+            number_output_dimensions=gp.kernel.number_output_dimensions,
+        ),
     )
-    tempered_gp_parameters = TemperedGPParameters(
-        kernel=TemperedKernelParameters(
-            log_tempering_factor=log_tempering_factor,
-        )
+    tempered_gp_parameters = tempered_gp.Parameters(
+        log_observation_noise=parameters.log_observation_noise,
+        mean=parameters.mean,
+        kernel=TemperedKernelParameters(log_tempering_factor=log_tempering_factor),
     )
     gaussian = Gaussian(
         **tempered_gp.predict_probability(

@@ -4,18 +4,16 @@ import jax
 import pydantic
 from flax.core import FrozenDict
 
-from src.gps.base.approximate_base import ApproximateGPBase
-from src.gps.base.classification_base import (
-    GPClassificationBase,
-    GPClassificationBaseParameters,
-)
+from src.gps.base.approximate_base import ApproximateGPBase, ApproximateGPBaseParameters
+from src.gps.base.classification_base import GPClassificationBase
+from src.kernels import TemperedKernel
 from src.kernels.multi_output_kernel import MultiOutputKernel
 from src.means.base import MeanBase
 
 PRNGKey = Any  # pylint: disable=invalid-name
 
 
-class ApproximateGPClassificationParameters(GPClassificationBaseParameters):
+class ApproximateGPClassificationParameters(ApproximateGPBaseParameters):
     pass
 
 
@@ -26,7 +24,7 @@ class ApproximateGPClassification(ApproximateGPBase, GPClassificationBase):
     def __init__(
         self,
         mean: MeanBase,
-        kernel: MultiOutputKernel,
+        kernel: Union[MultiOutputKernel, TemperedKernel],
         epsilon: float = 0.01,
         hermite_polynomial_order: int = 50,
     ):
@@ -64,7 +62,6 @@ class ApproximateGPClassification(ApproximateGPBase, GPClassificationBase):
 
         """
         return ApproximateGPClassification.Parameters(
-            log_observation_noise=parameters["log_observation_noise"],
             mean=self.mean.generate_parameters(parameters["mean"]),
             kernel=self.kernel.generate_parameters(parameters["kernel"]),
         )
@@ -84,7 +81,6 @@ class ApproximateGPClassification(ApproximateGPBase, GPClassificationBase):
 
         """
         return ApproximateGPClassification.Parameters(
-            log_observation_noise=jax.random.normal(key),
             mean=self.mean.initialise_random_parameters(key),
             kernel=self.kernel.initialise_random_parameters(key),
         )

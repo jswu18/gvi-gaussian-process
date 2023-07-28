@@ -3,7 +3,6 @@ from typing import Any, Tuple
 
 import jax.numpy as jnp
 
-from src.distributions import Gaussian
 from src.gps.base.base import GPBase, GPBaseParameters
 from src.kernels.base import KernelBase
 from src.means.base import MeanBase

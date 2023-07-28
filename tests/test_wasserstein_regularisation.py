@@ -134,7 +134,7 @@ def test_zero_wasserstein_approximate_gp_regression(
                     [1.5, 2.5, 3.5],
                 ]
             ),
-            1.61350647,
+            0.87307723,
         ],
     ],
 )
@@ -311,7 +311,7 @@ def test_zero_wasserstein_approximate_gp_classification(
                     [1.5, 2.5, 3.5],
                 ]
             ),
-            3.57583876,
+            1.71499075,
         ],
     ],
 )

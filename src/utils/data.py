@@ -10,7 +10,7 @@ PRNGKey = Any  # pylint: disable=invalid-name
 
 def generate_batch(
     key: PRNGKey,
-    data: Union[Tuple[jnp.ndarray], jnp.ndarray],
+    data: Union[Tuple[jnp.ndarray], Tuple[jnp.ndarray, jnp.ndarray], jnp.ndarray],
     batch_size: int,
     shuffle: bool = True,
     drop_last: bool = True,
