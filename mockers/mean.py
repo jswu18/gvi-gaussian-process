@@ -9,8 +9,7 @@ from src.means.stochastic_variational_mean import (
     StochasticVariationalMean,
     StochasticVariationalMeanParameters,
 )
-
-PRNGKey = Any  # pylint: disable=invalid-name
+from src.utils.custom_types import PRNGKey
 
 
 class MockMeanParameters(MeanBaseParameters):

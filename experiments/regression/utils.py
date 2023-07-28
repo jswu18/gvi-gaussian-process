@@ -1,10 +1,10 @@
-from typing import Any, Tuple
+from typing import Tuple
 
 import jax
 import jax.numpy as jnp
 import numpy as np
 
-PRNGKey = Any  # pylint: disable=invalid-name
+from src.utils.custom_types import PRNGKey
 
 
 def split_train_test_data(

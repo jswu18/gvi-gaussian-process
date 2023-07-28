@@ -1,10 +1,9 @@
 from abc import ABC, abstractmethod
-from typing import Any
 
 from jax import numpy as jnp
 from jax import random
 
-PRNGKey = Any  # pylint: disable=invalid-name
+from src.utils.custom_types import PRNGKey
 
 
 class Curve(ABC):
@@ -23,18 +22,18 @@ class Curve1(Curve):
 
 
 class Curve2(Curve):
-    __name__ = "$y=1.2 \cos(\pi x)$"
+    __name__ = "$y=1.2 \cos(2 \pi x)$ + x^2"
 
     def __call__(self, key: PRNGKey, x: jnp.ndarray, sigma_true: float) -> jnp.ndarray:
         return (
             1.2 * jnp.cos(x * (2 * jnp.pi))
-            + jnp.square(x)
+            + x**2
             + sigma_true * random.normal(key, shape=x.shape)
         ).reshape(-1)
 
 
 class Curve3(Curve):
-    __name__ = "$y=\sin(1.5\pi x)$"
+    __name__ = "$y=\sin(1.5\pi x) + 0.3 \cos(4.5 \pi x) + 0.5 \sin(3.5 \pi x)$"
 
     def __call__(self, key: PRNGKey, x: jnp.ndarray, sigma_true: float) -> jnp.ndarray:
         return (
@@ -46,7 +45,7 @@ class Curve3(Curve):
 
 
 class Curve4(Curve):
-    __name__ = "$y=\sin(\pi x) + 0.1x$"
+    __name__ = "$y=2 \sin(\pi x) + x$"
 
     def __call__(self, key: PRNGKey, x: jnp.ndarray, sigma_true: float) -> jnp.ndarray:
         return (
@@ -55,7 +54,7 @@ class Curve4(Curve):
 
 
 class Curve5(Curve):
-    __name__ = "$y=\sin(\pi x) + 0.1x^2$"
+    __name__ = "$y=\sin(\pi x) + 0.3x^3$"
 
     def __call__(self, key: PRNGKey, x: jnp.ndarray, sigma_true: float) -> jnp.ndarray:
         return (

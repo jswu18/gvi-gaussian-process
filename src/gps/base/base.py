@@ -14,8 +14,6 @@ from src.module import Module, ModuleParameters
 from src.utils.custom_types import JaxFloatType
 from src.utils.jit_compiler import JitCompiler
 
-PRNGKey = Any  # pylint: disable=invalid-name
-
 
 class GPBaseParameters(ModuleParameters, ABC):
     log_observation_noise: JaxFloatType

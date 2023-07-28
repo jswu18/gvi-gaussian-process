@@ -6,8 +6,7 @@ from flax.core.frozen_dict import FrozenDict
 from jax import numpy as jnp
 
 from src.module import Module, ModuleParameters
-
-PRNGKey = Any  # pylint: disable=invalid-name
+from src.utils.custom_types import PRNGKey
 
 
 class MeanBaseParameters(ModuleParameters, ABC):

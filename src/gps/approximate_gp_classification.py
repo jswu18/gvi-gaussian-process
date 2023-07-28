@@ -1,6 +1,5 @@
-from typing import Any, Dict, Union
+from typing import Dict, Union
 
-import jax
 import pydantic
 from flax.core import FrozenDict
 
@@ -9,8 +8,7 @@ from src.gps.base.classification_base import GPClassificationBase
 from src.kernels import TemperedKernel
 from src.kernels.multi_output_kernel import MultiOutputKernel
 from src.means.base import MeanBase
-
-PRNGKey = Any  # pylint: disable=invalid-name
+from src.utils.custom_types import PRNGKey
 
 
 class ApproximateGPClassificationParameters(ApproximateGPBaseParameters):

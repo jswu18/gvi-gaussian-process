@@ -1,13 +1,11 @@
-from typing import Any, Callable, Dict, Literal, Union
+from typing import Callable, Dict, Literal, Union
 
 import jax.numpy as jnp
 import pydantic
 from flax.core.frozen_dict import FrozenDict
 
 from src.kernels.base import KernelBase, KernelBaseParameters
-from src.utils.custom_types import JaxArrayType, JaxFloatType
-
-PRNGKey = Any  # pylint: disable=invalid-name
+from src.utils.custom_types import JaxArrayType, JaxFloatType, PRNGKey
 
 
 class TemperedKernelParameters(KernelBaseParameters):

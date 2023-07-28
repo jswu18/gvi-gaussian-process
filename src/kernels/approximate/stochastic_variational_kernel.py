@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, Literal, Tuple, Union
+from typing import Callable, Dict, Literal, Tuple, Union
 
 import jax.numpy as jnp
 import pydantic
@@ -10,10 +10,8 @@ from src.kernels.approximate.base import (
     ApproximateBaseKernelParameters,
 )
 from src.kernels.base import KernelBase, KernelBaseParameters
-from src.utils.custom_types import JaxArrayType
+from src.utils.custom_types import JaxArrayType, PRNGKey
 from src.utils.matrix_operations import add_diagonal_regulariser
-
-PRNGKey = Any  # pylint: disable=invalid-name
 
 
 class StochasticVariationalKernelParameters(ApproximateBaseKernelParameters):

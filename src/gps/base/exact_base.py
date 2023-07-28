@@ -7,8 +7,6 @@ from src.gps.base.base import GPBase, GPBaseParameters
 from src.kernels.base import KernelBase
 from src.means.base import MeanBase
 
-PRNGKey = Any  # pylint: disable=invalid-name
-
 
 class ExactGPBase(GPBase, ABC):
     def __init__(

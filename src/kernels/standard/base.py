@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Callable
+from typing import Callable
 
 import jax.numpy as jnp
 import pydantic
@@ -7,8 +7,6 @@ from jax import vmap
 
 from src.kernels.base import KernelBase, KernelBaseParameters
 from src.module import Module
-
-PRNGKey = Any  # pylint: disable=invalid-name
 
 
 class StandardKernelBaseParameters(KernelBaseParameters, ABC):

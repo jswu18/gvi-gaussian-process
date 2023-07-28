@@ -6,9 +6,7 @@ from jax import numpy as jnp
 
 from src.kernels.base import KernelBase, KernelBaseParameters
 from src.means.base import MeanBase, MeanBaseParameters
-from src.utils.custom_types import JaxArrayType
-
-PRNGKey = Any  # pylint: disable=invalid-name
+from src.utils.custom_types import JaxArrayType, PRNGKey
 
 
 class StochasticVariationalMeanParameters(MeanBaseParameters):

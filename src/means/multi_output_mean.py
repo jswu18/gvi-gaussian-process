@@ -5,8 +5,7 @@ import pydantic
 from flax.core.frozen_dict import FrozenDict
 
 from src.means.base import MeanBase, MeanBaseParameters
-
-PRNGKey = Any  # pylint: disable=invalid-name
+from src.utils.custom_types import PRNGKey
 
 
 class MultiOutputMeanParameters(MeanBaseParameters):

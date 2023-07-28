@@ -1,14 +1,12 @@
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict, Type, Union
+from typing import Callable, Dict, Type, Union
 
 import jax.numpy as jnp
 import pydantic
 from flax.core.frozen_dict import FrozenDict
 from pydantic import BaseModel
 
-from src.utils.custom_types import JSON_ENCODERS
-
-PRNGKey = Any  # pylint: disable=invalid-name
+from src.utils.custom_types import JSON_ENCODERS, PRNGKey
 
 
 class ModuleParameters(BaseModel, ABC):

@@ -1,149 +1,306 @@
 import os
-from typing import Any, List, Tuple
+from typing import Tuple
 
+import flax.linen as nn
 import jax
 import jax.numpy as jnp
+import matplotlib.pyplot as plt
 import numpy as np
-import optax
 import orbax
 from flax.training import orbax_utils
 from neural_tangents import stax
-from tqdm import tqdm
 
-from experiments.examples.regression.plotters import plot_losses, plot_regression
-from experiments.examples.regression.toy_regression_curves import CURVE_FUNCTIONS, Curve
-from experiments.examples.regression.utils import (
-    split_train_test_data,
-    split_train_test_data_intervals,
+from experiments.data import ExperimentData, set_up_experiment
+from experiments.neural_networks import MultiLayerPerceptron
+from experiments.regression.plotters import (
+    plot_losses,
+    plot_regression,
+    plot_two_losses,
 )
+from experiments.regression.toy_curves import CURVE_FUNCTIONS, Curve
+from experiments.utils import train_gvi, train_nll, train_tempered_nll
+from src import GeneralisedVariationalInference
 from src.distributions import Gaussian
 from src.empirical_risks import NegativeLogLikelihood
-from src.gps import GPRegression
+from src.gps import ApproximateGPRegression, GPRegression
+from src.gps.base.approximate_base import ApproximateGPBase
 from src.gps.base.base import GPBase, GPBaseParameters
-from src.inducing_points_selection import ConditionalVarianceInducingPointsSelector
-from src.kernels import CustomKernel
+from src.kernels import CustomKernel, TemperedKernel, TemperedKernelParameters
+from src.kernels.approximate import SVGPKernel
 from src.kernels.base import KernelBase, KernelBaseParameters
-from src.means import ConstantMean
-from src.utils.data import generate_batch
+from src.means import ConstantMean, CustomMean
+from src.regularisations import WassersteinRegularisation
+from src.utils.custom_types import PRNGKey
 
 orbax_checkpointer = orbax.checkpoint.PyTreeCheckpointer()
 
-PRNGKey = Any  # pylint: disable=invalid-name
 
-
-def split_train_test_validation_data(
+def run_reference_gp(
     key: PRNGKey,
-    x: jnp.ndarray,
-    y: jnp.ndarray,
-    number_of_test_intervals: int,
-    total_number_of_intervals: int,
-    train_data_percentage: float,
-):
-    key, subkey = jax.random.split(key)
-    (
-        x_train_validation,
-        y_train_validation,
-        x_test,
-        y_test,
-    ) = split_train_test_data_intervals(
-        subkey=subkey,
-        x=x,
-        y=y,
-        number_of_test_intervals=number_of_test_intervals,
-        total_number_of_intervals=total_number_of_intervals,
-    )
-    key, subkey = jax.random.split(key)
-    x_train, y_train, x_validation, y_validation = split_train_test_data(
-        key=subkey,
-        x=x_train_validation,
-        y=y_train_validation,
-        train_data_percentage=train_data_percentage,
-    )
-    return x_train, y_train, x_test, y_test, x_validation, y_validation
-
-
-def calculate_inducing_points(
-    key: PRNGKey,
-    x: jnp.ndarray,
-    y: jnp.ndarray,
-    number_of_inducing_points: int,
+    curve_function: Curve,
+    experiment_data: ExperimentData,
     kernel: KernelBase,
     kernel_parameters: KernelBaseParameters,
-) -> Tuple[jnp.ndarray, jnp.ndarray]:
-    inducing_points_selector = ConditionalVarianceInducingPointsSelector()
-    x_inducing, inducing_indices = inducing_points_selector.compute_inducing_points(
-        key=key,
-        training_inputs=x.reshape(-1, 1),
-        number_of_inducing_points=number_of_inducing_points,
-        kernel=kernel,
-        kernel_parameters=kernel_parameters,
-    )
-    y_inducing = y[inducing_indices]
-    return x_inducing, y_inducing
-
-
-def train_nll(
-    key: PRNGKey,
-    gp: GPBase,
-    gp_parameters: GPBaseParameters,
-    x: jnp.ndarray,
-    y: jnp.ndarray,
-    learning_rate: float,
-    number_of_epochs: int,
+    lr: float,
+    training_epochs: int,
+    save_checkpoint_frequency: int,
     batch_size: int,
-    checkpoint_path: str,
-) -> Tuple[GPBaseParameters, List[float]]:
-    optimizer = optax.adam(learning_rate)
-    losses = []
-    opt_state = optimizer.init(gp_parameters.dict())
-    nll_loss = NegativeLogLikelihood(gp=gp)
-    for epoch in tqdm(range(number_of_epochs)):
-        losses.append(
-            nll_loss.calculate_empirical_risk(
-                parameters=gp_parameters,
-                x=x,
-                y=y,
-            )
+    load_checkpoint: bool,
+    output_folder: str,
+) -> Tuple[GPBase, GPBaseParameters]:
+    gp = GPRegression(
+        x=experiment_data.x_inducing,
+        y=experiment_data.y_inducing,
+        kernel=kernel,
+        mean=ConstantMean(),
+    )
+    gp_parameters = gp.generate_parameters(
+        {
+            "log_observation_noise": jnp.log(1.0),
+            "mean": {"constant": 0},
+            "kernel": kernel_parameters.dict(),
+        }
+    )
+    reference_parameters_path = os.path.join(output_folder, f"reference.ckpt")
+    key, subkey = jax.random.split(key)
+    if load_checkpoint:
+        gp_parameters = gp.generate_parameters(
+            orbax_checkpointer.restore(reference_parameters_path)
+        )
+    else:
+        gp_parameters, reference_losses = train_nll(
+            key=subkey,
+            gp=gp,
+            gp_parameters=gp_parameters,
+            x=experiment_data.x_inducing,
+            y=experiment_data.y_inducing,
+            learning_rate=lr,
+            number_of_epochs=training_epochs,
+            save_checkpoint_frequency=save_checkpoint_frequency,
+            batch_size=batch_size,
+            checkpoint_path=os.path.join(
+                output_folder, "training-checkpoints", "reference"
+            ),
         )
         ckpt = gp_parameters.dict()
         save_args = orbax_utils.save_args_from_target(ckpt)
         orbax_checkpointer.save(
-            os.path.join(checkpoint_path, f"epoch-{epoch}.ckpt"),
-            ckpt,
-            save_args=save_args,
-            force=True,
+            reference_parameters_path, ckpt, save_args=save_args, force=True
         )
-        key, subkey = jax.random.split(key)
-        batch_generator = generate_batch(
-            key=subkey,
-            data=(x, y),
-            batch_size=batch_size,
-            shuffle=True,
-            drop_last=False,
+        fig = plot_losses(
+            losses=reference_losses,
+            loss_name="Negative Log Likelihood",
+            title=f"Reference GP NLL Loss ({curve_function.__name__})",
         )
-        data_batch = next(batch_generator, None)
-        while data_batch is not None:
-            x_batch, y_batch = data_batch
-            gradients = jax.grad(
-                lambda gp_parameters_dict: nll_loss.calculate_empirical_risk(
-                    parameters=gp_parameters_dict,
-                    x=x_batch,
-                    y=y_batch,
-                )
-            )(gp_parameters.dict())
-            updates, opt_state = optimizer.update(gradients, opt_state)
-            gp_parameters = gp.generate_parameters(
-                optax.apply_updates(gp_parameters.dict(), updates)
-            )
-            data_batch = next(batch_generator, None)
-    losses.append(
-        nll_loss.calculate_empirical_risk(
+        fig.savefig(os.path.join(output_folder, "reference-losses.png"))
+        plt.close(fig)
+    predicted_distribution = Gaussian(
+        **gp.predict_probability(
+            x=experiment_data.x,
             parameters=gp_parameters,
-            x=x,
-            y=y,
-        )
+        ).dict()
     )
-    return gp_parameters, losses
+    fig = plot_regression(
+        experiment_data=experiment_data,
+        mean=predicted_distribution.mean,
+        covariance=predicted_distribution.covariance,
+        title=f"Reference GP ({curve_function.__name__})",
+    )
+    fig.savefig(os.path.join(output_folder, "reference.png"))
+    plt.close(fig)
+    return gp, gp_parameters
+
+
+def run_approximate_gp(
+    key: PRNGKey,
+    gp: GPBase,
+    gp_parameters: GPBaseParameters,
+    experiment_data: ExperimentData,
+    curve_function: Curve,
+    lr: float,
+    training_epochs: int,
+    save_checkpoint_frequency: int,
+    batch_size: int,
+    load_checkpoint: bool,
+    neural_network: nn.Module,
+    el_matrix_lower_bound: float,
+    include_eigendecomposition: bool,
+    output_folder: str,
+) -> Tuple[ApproximateGPBase, GPBaseParameters]:
+
+    approximate_gp = ApproximateGPRegression(
+        kernel=SVGPKernel(
+            reference_kernel=gp.kernel,
+            reference_kernel_parameters=gp_parameters.kernel,
+            log_observation_noise=gp_parameters.log_observation_noise,
+            inducing_points=experiment_data.x_inducing,
+            training_points=experiment_data.x_train,
+            el_matrix_lower_bound=el_matrix_lower_bound,
+        ),
+        mean=CustomMean(
+            mean_function=lambda parameters, x: neural_network.apply(parameters, x),
+        ),
+    )
+    key, subkey = jax.random.split(key)
+    approximate_gp_parameters = approximate_gp.generate_parameters(
+        {
+            "mean": approximate_gp.mean.generate_parameters(
+                {
+                    "custom": neural_network.init(
+                        subkey, experiment_data.x_train[:1, ...]
+                    )
+                }
+            ),
+            "kernel": approximate_gp.kernel.initialise_random_parameters(subkey),
+        }
+    )
+    regularisation = WassersteinRegularisation(
+        gp=approximate_gp,
+        regulariser=gp,
+        regulariser_parameters=gp_parameters,
+        include_eigendecomposition=include_eigendecomposition,
+        eigenvalue_regularisation=0,
+    )
+    empirical_risk = NegativeLogLikelihood(gp=approximate_gp)
+    gvi = GeneralisedVariationalInference(
+        empirical_risk=empirical_risk,
+        regularisation=regularisation,
+    )
+
+    key, subkey = jax.random.split(key)
+    approximate_parameters_path = os.path.join(output_folder, f"approximate.ckpt")
+    if load_checkpoint:
+        approximate_gp_parameters = approximate_gp.generate_parameters(
+            orbax_checkpointer.restore(approximate_parameters_path)
+        )
+    else:
+        approximate_gp_parameters, gvi_losses, emp_risk_losses, reg_losses = train_gvi(
+            key=subkey,
+            gp_parameters=approximate_gp_parameters,
+            gvi=gvi,
+            x=experiment_data.x_train,
+            y=experiment_data.y_train,
+            learning_rate=lr,
+            number_of_epochs=training_epochs,
+            save_checkpoint_frequency=save_checkpoint_frequency,
+            batch_size=batch_size,
+            checkpoint_path=os.path.join(
+                output_folder, "training-checkpoints", "approximate"
+            ),
+        )
+        ckpt = approximate_gp_parameters.dict()
+        save_args = orbax_utils.save_args_from_target(ckpt)
+        orbax_checkpointer.save(
+            approximate_parameters_path, ckpt, save_args=save_args, force=True
+        )
+        fig = plot_losses(
+            losses=gvi_losses,
+            loss_name="GVI Loss",
+            title=f"GVI Loss ({curve_function.__name__})",
+        )
+        fig.savefig(os.path.join(output_folder, "approximate-gvi-losses.png"))
+        plt.close(fig)
+        fig = plot_two_losses(
+            loss1=emp_risk_losses,
+            loss1_name="Empirical Risk",
+            loss2=reg_losses,
+            loss2_name="Regularisation",
+            title=f"GVI Loss Decomposed ({curve_function.__name__})",
+        )
+        fig.savefig(os.path.join(output_folder, "approximate-gvi-losses-breakdown.png"))
+        plt.close(fig)
+
+    predicted_distribution = Gaussian(
+        **approximate_gp.predict_probability(
+            x=experiment_data.x,
+            parameters=approximate_gp_parameters,
+        ).dict()
+    )
+    fig = plot_regression(
+        experiment_data=experiment_data,
+        mean=predicted_distribution.mean,
+        covariance=predicted_distribution.covariance,
+        title=f"Approximate GP ({curve_function.__name__})",
+    )
+    fig.savefig(os.path.join(output_folder, "approximate.png"))
+    plt.close(fig)
+    return approximate_gp, approximate_gp_parameters
+
+
+def run_tempered_gp(
+    key: PRNGKey,
+    gp: ApproximateGPBase,
+    gp_parameters: GPBaseParameters,
+    experiment_data: ExperimentData,
+    curve_function: Curve,
+    lr: float,
+    training_epochs: int,
+    save_checkpoint_frequency: int,
+    batch_size: int,
+    load_checkpoint: bool,
+    output_folder: str,
+) -> Tuple[GPBase, GPBaseParameters]:
+    tempered_gp = type(gp)(
+        mean=gp.mean,
+        kernel=TemperedKernel(
+            base_kernel=gp.kernel,
+            base_kernel_parameters=gp_parameters.kernel,
+            number_output_dimensions=gp.kernel.number_output_dimensions,
+        ),
+    )
+    tempered_gp_parameters = tempered_gp.Parameters(
+        log_observation_noise=gp_parameters.log_observation_noise,
+        mean=gp_parameters.mean,
+        kernel=TemperedKernelParameters(log_tempering_factor=jnp.log(2.0)),
+    )
+
+    parameters_path = os.path.join(output_folder, f"tempered.ckpt")
+    key, subkey = jax.random.split(key)
+    if load_checkpoint:
+        tempered_gp_parameters = gp.generate_parameters(
+            orbax_checkpointer.restore(parameters_path)
+        )
+    else:
+        tempered_gp_parameters, losses = train_tempered_nll(
+            key=subkey,
+            gp=tempered_gp,
+            gp_parameters=tempered_gp_parameters,
+            base_gp_parameters=gp_parameters,
+            x=experiment_data.x_validation,
+            y=experiment_data.x_validation,
+            learning_rate=lr,
+            number_of_epochs=training_epochs,
+            save_checkpoint_frequency=save_checkpoint_frequency,
+            batch_size=batch_size,
+            checkpoint_path=os.path.join(
+                output_folder, "training-checkpoints", "tempered"
+            ),
+        )
+        ckpt = gp_parameters.dict()
+        save_args = orbax_utils.save_args_from_target(ckpt)
+        orbax_checkpointer.save(parameters_path, ckpt, save_args=save_args, force=True)
+        fig = plot_losses(
+            losses=losses,
+            loss_name="Negative Log Likelihood",
+            title=f"Tempered GP NLL Loss ({curve_function.__name__})",
+        )
+        fig.savefig(os.path.join(output_folder, "tempered-losses.png"))
+        plt.close(fig)
+    predicted_distribution = Gaussian(
+        **tempered_gp.predict_probability(
+            x=experiment_data.x,
+            parameters=tempered_gp_parameters,
+        ).dict()
+    )
+    fig = plot_regression(
+        experiment_data=experiment_data,
+        mean=predicted_distribution.mean,
+        covariance=predicted_distribution.covariance,
+        title=f"Tempered GP ({curve_function.__name__})",
+    )
+    fig.savefig(os.path.join(output_folder, "tempered.png"))
+    plt.close(fig)
+    return tempered_gp, tempered_gp_parameters
 
 
 def run_experiment(
@@ -159,122 +316,98 @@ def run_experiment(
     kernel_parameters: KernelBaseParameters,
     reference_gp_lr: float,
     reference_gp_training_epochs: int,
+    reference_save_checkpoint_frequency: int,
     reference_gp_batch_size: int,
     reference_load_checkpoint: bool,
+    approximate_gp_lr: float,
+    approximate_gp_training_epochs: int,
+    approximate_save_checkpoint_frequency: int,
+    approximate_gp_batch_size: int,
+    approximate_load_checkpoint: bool,
     output_directory: str,
+    neural_network: nn.Module,
+    el_matrix_lower_bound: float,
+    include_eigendecomposition: bool,
+    tempered_gp_lr: float,
+    tempered_gp_training_epochs: int,
+    tempered_save_checkpoint_frequency: int,
+    tempered_gp_batch_size: int,
+    tempered_load_checkpoint: bool,
 ):
     curve_name = type(curve_function).__name__.lower()
     output_folder = os.path.join(output_directory, curve_name)
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
     key, subkey = jax.random.split(key)
-    y = curve_function(key=key, x=x, sigma_true=sigma_true)
-    key, subkey = jax.random.split(key)
-    (
-        x_train,
-        y_train,
-        x_test,
-        y_test,
-        x_validation,
-        y_validation,
-    ) = split_train_test_validation_data(
+    experiment_data = set_up_experiment(
         key=subkey,
+        curve_function=curve_function,
         x=x,
-        y=y,
+        sigma_true=sigma_true,
         number_of_test_intervals=number_of_test_intervals,
         total_number_of_intervals=total_number_of_intervals,
-        train_data_percentage=train_data_percentage,
-    )
-    key, subkey = jax.random.split(key)
-    x_inducing, y_inducing = calculate_inducing_points(
-        key=subkey,
-        x=x_train,
-        y=y_train,
         number_of_inducing_points=number_of_inducing_points,
+        train_data_percentage=train_data_percentage,
         kernel=kernel,
         kernel_parameters=kernel_parameters,
     )
     fig = plot_regression(
-        x_train=x_train,
-        y_train=y_train,
-        x_validation=x_validation,
-        y_validation=y_validation,
-        x_test=x_test,
-        y_test=y_test,
-        x_inducing=x_inducing,
-        y_inducing=y_inducing,
+        experiment_data=experiment_data,
         title=f"{curve_function.__name__}",
     )
     fig.savefig(os.path.join(output_folder, f"{curve_name}.png"))
-    gp = GPRegression(
-        x=x_inducing,
-        y=y_inducing,
+    plt.close(fig)
+    key, subkey = jax.random.split(key)
+    gp, gp_parameters = run_reference_gp(
+        key=subkey,
+        curve_function=curve_function,
+        experiment_data=experiment_data,
         kernel=kernel,
-        mean=ConstantMean(),
+        kernel_parameters=kernel_parameters,
+        lr=reference_gp_lr,
+        training_epochs=reference_gp_training_epochs,
+        save_checkpoint_frequency=reference_save_checkpoint_frequency,
+        batch_size=reference_gp_batch_size,
+        load_checkpoint=reference_load_checkpoint,
+        output_folder=output_folder,
     )
-    gp_parameters = gp.generate_parameters(
-        {
-            "log_observation_noise": jnp.log(1.0),
-            "mean": {"constant": 0},
-            "kernel": kernel_parameters.dict(),
-        }
+    key, subkey = jax.random.split(key)
+    approximate_gp, approximate_gp_parameters = run_approximate_gp(
+        key=subkey,
+        gp=gp,
+        gp_parameters=gp_parameters,
+        experiment_data=experiment_data,
+        curve_function=curve_function,
+        lr=approximate_gp_lr,
+        training_epochs=approximate_gp_training_epochs,
+        save_checkpoint_frequency=approximate_save_checkpoint_frequency,
+        batch_size=approximate_gp_batch_size,
+        load_checkpoint=approximate_load_checkpoint,
+        neural_network=neural_network,
+        el_matrix_lower_bound=el_matrix_lower_bound,
+        include_eigendecomposition=include_eigendecomposition,
+        output_folder=output_folder,
     )
-    reference_parameters_path = os.path.join(output_folder, f"reference.ckpt")
-    if reference_load_checkpoint:
-        gp_parameters = gp.generate_parameters(
-            orbax_checkpointer.restore(reference_parameters_path)
-        )
-    else:
-        gp_parameters, reference_losses = train_nll(
-            key=key,
-            gp=gp,
-            gp_parameters=gp_parameters,
-            x=x_inducing,
-            y=y_inducing,
-            learning_rate=reference_gp_lr,
-            number_of_epochs=reference_gp_training_epochs,
-            batch_size=reference_gp_batch_size,
-            checkpoint_path=os.path.join(
-                output_folder, "training-checkpoints", "reference"
-            ),
-        )
-        ckpt = gp_parameters.dict()
-        save_args = orbax_utils.save_args_from_target(ckpt)
-        orbax_checkpointer.save(
-            reference_parameters_path, ckpt, save_args=save_args, force=True
-        )
-        fig = plot_losses(
-            losses=reference_losses,
-            loss_name="Negative Log Likelihood",
-            title=f"{curve_function.__name__}",
-        )
-        fig.savefig(os.path.join(output_folder, "reference-losses.png"))
-    predicted_distribution = Gaussian(
-        **gp.predict_probability(
-            x=x,
-            parameters=gp_parameters,
-        ).dict()
+    key, subkey = jax.random.split(key)
+    run_tempered_gp(
+        key=subkey,
+        gp=approximate_gp,
+        gp_parameters=approximate_gp_parameters,
+        experiment_data=experiment_data,
+        curve_function=curve_function,
+        lr=tempered_gp_lr,
+        training_epochs=tempered_gp_training_epochs,
+        save_checkpoint_frequency=tempered_save_checkpoint_frequency,
+        batch_size=tempered_gp_batch_size,
+        load_checkpoint=tempered_load_checkpoint,
+        output_folder=output_folder,
     )
-    fig = plot_regression(
-        x_train=x_train,
-        y_train=y_train,
-        x_validation=x_validation,
-        y_validation=y_validation,
-        x_test=x_test,
-        y_test=y_test,
-        x_inducing=x_inducing,
-        y_inducing=y_inducing,
-        x=x,
-        mean=predicted_distribution.mean,
-        covariance=predicted_distribution.covariance,
-        title=f"{curve_function.__name__}",
-    )
-    fig.savefig(os.path.join(output_folder, "reference.png"))
 
 
 if __name__ == "__main__":
+    jax.config.update("jax_enable_x64", True)
     SEED = 0
-    NUMBER_OF_DATA_POINTS = 1000
+    NUMBER_OF_DATA_POINTS = 500
     SIGMA_TRUE = 0.5
     TRAIN_DATA_PERCENTAGE = 0.8
     NUMBER_OF_TEST_INTERVALS = 2
@@ -282,9 +415,23 @@ if __name__ == "__main__":
     NUMBER_OF_INDUCING_POINTS = int(np.sqrt(NUMBER_OF_DATA_POINTS))
     REFERENCE_GP_LR = 1e-3
     REFERENCE_GP_TRAINING_EPOCHS = 5000
+    REFERENCE_SAVE_CHECKPOINT_FREQUENCY = 1000
     REFERENCE_GP_BATCH_SIZE = 100
-    REFERENCE_LOAD_CHECKPOINT = True
+    REFERENCE_LOAD_CHECKPOINT = False
     OUTPUT_DIRECTORY = "outputs"
+    EL_MATRIX_LOWER_BOUND = 1e-8
+    INCLUDE_EIGENDECOMPOSITION = False
+    APPROXIMATE_GP_LR = 1e-4
+    APPROXIMATE_GP_TRAINING_EPOCHS = 200000
+    APPROXIMATE_SAVE_CHECKPOINT_FREQUENCY = 1000
+    APPROXIMATE_GP_BATCH_SIZE = 100
+    APPROXIMATE_LOAD_CHECKPOINT = False
+    TEMPERED_GP_LR = 1e-3
+    TEMPERED_GP_TRAINING_EPOCHS = 10000
+    TEMPERED_SAVE_CHECKPOINT_FREQUENCY = 1000
+    TEMPERED_GP_BATCH_SIZE = 100
+    TEMPERED_LOAD_CHECKPOINT = False
+    X = jnp.linspace(-2, 2, NUMBER_OF_DATA_POINTS, dtype=np.float64).reshape(-1, 1)
 
     _, _, kernel_fn = stax.serial(
         stax.Dense(10, W_std=10, b_std=10),
@@ -293,10 +440,10 @@ if __name__ == "__main__":
     )
     KERNEL = CustomKernel(lambda x1, x2: kernel_fn(x1, x2, "nngp"))
     KERNEL_PARAMETERS = KERNEL.Parameters()
+    NEURAL_NETWORK = MultiLayerPerceptron([1, 10, 1])
 
     np.random.seed(SEED)
     KEY = jax.random.PRNGKey(SEED)
-    X = jnp.linspace(-2, 2, NUMBER_OF_DATA_POINTS, dtype=np.float64).reshape(-1)
 
     for CURVE_FUNCTION in CURVE_FUNCTIONS:
         KEY, SUBKEY = jax.random.split(KEY)
@@ -313,7 +460,21 @@ if __name__ == "__main__":
             kernel_parameters=KERNEL_PARAMETERS,
             reference_gp_lr=REFERENCE_GP_LR,
             reference_gp_training_epochs=REFERENCE_GP_TRAINING_EPOCHS,
+            reference_save_checkpoint_frequency=REFERENCE_SAVE_CHECKPOINT_FREQUENCY,
             reference_gp_batch_size=REFERENCE_GP_BATCH_SIZE,
             reference_load_checkpoint=REFERENCE_LOAD_CHECKPOINT,
+            approximate_gp_lr=APPROXIMATE_GP_LR,
+            approximate_gp_training_epochs=APPROXIMATE_GP_TRAINING_EPOCHS,
+            approximate_save_checkpoint_frequency=APPROXIMATE_SAVE_CHECKPOINT_FREQUENCY,
+            approximate_gp_batch_size=APPROXIMATE_GP_BATCH_SIZE,
+            approximate_load_checkpoint=APPROXIMATE_LOAD_CHECKPOINT,
             output_directory=OUTPUT_DIRECTORY,
+            neural_network=NEURAL_NETWORK,
+            el_matrix_lower_bound=EL_MATRIX_LOWER_BOUND,
+            include_eigendecomposition=INCLUDE_EIGENDECOMPOSITION,
+            tempered_gp_lr=TEMPERED_GP_LR,
+            tempered_gp_training_epochs=TEMPERED_GP_TRAINING_EPOCHS,
+            tempered_save_checkpoint_frequency=TEMPERED_SAVE_CHECKPOINT_FREQUENCY,
+            tempered_gp_batch_size=TEMPERED_GP_BATCH_SIZE,
+            tempered_load_checkpoint=TEMPERED_LOAD_CHECKPOINT,
         )
