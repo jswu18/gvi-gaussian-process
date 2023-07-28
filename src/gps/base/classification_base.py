@@ -8,7 +8,7 @@ from scipy.special import roots_hermite
 
 from src.distributions import Multinomial
 from src.gps.base.base import GPBase, GPBaseParameters
-from src.kernels import TemperedKernelParameters
+from src.kernels import TemperedKernel, TemperedKernelParameters
 from src.kernels.multi_output_kernel import (
     MultiOutputKernel,
     MultiOutputKernelParameters,
@@ -27,7 +27,7 @@ class GPClassificationBase(GPBase, ABC):
     def __init__(
         self,
         mean: MeanBase,
-        kernel: MultiOutputKernel,
+        kernel: Union[MultiOutputKernel, TemperedKernel],
         epsilon: float,
         hermite_polynomial_order: int,
     ):

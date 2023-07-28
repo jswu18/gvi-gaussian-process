@@ -16,26 +16,17 @@ from src.utils.matrix_operations import add_diagonal_regulariser
 PRNGKey = Any  # pylint: disable=invalid-name
 
 
-class StochasticVariationalKernelParameters(ApproximateBaseKernelParameters):
-    """
-    el_matrix_lower_triangle is a lower triangle of the L matrix
-    el_matrix_log_diagonal is the logarithm of the diagonal of the L matrix
-    combining them such that:
-        L = el_matrix_lower_triangle + diagonalise(exp(el_matrix_log_diagonal))
-    and
-        sigma_matrix = L @ L.T
-    """
+class SVGPKernelParameters(ApproximateBaseKernelParameters):
 
-    el_matrix_lower_triangle: JaxArrayType[Literal["float64"]]
-    el_matrix_log_diagonal: JaxArrayType[Literal["float64"]]
+    log_el_matrix: JaxArrayType[Literal["float64"]]
 
 
-class StochasticVariationalKernel(ApproximateBaseKernel):
+class SVGPKernel(ApproximateBaseKernel):
     """
     The stochastic variational Gaussian process kernel as defined in Titsias (2009).
     """
 
-    Parameters = StochasticVariationalKernelParameters
+    Parameters = SVGPKernelParameters
 
     def __init__(
         self,
@@ -45,7 +36,7 @@ class StochasticVariationalKernel(ApproximateBaseKernel):
         inducing_points: jnp.ndarray,
         training_points: jnp.ndarray,
         diagonal_regularisation: float = 1e-5,
-        el_matrix_diagonal_lower_bound: float = 1e-8,
+        el_matrix_lower_bound: float = 1e-8,
         is_diagonal_regularisation_absolute_scale: bool = False,
         preprocess_function: Callable[[jnp.ndarray], jnp.ndarray] = None,
     ):
@@ -68,7 +59,7 @@ class StochasticVariationalKernel(ApproximateBaseKernel):
         self.inducing_points = inducing_points
         self.training_points = training_points
         self.diagonal_regularisation = diagonal_regularisation
-        self.el_matrix_diagonal_lower_bound = el_matrix_diagonal_lower_bound
+        self.el_matrix_lower_bound = el_matrix_lower_bound
         self.is_diagonal_regularisation_absolute_scale = (
             is_diagonal_regularisation_absolute_scale
         )
@@ -106,13 +97,13 @@ class StochasticVariationalKernel(ApproximateBaseKernel):
         Returns: A Pydantic model of the parameters for Stochastic Variational Gaussian Process Kernels.
 
         """
-        return StochasticVariationalKernel.Parameters(**parameters)
+        return SVGPKernel.Parameters(**parameters)
 
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def initialise_random_parameters(
         self,
         key: PRNGKey = None,
-    ) -> StochasticVariationalKernelParameters:
+    ) -> SVGPKernelParameters:
         """
         Initialise each parameter of the Stochastic Variational Gaussian Process Kernel with the appropriate random initialisation.
 
@@ -124,13 +115,9 @@ class StochasticVariationalKernel(ApproximateBaseKernel):
 
         """
         # raise warning if key is not None
-        (
-            el_matrix_lower_triangle,
-            el_matrix_log_diagonal,
-        ) = self.initialise_el_matrix_parameters()
-        return StochasticVariationalKernel.Parameters(
-            el_matrix_lower_triangle=el_matrix_lower_triangle,
-            el_matrix_log_diagonal=el_matrix_log_diagonal,
+        log_el_matrix = self.initialise_el_matrix_parameters()
+        return SVGPKernel.Parameters(
+            log_el_matrix=log_el_matrix,
         )
 
     def initialise_el_matrix_parameters(
@@ -154,20 +141,15 @@ class StochasticVariationalKernel(ApproximateBaseKernel):
             * self.gram_inducing_train
             @ self.gram_inducing_train.T
         )
-        inverse_cholesky_decomposition = jnp.linalg.inv(cholesky_decomposition)
-        el_matrix_lower_triangle = jnp.tril(inverse_cholesky_decomposition, k=-1)
-        el_matrix_log_diagonal = jnp.log(
+        return jnp.log(
             jnp.clip(
-                jnp.diag(inverse_cholesky_decomposition),
-                self.el_matrix_diagonal_lower_bound,
-                None,
+                jnp.linalg.inv(cholesky_decomposition), self.el_matrix_lower_bound, None
             )
         )
-        return el_matrix_lower_triangle, el_matrix_log_diagonal
 
     def _calculate_gram(
         self,
-        parameters: StochasticVariationalKernelParameters,
+        parameters: SVGPKernelParameters,
         x1: jnp.ndarray,
         x2: jnp.ndarray,
     ) -> jnp.ndarray:
@@ -188,13 +170,10 @@ class StochasticVariationalKernel(ApproximateBaseKernel):
             x1=x1,
             x2=x2,
         )
-        el_matrix_lower_triangle = jnp.tril(parameters.el_matrix_lower_triangle, k=-1)
-        el_matrix = el_matrix_lower_triangle + jnp.diag(
-            jnp.clip(
-                jnp.exp(parameters.el_matrix_log_diagonal),
-                self.el_matrix_diagonal_lower_bound,
-                None,
-            )
+        el_matrix = jnp.clip(
+            jnp.exp(parameters.log_el_matrix),
+            self.el_matrix_lower_bound,
+            None,
         )
         sigma_matrix = el_matrix.T @ el_matrix
         return (

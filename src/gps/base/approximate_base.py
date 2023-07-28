@@ -6,6 +6,11 @@ import jax.numpy as jnp
 from src.gps.base.base import GPBase, GPBaseParameters
 from src.kernels.base import KernelBase
 from src.means.base import MeanBase
+from src.utils.custom_types import JaxFloatType
+
+
+class ApproximateGPBaseParameters(GPBaseParameters):
+    log_observation_noise: JaxFloatType = jnp.log(0)
 
 
 class ApproximateGPBase(GPBase, ABC):

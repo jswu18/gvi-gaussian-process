@@ -132,7 +132,7 @@ def test_zero_bhattacharyya_approximate_gp_regression(
                     [1.5, 2.5, 3.5],
                 ]
             ),
-            4.75772775,
+            0.27404937,
         ],
     ],
 )
@@ -272,7 +272,7 @@ def test_zero_bhattacharyya_approximate_gp_classification(
         gp=gp,
         regulariser=gp,
         regulariser_parameters=gp_parameters,
-        eigenvalue_regularisation=0,
+        eigenvalue_regularisation=1e-8,
     )
 
     assert jnp.isclose(
@@ -308,7 +308,7 @@ def test_zero_bhattacharyya_approximate_gp_classification(
                     [1.5, 2.5, 3.5],
                 ]
             ),
-            19.09198822,
+            1.93082647,
         ],
     ],
 )

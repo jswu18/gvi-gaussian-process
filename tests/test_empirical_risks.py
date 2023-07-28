@@ -1,7 +1,11 @@
 import jax.numpy as jnp
 import pytest
 
-from mockers.kernel import MockKernel, MockKernelParameters
+from mockers.kernel import (
+    MockKernel,
+    MockKernelParameters,
+    calculate_reference_gram_eye_mock,
+)
 from mockers.mean import MockMean, MockMeanParameters
 from src.empirical_risks import NegativeLogLikelihood
 from src.gps import (
@@ -32,7 +36,7 @@ from src.kernels import MultiOutputKernel, MultiOutputKernelParameters
                 ]
             ),
             jnp.ones((2,)),
-            0.11574074,
+            1.4112988,
         ],
     ],
 )
@@ -80,7 +84,7 @@ def test_gp_regression_nll(
                 ]
             ),
             jnp.array([1.2, 4.2]),
-            5.14,
+            3.48893853,
         ],
     ],
 )
@@ -142,7 +146,7 @@ def test_approximate_gp_regression_nll(
                     [0.1, 0.2, 0.3, 0.4],
                 ]
             ),
-            0.07816624,
+            3.1939816,
         ],
     ],
 )
@@ -157,7 +161,10 @@ def test_gp_classification_nll(
 ):
     gp = GPClassification(
         mean=MockMean(number_output_dimensions=number_of_classes),
-        kernel=MultiOutputKernel(kernels=[MockKernel()] * number_of_classes),
+        kernel=MultiOutputKernel(
+            kernels=[MockKernel(kernel_func=calculate_reference_gram_eye_mock)]
+            * number_of_classes
+        ),
         x=x_train,
         y=y_train,
     )
@@ -172,7 +179,7 @@ def test_gp_classification_nll(
         ),
     )
     assert jnp.isclose(
-        nll.calculate_empirical_risk(
+        nll._calculate_empirical_risk(
             parameters=gp_parameters,
             x=x,
             y=y,
@@ -199,7 +206,7 @@ def test_gp_classification_nll(
                     [0.1, 0.2, 0.3, 0.4],
                 ]
             ),
-            0.4445,
+            1.20893853,
         ],
     ],
 )

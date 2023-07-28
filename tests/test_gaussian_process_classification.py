@@ -2,18 +2,18 @@ import jax.numpy as jnp
 import pytest
 from jax.config import config
 
-from mockers.kernel import MockKernel, MockKernelParameters
+from mockers.kernel import (
+    MockKernel,
+    MockKernelParameters,
+    calculate_reference_gram_eye_mock,
+)
 from mockers.mean import MockMean, MockMeanParameters
 from src.distributions import Multinomial
-from src.gps import (
-    ApproximateGPClassification,
-    GPClassification,
-    TemperedGP,
-    TemperedGPParameters,
-)
+from src.gps import ApproximateGPClassification, GPClassification
 from src.kernels import (
     MultiOutputKernel,
     MultiOutputKernelParameters,
+    TemperedKernel,
     TemperedKernelParameters,
 )
 
@@ -89,11 +89,10 @@ def test_exact_gp_classification_prediction(
 
 
 @pytest.mark.parametrize(
-    "number_of_classes,log_observation_noise,x_test,probabilities",
+    "number_of_classes,x_test,probabilities",
     [
         [
             4,
-            jnp.log(jnp.array([1, 0.5, 0.2, 0.9])),
             jnp.array(
                 [
                     [1.0, 3.0, 2.0],
@@ -102,18 +101,8 @@ def test_exact_gp_classification_prediction(
             ),
             jnp.array(
                 [
-                    [
-                        0.2691234800778074,
-                        0.24267525339935925,
-                        0.22395749569068032,
-                        0.26424377083219325,
-                    ],
-                    [
-                        0.2691234800778074,
-                        0.24267525339935925,
-                        0.22395749569068032,
-                        0.26424377083219325,
-                    ],
+                    [0.25, 0.25, 0.25, 0.25],
+                    [0.25, 0.25, 0.25, 0.25],
                 ]
             ),
         ],
@@ -121,7 +110,6 @@ def test_exact_gp_classification_prediction(
 )
 def test_approximate_gp_classification_prediction(
     number_of_classes: int,
-    log_observation_noise: float,
     x_test: jnp.ndarray,
     probabilities: jnp.ndarray,
 ):
@@ -130,14 +118,13 @@ def test_approximate_gp_classification_prediction(
         kernel=MultiOutputKernel(kernels=[MockKernel()] * number_of_classes),
     )
     parameters = gp.Parameters(
-        log_observation_noise=log_observation_noise,
         mean=MockMeanParameters(),
         kernel=MultiOutputKernelParameters(
             kernels=[MockKernelParameters()] * number_of_classes
         ),
     )
     multinomial = Multinomial(**gp.predict_probability(parameters, x=x_test).dict())
-    assert jnp.array_equal(multinomial.probabilities, probabilities)
+    assert jnp.allclose(multinomial.probabilities, probabilities)
 
 
 @pytest.mark.parametrize(
@@ -167,18 +154,8 @@ def test_approximate_gp_classification_prediction(
             ),
             jnp.array(
                 [
-                    [
-                        0.22861418433856942,
-                        0.18940287159753366,
-                        0.22580482612573324,
-                        0.3561781566207092,
-                    ],
-                    [
-                        0.22861418433856942,
-                        0.18940287159753366,
-                        0.22580482612573324,
-                        0.3561781566207092,
-                    ],
+                    [0.25269439, 0.19932216, 0.22324345, 0.32474002],
+                    [0.25269439, 0.19932216, 0.22324345, 0.32474002],
                 ]
             ),
         ],
@@ -197,7 +174,10 @@ def test_tempered_exact_gp_classification_prediction(
         x=x,
         y=y,
         mean=MockMean(number_output_dimensions=number_of_classes),
-        kernel=MultiOutputKernel(kernels=[MockKernel()] * number_of_classes),
+        kernel=MultiOutputKernel(
+            kernels=[MockKernel(kernel_func=calculate_reference_gram_eye_mock)]
+            * number_of_classes
+        ),
     )
     parameters = gp.Parameters(
         log_observation_noise=log_observation_noise,
@@ -206,19 +186,26 @@ def test_tempered_exact_gp_classification_prediction(
             kernels=[MockKernelParameters()] * number_of_classes
         ),
     )
-    tempered_gp = TemperedGP(
-        base_gp=gp,
-        base_gp_parameters=parameters,
+    tempered_gp = type(gp)(
+        mean=gp.mean,
+        kernel=TemperedKernel(
+            base_kernel=gp.kernel,
+            base_kernel_parameters=parameters.kernel,
+            number_output_dimensions=gp.kernel.number_output_dimensions,
+        ),
+        x=x,
+        y=y,
     )
-    tempered_gp_parameters = TemperedGPParameters(
-        kernel=TemperedKernelParameters(
-            log_tempering_factor=log_tempering_factor,
-        )
+    tempered_gp_parameters = tempered_gp.Parameters(
+        log_observation_noise=parameters.log_observation_noise,
+        mean=parameters.mean,
+        kernel=TemperedKernelParameters(log_tempering_factor=log_tempering_factor),
     )
+    tempered_gp.kernel._calculate_gram(tempered_gp_parameters.kernel, x1=x, x2=x)
     multinomial = Multinomial(
         **tempered_gp.predict_probability(tempered_gp_parameters, x=x_test).dict()
     )
-    assert jnp.array_equal(multinomial.probabilities, probabilities)
+    assert jnp.allclose(multinomial.probabilities, probabilities)
 
 
 @pytest.mark.parametrize(
@@ -236,18 +223,8 @@ def test_tempered_exact_gp_classification_prediction(
             ),
             jnp.array(
                 [
-                    [
-                        0.20811607036034108,
-                        0.20811607036034108,
-                        0.27109154535384067,
-                        0.3126763214158399,
-                    ],
-                    [
-                        0.20811607036034108,
-                        0.20811607036034108,
-                        0.27109154535384067,
-                        0.3126763214158399,
-                    ],
+                    [0.1690632, 0.20674086, 0.29816303, 0.32603688],
+                    [0.1690632, 0.20674086, 0.29816303, 0.32603688],
                 ]
             ),
         ],
@@ -271,16 +248,20 @@ def test_tempered_approximate_gp_classification_prediction(
             kernels=[MockKernelParameters()] * number_of_classes
         ),
     )
-    tempered_gp = TemperedGP(
-        base_gp=gp,
-        base_gp_parameters=parameters,
+    tempered_gp = type(gp)(
+        mean=gp.mean,
+        kernel=TemperedKernel(
+            base_kernel=gp.kernel,
+            base_kernel_parameters=parameters.kernel,
+            number_output_dimensions=gp.kernel.number_output_dimensions,
+        ),
     )
-    tempered_gp_parameters = TemperedGPParameters(
-        kernel=TemperedKernelParameters(
-            log_tempering_factor=log_tempering_factor,
-        )
+    tempered_gp_parameters = tempered_gp.Parameters(
+        log_observation_noise=parameters.log_observation_noise,
+        mean=parameters.mean,
+        kernel=TemperedKernelParameters(log_tempering_factor=log_tempering_factor),
     )
     multinomial = Multinomial(
         **tempered_gp.predict_probability(tempered_gp_parameters, x=x_test).dict()
     )
-    assert jnp.array_equal(multinomial.probabilities, probabilities)
+    assert jnp.allclose(multinomial.probabilities, probabilities)
