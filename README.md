@@ -6,9 +6,6 @@ For a quick overview of GVI, see <a href="https://jswu18.github.io/posts/2023/07
 
 Gaussian Wasserstein Inference is developed in <a href="https://arxiv.org/pdf/2205.06342.pdf">this paper</a> by Veit Wild.
 
-
-
-
 To get set up:
 
 1. Install `poetry`
@@ -22,3 +19,67 @@ pip install poetry
 ```shell
 poetry install
 ```
+
+## Sample Regression Curves
+
+<p align="middle">
+  <img src="experiments/regression/outputs/curve0/curve0.png" width="24%" />
+  <img src="experiments/regression/outputs/curve0/reference.png" width="24%" />
+  <img src="experiments/regression/outputs/curve0/approximate.png" width="24%" />
+  <img src="experiments/regression/outputs/curve0/tempered.png" width="24%" />
+</p>
+<p align="middle">
+  <img src="experiments/regression/outputs/curve1/curve1.png" width="24%" />
+  <img src="experiments/regression/outputs/curve1/reference.png" width="24%" />
+  <img src="experiments/regression/outputs/curve1/approximate.png" width="24%" />
+  <img src="experiments/regression/outputs/curve1/tempered.png" width="24%" />
+</p>
+<p align="middle">
+  <img src="experiments/regression/outputs/curve2/curve2.png" width="24%" />
+  <img src="experiments/regression/outputs/curve2/reference.png" width="24%" />
+  <img src="experiments/regression/outputs/curve2/approximate.png" width="24%" />
+  <img src="experiments/regression/outputs/curve2/tempered.png" width="24%" />
+</p>
+<p align="middle">
+  <img src="experiments/regression/outputs/curve3/curve3.png" width="24%" />
+  <img src="experiments/regression/outputs/curve3/reference.png" width="24%" />
+  <img src="experiments/regression/outputs/curve3/approximate.png" width="24%" />
+  <img src="experiments/regression/outputs/curve3/tempered.png" width="24%" />
+</p>
+<p align="middle">
+  <img src="experiments/regression/outputs/curve4/curve4.png" width="24%" />
+  <img src="experiments/regression/outputs/curve4/reference.png" width="24%" />
+  <img src="experiments/regression/outputs/curve4/approximate.png" width="24%" />
+  <img src="experiments/regression/outputs/curve4/tempered.png" width="24%" />
+</p>
+<p align="middle">
+  <img src="experiments/regression/outputs/curve5/curve5.png" width="24%" />
+  <img src="experiments/regression/outputs/curve5/reference.png" width="24%" />
+  <img src="experiments/regression/outputs/curve5/approximate.png" width="24%" />
+  <img src="experiments/regression/outputs/curve5/tempered.png" width="24%" />
+</p>
+<p align="middle">
+  <img src="experiments/regression/outputs/curve6/curve6.png" width="24%" />
+  <img src="experiments/regression/outputs/curve6/reference.png" width="24%" />
+  <img src="experiments/regression/outputs/curve6/approximate.png" width="24%" />
+  <img src="experiments/regression/outputs/curve6/tempered.png" width="24%" />
+</p>
+<p align="middle">
+  <img src="experiments/regression/outputs/curve7/curve7.png" width="24%" />
+  <img src="experiments/regression/outputs/curve7/reference.png" width="24%" />
+  <img src="experiments/regression/outputs/curve7/approximate.png" width="24%" />
+  <img src="experiments/regression/outputs/curve7/tempered.png" width="24%" />
+</p>
+<p align="middle">
+  <img src="experiments/regression/outputs/curve8/curve8.png" width="24%" />
+  <img src="experiments/regression/outputs/curve8/reference.png" width="24%" />
+  <img src="experiments/regression/outputs/curve8/approximate.png" width="24%" />
+  <img src="experiments/regression/outputs/curve8/tempered.png" width="24%" />
+</p>
+<p align="middle">
+  <img src="experiments/regression/outputs/curve9/curve9.png" width="24%" />
+  <img src="experiments/regression/outputs/curve9/reference.png" width="24%" />
+  <img src="experiments/regression/outputs/curve9/approximate.png" width="24%" />
+  <img src="experiments/regression/outputs/curve9/tempered.png" width="24%" />
+</p>
+
