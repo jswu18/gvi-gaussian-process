@@ -150,7 +150,6 @@ if __name__ == "__main__":
     from src.utils.custom_types import PRNGKey
 
     jax.config.update("jax_enable_x64", True)
-    SEED = 0
     NUMBER_OF_DATA_POINTS = 500
     SIGMA_TRUE = 0.5
     TRAIN_DATA_PERCENTAGE = 0.8
@@ -186,9 +185,9 @@ if __name__ == "__main__":
     KERNEL_PARAMETERS = KERNEL.Parameters()
     NEURAL_NETWORK = MultiLayerPerceptron([1, 10, 1])
 
-    for CURVE_FUNCTION in CURVE_FUNCTIONS:
-        np.random.seed(SEED)
-        KEY, SUBKEY = jax.random.split(jax.random.PRNGKey(SEED))
+    for i, CURVE_FUNCTION in enumerate(CURVE_FUNCTIONS):
+        np.random.seed(i)
+        KEY, SUBKEY = jax.random.split(jax.random.PRNGKey(i))
         curve_name = type(CURVE_FUNCTION).__name__.lower()
         output_folder = os.path.join(OUTPUT_DIRECTORY, curve_name)
         if not os.path.exists(output_folder):
