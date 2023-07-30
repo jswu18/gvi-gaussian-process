@@ -26,7 +26,7 @@ from src.gps import ApproximateGPRegression, GPRegression
 from src.gps.base.approximate_base import ApproximateGPBase
 from src.gps.base.base import GPBase, GPBaseParameters
 from src.kernels import CustomKernel, TemperedKernel, TemperedKernelParameters
-from src.kernels.approximate import SVGPKernel
+from src.kernels.approximate import StochasticVariationalKernel
 from src.kernels.base import KernelBase, KernelBaseParameters
 from src.means import ConstantMean, CustomMean
 from src.regularisations import WassersteinRegularisation
@@ -94,6 +94,10 @@ def run_reference_gp(
         )
         fig.savefig(os.path.join(output_folder, "reference-losses.png"))
         plt.close(fig)
+        np.save(
+            os.path.join(output_folder, "reference-losses.npy"),
+            np.array(reference_losses),
+        )
     predicted_distribution = Gaussian(
         **gp.predict_probability(
             x=experiment_data.x,
@@ -129,13 +133,14 @@ def run_approximate_gp(
 ) -> Tuple[ApproximateGPBase, GPBaseParameters]:
 
     approximate_gp = ApproximateGPRegression(
-        kernel=SVGPKernel(
+        kernel=StochasticVariationalKernel(
             reference_kernel=gp.kernel,
             reference_kernel_parameters=gp_parameters.kernel,
             log_observation_noise=gp_parameters.log_observation_noise,
             inducing_points=experiment_data.x_inducing,
             training_points=experiment_data.x_train,
-            el_matrix_lower_bound=el_matrix_lower_bound,
+            diagonal_regularisation=el_matrix_lower_bound,
+            el_matrix_diagonal_lower_bound=el_matrix_lower_bound,
         ),
         mean=CustomMean(
             mean_function=lambda parameters, x: neural_network.apply(parameters, x),
@@ -161,7 +166,9 @@ def run_approximate_gp(
         include_eigendecomposition=include_eigendecomposition,
         eigenvalue_regularisation=0,
     )
-    empirical_risk = NegativeLogLikelihood(gp=approximate_gp)
+    empirical_risk = NegativeLogLikelihood(
+        gp=approximate_gp,
+    )
     gvi = GeneralisedVariationalInference(
         empirical_risk=empirical_risk,
         regularisation=regularisation,
@@ -209,6 +216,18 @@ def run_approximate_gp(
         )
         fig.savefig(os.path.join(output_folder, "approximate-gvi-losses-breakdown.png"))
         plt.close(fig)
+        np.save(
+            os.path.join(output_folder, "approximate-gvi-losses.npy"),
+            np.array(gvi_losses),
+        )
+        np.save(
+            os.path.join(output_folder, "approximate-emp-risk-losses.npy"),
+            np.array(emp_risk_losses),
+        )
+        np.save(
+            os.path.join(output_folder, "approximate-reg-losses.npy"),
+            np.array(reg_losses),
+        )
 
     predicted_distribution = Gaussian(
         **approximate_gp.predict_probability(
@@ -286,6 +305,8 @@ def run_tempered_gp(
         )
         fig.savefig(os.path.join(output_folder, "tempered-losses.png"))
         plt.close(fig)
+        np.save(os.path.join(output_folder, "tempered-losses.npy"), np.array(losses))
+
     predicted_distribution = Gaussian(
         **tempered_gp.predict_probability(
             x=experiment_data.x,
@@ -406,7 +427,6 @@ def run_experiment(
 
 if __name__ == "__main__":
     jax.config.update("jax_enable_x64", True)
-    SEED = 0
     NUMBER_OF_DATA_POINTS = 500
     SIGMA_TRUE = 0.5
     TRAIN_DATA_PERCENTAGE = 0.8
@@ -419,34 +439,32 @@ if __name__ == "__main__":
     REFERENCE_GP_BATCH_SIZE = 100
     REFERENCE_LOAD_CHECKPOINT = False
     OUTPUT_DIRECTORY = "outputs"
-    EL_MATRIX_LOWER_BOUND = 1e-8
+    EL_MATRIX_LOWER_BOUND = 1e-5
     INCLUDE_EIGENDECOMPOSITION = False
-    APPROXIMATE_GP_LR = 1e-4
-    APPROXIMATE_GP_TRAINING_EPOCHS = 200000
+    APPROXIMATE_GP_LR = 1e-5
+    APPROXIMATE_GP_TRAINING_EPOCHS = 1000000
     APPROXIMATE_SAVE_CHECKPOINT_FREQUENCY = 1000
-    APPROXIMATE_GP_BATCH_SIZE = 100
+    APPROXIMATE_GP_BATCH_SIZE = 500
     APPROXIMATE_LOAD_CHECKPOINT = False
     TEMPERED_GP_LR = 1e-3
-    TEMPERED_GP_TRAINING_EPOCHS = 10000
+    TEMPERED_GP_TRAINING_EPOCHS = 2000
     TEMPERED_SAVE_CHECKPOINT_FREQUENCY = 1000
-    TEMPERED_GP_BATCH_SIZE = 100
+    TEMPERED_GP_BATCH_SIZE = 500
     TEMPERED_LOAD_CHECKPOINT = False
     X = jnp.linspace(-2, 2, NUMBER_OF_DATA_POINTS, dtype=np.float64).reshape(-1, 1)
 
     _, _, kernel_fn = stax.serial(
-        stax.Dense(10, W_std=10, b_std=10),
+        stax.Dense(50, W_std=10, b_std=10),
         stax.Erf(),
         stax.Dense(1, W_std=10, b_std=10),
     )
     KERNEL = CustomKernel(lambda x1, x2: kernel_fn(x1, x2, "nngp"))
     KERNEL_PARAMETERS = KERNEL.Parameters()
-    NEURAL_NETWORK = MultiLayerPerceptron([1, 10, 1])
+    NEURAL_NETWORK = MultiLayerPerceptron([1, 50, 1])
 
-    np.random.seed(SEED)
-    KEY = jax.random.PRNGKey(SEED)
-
-    for CURVE_FUNCTION in CURVE_FUNCTIONS:
-        KEY, SUBKEY = jax.random.split(KEY)
+    for i, CURVE_FUNCTION in enumerate(CURVE_FUNCTIONS):
+        np.random.seed(i)
+        KEY, SUBKEY = jax.random.split(jax.random.PRNGKey(i))
         run_experiment(
             key=SUBKEY,
             curve_function=CURVE_FUNCTION,

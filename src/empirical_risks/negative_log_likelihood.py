@@ -46,9 +46,9 @@ class NegativeLogLikelihood(EmpiricalRiskBase):
                             scale=scale_,
                         )
                     )(
-                        y.reshape(-1, 1),
-                        gaussian.mean.reshape(-1, 1),
-                        jnp.sqrt(gaussian.covariance.reshape(-1, 1)),
+                        y.reshape(-1),
+                        gaussian.mean.reshape(-1),
+                        jnp.sqrt(gaussian.covariance.reshape(-1)),
                     )
                 )
             )

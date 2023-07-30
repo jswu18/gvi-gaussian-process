@@ -12,7 +12,9 @@ from src.utils.jit_compiler import JitCompiler
 
 class GeneralisedVariationalInference:
     def __init__(
-        self, regularisation: RegularisationBase, empirical_risk: EmpiricalRiskBase
+        self,
+        regularisation: RegularisationBase,
+        empirical_risk: EmpiricalRiskBase,
     ):
         self.regularisation = regularisation
         self.empirical_risk = empirical_risk
