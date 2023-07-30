@@ -434,7 +434,7 @@ if __name__ == "__main__":
     TOTAL_NUMBER_OF_INTERVALS = 8
     NUMBER_OF_INDUCING_POINTS = int(np.sqrt(NUMBER_OF_DATA_POINTS))
     REFERENCE_GP_LR = 1e-3
-    REFERENCE_GP_TRAINING_EPOCHS = 5000
+    REFERENCE_GP_TRAINING_EPOCHS = 10000
     REFERENCE_SAVE_CHECKPOINT_FREQUENCY = 1000
     REFERENCE_GP_BATCH_SIZE = 100
     REFERENCE_LOAD_CHECKPOINT = False
@@ -462,9 +462,9 @@ if __name__ == "__main__":
     KERNEL_PARAMETERS = KERNEL.Parameters()
     NEURAL_NETWORK = MultiLayerPerceptron([1, 50, 1])
 
-    for i, CURVE_FUNCTION in enumerate(CURVE_FUNCTIONS):
-        np.random.seed(i)
-        KEY, SUBKEY = jax.random.split(jax.random.PRNGKey(i))
+    for CURVE_FUNCTION in CURVE_FUNCTIONS:
+        np.random.seed(CURVE_FUNCTION.seed)
+        KEY, SUBKEY = jax.random.split(jax.random.PRNGKey(CURVE_FUNCTION.seed))
         run_experiment(
             key=SUBKEY,
             curve_function=CURVE_FUNCTION,
