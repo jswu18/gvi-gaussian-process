@@ -144,7 +144,6 @@ if __name__ == "__main__":
     from neural_tangents import stax
 
     from experiments.data import set_up_experiment
-    from experiments.neural_networks import MultiLayerPerceptron
     from experiments.regression.plotters import plot_regression
     from src.kernels import CustomKernel
     from src.utils.custom_types import PRNGKey
@@ -156,24 +155,8 @@ if __name__ == "__main__":
     NUMBER_OF_TEST_INTERVALS = 2
     TOTAL_NUMBER_OF_INTERVALS = 8
     NUMBER_OF_INDUCING_POINTS = int(np.sqrt(NUMBER_OF_DATA_POINTS))
-    REFERENCE_GP_LR = 1e-3
-    REFERENCE_GP_TRAINING_EPOCHS = 5000
-    REFERENCE_SAVE_CHECKPOINT_FREQUENCY = 1000
-    REFERENCE_GP_BATCH_SIZE = 100
-    REFERENCE_LOAD_CHECKPOINT = False
     OUTPUT_DIRECTORY = "outputs"
-    EL_MATRIX_LOWER_BOUND = 1e-10
-    INCLUDE_EIGENDECOMPOSITION = False
-    APPROXIMATE_GP_LR = 1e-4
-    APPROXIMATE_GP_TRAINING_EPOCHS = 200000
-    APPROXIMATE_SAVE_CHECKPOINT_FREQUENCY = 1000
-    APPROXIMATE_GP_BATCH_SIZE = 500
-    APPROXIMATE_LOAD_CHECKPOINT = False
-    TEMPERED_GP_LR = 1e-3
-    TEMPERED_GP_TRAINING_EPOCHS = 2000
-    TEMPERED_SAVE_CHECKPOINT_FREQUENCY = 1000
-    TEMPERED_GP_BATCH_SIZE = 500
-    TEMPERED_LOAD_CHECKPOINT = False
+
     X = jnp.linspace(-2, 2, NUMBER_OF_DATA_POINTS, dtype=np.float64).reshape(-1, 1)
 
     _, _, kernel_fn = stax.serial(
@@ -183,7 +166,6 @@ if __name__ == "__main__":
     )
     KERNEL = CustomKernel(lambda x1, x2: kernel_fn(x1, x2, "nngp"))
     KERNEL_PARAMETERS = KERNEL.Parameters()
-    NEURAL_NETWORK = MultiLayerPerceptron([1, 10, 1])
 
     for i, CURVE_FUNCTION in enumerate(CURVE_FUNCTIONS):
         np.random.seed(i)
