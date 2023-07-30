@@ -1,4 +1,5 @@
 import warnings
+from typing import Optional
 
 import jax
 import jax.numpy as jnp
@@ -96,8 +97,8 @@ class WassersteinRegularisation(RegularisationBase):
         covariance_train_p_diagonal: jnp.ndarray,
         mean_train_q: jnp.ndarray,
         covariance_train_q_diagonal: jnp.ndarray,
-        gram_batch_train_p: jnp.ndarray,
-        gram_batch_train_q: jnp.ndarray,
+        gram_batch_train_p: Optional[jnp.ndarray],
+        gram_batch_train_q: Optional[jnp.ndarray],
         eigenvalue_regularisation: float = 1e-8,
         is_eigenvalue_regularisation_absolute_scale: bool = False,
         use_symmetric_matrix_eigendecomposition: bool = True,
@@ -126,20 +127,20 @@ class WassersteinRegularisation(RegularisationBase):
         Returns: the empirical Gaussian Wasserstein metric
 
         """
-        cross_covariance_eigenvalues = WassersteinRegularisation._compute_cross_covariance_eigenvalues(
-            gram_batch_train_p,
-            gram_batch_train_q,
-            eigenvalue_regularisation=eigenvalue_regularisation,
-            is_eigenvalue_regularisation_absolute_scale=is_eigenvalue_regularisation_absolute_scale,
-            use_symmetric_matrix_eigendecomposition=use_symmetric_matrix_eigendecomposition,
-        )
-        batch_size, train_size = gram_batch_train_p.shape
         gaussian_wasserstein_metric = (
-            jnp.mean((mean_train_p - mean_train_q) ** 2)
+            jnp.mean(jnp.square(mean_train_p - mean_train_q))
             + jnp.mean(covariance_train_p_diagonal)
             + jnp.mean(covariance_train_q_diagonal)
         )
         if include_eigendecomposition:
+            batch_size, train_size = gram_batch_train_p.shape
+            cross_covariance_eigenvalues = WassersteinRegularisation._compute_cross_covariance_eigenvalues(
+                gram_batch_train_p,
+                gram_batch_train_q,
+                eigenvalue_regularisation=eigenvalue_regularisation,
+                is_eigenvalue_regularisation_absolute_scale=is_eigenvalue_regularisation_absolute_scale,
+                use_symmetric_matrix_eigendecomposition=use_symmetric_matrix_eigendecomposition,
+            )
             gaussian_wasserstein_metric -= (
                 2 / jnp.sqrt(batch_size * train_size)
             ) * jnp.sum(jnp.sqrt(cross_covariance_eigenvalues))
@@ -168,48 +169,81 @@ class WassersteinRegularisation(RegularisationBase):
             gaussian_q.mean,
             gaussian_q.covariance,
         )
-        gram_batch_train_p = self.regulariser.calculate_prediction_gaussian_covariance(
-            parameters=self.regulariser_parameters,
-            x=x,
-            full_covariance=True,
-        )
-        gram_batch_train_q = self.gp.calculate_prediction_gaussian_covariance(
-            parameters=parameters,
-            x=x,
-            full_covariance=True,
-        )
-        return jnp.sum(
-            jax.vmap(
-                lambda m_p, c_p, m_q, c_q, c_bt_p, c_bt_q: WassersteinRegularisation.calculate_gaussian_wasserstein_metric(
-                    mean_train_p=m_p,
-                    covariance_train_p_diagonal=c_p,
-                    mean_train_q=m_q,
-                    covariance_train_q_diagonal=c_q,
-                    gram_batch_train_p=c_bt_p,
-                    gram_batch_train_q=c_bt_q,
-                    eigenvalue_regularisation=self.eigenvalue_regularisation,
-                    is_eigenvalue_regularisation_absolute_scale=self.is_eigenvalue_regularisation_absolute_scale,
-                    use_symmetric_matrix_eigendecomposition=self.use_symmetric_matrix_eigendecomposition,
-                    include_eigendecomposition=self.include_eigendecomposition,
+        if self.include_eigendecomposition:
+            gram_batch_train_p = (
+                self.regulariser.calculate_prediction_gaussian_covariance(
+                    parameters=self.regulariser_parameters,
+                    x=x,
+                    full_covariance=True,
                 )
-            )(
-                jnp.atleast_2d(mean_train_p).reshape(
-                    self.gp.mean.number_output_dimensions, -1
-                ),
-                jnp.atleast_2d(covariance_train_p_diagonal).reshape(
-                    self.gp.mean.number_output_dimensions, -1
-                ),
-                jnp.atleast_2d(mean_train_q).reshape(
-                    self.gp.mean.number_output_dimensions, -1
-                ),
-                jnp.atleast_2d(covariance_train_q_diagonal).reshape(
-                    self.gp.mean.number_output_dimensions, -1
-                ),
-                jnp.atleast_3d(gram_batch_train_p).reshape(
-                    self.gp.mean.number_output_dimensions, x.shape[0], x.shape[0]
-                ),
-                jnp.atleast_3d(gram_batch_train_q).reshape(
-                    self.gp.mean.number_output_dimensions, x.shape[0], x.shape[0]
-                ),
             )
-        ).astype(jnp.float64)
+            gram_batch_train_q = self.gp.calculate_prediction_gaussian_covariance(
+                parameters=parameters,
+                x=x,
+                full_covariance=True,
+            )
+            return jnp.sum(
+                jax.vmap(
+                    lambda m_p, c_p, m_q, c_q, c_bt_p, c_bt_q: WassersteinRegularisation.calculate_gaussian_wasserstein_metric(
+                        mean_train_p=m_p,
+                        covariance_train_p_diagonal=c_p,
+                        mean_train_q=m_q,
+                        covariance_train_q_diagonal=c_q,
+                        gram_batch_train_p=c_bt_p,
+                        gram_batch_train_q=c_bt_q,
+                        eigenvalue_regularisation=self.eigenvalue_regularisation,
+                        is_eigenvalue_regularisation_absolute_scale=self.is_eigenvalue_regularisation_absolute_scale,
+                        use_symmetric_matrix_eigendecomposition=self.use_symmetric_matrix_eigendecomposition,
+                        include_eigendecomposition=self.include_eigendecomposition,
+                    )
+                )(
+                    jnp.atleast_2d(mean_train_p).reshape(
+                        self.gp.mean.number_output_dimensions, -1
+                    ),
+                    jnp.atleast_2d(covariance_train_p_diagonal).reshape(
+                        self.gp.mean.number_output_dimensions, -1
+                    ),
+                    jnp.atleast_2d(mean_train_q).reshape(
+                        self.gp.mean.number_output_dimensions, -1
+                    ),
+                    jnp.atleast_2d(covariance_train_q_diagonal).reshape(
+                        self.gp.mean.number_output_dimensions, -1
+                    ),
+                    jnp.atleast_3d(gram_batch_train_p).reshape(
+                        self.gp.mean.number_output_dimensions, x.shape[0], x.shape[0]
+                    ),
+                    jnp.atleast_3d(gram_batch_train_q).reshape(
+                        self.gp.mean.number_output_dimensions, x.shape[0], x.shape[0]
+                    ),
+                )
+            ).astype(jnp.float64)
+        else:
+            return jnp.sum(
+                jax.vmap(
+                    lambda m_p, c_p, m_q, c_q: WassersteinRegularisation.calculate_gaussian_wasserstein_metric(
+                        mean_train_p=m_p,
+                        covariance_train_p_diagonal=c_p,
+                        mean_train_q=m_q,
+                        covariance_train_q_diagonal=c_q,
+                        gram_batch_train_p=None,
+                        gram_batch_train_q=None,
+                        eigenvalue_regularisation=self.eigenvalue_regularisation,
+                        is_eigenvalue_regularisation_absolute_scale=self.is_eigenvalue_regularisation_absolute_scale,
+                        use_symmetric_matrix_eigendecomposition=self.use_symmetric_matrix_eigendecomposition,
+                        include_eigendecomposition=self.include_eigendecomposition,
+                    )
+                )(
+                    jnp.atleast_2d(mean_train_p).reshape(
+                        self.gp.mean.number_output_dimensions, -1
+                    ),
+                    jnp.atleast_2d(covariance_train_p_diagonal).reshape(
+                        self.gp.mean.number_output_dimensions, -1
+                    ),
+                    jnp.atleast_2d(mean_train_q).reshape(
+                        self.gp.mean.number_output_dimensions, -1
+                    ),
+                    jnp.atleast_2d(covariance_train_q_diagonal).reshape(
+                        self.gp.mean.number_output_dimensions, -1
+                    ),
+                )
+            ).astype(jnp.float64)

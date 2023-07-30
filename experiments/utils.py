@@ -57,13 +57,6 @@ def train_nll(
     opt_state = optimizer.init(gp_parameters.dict())
     nll_loss = NegativeLogLikelihood(gp=gp)
     for epoch in tqdm(range(number_of_epochs)):
-        losses.append(
-            nll_loss.calculate_empirical_risk(
-                parameters=gp_parameters,
-                x=x,
-                y=y,
-            )
-        )
         if epoch % save_checkpoint_frequency == 0:
             ckpt = gp_parameters.dict()
             save_args = orbax_utils.save_args_from_target(ckpt)
@@ -96,13 +89,13 @@ def train_nll(
                 optax.apply_updates(gp_parameters.dict(), updates)
             )
             data_batch = next(batch_generator, None)
-    losses.append(
-        nll_loss.calculate_empirical_risk(
-            parameters=gp_parameters,
-            x=x,
-            y=y,
+        losses.append(
+            nll_loss.calculate_empirical_risk(
+                parameters=gp_parameters,
+                x=x,
+                y=y,
+            )
         )
-    )
     return gp_parameters, losses
 
 
@@ -124,13 +117,6 @@ def train_tempered_nll(
     opt_state = optimizer.init(gp_parameters.kernel.dict())
     nll_loss = NegativeLogLikelihood(gp=gp)
     for epoch in tqdm(range(number_of_epochs)):
-        losses.append(
-            nll_loss.calculate_empirical_risk(
-                parameters=gp_parameters,
-                x=x,
-                y=y,
-            )
-        )
         if epoch % save_checkpoint_frequency == 0:
             ckpt = gp_parameters.dict()
             save_args = orbax_utils.save_args_from_target(ckpt)
@@ -174,13 +160,13 @@ def train_tempered_nll(
                 kernel=tempered_gp_kernel_parameters,
             )
             data_batch = next(batch_generator, None)
-    losses.append(
-        nll_loss.calculate_empirical_risk(
-            parameters=gp_parameters,
-            x=x,
-            y=y,
+        losses.append(
+            nll_loss.calculate_empirical_risk(
+                parameters=gp_parameters,
+                x=x,
+                y=y,
+            )
         )
-    )
     return gp_parameters, losses
 
 
@@ -202,26 +188,6 @@ def train_gvi(
     reg_losses = []
     opt_state = optimizer.init(gp_parameters.dict())
     for epoch in tqdm(range(number_of_epochs)):
-        gvi_losses.append(
-            gvi.calculate_loss(
-                parameters=gp_parameters,
-                x=x,
-                y=y,
-            )
-        )
-        emp_risk_losses.append(
-            gvi.empirical_risk.calculate_empirical_risk(
-                parameters=gp_parameters,
-                x=x,
-                y=y,
-            )
-        )
-        reg_losses.append(
-            gvi.regularisation.calculate_regularisation(
-                parameters=gp_parameters,
-                x=x,
-            )
-        )
         if epoch % save_checkpoint_frequency == 0:
             ckpt = gp_parameters.dict()
             save_args = orbax_utils.save_args_from_target(ckpt)
@@ -254,24 +220,24 @@ def train_gvi(
                 optax.apply_updates(gp_parameters.dict(), updates)
             )
             data_batch = next(batch_generator, None)
-    gvi_losses.append(
-        gvi.calculate_loss(
-            parameters=gp_parameters,
-            x=x,
-            y=y,
+        gvi_losses.append(
+            gvi.calculate_loss(
+                parameters=gp_parameters,
+                x=x,
+                y=y,
+            )
         )
-    )
-    emp_risk_losses.append(
-        gvi.empirical_risk.calculate_empirical_risk(
-            parameters=gp_parameters,
-            x=x,
-            y=y,
+        emp_risk_losses.append(
+            gvi.empirical_risk.calculate_empirical_risk(
+                parameters=gp_parameters,
+                x=x,
+                y=y,
+            )
         )
-    )
-    reg_losses.append(
-        gvi.regularisation.calculate_regularisation(
-            parameters=gp_parameters,
-            x=x,
+        reg_losses.append(
+            gvi.regularisation.calculate_regularisation(
+                parameters=gp_parameters,
+                x=x,
+            )
         )
-    )
     return gp_parameters, gvi_losses, emp_risk_losses, reg_losses
