@@ -3,7 +3,7 @@ import pytest
 from jax import random
 from jax.config import config
 
-from mockers.kernels import ReferenceKernelMock, ReferenceKernelParametersMock
+from mockers.kernel import MockKernel, MockKernelParameters
 from src.inducing_points_selection import ConditionalVarianceInducingPointsSelector
 
 config.update("jax_enable_x64", True)
@@ -39,8 +39,8 @@ def test_inducing_points_selection(
         key=random.PRNGKey(0),
         training_inputs=x,
         number_of_inducing_points=2,
-        kernel=ReferenceKernelMock(),
-        kernel_parameters=ReferenceKernelParametersMock(),
+        kernel=MockKernel(),
+        kernel_parameters=MockKernelParameters(),
     )
     assert jnp.array_equal(
         x_inducing_selected,
@@ -83,8 +83,8 @@ def test_inducing_points_indices_selection(
         key=random.PRNGKey(0),
         training_inputs=x,
         number_of_inducing_points=2,
-        kernel=ReferenceKernelMock(),
-        kernel_parameters=ReferenceKernelParametersMock(),
+        kernel=MockKernel(),
+        kernel_parameters=MockKernelParameters(),
     )
     assert jnp.array_equal(
         x_inducing_selected_indices,

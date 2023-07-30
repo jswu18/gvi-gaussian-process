@@ -49,3 +49,9 @@ notebooks/mnist_data
 
 # scripts
 /scripts/regression_toy_example_outputs/*
+
+# covereage
+.coverage
+
+# experiment outputs
+/experiments/regression/outputs

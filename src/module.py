@@ -1,16 +1,29 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Type, Union
+from typing import Callable, Dict, Type, Union
 
+import jax.numpy as jnp
 import pydantic
 from flax.core.frozen_dict import FrozenDict
+from pydantic import BaseModel
 
-from src.parameters.module import ModuleParameters
+from src.utils.custom_types import JSON_ENCODERS, PRNGKey
 
-PRNGKey = Any  # pylint: disable=invalid-name
+
+class ModuleParameters(BaseModel, ABC):
+    class Config:
+        json_encoders = JSON_ENCODERS
 
 
 class Module(ABC):
     Parameters: ModuleParameters = ModuleParameters
+
+    def __init__(
+        self, preprocess_function: Callable[[jnp.ndarray], jnp.ndarray] = None
+    ):
+        if preprocess_function is None:
+            self.preprocess_function = lambda x: x
+        else:
+            self.preprocess_function = preprocess_function
 
     @staticmethod
     def check_parameters(

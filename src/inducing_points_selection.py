@@ -1,16 +1,13 @@
 import warnings
 from abc import ABC, abstractmethod
-from typing import Any, Optional, Tuple
+from typing import Optional, Tuple
 
 import jax.numpy as jnp
 import numpy as np
 from jax import random
 
-from src.kernels.kernels import Kernel
-from src.parameters.kernels.kernels import KernelParameters
-from src.utils.samplers import sample_discrete_unnormalised_distribution
-
-PRNGKey = Any  # pylint: disable=invalid-name
+from src.kernels.base import KernelBase, KernelBaseParameters
+from src.utils.custom_types import PRNGKey
 
 
 class InducingPointsSelector(ABC):
@@ -20,8 +17,8 @@ class InducingPointsSelector(ABC):
         key: PRNGKey,
         training_inputs: jnp.ndarray,
         number_of_inducing_points: int,
-        kernel: Kernel,
-        kernel_parameters: KernelParameters,
+        kernel: KernelBase,
+        kernel_parameters: KernelBaseParameters,
     ) -> Tuple[jnp.ndarray, jnp.ndarray]:
         """
         Adapted from https://github.com/markvdw/RobustGP/blob/master/robustgp/init_methods/methods.py
@@ -36,18 +33,14 @@ class ConditionalVarianceInducingPointsSelector(InducingPointsSelector):
 
     def __init__(
         self,
-        sample: Optional[bool] = False,
         threshold: Optional[int] = 0.0,
     ):
         """
 
         Args:
-            sample: bool, if True, sample points into subset to use with weights based on variance, if False choose
-                    point with highest variance at each iteration
             threshold: float or None, if not None, if tr(Kff-Qff)<threshold, stop choosing inducing points as the approx
                        has converged.
         """
-        self.sample = sample
         self.threshold = threshold
 
     def compute_inducing_points(
@@ -55,8 +48,8 @@ class ConditionalVarianceInducingPointsSelector(InducingPointsSelector):
         key: PRNGKey,
         training_inputs: jnp.ndarray,
         number_of_inducing_points: int,
-        kernel: Kernel,
-        kernel_parameters: KernelParameters,
+        kernel: KernelBase,
+        kernel_parameters: KernelBaseParameters,
         jitter: float = 1e-12,
     ) -> Tuple[jnp.ndarray, jnp.ndarray]:
         """
@@ -109,15 +102,14 @@ class ConditionalVarianceInducingPointsSelector(InducingPointsSelector):
         )
         di = (
             kernel.calculate_gram(
-                parameters=kernel_parameters, x=training_inputs, full_cov=False
+                parameters=kernel_parameters,
+                x1=training_inputs,
+                x2=training_inputs,
+                full_covariance=False,
             )
             + jitter
         )
-        if self.sample:
-            key, subkey = random.split(key)
-            indices[0] = sample_discrete_unnormalised_distribution(subkey, di)
-        else:
-            indices[0] = jnp.argmax(di)  # select first point, add to index 0
+        indices[0] = jnp.argmax(di)  # select first point, add to index 0
         if number_of_inducing_points == 1:
             indices = indices.astype(int)
             inducing_points = training_inputs[indices]
@@ -133,10 +125,10 @@ class ConditionalVarianceInducingPointsSelector(InducingPointsSelector):
             cj = ci[:m, j]  # [m, 1]
             gram_matrix_raw = np.array(
                 kernel.calculate_gram(
-                    kernel_parameters,
-                    training_inputs,
-                    new_inducing_points,
-                    full_cov=True,
+                    parameters=kernel_parameters,
+                    x1=training_inputs,
+                    x2=new_inducing_points,
+                    full_covariance=True,
                 )
             )
             gram_matrix = np.round(np.squeeze(gram_matrix_raw), 20)  # [N]
@@ -148,11 +140,7 @@ class ConditionalVarianceInducingPointsSelector(InducingPointsSelector):
             except FloatingPointError:
                 pass
             di = jnp.clip(di, 0, None)
-            if self.sample:
-                key, subkey = random.split(key)
-                indices[m + 1] = sample_discrete_unnormalised_distribution(subkey, di)
-            else:
-                indices[m + 1] = jnp.argmax(di)  # select first point, add to index 0
+            indices[m + 1] = jnp.argmax(di)  # select first point, add to index 0
             # sum of di is tr(Kff-Qff), if this is small things are ok
             if jnp.sum(jnp.clip(di, 0, None)) < self.threshold:
                 indices = indices[:m]

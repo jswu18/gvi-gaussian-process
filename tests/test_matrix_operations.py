@@ -2,6 +2,7 @@ import jax.numpy as jnp
 import pytest
 
 from src.utils.matrix_operations import (
+    add_diagonal_regulariser,
     compute_covariance_eigenvalues,
     compute_product_eigenvalues,
 )
@@ -88,4 +89,57 @@ def test_compute_product_eigenvalues(
         jnp.sort(compute_product_eigenvalues(matrix_a, matrix_b)),
         rtol=1e-05,
         atol=1e-08,
+    )
+
+
+@pytest.mark.parametrize(
+    "matrix,diagonal_regularisation,is_diagonal_regularisation_absolute_scale,regularised_matrix",
+    [
+        [
+            jnp.array(
+                [
+                    [1, 0.5],
+                    [0.5, 1],
+                ]
+            ),
+            1e-1,
+            False,
+            jnp.array(
+                [
+                    [1 + 1e-1, 0.5],
+                    [0.5, 1 + 1e-1],
+                ]
+            ),
+        ],
+        [
+            jnp.array(
+                [
+                    [0.1, 0.5],
+                    [0.5, 1],
+                ]
+            ),
+            1e-1,
+            True,
+            jnp.array(
+                [
+                    [0.2, 0.5],
+                    [0.5, 1.1],
+                ]
+            ),
+        ],
+    ],
+)
+def test_add_diagonal_regulariser(
+    matrix: jnp.ndarray,
+    diagonal_regularisation: float,
+    is_diagonal_regularisation_absolute_scale: bool,
+    regularised_matrix: jnp.ndarray,
+):
+    assert jnp.allclose(
+        add_diagonal_regulariser(
+            matrix=matrix,
+            diagonal_regularisation=diagonal_regularisation,
+            is_diagonal_regularisation_absolute_scale=is_diagonal_regularisation_absolute_scale,
+        ),
+        regularised_matrix,
     )
