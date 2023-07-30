@@ -14,6 +14,18 @@ class Curve(ABC):
         raise NotImplementedError
 
 
+class Curve0(Curve):
+    __name__ = "$y=2 \sin(0.35 \pi (x-3)^2) + x^2$"
+    seed: int = 0
+
+    def __call__(self, key: PRNGKey, x: jnp.ndarray, sigma_true: float) -> jnp.ndarray:
+        return (
+            2 * jnp.sin(((x - 3) ** 2) * 0.35 * jnp.pi)
+            + x**2
+            + sigma_true * random.normal(key, shape=x.shape)
+        ).reshape(-1)
+
+
 class Curve1(Curve):
     __name__ = "$y=2\sin(\pi x)$"
     seed: int = 1
@@ -120,19 +132,8 @@ class Curve9(Curve):
         ).reshape(-1)
 
 
-class Curve10(Curve):
-    __name__ = "$y=2 \sin(0.35 \pi (x-3)^2) + x^2$"
-    seed: int = 10
-
-    def __call__(self, key: PRNGKey, x: jnp.ndarray, sigma_true: float) -> jnp.ndarray:
-        return (
-            2 * jnp.sin(((x - 3) ** 2) * 0.35 * jnp.pi)
-            + x**2
-            + sigma_true * random.normal(key, shape=x.shape)
-        ).reshape(-1)
-
-
 CURVE_FUNCTIONS = [
+    Curve0(),
     Curve1(),
     Curve2(),
     Curve3(),
@@ -142,7 +143,6 @@ CURVE_FUNCTIONS = [
     Curve7(),
     Curve8(),
     Curve9(),
-    Curve10(),
 ]
 
 
