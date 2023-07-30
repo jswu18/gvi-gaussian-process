@@ -7,6 +7,8 @@ from src.utils.custom_types import PRNGKey
 
 
 class Curve(ABC):
+    seed: int
+
     @abstractmethod
     def __call__(self, key: PRNGKey, x: jnp.ndarray, sigma_true: float) -> jnp.ndarray:
         raise NotImplementedError
@@ -14,6 +16,7 @@ class Curve(ABC):
 
 class Curve1(Curve):
     __name__ = "$y=2\sin(\pi x)$"
+    seed: int = 1
 
     def __call__(self, key: PRNGKey, x: jnp.ndarray, sigma_true: float) -> jnp.ndarray:
         return (
@@ -23,6 +26,7 @@ class Curve1(Curve):
 
 class Curve2(Curve):
     __name__ = "$y=1.2 \cos(2 \pi x)$ + x^2"
+    seed: int = 2
 
     def __call__(self, key: PRNGKey, x: jnp.ndarray, sigma_true: float) -> jnp.ndarray:
         return (
@@ -34,6 +38,7 @@ class Curve2(Curve):
 
 class Curve3(Curve):
     __name__ = "$y=\sin(1.5\pi x) + 0.3 \cos(4.5 \pi x) + 0.5 \sin(3.5 \pi x)$"
+    seed: int = 3
 
     def __call__(self, key: PRNGKey, x: jnp.ndarray, sigma_true: float) -> jnp.ndarray:
         return (
@@ -46,6 +51,7 @@ class Curve3(Curve):
 
 class Curve4(Curve):
     __name__ = "$y=2 \sin(\pi x) + x$"
+    seed: int = 4
 
     def __call__(self, key: PRNGKey, x: jnp.ndarray, sigma_true: float) -> jnp.ndarray:
         return (
@@ -55,6 +61,7 @@ class Curve4(Curve):
 
 class Curve5(Curve):
     __name__ = "$y=\sin(\pi x) + 0.3x^3$"
+    seed: int = 5
 
     def __call__(self, key: PRNGKey, x: jnp.ndarray, sigma_true: float) -> jnp.ndarray:
         return (
@@ -66,6 +73,7 @@ class Curve5(Curve):
 
 class Curve6(Curve):
     __name__ = "$y=2\sin(\pi x) + \sin(3 \pi x) -x$"
+    seed: int = 6
 
     def __call__(self, key: PRNGKey, x: jnp.ndarray, sigma_true: float) -> jnp.ndarray:
         return (
@@ -78,6 +86,7 @@ class Curve6(Curve):
 
 class Curve7(Curve):
     __name__ = "$y=2\cos(\pi x) + \sin(3 \pi x) -x^2$"
+    seed: int = 7
 
     def __call__(self, key: PRNGKey, x: jnp.ndarray, sigma_true: float) -> jnp.ndarray:
         return (
@@ -90,6 +99,7 @@ class Curve7(Curve):
 
 class Curve8(Curve):
     __name__ = "$y=\sin(0.5 \pi (x-2)^2)$"
+    seed: int = 8
 
     def __call__(self, key: PRNGKey, x: jnp.ndarray, sigma_true: float) -> jnp.ndarray:
         return (
@@ -100,6 +110,7 @@ class Curve8(Curve):
 
 class Curve9(Curve):
     __name__ = "$y=3\sqrt{4-x^2} + \sin(\pi x)$"
+    seed: int = 9
 
     def __call__(self, key: PRNGKey, x: jnp.ndarray, sigma_true: float) -> jnp.ndarray:
         return (
@@ -111,6 +122,7 @@ class Curve9(Curve):
 
 class Curve10(Curve):
     __name__ = "$y=2 \sin(0.35 \pi (x-3)^2) + x^2$"
+    seed: int = 10
 
     def __call__(self, key: PRNGKey, x: jnp.ndarray, sigma_true: float) -> jnp.ndarray:
         return (
@@ -149,7 +161,7 @@ if __name__ == "__main__":
     from src.utils.custom_types import PRNGKey
 
     jax.config.update("jax_enable_x64", True)
-    NUMBER_OF_DATA_POINTS = 500
+    NUMBER_OF_DATA_POINTS = 1000
     SIGMA_TRUE = 0.5
     TRAIN_DATA_PERCENTAGE = 0.8
     NUMBER_OF_TEST_INTERVALS = 2
@@ -160,16 +172,16 @@ if __name__ == "__main__":
     X = jnp.linspace(-2, 2, NUMBER_OF_DATA_POINTS, dtype=np.float64).reshape(-1, 1)
 
     _, _, kernel_fn = stax.serial(
-        stax.Dense(10, W_std=5, b_std=5),
+        stax.Dense(50, W_std=10, b_std=10),
         stax.Erf(),
-        stax.Dense(1, W_std=5, b_std=5),
+        stax.Dense(1, W_std=10, b_std=10),
     )
     KERNEL = CustomKernel(lambda x1, x2: kernel_fn(x1, x2, "nngp"))
     KERNEL_PARAMETERS = KERNEL.Parameters()
 
-    for i, CURVE_FUNCTION in enumerate(CURVE_FUNCTIONS):
-        np.random.seed(i)
-        KEY, SUBKEY = jax.random.split(jax.random.PRNGKey(i))
+    for CURVE_FUNCTION in CURVE_FUNCTIONS:
+        np.random.seed(CURVE_FUNCTION.seed)
+        KEY, SUBKEY = jax.random.split(jax.random.PRNGKey(CURVE_FUNCTION.seed))
         curve_name = type(CURVE_FUNCTION).__name__.lower()
         output_folder = os.path.join(OUTPUT_DIRECTORY, curve_name)
         if not os.path.exists(output_folder):
