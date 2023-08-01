@@ -58,14 +58,17 @@ def split_train_test_data_intervals(
     Returns:
         The x and y data with the chunks removed.
     """
+    total_number_of_intervals = max(
+        total_number_of_intervals, number_of_test_intervals + 5
+    )
     interval_size = x.shape[0] // total_number_of_intervals
     test_interval_indices = jax.random.choice(
         subkey,
-        total_number_of_intervals - 2,
+        total_number_of_intervals - 4,
         shape=(number_of_test_intervals,),
         replace=False,
     )
-    test_interval_indices = test_interval_indices + 1
+    test_interval_indices = test_interval_indices + 2
     x_train = jnp.concatenate(
         [
             x[interval_size * interval : interval_size * (interval + 1)]

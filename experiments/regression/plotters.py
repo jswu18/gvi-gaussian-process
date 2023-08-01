@@ -12,8 +12,8 @@ def plot_regression(
     mean: jnp.ndarray = None,
     covariance: jnp.ndarray = None,
 ):
-    fig, ax = plt.subplots(figsize=(10, 5))
-
+    fig, ax = plt.subplots(figsize=(13, 6.5))
+    fig.tight_layout()
     if mean is not None and covariance is not None:
         ax.plot(experiment_data.x.reshape(-1), mean.reshape(-1), label="mean")
         stdev = jnp.sqrt(covariance)
@@ -60,7 +60,8 @@ def plot_regression(
 
 
 def plot_losses(losses: List[float], loss_name: str, title: str = None):
-    fig, ax = plt.subplots(figsize=(10, 5))
+    fig, ax = plt.subplots(figsize=(13, 6.5))
+    fig.tight_layout()
     ax.plot(losses)
     ax.set_xlabel("epoch")
     ax.set_ylabel(loss_name)
@@ -76,7 +77,8 @@ def plot_two_losses(
     loss2_name: str,
     title: str = None,
 ):
-    fig, ax1 = plt.subplots(figsize=(10, 5))
+    fig, ax1 = plt.subplots(figsize=(13, 6.5))
+    fig.tight_layout()
 
     ax2 = ax1.twinx()
     ax1.plot(loss1, "g-", label=loss1_name)

@@ -161,7 +161,7 @@ if __name__ == "__main__":
     from src.utils.custom_types import PRNGKey
 
     jax.config.update("jax_enable_x64", True)
-    NUMBER_OF_DATA_POINTS = 1000
+    NUMBER_OF_DATA_POINTS = 500
     SIGMA_TRUE = 0.5
     TRAIN_DATA_PERCENTAGE = 0.8
     NUMBER_OF_TEST_INTERVALS = 2
@@ -172,7 +172,7 @@ if __name__ == "__main__":
     X = jnp.linspace(-2, 2, NUMBER_OF_DATA_POINTS, dtype=np.float64).reshape(-1, 1)
 
     _, _, kernel_fn = stax.serial(
-        stax.Dense(50, W_std=10, b_std=10),
+        stax.Dense(10, W_std=10, b_std=10),
         stax.Erf(),
         stax.Dense(1, W_std=10, b_std=10),
     )
@@ -181,12 +181,12 @@ if __name__ == "__main__":
 
     for CURVE_FUNCTION in CURVE_FUNCTIONS:
         np.random.seed(CURVE_FUNCTION.seed)
-        KEY, SUBKEY = jax.random.split(jax.random.PRNGKey(CURVE_FUNCTION.seed))
+        _, SUBKEY = jax.random.split(jax.random.PRNGKey(CURVE_FUNCTION.seed))
         curve_name = type(CURVE_FUNCTION).__name__.lower()
         output_folder = os.path.join(OUTPUT_DIRECTORY, curve_name)
         if not os.path.exists(output_folder):
             os.makedirs(output_folder)
-        KEY, SUBKEY = jax.random.split(KEY)
+        _, SUBKEY = jax.random.split(SUBKEY)
         experiment_data = set_up_experiment(
             key=SUBKEY,
             curve_function=CURVE_FUNCTION,

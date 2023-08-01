@@ -26,7 +26,7 @@ from src.gps import ApproximateGPRegression, GPRegression
 from src.gps.base.approximate_base import ApproximateGPBase
 from src.gps.base.base import GPBase, GPBaseParameters
 from src.kernels import CustomKernel, TemperedKernel, TemperedKernelParameters
-from src.kernels.approximate import StochasticVariationalKernel
+from src.kernels.approximate.svgp_kernel import StochasticVariationalKernel
 from src.kernels.base import KernelBase, KernelBaseParameters
 from src.means import ConstantMean, CustomMean
 from src.regularisations import WassersteinRegularisation
@@ -92,7 +92,9 @@ def run_reference_gp(
             loss_name="Negative Log Likelihood",
             title=f"Reference GP NLL Loss ({curve_function.__name__})",
         )
-        fig.savefig(os.path.join(output_folder, "reference-losses.png"))
+        fig.savefig(
+            os.path.join(output_folder, "reference-losses.png"), bbox_inches="tight"
+        )
         plt.close(fig)
         np.save(
             os.path.join(output_folder, "reference-losses.npy"),
@@ -110,7 +112,7 @@ def run_reference_gp(
         covariance=predicted_distribution.covariance,
         title=f"Reference GP ({curve_function.__name__})",
     )
-    fig.savefig(os.path.join(output_folder, "reference.png"))
+    fig.savefig(os.path.join(output_folder, "reference.png"), bbox_inches="tight")
     plt.close(fig)
     return gp, gp_parameters
 
@@ -127,8 +129,9 @@ def run_approximate_gp(
     batch_size: int,
     load_checkpoint: bool,
     neural_network: nn.Module,
-    el_matrix_lower_bound: float,
+    diagonal_regularisation: float,
     include_eigendecomposition: bool,
+    eigenvalue_regularisation: float,
     output_folder: str,
 ) -> Tuple[ApproximateGPBase, GPBaseParameters]:
 
@@ -139,8 +142,7 @@ def run_approximate_gp(
             log_observation_noise=gp_parameters.log_observation_noise,
             inducing_points=experiment_data.x_inducing,
             training_points=experiment_data.x_train,
-            diagonal_regularisation=el_matrix_lower_bound,
-            el_matrix_diagonal_lower_bound=el_matrix_lower_bound,
+            diagonal_regularisation=diagonal_regularisation,
         ),
         mean=CustomMean(
             mean_function=lambda parameters, x: neural_network.apply(parameters, x),
@@ -164,7 +166,7 @@ def run_approximate_gp(
         regulariser=gp,
         regulariser_parameters=gp_parameters,
         include_eigendecomposition=include_eigendecomposition,
-        eigenvalue_regularisation=0,
+        eigenvalue_regularisation=eigenvalue_regularisation,
     )
     empirical_risk = NegativeLogLikelihood(
         gp=approximate_gp,
@@ -205,7 +207,10 @@ def run_approximate_gp(
             loss_name="GVI Loss",
             title=f"GVI Loss ({curve_function.__name__})",
         )
-        fig.savefig(os.path.join(output_folder, "approximate-gvi-losses.png"))
+        fig.savefig(
+            os.path.join(output_folder, "approximate-gvi-losses.png"),
+            bbox_inches="tight",
+        )
         plt.close(fig)
         fig = plot_two_losses(
             loss1=emp_risk_losses,
@@ -214,7 +219,10 @@ def run_approximate_gp(
             loss2_name="Regularisation",
             title=f"GVI Loss Decomposed ({curve_function.__name__})",
         )
-        fig.savefig(os.path.join(output_folder, "approximate-gvi-losses-breakdown.png"))
+        fig.savefig(
+            os.path.join(output_folder, "approximate-gvi-losses-breakdown.png"),
+            bbox_inches="tight",
+        )
         plt.close(fig)
         np.save(
             os.path.join(output_folder, "approximate-gvi-losses.npy"),
@@ -241,7 +249,7 @@ def run_approximate_gp(
         covariance=predicted_distribution.covariance,
         title=f"Approximate GP ({curve_function.__name__})",
     )
-    fig.savefig(os.path.join(output_folder, "approximate.png"))
+    fig.savefig(os.path.join(output_folder, "approximate.png"), bbox_inches="tight")
     plt.close(fig)
     return approximate_gp, approximate_gp_parameters
 
@@ -301,9 +309,11 @@ def run_tempered_gp(
         fig = plot_losses(
             losses=losses,
             loss_name="Negative Log Likelihood",
-            title=f"Tempered GP NLL Loss ({curve_function.__name__})",
+            title=f"Tempered Approximate GP NLL Loss ({curve_function.__name__})",
         )
-        fig.savefig(os.path.join(output_folder, "tempered-losses.png"))
+        fig.savefig(
+            os.path.join(output_folder, "tempered-losses.png"), bbox_inches="tight"
+        )
         plt.close(fig)
         np.save(os.path.join(output_folder, "tempered-losses.npy"), np.array(losses))
 
@@ -317,9 +327,9 @@ def run_tempered_gp(
         experiment_data=experiment_data,
         mean=predicted_distribution.mean,
         covariance=predicted_distribution.covariance,
-        title=f"Tempered GP ({curve_function.__name__})",
+        title=f"Tempered Approximate GP ({curve_function.__name__})",
     )
-    fig.savefig(os.path.join(output_folder, "tempered.png"))
+    fig.savefig(os.path.join(output_folder, "tempered.png"), bbox_inches="tight")
     plt.close(fig)
     return tempered_gp, tempered_gp_parameters
 
@@ -347,8 +357,9 @@ def run_experiment(
     approximate_load_checkpoint: bool,
     output_directory: str,
     neural_network: nn.Module,
-    el_matrix_lower_bound: float,
+    diagonal_regularisation: float,
     include_eigendecomposition: bool,
+    eigenvalue_regularisation: float,
     tempered_gp_lr: float,
     tempered_gp_training_epochs: int,
     tempered_save_checkpoint_frequency: int,
@@ -376,7 +387,7 @@ def run_experiment(
         experiment_data=experiment_data,
         title=f"{curve_function.__name__}",
     )
-    fig.savefig(os.path.join(output_folder, f"{curve_name}.png"))
+    fig.savefig(os.path.join(output_folder, f"{curve_name}.png"), bbox_inches="tight")
     plt.close(fig)
     key, subkey = jax.random.split(key)
     gp, gp_parameters = run_reference_gp(
@@ -405,8 +416,9 @@ def run_experiment(
         batch_size=approximate_gp_batch_size,
         load_checkpoint=approximate_load_checkpoint,
         neural_network=neural_network,
-        el_matrix_lower_bound=el_matrix_lower_bound,
+        diagonal_regularisation=diagonal_regularisation,
         include_eigendecomposition=include_eigendecomposition,
+        eigenvalue_regularisation=eigenvalue_regularisation,
         output_folder=output_folder,
     )
     key, subkey = jax.random.split(key)
@@ -432,17 +444,18 @@ if __name__ == "__main__":
     TRAIN_DATA_PERCENTAGE = 0.8
     NUMBER_OF_TEST_INTERVALS = 2
     TOTAL_NUMBER_OF_INTERVALS = 8
-    NUMBER_OF_INDUCING_POINTS = int(np.sqrt(NUMBER_OF_DATA_POINTS))
+    NUMBER_OF_INDUCING_POINTS = int(2 * np.sqrt(NUMBER_OF_DATA_POINTS))
     REFERENCE_GP_LR = 1e-3
-    REFERENCE_GP_TRAINING_EPOCHS = 10000
+    REFERENCE_GP_TRAINING_EPOCHS = 5000
     REFERENCE_SAVE_CHECKPOINT_FREQUENCY = 1000
     REFERENCE_GP_BATCH_SIZE = 100
     REFERENCE_LOAD_CHECKPOINT = False
     OUTPUT_DIRECTORY = "outputs"
-    EL_MATRIX_LOWER_BOUND = 1e-5
+    DIAGONAL_REGULARISATION = 1e-10
     INCLUDE_EIGENDECOMPOSITION = False
-    APPROXIMATE_GP_LR = 1e-5
-    APPROXIMATE_GP_TRAINING_EPOCHS = 1000000
+    EIGENVALUE_REGULARISATION = 1e-10
+    APPROXIMATE_GP_LR = 5e-3
+    APPROXIMATE_GP_TRAINING_EPOCHS = 50000
     APPROXIMATE_SAVE_CHECKPOINT_FREQUENCY = 1000
     APPROXIMATE_GP_BATCH_SIZE = 500
     APPROXIMATE_LOAD_CHECKPOINT = False
@@ -454,13 +467,13 @@ if __name__ == "__main__":
     X = jnp.linspace(-2, 2, NUMBER_OF_DATA_POINTS, dtype=np.float64).reshape(-1, 1)
 
     _, _, kernel_fn = stax.serial(
-        stax.Dense(50, W_std=10, b_std=10),
+        stax.Dense(10, W_std=10, b_std=10),
         stax.Erf(),
         stax.Dense(1, W_std=10, b_std=10),
     )
     KERNEL = CustomKernel(lambda x1, x2: kernel_fn(x1, x2, "nngp"))
     KERNEL_PARAMETERS = KERNEL.Parameters()
-    NEURAL_NETWORK = MultiLayerPerceptron([1, 50, 1])
+    NEURAL_NETWORK = MultiLayerPerceptron([1, 10, 1])
 
     for CURVE_FUNCTION in CURVE_FUNCTIONS:
         np.random.seed(CURVE_FUNCTION.seed)
@@ -488,8 +501,9 @@ if __name__ == "__main__":
             approximate_load_checkpoint=APPROXIMATE_LOAD_CHECKPOINT,
             output_directory=OUTPUT_DIRECTORY,
             neural_network=NEURAL_NETWORK,
-            el_matrix_lower_bound=EL_MATRIX_LOWER_BOUND,
+            diagonal_regularisation=DIAGONAL_REGULARISATION,
             include_eigendecomposition=INCLUDE_EIGENDECOMPOSITION,
+            eigenvalue_regularisation=EIGENVALUE_REGULARISATION,
             tempered_gp_lr=TEMPERED_GP_LR,
             tempered_gp_training_epochs=TEMPERED_GP_TRAINING_EPOCHS,
             tempered_save_checkpoint_frequency=TEMPERED_SAVE_CHECKPOINT_FREQUENCY,
