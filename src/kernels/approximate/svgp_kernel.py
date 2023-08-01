@@ -24,8 +24,7 @@ class StochasticVariationalKernelParameters(ApproximateBaseKernelParameters):
         sigma_matrix = L @ L.T
     """
 
-    el_matrix_lower_triangle: JaxArrayType[Literal["float64"]]
-    el_matrix_log_diagonal: JaxArrayType[Literal["float64"]]
+    log_el_matrix: JaxArrayType[Literal["float64"]]
 
 
 class StochasticVariationalKernel(ApproximateBaseKernel):
@@ -119,13 +118,9 @@ class StochasticVariationalKernel(ApproximateBaseKernel):
 
         """
         # raise warning if key is not None
-        (
-            el_matrix_lower_triangle,
-            el_matrix_log_diagonal,
-        ) = self.initialise_el_matrix_parameters()
+        log_el_matrix = self.initialise_el_matrix_parameters()
         return StochasticVariationalKernel.Parameters(
-            el_matrix_lower_triangle=el_matrix_lower_triangle,
-            el_matrix_log_diagonal=el_matrix_log_diagonal,
+            log_el_matrix=log_el_matrix,
         )
 
     def initialise_el_matrix_parameters(
@@ -149,16 +144,13 @@ class StochasticVariationalKernel(ApproximateBaseKernel):
             * self.gram_inducing_train
             @ self.gram_inducing_train.T
         )
-        inverse_cholesky_decomposition = jnp.linalg.inv(cholesky_decomposition)
-        el_matrix_lower_triangle = jnp.tril(inverse_cholesky_decomposition, k=-1)
-        el_matrix_log_diagonal = jnp.log(
+        return jnp.log(
             jnp.clip(
-                jnp.diag(inverse_cholesky_decomposition),
+                jnp.linalg.inv(cholesky_decomposition),
                 self.diagonal_regularisation,
                 None,
             )
         )
-        return el_matrix_lower_triangle, el_matrix_log_diagonal
 
     def _calculate_gram(
         self,
@@ -183,9 +175,8 @@ class StochasticVariationalKernel(ApproximateBaseKernel):
             x1=x1,
             x2=x2,
         )
-        el_matrix_lower_triangle = jnp.tril(parameters.el_matrix_lower_triangle, k=-1)
-        el_matrix = el_matrix_lower_triangle + jnp.diag(
-            jnp.exp(parameters.el_matrix_log_diagonal),
+        el_matrix = (
+            jnp.exp(parameters.log_el_matrix) @ jnp.exp(parameters.log_el_matrix).T
         )
         sigma_matrix = el_matrix.T @ el_matrix
         return (
