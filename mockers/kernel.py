@@ -53,9 +53,9 @@ class MockKernel(KernelBase):
 
     def _calculate_gram(
         self,
+        parameters: Union[Dict, FrozenDict, MockKernelParameters],
         x1: jnp.ndarray,
         x2: jnp.ndarray = None,
-        parameters: MockKernelParameters = None,
         full_cov: bool = True,
     ) -> jnp.ndarray:
         gram = self.kernel_func(x1, x2)
@@ -84,9 +84,9 @@ class MockApproximateKernel(ApproximateBaseKernel):
 
     @staticmethod
     def _calculate_gram(
+        parameters: Union[Dict, FrozenDict, MockApproximateKernelParameters],
         x1: jnp.ndarray,
         x2: jnp.ndarray = None,
-        parameters: MockApproximateKernelParameters = None,
         full_cov: bool = True,
     ) -> jnp.ndarray:
         gram = jnp.ones((x1.shape[0], x2.shape[0]))

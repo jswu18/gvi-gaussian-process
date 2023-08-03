@@ -45,10 +45,13 @@ class TemperedKernel(KernelBase):
 
     def _calculate_gram(
         self,
-        parameters: TemperedKernelParameters,
+        parameters: Union[Dict, FrozenDict, TemperedKernelParameters],
         x1: jnp.ndarray,
         x2: jnp.ndarray,
     ) -> jnp.ndarray:
+        # convert to Pydantic model if necessary
+        if not isinstance(parameters, self.Parameters):
+            parameters = self.generate_parameters(parameters)
         gram = self.base_kernel.calculate_gram(
             self.base_kernel_parameters,
             x1,

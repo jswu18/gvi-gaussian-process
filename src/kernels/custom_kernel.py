@@ -68,7 +68,7 @@ class CustomKernel(KernelBase):
 
     def _calculate_gram(
         self,
-        parameters: CustomKernelParameters,
+        parameters: Union[Dict, FrozenDict, CustomKernelParameters],
         x1: jnp.ndarray,
         x2: jnp.ndarray,
     ) -> jnp.ndarray:
@@ -86,6 +86,9 @@ class CustomKernel(KernelBase):
         Returns: the kernel gram matrix of shape (m_1, m_2)
 
         """
+        # convert to Pydantic model if necessary
+        if not isinstance(parameters, self.Parameters):
+            parameters = self.generate_parameters(parameters)
         return (
             jax.vmap(
                 lambda x1_: jax.vmap(lambda x2_: self.kernel_function(x1_, x2_))(

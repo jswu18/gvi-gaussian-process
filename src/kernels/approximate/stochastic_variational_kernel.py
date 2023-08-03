@@ -162,10 +162,13 @@ class StochasticVariationalKernel(ApproximateBaseKernel):
 
     def _calculate_gram(
         self,
-        parameters: StochasticVariationalKernelParameters,
+        parameters: Union[Dict, FrozenDict, StochasticVariationalKernelParameters],
         x1: jnp.ndarray,
         x2: jnp.ndarray,
     ) -> jnp.ndarray:
+        # convert to Pydantic model if necessary
+        if not isinstance(parameters, self.Parameters):
+            parameters = self.generate_parameters(parameters)
         reference_gram_x1_inducing = self.reference_kernel.calculate_gram(
             parameters=self.reference_kernel_parameters,
             x1=x1,

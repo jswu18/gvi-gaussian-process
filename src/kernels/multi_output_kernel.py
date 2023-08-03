@@ -68,7 +68,7 @@ class MultiOutputKernel(KernelBase):
 
     def _calculate_gram(
         self,
-        parameters: MultiOutputKernelParameters,
+        parameters: Union[Dict, FrozenDict, MultiOutputKernelParameters],
         x1: jnp.ndarray,
         x2: jnp.ndarray,
     ) -> jnp.ndarray:
@@ -86,6 +86,9 @@ class MultiOutputKernel(KernelBase):
 
         Returns: the kernel a stacked gram matrix of shape (k, m_1, m_2)
         """
+        # convert to Pydantic model if necessary
+        if not isinstance(parameters, self.Parameters):
+            parameters = self.generate_parameters(parameters)
         return jnp.array(
             [
                 kernel_.calculate_gram(

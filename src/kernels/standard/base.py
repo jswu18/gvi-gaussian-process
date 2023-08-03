@@ -1,8 +1,9 @@
 from abc import ABC, abstractmethod
-from typing import Callable
+from typing import Callable, Dict, Union
 
 import jax.numpy as jnp
 import pydantic
+from flax.core.frozen_dict import FrozenDict
 from jax import vmap
 
 from src.kernels.base import KernelBase, KernelBaseParameters
@@ -71,7 +72,7 @@ class StandardKernelBase(KernelBase, ABC):
 
     def _calculate_gram(
         self,
-        parameters: StandardKernelBaseParameters,
+        parameters: Union[Dict, FrozenDict, StandardKernelBaseParameters],
         x1: jnp.ndarray,
         x2: jnp.ndarray,
     ) -> jnp.ndarray:
@@ -88,6 +89,9 @@ class StandardKernelBase(KernelBase, ABC):
 
         Returns: the kernel gram matrix of shape (m_1, m_2)
         """
+        # convert to Pydantic model if necessary
+        if not isinstance(parameters, self.Parameters):
+            parameters = self.generate_parameters(parameters)
         return vmap(
             lambda x1_: vmap(
                 lambda x2_: self.calculate_kernel(
