@@ -15,7 +15,7 @@ from experiments.neural_networks import MultiLayerPerceptron
 from experiments.plotters import plot_losses, plot_two_losses
 from experiments.regression.data import set_up_regression_experiment
 from experiments.regression.plotters import plot_regression
-from experiments.regression.toy_curves import CURVE_FUNCTIONS, Curve
+from experiments.regression.toy_curves.curves import CURVE_FUNCTIONS, Curve
 from experiments.trainers import train_gvi, train_nll, train_tempered_nll
 from src import GeneralisedVariationalInference
 from src.distributions import Gaussian
