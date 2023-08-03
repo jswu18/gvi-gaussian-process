@@ -1,42 +1,13 @@
 from typing import Tuple
 
 import jax
-import jax.numpy as jnp
-import numpy as np
+from jax import numpy as jnp
+from sklearn.model_selection import train_test_split
 
+from experiments.data import ExperimentData
+from experiments.utils import calculate_inducing_points
+from src.kernels.base import KernelBase, KernelBaseParameters
 from src.utils.custom_types import PRNGKey
-
-
-def split_train_test_data(
-    key: PRNGKey,
-    x: jnp.ndarray,
-    y: jnp.ndarray,
-    train_data_percentage: float,
-) -> Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray, jnp.ndarray]:
-    """Split data into test and train data by randomly selecting points.
-
-    Args:
-        key: The random key.
-        x: The x data.
-        y: The y data.
-        train_data_percentage: The percentage of data to use for training.
-
-    Returns:
-        Train and test data.
-    """
-    number_of_training_points = int(x.shape[0] * train_data_percentage)
-
-    train_idx = jax.random.choice(
-        key, x.shape[0], shape=(number_of_training_points,), replace=False
-    )
-    train_mask = np.zeros(x.shape[0]).astype(bool)
-    train_mask[train_idx] = True
-    x_train = x[train_mask, ...]
-    y_train = y[train_mask]
-    x_test = x[~train_mask, ...]
-    y_test = y[~train_mask]
-
-    return x_train, y_train, x_test, y_test
 
 
 def split_train_test_data_intervals(
@@ -98,3 +69,86 @@ def split_train_test_data_intervals(
         ]
     )
     return x_train, y_train, x_test, y_test
+
+
+def split_train_test_validation_data(
+    key: PRNGKey,
+    x: jnp.ndarray,
+    y: jnp.ndarray,
+    number_of_test_intervals: int,
+    total_number_of_intervals: int,
+    train_data_percentage: float,
+):
+    key, subkey = jax.random.split(key)
+    (
+        x_train_validation,
+        y_train_validation,
+        x_test,
+        y_test,
+    ) = split_train_test_data_intervals(
+        subkey=subkey,
+        x=x,
+        y=y,
+        number_of_test_intervals=number_of_test_intervals,
+        total_number_of_intervals=total_number_of_intervals,
+    )
+    key, subkey = jax.random.split(key)
+    x_train, x_validation, y_train, y_validation = train_test_split(
+        x_train_validation,
+        y_train_validation,
+        test_size=1 - train_data_percentage,
+        random_state=int(jnp.sum(subkey)),
+    )
+    return x_train, y_train, x_test, y_test, x_validation, y_validation
+
+
+def set_up_regression_experiment(
+    key: PRNGKey,
+    x: jnp.ndarray,
+    y: jnp.ndarray,
+    number_of_test_intervals: int,
+    total_number_of_intervals: int,
+    number_of_inducing_points: int,
+    train_data_percentage: float,
+    kernel: KernelBase,
+    kernel_parameters: KernelBaseParameters,
+) -> ExperimentData:
+    key, subkey = jax.random.split(key)
+    key, subkey = jax.random.split(key)
+    (
+        x_train,
+        y_train,
+        x_test,
+        y_test,
+        x_validation,
+        y_validation,
+    ) = split_train_test_validation_data(
+        key=subkey,
+        x=x,
+        y=y,
+        number_of_test_intervals=number_of_test_intervals,
+        total_number_of_intervals=total_number_of_intervals,
+        train_data_percentage=train_data_percentage,
+    )
+    key, subkey = jax.random.split(key)
+    x_inducing, y_inducing = calculate_inducing_points(
+        key=subkey,
+        x=x_train,
+        y=y_train,
+        number_of_inducing_points=number_of_inducing_points,
+        kernel=kernel,
+        kernel_parameters=kernel_parameters,
+    )
+    experiment_data = ExperimentData(
+        x=x,
+        y=y,
+        x_train=x_train,
+        y_train=y_train,
+        x_inducing=x_inducing,
+        y_inducing=y_inducing,
+        y_test=y_test,
+        x_test=x_test,
+        x_validation=x_validation,
+        y_validation=y_validation,
+    )
+    return experiment_data

@@ -31,7 +31,7 @@ def calculate_inducing_points(
     inducing_points_selector = ConditionalVarianceInducingPointsSelector()
     x_inducing, inducing_indices = inducing_points_selector.compute_inducing_points(
         key=key,
-        training_inputs=x.reshape(-1, 1),
+        training_inputs=jnp.atleast_2d(x).reshape(x.shape[0], -1),
         number_of_inducing_points=number_of_inducing_points,
         kernel=kernel,
         kernel_parameters=kernel_parameters,
@@ -51,6 +51,7 @@ def train_nll(
     save_checkpoint_frequency: int,
     batch_size: int,
     checkpoint_path: str,
+    nll_break_condition: float,
 ) -> Tuple[GPBaseParameters, List[float]]:
     optimizer = optax.adam(learning_rate)
     losses = []
@@ -96,6 +97,8 @@ def train_nll(
                 y=y,
             )
         )
+        if losses[-1] < nll_break_condition:
+            break
     return gp_parameters, losses
 
 

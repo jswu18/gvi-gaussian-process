@@ -23,7 +23,7 @@ class WassersteinRegularisation(RegularisationBase):
         eigenvalue_regularisation: float = 1e-8,
         is_eigenvalue_regularisation_absolute_scale: bool = False,
         use_symmetric_matrix_eigendecomposition: bool = True,
-        include_eigendecomposition: bool = True,
+        include_eigendecomposition: bool = False,
     ):
         self.eigenvalue_regularisation = eigenvalue_regularisation
         self.is_eigenvalue_regularisation_absolute_scale = (
@@ -182,7 +182,7 @@ class WassersteinRegularisation(RegularisationBase):
                 x=x,
                 full_covariance=True,
             )
-            return jnp.sum(
+            return jnp.mean(
                 jax.vmap(
                     lambda m_p, c_p, m_q, c_q, c_bt_p, c_bt_q: WassersteinRegularisation.calculate_gaussian_wasserstein_metric(
                         mean_train_p=m_p,
@@ -218,7 +218,7 @@ class WassersteinRegularisation(RegularisationBase):
                 )
             ).astype(jnp.float64)
         else:
-            return jnp.sum(
+            return jnp.mean(
                 jax.vmap(
                     lambda m_p, c_p, m_q, c_q: WassersteinRegularisation.calculate_gaussian_wasserstein_metric(
                         mean_train_p=m_p,

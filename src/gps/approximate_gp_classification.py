@@ -25,6 +25,7 @@ class ApproximateGPClassification(ApproximateGPBase, GPClassificationBase):
         kernel: Union[MultiOutputKernel, TemperedKernel],
         epsilon: float = 0.01,
         hermite_polynomial_order: int = 50,
+        cdf_lower_bound: float = 1e-10,
     ):
         """
         Defining the mean function, and the kernel for the Gaussian process.
@@ -44,6 +45,7 @@ class ApproximateGPClassification(ApproximateGPBase, GPClassificationBase):
             kernel=kernel,
             epsilon=epsilon,
             hermite_polynomial_order=hermite_polynomial_order,
+            cdf_lower_bound=cdf_lower_bound,
         )
 
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))

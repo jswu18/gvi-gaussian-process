@@ -30,11 +30,13 @@ class GPClassificationBase(GPBase, ABC):
         kernel: Union[MultiOutputKernel, TemperedKernel],
         epsilon: float,
         hermite_polynomial_order: int,
+        cdf_lower_bound: float,
     ):
         assert mean.number_output_dimensions > 1
         assert mean.number_output_dimensions == kernel.number_output_dimensions
         self.number_output_dimensions = mean.number_output_dimensions
         self.epsilon = epsilon
+        self.cdf_lower_bound = cdf_lower_bound
         self._hermite_roots, self._hermite_weights = roots_hermite(
             hermite_polynomial_order
         )
@@ -58,6 +60,7 @@ class GPClassificationBase(GPBase, ABC):
             covariance_diagonals=covariance_diagonals,
             hermite_weights=self._hermite_weights,
             hermite_roots=self._hermite_roots,
+            cdf_lower_bound=self.cdf_lower_bound,
         )
         # (n, k)
         probabilities = (1 - self.epsilon) * s_matrix + (
@@ -71,6 +74,7 @@ class GPClassificationBase(GPBase, ABC):
         covariance_diagonals: jnp.ndarray,
         hermite_weights: jnp.ndarray,
         hermite_roots: jnp.ndarray,
+        cdf_lower_bound: float,
     ) -> jnp.ndarray:
         """
         Computes the probabilities of each class
@@ -121,7 +125,8 @@ class GPClassificationBase(GPBase, ABC):
             ],
         )
 
-        log_cdf_values = jnp.log(jsp.stats.norm.cdf(cdf_input))  # (h, k_j, k_l, n)
+        cdf_values = jnp.clip(jsp.stats.norm.cdf(cdf_input), cdf_lower_bound, None)
+        log_cdf_values = jnp.log(cdf_values)  # (h, k_j, k_l, n)
 
         # (h, k, n)
         hermite_components = jnp.multiply(

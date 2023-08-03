@@ -1,5 +1,6 @@
 from typing import Dict, List, Union
 
+import jax
 import jax.numpy as jnp
 import pydantic
 from flax.core.frozen_dict import FrozenDict
@@ -37,7 +38,12 @@ class MultiOutputKernel(KernelBase):
 
         """
         assert len(parameters["kernels"]) == self.number_output_dimensions
-        return MultiOutputKernel.Parameters(**parameters)
+        return MultiOutputKernel.Parameters(
+            kernels=[
+                kernel.generate_parameters(parameters=parameters_)
+                for kernel, parameters_ in zip(self.kernels, parameters["kernels"])
+            ]
+        )
 
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def initialise_random_parameters(
@@ -53,7 +59,12 @@ class MultiOutputKernel(KernelBase):
         Returns: A Pydantic model of the parameters for Neural Network Gaussian Process Kernels.
 
         """
-        pass
+        kernel_parameters = []
+        for kernel in self.kernels:
+            key, subkey = jax.random.split(key=key)
+            kernel_parameters.append(kernel.initialise_random_parameters(key=subkey))
+
+        return MultiOutputKernel.Parameters(kernels=kernel_parameters)
 
     def _calculate_gram(
         self,

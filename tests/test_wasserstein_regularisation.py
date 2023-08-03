@@ -61,6 +61,7 @@ def test_zero_wasserstein_gp_regression(
         regulariser=gp,
         regulariser_parameters=gp_parameters,
         eigenvalue_regularisation=0,
+        include_eigendecomposition=True,
     )
     assert jnp.isclose(
         wasserstein.calculate_regularisation(
@@ -105,6 +106,7 @@ def test_zero_wasserstein_approximate_gp_regression(
         regulariser=gp,
         regulariser_parameters=gp_parameters,
         eigenvalue_regularisation=0,
+        include_eigendecomposition=True,
     )
 
     assert jnp.isclose(
@@ -164,6 +166,7 @@ def test_wasserstein_gp_regression(
         gp=gp,
         regulariser=regulariser,
         regulariser_parameters=parameters,
+        include_eigendecomposition=True,
     )
     assert jnp.isclose(
         wasserstein.calculate_regularisation(
@@ -228,6 +231,7 @@ def test_zero_wasserstein_gp_classification(
         regulariser=gp,
         regulariser_parameters=gp_parameters,
         eigenvalue_regularisation=0,
+        include_eigendecomposition=True,
     )
     assert jnp.isclose(
         wasserstein.calculate_regularisation(
@@ -276,6 +280,7 @@ def test_zero_wasserstein_approximate_gp_classification(
         regulariser=gp,
         regulariser_parameters=gp_parameters,
         eigenvalue_regularisation=0,
+        include_eigendecomposition=True,
     )
 
     assert jnp.isclose(
@@ -311,7 +316,7 @@ def test_zero_wasserstein_approximate_gp_classification(
                     [1.5, 2.5, 3.5],
                 ]
             ),
-            1.71499075,
+            0.42874769,
         ],
     ],
 )
@@ -344,6 +349,7 @@ def test_wasserstein_gp_classification(
         gp=gp,
         regulariser=regulariser,
         regulariser_parameters=parameters,
+        include_eigendecomposition=True,
     )
     assert jnp.isclose(
         wasserstein.calculate_regularisation(
