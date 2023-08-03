@@ -41,42 +41,30 @@ class SquaredDifferenceRegularisation(RegularisationBase):
             x=x,
             full_covariance=self.full_covariance,
         )
-        mean_p, covariance_p = (
-            gaussian_p.mean,
-            gaussian_p.covariance,
-        )
         gaussian_q = self.gp.calculate_prediction_gaussian(
             parameters=parameters,
             x=x,
             full_covariance=self.full_covariance,
         )
-        mean_q, covariance_q = (
-            gaussian_q.mean,
-            gaussian_q.covariance,
+        mean_p = jnp.atleast_2d(gaussian_p.mean).reshape(
+            self.gp.mean.number_output_dimensions, -1
+        )
+        mean_q = jnp.atleast_2d(gaussian_q.mean).reshape(
+            self.gp.mean.number_output_dimensions, -1
         )
         if self.full_covariance:
-            return jnp.mean(
-                jax.vmap(
-                    lambda m_p, c_p, m_q, c_q: SquaredDifferenceRegularisation.calculate_squared_distance(
-                        m_p=m_p,
-                        c_p=c_p,
-                        m_q=m_q,
-                        c_q=c_q,
-                    )
-                )(
-                    jnp.atleast_2d(mean_p).reshape(
-                        self.gp.mean.number_output_dimensions, -1
-                    ),
-                    jnp.atleast_3d(covariance_p).reshape(
-                        self.gp.mean.number_output_dimensions, x.shape[0], x.shape[0]
-                    ),
-                    jnp.atleast_2d(mean_q).reshape(
-                        self.gp.mean.number_output_dimensions, -1
-                    ),
-                    jnp.atleast_3d(covariance_q).reshape(
-                        self.gp.mean.number_output_dimensions, x.shape[0], x.shape[0]
-                    ),
-                )
+            covariance_p = jnp.atleast_3d(covariance_p).reshape(
+                self.gp.mean.number_output_dimensions, x.shape[0], x.shape[0]
+            )
+            covariance_q = jnp.atleast_3d(covariance_q).reshape(
+                self.gp.mean.number_output_dimensions, x.shape[0], x.shape[0]
+            )
+        else:
+            covariance_p = jnp.atleast_2d(gaussian_p.covariance).reshape(
+                self.gp.mean.number_output_dimensions, x.shape[0]
+            )
+            covariance_q = jnp.atleast_2d(gaussian_q.covariance).reshape(
+                self.gp.mean.number_output_dimensions, x.shape[0]
             )
         return jnp.mean(
             jax.vmap(
@@ -86,18 +74,5 @@ class SquaredDifferenceRegularisation(RegularisationBase):
                     m_q=m_q,
                     c_q=c_q,
                 )
-            )(
-                jnp.atleast_2d(mean_p).reshape(
-                    self.gp.mean.number_output_dimensions, -1
-                ),
-                jnp.atleast_2d(covariance_p).reshape(
-                    self.gp.mean.number_output_dimensions, x.shape[0]
-                ),
-                jnp.atleast_2d(mean_q).reshape(
-                    self.gp.mean.number_output_dimensions, -1
-                ),
-                jnp.atleast_2d(covariance_q).reshape(
-                    self.gp.mean.number_output_dimensions, x.shape[0]
-                ),
-            )
+            )(mean_p, covariance_p, mean_q, covariance_q)
         )
