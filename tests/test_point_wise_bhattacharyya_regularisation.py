@@ -11,7 +11,7 @@ from src.gps import (
     GPRegression,
 )
 from src.kernels import MultiOutputKernel, MultiOutputKernelParameters
-from src.regularisations import PointWiseBhattacharyyaRegularisation
+from src.regularisations.point_wise import PointWiseBhattacharyyaRegularisation
 
 config.update("jax_enable_x64", True)
 

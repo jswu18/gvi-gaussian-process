@@ -1,13 +1,15 @@
+from abc import abstractmethod
+
 import jax
 import jax.numpy as jnp
-import jax.scipy as jsp
 import pydantic
 
 from src.gps.base.base import GPBase, GPBaseParameters
 from src.regularisations.base import RegularisationBase
+from src.utils.custom_types import JaxFloatType
 
 
-class PointWiseWassersteinRegularisation(RegularisationBase):
+class PointWiseRegularisationBase(RegularisationBase):
     def __init__(
         self,
         gp: GPBase,
@@ -22,21 +24,14 @@ class PointWiseWassersteinRegularisation(RegularisationBase):
 
     @staticmethod
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
-    def calculate_pointwise_wasserstein_distance(
-        m_p: jnp.ndarray,
-        c_p: jnp.ndarray,
-        m_q: jnp.ndarray,
-        c_q: jnp.ndarray,
-    ) -> float:
-        return jnp.float64(
-            jnp.mean(
-                jax.vmap(
-                    lambda m_p_, c_p_, m_q_, c_q_: (
-                        jnp.square(m_p_ - m_q_) + c_p_ + c_q_ - 2 * jnp.sqrt(c_p_ * c_q)
-                    )
-                )(m_p, c_p, m_q, c_q)
-            )
-        )
+    @abstractmethod
+    def calculate_point_wise_distance(
+        m_p: JaxFloatType,
+        c_p: JaxFloatType,
+        m_q: JaxFloatType,
+        c_q: JaxFloatType,
+    ) -> JaxFloatType:
+        raise NotImplementedError
 
     def _calculate_regularisation(
         self,
@@ -63,11 +58,15 @@ class PointWiseWassersteinRegularisation(RegularisationBase):
         )
         return jnp.mean(
             jax.vmap(
-                lambda m_p, c_p, m_q, c_q: PointWiseWassersteinRegularisation.calculate_pointwise_wasserstein_distance(
-                    m_p=m_p,
-                    c_p=c_p,
-                    m_q=m_q,
-                    c_q=c_q,
+                lambda m_p, c_p, m_q, c_q: jnp.mean(
+                    jax.vmap(
+                        lambda m_p_, c_p_, m_q_, c_q_: self.calculate_point_wise_distance(
+                            m_p=m_p_,
+                            c_p=c_p_,
+                            m_q=m_q_,
+                            c_q=c_q_,
+                        )
+                    )(m_p, c_p, m_q, c_q)
                 )
             )(
                 jnp.atleast_2d(mean_p).reshape(

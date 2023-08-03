@@ -13,10 +13,10 @@ from neural_tangents import stax
 from experiments.data import ExperimentData
 from experiments.neural_networks import MultiLayerPerceptron
 from experiments.plotters import plot_losses, plot_two_losses
+from experiments.regression.data import set_up_regression_experiment
 from experiments.regression.plotters import plot_regression
 from experiments.regression.toy_curves import CURVE_FUNCTIONS, Curve
-from experiments.regression.utils import set_up_regression_experiment
-from experiments.utils import train_gvi, train_nll, train_tempered_nll
+from experiments.trainers import train_gvi, train_nll, train_tempered_nll
 from src import GeneralisedVariationalInference
 from src.distributions import Gaussian
 from src.empirical_risks import NegativeLogLikelihood
@@ -28,11 +28,13 @@ from src.kernels.approximate.svgp_diagonal_kernel import StochasticVariationalKe
 from src.kernels.base import KernelBase, KernelBaseParameters
 from src.means import ConstantMean, CustomMean
 from src.regularisations import (
+    SquaredDifferenceRegularisation,
+    WassersteinRegularisation,
+)
+from src.regularisations.point_wise import (
     PointWiseBhattacharyyaRegularisation,
     PointWiseKLRegularisation,
     PointWiseWassersteinRegularisation,
-    SquaredDifferenceRegularisation,
-    WassersteinRegularisation,
 )
 from src.regularisations.base import RegularisationBase
 from src.utils.custom_types import PRNGKey

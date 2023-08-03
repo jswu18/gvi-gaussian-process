@@ -1,8 +1,6 @@
 from dataclasses import dataclass
-from typing import Tuple
 
 import jax
-import numpy as np
 from jax import numpy as jnp
 from sklearn.model_selection import train_test_split
 
@@ -95,35 +93,3 @@ def set_up_experiment(
         y_validation=y_validation,
     )
     return experiment_data
-
-
-def split_train_test_data(
-    key: PRNGKey,
-    x: jnp.ndarray,
-    y: jnp.ndarray,
-    train_data_percentage: float,
-) -> Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray, jnp.ndarray]:
-    """Split data into test and train data by randomly selecting points.
-
-    Args:
-        key: The random key.
-        x: The x data.
-        y: The y data.
-        train_data_percentage: The percentage of data to use for training.
-
-    Returns:
-        Train and test data.
-    """
-    number_of_training_points = int(x.shape[0] * train_data_percentage)
-
-    train_idx = jax.random.choice(
-        key, x.shape[0], shape=(number_of_training_points,), replace=False
-    )
-    train_mask = np.zeros(x.shape[0]).astype(bool)
-    train_mask[train_idx] = True
-    x_train = x[train_mask, ...]
-    y_train = y[train_mask]
-    x_test = x[~train_mask, ...]
-    y_test = y[~train_mask]
-
-    return x_train, y_train, x_test, y_test
