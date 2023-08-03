@@ -12,7 +12,10 @@ class Distribution(ModuleParameters, ABC):
 class Gaussian(Distribution):
     mean: JaxArrayType[Literal["float64"]]
     covariance: JaxArrayType[Literal["float64"]]
-    full_covariance: bool = True
+
+    @property
+    def full_covariance(self) -> bool:
+        return self.covariance.ndim != self.mean.ndim
 
 
 class Multinomial(Distribution):
