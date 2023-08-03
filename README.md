@@ -1,10 +1,10 @@
-# Gaussian Wasserstein Inference in Function Spaces
+# Generalised Variational Inference for Sparse Gaussian Process Learning
 
-Leveraging Generalised Variational Inference (GVI) to build a loss objective with the Wasserstein distance for image classifier sparse Gaussian Processes constructed with NNGP infinite-width kernels.
+Leveraging Generalised Variational Inference (GVI) to construct loss objectives for sparse Gaussian Process (sGP) learning in the contexts of both regression and classification. This is a flexible framework accomodating any regulariser defined with respect to a distance metric for push-forward Gaussian measures in function spaces (i.e. the Wasserstein Metric). With GVI we can also flexibily define the sGP. An example is the use of Convolutional NNGP infinite-width kernel for image classifier tasks.
 
 For a quick overview of GVI, see <a href="https://jswu18.github.io/posts/2023/07/generalised-variational-inference/">my blog post</a>.
 
-Gaussian Wasserstein Inference is developed in <a href="https://arxiv.org/pdf/2205.06342.pdf">this paper</a> by Veit Wild.
+Gaussian Wasserstein Inference (GVI with the Wasserstein metric as the regulariser) is developed in <a href="https://arxiv.org/pdf/2205.06342.pdf">this paper</a> by Veit Wild.
 
 To get set up:
 
