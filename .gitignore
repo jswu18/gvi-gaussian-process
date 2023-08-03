@@ -10,6 +10,7 @@ __pycache__
 # Model checkpoints
 *.ckpt
 /**/*.ckpt
+/**/**/*.ckpt
 
 # Notebook checkpoints
 *ipynb_checkpoints
@@ -18,8 +19,8 @@ __pycache__
 notebooks/.DS_Store
 
 # notebook ignores
-notebooks/sandbox.ipynb
-notebooks/mnist_data
+*.ipynb
+notebooks/*.ipynb
 
 # Pytest
 *pytest_cache
@@ -47,11 +48,12 @@ notebooks/mnist_data
 /**/**/*.bcf
 /**/**/*.xml
 
-# scripts
-/scripts/regression_toy_example_outputs/*
-
 # covereage
 .coverage
 
 # experiment outputs
-/experiments/regression/outputs
+/experiments/**/outputs
+/experiments/**/**/outputs
+
+# training data
+/experiments/**/data
