@@ -31,12 +31,12 @@ from src.regularisations import (
     SquaredDifferenceRegularisation,
     WassersteinRegularisation,
 )
+from src.regularisations.base import RegularisationBase
 from src.regularisations.point_wise import (
     PointWiseBhattacharyyaRegularisation,
     PointWiseKLRegularisation,
     PointWiseWassersteinRegularisation,
 )
-from src.regularisations.base import RegularisationBase
 from src.utils.custom_types import PRNGKey
 
 orbax_checkpointer = orbax.checkpoint.PyTreeCheckpointer()
