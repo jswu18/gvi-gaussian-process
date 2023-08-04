@@ -1,5 +1,5 @@
 import os
-from typing import Tuple, Type
+from typing import List, Tuple, Type
 
 import flax.linen as nn
 import jax
@@ -35,6 +35,7 @@ from src.regularisations.base import RegularisationBase
 from src.regularisations.point_wise import (
     PointWiseBhattacharyyaRegularisation,
     PointWiseKLRegularisation,
+    PointWiseSymmetricKLRegularisation,
     PointWiseWassersteinRegularisation,
 )
 from src.utils.custom_types import PRNGKey
@@ -69,7 +70,9 @@ def run_reference_gp(
             "kernel": kernel_parameters.dict(),
         }
     )
-    reference_parameters_path = os.path.join(output_folder, f"reference.ckpt")
+    reference_parameters_path = os.path.join(
+        output_folder, "training-checkpoints", f"reference.ckpt"
+    )
     key, subkey = jax.random.split(key)
     if load_checkpoint:
         gp_parameters = gp.generate_parameters(
@@ -186,7 +189,9 @@ def run_approximate_gp(
 
     key, subkey = jax.random.split(key)
     approximate_parameters_path = os.path.join(
-        output_folder, f"approximate-{regulariser.__name__}.ckpt"
+        output_folder,
+        "training-checkpoints",
+        f"approximate-{regulariser.__name__}.ckpt",
     )
     if load_checkpoint:
         approximate_gp_parameters = approximate_gp.generate_parameters(
@@ -315,7 +320,7 @@ def run_tempered_gp(
     )
 
     parameters_path = os.path.join(
-        output_folder, f"tempered-{regulariser.__name__}.ckpt"
+        output_folder, "training-checkpoints", f"tempered-{regulariser.__name__}.ckpt"
     )
     key, subkey = jax.random.split(key)
     if load_checkpoint:
@@ -383,7 +388,6 @@ def run_tempered_gp(
 
 
 def run_experiment(
-    key: PRNGKey,
     curve_function: Curve,
     x: jnp.ndarray,
     sigma_true: float,
@@ -414,13 +418,14 @@ def run_experiment(
     tempered_gp_batch_size: int,
     tempered_load_checkpoint: bool,
     nll_break_condition: float,
-    regulariser: Type[RegularisationBase],
+    regularisers: List[Type[RegularisationBase]],
 ):
     curve_name = type(curve_function).__name__.lower()
     output_folder = os.path.join(output_directory, curve_name)
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
-    key, subkey = jax.random.split(key)
+    np.random.seed(CURVE_FUNCTION.seed)
+    key, subkey = jax.random.split(jax.random.PRNGKey(CURVE_FUNCTION.seed))
     experiment_data = set_up_regression_experiment(
         key=subkey,
         x=x,
@@ -438,7 +443,7 @@ def run_experiment(
     )
     fig.savefig(os.path.join(output_folder, f"{curve_name}.png"), bbox_inches="tight")
     plt.close(fig)
-    key, subkey = jax.random.split(key)
+    _, subkey = jax.random.split(key)
     gp, gp_parameters = run_reference_gp(
         key=subkey,
         curve_function=curve_function,
@@ -453,40 +458,43 @@ def run_experiment(
         output_folder=output_folder,
         nll_break_condition=nll_break_condition,
     )
-    key, subkey = jax.random.split(key)
-    approximate_gp, approximate_gp_parameters = run_approximate_gp(
-        key=subkey,
-        gp=gp,
-        gp_parameters=gp_parameters,
-        experiment_data=experiment_data,
-        curve_function=curve_function,
-        lr=approximate_gp_lr,
-        training_epochs=approximate_gp_training_epochs,
-        save_checkpoint_frequency=approximate_save_checkpoint_frequency,
-        batch_size=approximate_gp_batch_size,
-        load_checkpoint=approximate_load_checkpoint,
-        neural_network=neural_network,
-        diagonal_regularisation=diagonal_regularisation,
-        include_eigendecomposition=include_eigendecomposition,
-        eigenvalue_regularisation=eigenvalue_regularisation,
-        output_folder=output_folder,
-        regulariser=regulariser,
-    )
-    key, subkey = jax.random.split(key)
-    run_tempered_gp(
-        key=subkey,
-        gp=approximate_gp,
-        gp_parameters=approximate_gp_parameters,
-        experiment_data=experiment_data,
-        curve_function=curve_function,
-        lr=tempered_gp_lr,
-        training_epochs=tempered_gp_training_epochs,
-        save_checkpoint_frequency=tempered_save_checkpoint_frequency,
-        batch_size=tempered_gp_batch_size,
-        load_checkpoint=tempered_load_checkpoint,
-        output_folder=output_folder,
-        regulariser=regulariser,
-    )
+
+    for regulariser in regularisers:
+        np.random.seed(CURVE_FUNCTION.seed)
+        key, subkey = jax.random.split(jax.random.PRNGKey(CURVE_FUNCTION.seed))
+        approximate_gp, approximate_gp_parameters = run_approximate_gp(
+            key=subkey,
+            gp=gp,
+            gp_parameters=gp_parameters,
+            experiment_data=experiment_data,
+            curve_function=curve_function,
+            lr=approximate_gp_lr,
+            training_epochs=approximate_gp_training_epochs,
+            save_checkpoint_frequency=approximate_save_checkpoint_frequency,
+            batch_size=approximate_gp_batch_size,
+            load_checkpoint=approximate_load_checkpoint,
+            neural_network=neural_network,
+            diagonal_regularisation=diagonal_regularisation,
+            include_eigendecomposition=include_eigendecomposition,
+            eigenvalue_regularisation=eigenvalue_regularisation,
+            output_folder=output_folder,
+            regulariser=regulariser,
+        )
+        _, subkey = jax.random.split(key)
+        run_tempered_gp(
+            key=subkey,
+            gp=approximate_gp,
+            gp_parameters=approximate_gp_parameters,
+            experiment_data=experiment_data,
+            curve_function=curve_function,
+            lr=tempered_gp_lr,
+            training_epochs=tempered_gp_training_epochs,
+            save_checkpoint_frequency=tempered_save_checkpoint_frequency,
+            batch_size=tempered_gp_batch_size,
+            load_checkpoint=tempered_load_checkpoint,
+            output_folder=output_folder,
+            regulariser=regulariser,
+        )
 
 
 if __name__ == "__main__":
@@ -502,11 +510,11 @@ if __name__ == "__main__":
     REFERENCE_SAVE_CHECKPOINT_FREQUENCY = 1000
     REFERENCE_GP_BATCH_SIZE = 100
     REFERENCE_LOAD_CHECKPOINT = False
-    OUTPUT_DIRECTORY = "outputs"
+    OUTPUT_DIRECTORY = "toy_curves/outputs"
     DIAGONAL_REGULARISATION = 1e-10
     INCLUDE_EIGENDECOMPOSITION = False
     EIGENVALUE_REGULARISATION = 1e-10
-    APPROXIMATE_GP_LR = 1e-2
+    APPROXIMATE_GP_LR = 1e-3
     APPROXIMATE_GP_TRAINING_EPOCHS = 50000
     APPROXIMATE_SAVE_CHECKPOINT_FREQUENCY = 1000
     APPROXIMATE_GP_BATCH_SIZE = 500
@@ -528,48 +536,44 @@ if __name__ == "__main__":
     KERNEL_PARAMETERS = KERNEL.Parameters()
     NEURAL_NETWORK = MultiLayerPerceptron([1, 10, 1])
 
-    REGULARISERS = [
-        PointWiseWassersteinRegularisation,
-        PointWiseBhattacharyyaRegularisation,
-        SquaredDifferenceRegularisation,
-        WassersteinRegularisation,
-        PointWiseKLRegularisation,
-    ]
     for CURVE_FUNCTION in CURVE_FUNCTIONS:
-        for REGULARISER in REGULARISERS:
-            np.random.seed(CURVE_FUNCTION.seed)
-            KEY, SUBKEY = jax.random.split(jax.random.PRNGKey(CURVE_FUNCTION.seed))
-            run_experiment(
-                key=SUBKEY,
-                curve_function=CURVE_FUNCTION,
-                x=X,
-                sigma_true=SIGMA_TRUE,
-                number_of_test_intervals=NUMBER_OF_TEST_INTERVALS,
-                total_number_of_intervals=TOTAL_NUMBER_OF_INTERVALS,
-                number_of_inducing_points=NUMBER_OF_INDUCING_POINTS,
-                train_data_percentage=TRAIN_DATA_PERCENTAGE,
-                kernel=KERNEL,
-                kernel_parameters=KERNEL_PARAMETERS,
-                reference_gp_lr=REFERENCE_GP_LR,
-                reference_gp_training_epochs=REFERENCE_GP_TRAINING_EPOCHS,
-                reference_save_checkpoint_frequency=REFERENCE_SAVE_CHECKPOINT_FREQUENCY,
-                reference_gp_batch_size=REFERENCE_GP_BATCH_SIZE,
-                reference_load_checkpoint=REFERENCE_LOAD_CHECKPOINT,
-                approximate_gp_lr=APPROXIMATE_GP_LR,
-                approximate_gp_training_epochs=APPROXIMATE_GP_TRAINING_EPOCHS,
-                approximate_save_checkpoint_frequency=APPROXIMATE_SAVE_CHECKPOINT_FREQUENCY,
-                approximate_gp_batch_size=APPROXIMATE_GP_BATCH_SIZE,
-                approximate_load_checkpoint=APPROXIMATE_LOAD_CHECKPOINT,
-                output_directory=OUTPUT_DIRECTORY,
-                neural_network=NEURAL_NETWORK,
-                diagonal_regularisation=DIAGONAL_REGULARISATION,
-                include_eigendecomposition=INCLUDE_EIGENDECOMPOSITION,
-                eigenvalue_regularisation=EIGENVALUE_REGULARISATION,
-                tempered_gp_lr=TEMPERED_GP_LR,
-                tempered_gp_training_epochs=TEMPERED_GP_TRAINING_EPOCHS,
-                tempered_save_checkpoint_frequency=TEMPERED_SAVE_CHECKPOINT_FREQUENCY,
-                tempered_gp_batch_size=TEMPERED_GP_BATCH_SIZE,
-                tempered_load_checkpoint=TEMPERED_LOAD_CHECKPOINT,
-                nll_break_condition=NLL_BREAK_CONDITION,
-                regulariser=REGULARISER,
-            )
+        run_experiment(
+            curve_function=CURVE_FUNCTION,
+            x=X,
+            sigma_true=SIGMA_TRUE,
+            number_of_test_intervals=NUMBER_OF_TEST_INTERVALS,
+            total_number_of_intervals=TOTAL_NUMBER_OF_INTERVALS,
+            number_of_inducing_points=NUMBER_OF_INDUCING_POINTS,
+            train_data_percentage=TRAIN_DATA_PERCENTAGE,
+            kernel=KERNEL,
+            kernel_parameters=KERNEL_PARAMETERS,
+            reference_gp_lr=REFERENCE_GP_LR,
+            reference_gp_training_epochs=REFERENCE_GP_TRAINING_EPOCHS,
+            reference_save_checkpoint_frequency=REFERENCE_SAVE_CHECKPOINT_FREQUENCY,
+            reference_gp_batch_size=REFERENCE_GP_BATCH_SIZE,
+            reference_load_checkpoint=REFERENCE_LOAD_CHECKPOINT,
+            approximate_gp_lr=APPROXIMATE_GP_LR,
+            approximate_gp_training_epochs=APPROXIMATE_GP_TRAINING_EPOCHS,
+            approximate_save_checkpoint_frequency=APPROXIMATE_SAVE_CHECKPOINT_FREQUENCY,
+            approximate_gp_batch_size=APPROXIMATE_GP_BATCH_SIZE,
+            approximate_load_checkpoint=APPROXIMATE_LOAD_CHECKPOINT,
+            output_directory=OUTPUT_DIRECTORY,
+            neural_network=NEURAL_NETWORK,
+            diagonal_regularisation=DIAGONAL_REGULARISATION,
+            include_eigendecomposition=INCLUDE_EIGENDECOMPOSITION,
+            eigenvalue_regularisation=EIGENVALUE_REGULARISATION,
+            tempered_gp_lr=TEMPERED_GP_LR,
+            tempered_gp_training_epochs=TEMPERED_GP_TRAINING_EPOCHS,
+            tempered_save_checkpoint_frequency=TEMPERED_SAVE_CHECKPOINT_FREQUENCY,
+            tempered_gp_batch_size=TEMPERED_GP_BATCH_SIZE,
+            tempered_load_checkpoint=TEMPERED_LOAD_CHECKPOINT,
+            nll_break_condition=NLL_BREAK_CONDITION,
+            regularisers=[
+                PointWiseKLRegularisation,
+                PointWiseSymmetricKLRegularisation,
+                PointWiseWassersteinRegularisation,
+                PointWiseBhattacharyyaRegularisation,
+                SquaredDifferenceRegularisation,
+                WassersteinRegularisation,
+            ],
+        )

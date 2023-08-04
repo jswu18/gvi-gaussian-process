@@ -59,7 +59,7 @@ def set_up_experiment(
         x,
         y,
         test_size=1 - train_data_percentage,
-        random_state=int(jnp.sum(subkey)),
+        random_state=int(jnp.sum(subkey)) % (2**32 - 1),
     )
 
     key, subkey = jax.random.split(key)
@@ -68,7 +68,7 @@ def set_up_experiment(
         y_test_and_validation,
         test_size=test_data_percentage
         / (test_data_percentage + validation_data_percentage),
-        random_state=int(jnp.sum(subkey)),
+        random_state=int(jnp.sum(subkey)) % (2**32 - 1),
     )
 
     key, subkey = jax.random.split(key)

@@ -27,12 +27,12 @@ class Curve0(Curve):
 
 
 class Curve1(Curve):
-    __name__ = "$y=2\sin(\pi x)$"
+    __name__ = "$y=2\sin(2\pi x)$"
     seed: int = 1
 
     def __call__(self, key: PRNGKey, x: jnp.ndarray, sigma_true: float) -> jnp.ndarray:
         return (
-            2 * jnp.sin(x * jnp.pi) + sigma_true * random.normal(key, shape=x.shape)
+            2 * jnp.sin(2 * x * jnp.pi) + sigma_true * random.normal(key, shape=x.shape)
         ).reshape(-1)
 
 
@@ -62,12 +62,14 @@ class Curve3(Curve):
 
 
 class Curve4(Curve):
-    __name__ = "$y=2 \sin(\pi x) + x$"
+    __name__ = "$y=2 \sin(2\pi x) + x$"
     seed: int = 4
 
     def __call__(self, key: PRNGKey, x: jnp.ndarray, sigma_true: float) -> jnp.ndarray:
         return (
-            2 * jnp.sin(jnp.pi * x) + x + sigma_true * random.normal(key, shape=x.shape)
+            2 * jnp.sin(2 * jnp.pi * x)
+            + x
+            + sigma_true * random.normal(key, shape=x.shape)
         ).reshape(-1)
 
 

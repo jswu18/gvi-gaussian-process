@@ -12,6 +12,7 @@
 </p>
 <p align="middle">
   <img src="outputs/curve0/tempered-PointWiseKLRegularisation.png" width="49.5%" />
+  <img src="outputs/curve0/tempered-PointWiseSymmetricKLRegularisation.png" width="49.5%" />
 </p>
 
 ## Curve 1
@@ -25,6 +26,7 @@
 </p>
 <p align="middle">
   <img src="outputs/curve1/tempered-PointWiseKLRegularisation.png" width="49.5%" />
+  <img src="outputs/curve1/tempered-PointWiseSymmetricKLRegularisation.png" width="49.5%" />
 </p>
 
 ## Curve 2
@@ -38,6 +40,7 @@
 </p>
 <p align="middle">
   <img src="outputs/curve2/tempered-PointWiseKLRegularisation.png" width="49.5%" />
+  <img src="outputs/curve2/tempered-PointWiseSymmetricKLRegularisation.png" width="49.5%" />
 </p>
 
 ## Curve 3
@@ -51,6 +54,7 @@
 </p>
 <p align="middle">
   <img src="outputs/curve3/tempered-PointWiseKLRegularisation.png" width="49.5%" />
+  <img src="outputs/curve3/tempered-PointWiseSymmetricKLRegularisation.png" width="49.5%" />
 </p>
 
 
@@ -65,6 +69,7 @@
 </p>
 <p align="middle">
   <img src="outputs/curve4/tempered-PointWiseKLRegularisation.png" width="49.5%" />
+  <img src="outputs/curve4/tempered-PointWiseSymmetricKLRegularisation.png" width="49.5%" />
 </p>
 
 ## Curve 5
@@ -78,6 +83,7 @@
 </p>
 <p align="middle">
   <img src="outputs/curve5/tempered-PointWiseKLRegularisation.png" width="49.5%" />
+  <img src="outputs/curve5/tempered-PointWiseSymmetricKLRegularisation.png" width="49.5%" />
 </p>
 
 ## Curve 6
@@ -91,6 +97,7 @@
 </p>
 <p align="middle">
   <img src="outputs/curve6/tempered-PointWiseKLRegularisation.png" width="49.5%" />
+  <img src="outputs/curve6/tempered-PointWiseSymmetricKLRegularisation.png" width="49.5%" />
 </p>
 
 ## Curve 7
@@ -104,6 +111,7 @@
 </p>
 <p align="middle">
   <img src="outputs/curve7/tempered-PointWiseKLRegularisation.png" width="49.5%" />
+  <img src="outputs/curve7/tempered-PointWiseSymmetricKLRegularisation.png" width="49.5%" />
 </p>
 
 ## Curve 8
@@ -117,6 +125,7 @@
 </p>
 <p align="middle">
   <img src="outputs/curve8/tempered-PointWiseKLRegularisation.png" width="49.5%" />
+  <img src="outputs/curve8/tempered-PointWiseSymmetricKLRegularisation.png" width="49.5%" />
 </p>
 
 ## Curve 9
@@ -130,4 +139,5 @@
 </p>
 <p align="middle">
   <img src="outputs/curve9/tempered-PointWiseKLRegularisation.png" width="49.5%" />
+  <img src="outputs/curve9/tempered-PointWiseSymmetricKLRegularisation.png" width="49.5%" />
 </p>

@@ -31,7 +31,7 @@ def train_nll(
     checkpoint_path: str,
     nll_break_condition: float,
 ) -> Tuple[GPBaseParameters, List[float]]:
-    optimizer = optax.adam(learning_rate)
+    optimizer = optax.adabelief(learning_rate)
     losses = []
     opt_state = optimizer.init(gp_parameters.dict())
     nll_loss = NegativeLogLikelihood(gp=gp)
@@ -93,7 +93,7 @@ def train_tempered_nll(
     batch_size: int,
     checkpoint_path: str,
 ) -> Tuple[GPBaseParameters, List[float]]:
-    optimizer = optax.adam(learning_rate)
+    optimizer = optax.adabelief(learning_rate)
     losses = []
     opt_state = optimizer.init(gp_parameters.kernel.dict())
     nll_loss = NegativeLogLikelihood(gp=gp)
@@ -163,7 +163,7 @@ def train_gvi(
     batch_size: int,
     checkpoint_path: str,
 ) -> Tuple[GPBaseParameters, List[float], List[float], List[float]]:
-    optimizer = optax.adam(learning_rate)
+    optimizer = optax.adabelief(learning_rate)
     gvi_losses = []
     emp_risk_losses = []
     reg_losses = []
