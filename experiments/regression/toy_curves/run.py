@@ -34,7 +34,9 @@ from src.regularisations import (
 from src.regularisations.base import RegularisationBase
 from src.regularisations.point_wise import (
     PointWiseBhattacharyyaRegularisation,
+    PointWiseHellingerRegularisation,
     PointWiseKLRegularisation,
+    PointWiseRenyiRegularisation,
     PointWiseSymmetricKLRegularisation,
     PointWiseWassersteinRegularisation,
 )
@@ -509,7 +511,7 @@ if __name__ == "__main__":
     REFERENCE_GP_TRAINING_EPOCHS = 20000
     REFERENCE_SAVE_CHECKPOINT_FREQUENCY = 1000
     REFERENCE_GP_BATCH_SIZE = 100
-    REFERENCE_LOAD_CHECKPOINT = False
+    REFERENCE_LOAD_CHECKPOINT = True
     OUTPUT_DIRECTORY = "toy_curves/outputs"
     DIAGONAL_REGULARISATION = 1e-10
     INCLUDE_EIGENDECOMPOSITION = False
@@ -575,5 +577,7 @@ if __name__ == "__main__":
                 PointWiseBhattacharyyaRegularisation,
                 SquaredDifferenceRegularisation,
                 WassersteinRegularisation,
+                PointWiseRenyiRegularisation,
+                PointWiseHellingerRegularisation,
             ],
         )
