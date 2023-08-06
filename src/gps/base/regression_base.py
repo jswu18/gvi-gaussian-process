@@ -21,7 +21,7 @@ class GPRegressionBase(GPBase, ABC):
         self,
         probabilities: Tuple[jnp.ndarray, jnp.ndarray],
         full_covariance: bool = False,
-    ):
+    ) -> Gaussian:
         mean, covariance = probabilities
         return Gaussian(
             mean=mean, covariance=covariance, full_covariance=full_covariance

@@ -12,7 +12,7 @@ class SquaredDifferenceRegularisation(RegularisationBase):
         gp: GPBase,
         regulariser: GPBase,
         regulariser_parameters: GPBaseParameters,
-        full_covariance: bool = False,
+        full_covariance: bool = True,
     ):
         self.full_covariance = full_covariance
         super().__init__(
@@ -53,10 +53,10 @@ class SquaredDifferenceRegularisation(RegularisationBase):
             self.gp.mean.number_output_dimensions, -1
         )
         if self.full_covariance:
-            covariance_p = jnp.atleast_3d(covariance_p).reshape(
+            covariance_p = jnp.atleast_3d(gaussian_p.covariance).reshape(
                 self.gp.mean.number_output_dimensions, x.shape[0], x.shape[0]
             )
-            covariance_q = jnp.atleast_3d(covariance_q).reshape(
+            covariance_q = jnp.atleast_3d(gaussian_q.covariance).reshape(
                 self.gp.mean.number_output_dimensions, x.shape[0], x.shape[0]
             )
         else:

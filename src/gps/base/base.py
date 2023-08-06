@@ -74,7 +74,7 @@ class GPBase(Module, ABC):
     def _construct_distribution(
         self,
         probabilities: Union[Tuple[jnp.ndarray, jnp.ndarray], jnp.ndarray],
-    ):
+    ) -> Distribution:
         raise NotImplementedError
 
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))

@@ -37,7 +37,10 @@ class ARDKernel(StandardKernelBase):
         Returns: A Pydantic model of the parameters for ARDKernel Kernels.
 
         """
-        return ARDKernel.Parameters(**parameters)
+        return ARDKernel.Parameters(
+            log_scaling=parameters["log_scaling"],
+            log_lengthscales=parameters["log_lengthscales"],
+        )
 
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def initialise_random_parameters(

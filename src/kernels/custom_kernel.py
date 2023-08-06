@@ -22,7 +22,7 @@ class CustomKernel(KernelBase):
 
     def __init__(
         self,
-        kernel_function: Callable[[jnp.ndarray, jnp.ndarray], jnp.float64],
+        kernel_function: Callable[[Any, jnp.ndarray, jnp.ndarray], jnp.float64],
         preprocess_function: Callable = None,
     ):
         """
@@ -48,7 +48,9 @@ class CustomKernel(KernelBase):
         Returns: A Pydantic model of the parameters for Neural Network Gaussian Process Kernel.
 
         """
-        return CustomKernel.Parameters(**parameters)
+        return CustomKernel.Parameters(
+            custom=parameters["custom"],
+        )
 
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def initialise_random_parameters(
@@ -91,8 +93,8 @@ class CustomKernel(KernelBase):
             parameters = self.generate_parameters(parameters)
         return (
             jax.vmap(
-                lambda x1_: jax.vmap(lambda x2_: self.kernel_function(x1_, x2_))(
-                    x2[:, None, ...]
-                )
+                lambda x1_: jax.vmap(
+                    lambda x2_: self.kernel_function(parameters.custom, x1_, x2_)
+                )(x2[:, None, ...])
             )(x1[:, None, ...])
         ).reshape(x1.shape[0], x2.shape[0])

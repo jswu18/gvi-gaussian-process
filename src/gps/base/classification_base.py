@@ -42,7 +42,7 @@ class GPClassificationBase(GPBase, ABC):
         )
         GPBase.__init__(self, mean=mean, kernel=kernel)
 
-    def _construct_distribution(self, probabilities: jnp.ndarray):
+    def _construct_distribution(self, probabilities: jnp.ndarray) -> Multinomial:
         return Multinomial(probabilities=probabilities)
 
     def _predict_probability(

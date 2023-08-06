@@ -7,11 +7,15 @@ import pydantic
 from flax.core.frozen_dict import FrozenDict
 
 from src.kernels.base import KernelBase, KernelBaseParameters
+from src.kernels.non_stationary.base import (
+    NonStationaryKernelBase,
+    NonStationaryKernelBaseParameters,
+)
 from src.utils.custom_types import PRNGKey
 
 
 class NeuralNetworkKernelParameters(KernelBaseParameters):
-    base_kernel: KernelBaseParameters
+    base_kernel: NonStationaryKernelBaseParameters
     neural_network: Any
 
 
@@ -24,7 +28,7 @@ class NeuralNetworkKernel(KernelBase):
 
     def __init__(
         self,
-        base_kernel: KernelBase,
+        base_kernel: NonStationaryKernelBase,
         neural_network: nn.Module,
         preprocess_function: Callable = None,
     ):
@@ -45,7 +49,10 @@ class NeuralNetworkKernel(KernelBase):
         Returns: A Pydantic model of the parameters for Neural Network Gaussian Process Kernel.
 
         """
-        return NeuralNetworkKernel.Parameters(**parameters)
+        return NeuralNetworkKernel.Parameters(
+            base_kernel=self.base_kernel.generate_parameters(parameters["base_kernel"]),
+            neural_network=parameters["neural_network"],
+        )
 
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def initialise_random_parameters(
@@ -77,8 +84,12 @@ class NeuralNetworkKernel(KernelBase):
                 lambda x1_: jax.vmap(
                     lambda x2_: self.base_kernel.calculate_gram(
                         parameters=parameters.base_kernel,
-                        x1=self.neural_network.apply(parameters.neural_network, x1_),
-                        x2=self.neural_network.apply(parameters.neural_network, x2_),
+                        x1=self.neural_network.apply(
+                            parameters.neural_network, x1_
+                        ).reshape(1, -1),
+                        x2=self.neural_network.apply(
+                            parameters.neural_network, x2_
+                        ).reshape(1, -1),
                     )
                 )(x2[:, None, ...])
             )(x1[:, None, ...])

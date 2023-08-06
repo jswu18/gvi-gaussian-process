@@ -3,7 +3,10 @@ from src.kernels.multi_output_kernel import (
     MultiOutputKernel,
     MultiOutputKernelParameters,
 )
-from src.kernels.neural_network_kernel import NeuralNetworkKernel
+from src.kernels.neural_network_kernel import (
+    NeuralNetworkKernel,
+    NeuralNetworkKernelParameters,
+)
 from src.kernels.tempered_kernel import TemperedKernel, TemperedKernelParameters
 
 __all__ = [
@@ -14,4 +17,5 @@ __all__ = [
     "TemperedKernel",
     "TemperedKernelParameters",
     "NeuralNetworkKernel",
+    "NeuralNetworkKernelParameters",
 ]

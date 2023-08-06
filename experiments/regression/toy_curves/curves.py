@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 
+import jax
 from jax import numpy as jnp
-from jax import random
 
 from src.utils.custom_types import PRNGKey
 
@@ -22,7 +22,7 @@ class Curve0(Curve):
         return (
             2 * jnp.sin(((x - 3) ** 2) * 0.35 * jnp.pi)
             + x**2
-            + sigma_true * random.normal(key, shape=x.shape)
+            + sigma_true * jax.random.normal(key, shape=x.shape)
         ).reshape(-1)
 
 
@@ -32,7 +32,8 @@ class Curve1(Curve):
 
     def __call__(self, key: PRNGKey, x: jnp.ndarray, sigma_true: float) -> jnp.ndarray:
         return (
-            2 * jnp.sin(2 * x * jnp.pi) + sigma_true * random.normal(key, shape=x.shape)
+            2 * jnp.sin(2 * x * jnp.pi)
+            + sigma_true * jax.random.normal(key, shape=x.shape)
         ).reshape(-1)
 
 
@@ -44,20 +45,20 @@ class Curve2(Curve):
         return (
             1.2 * jnp.cos(x * (2 * jnp.pi))
             + x**2
-            + sigma_true * random.normal(key, shape=x.shape)
+            + sigma_true * jax.random.normal(key, shape=x.shape)
         ).reshape(-1)
 
 
 class Curve3(Curve):
-    __name__ = "$y=\sin(1.5\pi x) + 0.3 \cos(4.5 \pi x) + 0.5 \sin(3.5 \pi x)$"
+    __name__ = "$y=2\sin(1.5\pi x) + 0.6 \cos(4.5 \pi x) + \sin(3.5 \pi x)$"
     seed: int = 3
 
     def __call__(self, key: PRNGKey, x: jnp.ndarray, sigma_true: float) -> jnp.ndarray:
         return (
-            jnp.sin(x * (1.5 * jnp.pi))
-            + 0.3 * jnp.cos(x * (4.5 * jnp.pi))
-            + 0.5 * jnp.sin(x * (3.5 * jnp.pi))
-            + sigma_true * random.normal(key, shape=x.shape)
+            2 * jnp.sin(x * (1.5 * jnp.pi))
+            + 0.6 * jnp.cos(x * (4.5 * jnp.pi))
+            + jnp.sin(x * (3.5 * jnp.pi))
+            + sigma_true * jax.random.normal(key, shape=x.shape)
         ).reshape(-1)
 
 
@@ -69,7 +70,7 @@ class Curve4(Curve):
         return (
             2 * jnp.sin(2 * jnp.pi * x)
             + x
-            + sigma_true * random.normal(key, shape=x.shape)
+            + sigma_true * jax.random.normal(key, shape=x.shape)
         ).reshape(-1)
 
 
@@ -81,20 +82,20 @@ class Curve5(Curve):
         return (
             jnp.sin(jnp.pi * x)
             + 0.3 * (x**3)
-            + sigma_true * random.normal(key, shape=x.shape)
+            + sigma_true * jax.random.normal(key, shape=x.shape)
         ).reshape(-1)
 
 
 class Curve6(Curve):
-    __name__ = "$y=2\sin(\pi x) + \sin(3 \pi x) -x$"
+    __name__ = "$y==4\sin(\pi x) + 2\sin(3 \pi x) -2x$"
     seed: int = 6
 
     def __call__(self, key: PRNGKey, x: jnp.ndarray, sigma_true: float) -> jnp.ndarray:
         return (
-            2 * jnp.sin(x * jnp.pi)
-            + jnp.sin(x * (3 * jnp.pi))
-            - x
-            + sigma_true * random.normal(key, shape=x.shape)
+            4 * jnp.sin(x * jnp.pi)
+            + 2 * jnp.sin(x * (3 * jnp.pi))
+            - 2 * x
+            + sigma_true * jax.random.normal(key, shape=x.shape)
         ).reshape(-1)
 
 
@@ -107,7 +108,7 @@ class Curve7(Curve):
             2 * jnp.cos(x * jnp.pi)
             + jnp.sin(x * (3 * jnp.pi))
             - x**2
-            + sigma_true * random.normal(key, shape=x.shape)
+            + sigma_true * jax.random.normal(key, shape=x.shape)
         ).reshape(-1)
 
 
@@ -118,7 +119,7 @@ class Curve8(Curve):
     def __call__(self, key: PRNGKey, x: jnp.ndarray, sigma_true: float) -> jnp.ndarray:
         return (
             jnp.sin(((x - 2) ** 2) * 0.5 * jnp.pi)
-            + sigma_true * random.normal(key, shape=x.shape)
+            + sigma_true * jax.random.normal(key, shape=x.shape)
         ).reshape(-1)
 
 
@@ -130,7 +131,7 @@ class Curve9(Curve):
         return (
             3 * jnp.sqrt(4 - x**2)
             + jnp.sin(jnp.pi * x)
-            + sigma_true * random.normal(key, shape=x.shape)
+            + sigma_true * jax.random.normal(key, shape=x.shape)
         ).reshape(-1)
 
 

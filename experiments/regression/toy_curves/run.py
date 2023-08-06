@@ -23,9 +23,19 @@ from src.empirical_risks import NegativeLogLikelihood
 from src.gps import ApproximateGPRegression, GPRegression
 from src.gps.base.approximate_base import ApproximateGPBase
 from src.gps.base.base import GPBase, GPBaseParameters
-from src.kernels import CustomKernel, TemperedKernel, TemperedKernelParameters
+from src.kernels import (
+    CustomKernel,
+    NeuralNetworkKernel,
+    TemperedKernel,
+    TemperedKernelParameters,
+)
+from src.kernels.approximate.generalised_svgp_kernel import (
+    GeneralisedStochasticVariationalKernel,
+)
 from src.kernels.approximate.svgp_diagonal_kernel import StochasticVariationalKernel
 from src.kernels.base import KernelBase, KernelBaseParameters
+from src.kernels.non_stationary import PolynomialKernel
+from src.kernels.standard import ARDKernel, ARDKernelParameters
 from src.means import ConstantMean, CustomMean
 from src.regularisations import (
     SquaredDifferenceRegularisation,
@@ -149,15 +159,51 @@ def run_approximate_gp(
     output_folder: str,
     regulariser: Type[RegularisationBase],
 ) -> Tuple[ApproximateGPBase, GPBaseParameters]:
+    # kernel_neural_network = MultiLayerPerceptron([1, 10])
+    # base_kernel = NeuralNetworkKernel(
+    #     base_kernel=PolynomialKernel(polynomial_degree=1),
+    #     neural_network=kernel_neural_network,
+    # )
+    # key, subkey = jax.random.split(key)
+    # base_kernel_parameters = base_kernel.generate_parameters(
+    #     {
+    #         "base_kernel": base_kernel.base_kernel.generate_parameters(
+    #             {
+    #                 "log_constant": jnp.log(1),
+    #                 "log_scaling": jnp.log(1/10),
+    #             }
+    #         ),
+    #         "neural_network": kernel_neural_network.init(
+    #                     subkey, experiment_data.x_train[:1, ...]
+    #                 ),
+    #     }
+    # )
+    def base_nngp_kernel_function(parameters, x1, x2):
+        _, _, kernel_fn = stax.serial(
+            stax.Dense(10, W_std=parameters[0]["w_std"], b_std=parameters[0]["b_std"]),
+            stax.Erf(),
+            stax.Dense(1, W_std=parameters[1]["w_std"], b_std=parameters[1]["b_std"]),
+        )
+        return kernel_fn(x1, x2, "nngp")
 
+    base_kernel = CustomKernel(kernel_function=base_nngp_kernel_function)
+    base_kernel_parameters = base_kernel.generate_parameters(
+        {
+            "custom": [
+                {"w_std": 1.0, "b_std": 1.0},
+                {"w_std": 1.0, "b_std": 1.0},
+            ]
+        }
+    )
     approximate_gp = ApproximateGPRegression(
-        kernel=StochasticVariationalKernel(
+        kernel=GeneralisedStochasticVariationalKernel(
             reference_kernel=gp.kernel,
             reference_kernel_parameters=gp_parameters.kernel,
             log_observation_noise=gp_parameters.log_observation_noise,
             inducing_points=experiment_data.x_inducing,
             training_points=experiment_data.x_train,
             diagonal_regularisation=diagonal_regularisation,
+            base_kernel=base_kernel,
         ),
         mean=CustomMean(
             mean_function=lambda parameters, x: neural_network.apply(parameters, x),
@@ -173,7 +219,11 @@ def run_approximate_gp(
                     )
                 }
             ),
-            "kernel": approximate_gp.kernel.initialise_random_parameters(subkey),
+            "kernel": approximate_gp.kernel.generate_parameters(
+                {
+                    "base_kernel": base_kernel_parameters.dict(),
+                }
+            ),
         }
     )
     regularisation = regulariser(
@@ -507,35 +557,45 @@ if __name__ == "__main__":
     NUMBER_OF_TEST_INTERVALS = 2
     TOTAL_NUMBER_OF_INTERVALS = 8
     NUMBER_OF_INDUCING_POINTS = int(2 * np.sqrt(NUMBER_OF_DATA_POINTS))
-    REFERENCE_GP_LR = 1e-3
+    REFERENCE_GP_LR = 1e-2
     REFERENCE_GP_TRAINING_EPOCHS = 20000
     REFERENCE_SAVE_CHECKPOINT_FREQUENCY = 1000
-    REFERENCE_GP_BATCH_SIZE = 100
-    REFERENCE_LOAD_CHECKPOINT = True
+    REFERENCE_GP_BATCH_SIZE = 1000
+    REFERENCE_LOAD_CHECKPOINT = False
     OUTPUT_DIRECTORY = "toy_curves/outputs"
     DIAGONAL_REGULARISATION = 1e-10
     INCLUDE_EIGENDECOMPOSITION = False
     EIGENVALUE_REGULARISATION = 1e-10
     APPROXIMATE_GP_LR = 1e-3
-    APPROXIMATE_GP_TRAINING_EPOCHS = 50000
+    APPROXIMATE_GP_TRAINING_EPOCHS = 20000
     APPROXIMATE_SAVE_CHECKPOINT_FREQUENCY = 1000
-    APPROXIMATE_GP_BATCH_SIZE = 500
+    APPROXIMATE_GP_BATCH_SIZE = 1000
     APPROXIMATE_LOAD_CHECKPOINT = False
     TEMPERED_GP_LR = 1e-3
-    TEMPERED_GP_TRAINING_EPOCHS = 10000
+    TEMPERED_GP_TRAINING_EPOCHS = 2000
     TEMPERED_SAVE_CHECKPOINT_FREQUENCY = 1000
-    TEMPERED_GP_BATCH_SIZE = 500
+    TEMPERED_GP_BATCH_SIZE = 1000
     TEMPERED_LOAD_CHECKPOINT = False
-    NLL_BREAK_CONDITION = 0
+    NLL_BREAK_CONDITION = -1
     X = jnp.linspace(-2, 2, NUMBER_OF_DATA_POINTS, dtype=np.float64).reshape(-1, 1)
 
-    _, _, kernel_fn = stax.serial(
-        stax.Dense(10, W_std=15, b_std=15),
-        stax.Erf(),
-        stax.Dense(1, W_std=15, b_std=15),
+    def nngp_kernel_function(parameters, x1, x2):
+        _, _, kernel_fn = stax.serial(
+            stax.Dense(10, W_std=parameters[0]["w_std"], b_std=parameters[0]["b_std"]),
+            stax.Erf(),
+            stax.Dense(1, W_std=parameters[1]["w_std"], b_std=parameters[1]["b_std"]),
+        )
+        return kernel_fn(x1, x2, "nngp")
+
+    KERNEL = CustomKernel(kernel_function=nngp_kernel_function)
+    KERNEL_PARAMETERS = KERNEL.generate_parameters(
+        {
+            "custom": [
+                {"w_std": 15.0, "b_std": 15.0},
+                {"w_std": 15.0, "b_std": 15.0},
+            ]
+        }
     )
-    KERNEL = CustomKernel(lambda x1, x2: kernel_fn(x1, x2, "nngp"))
-    KERNEL_PARAMETERS = KERNEL.Parameters()
     NEURAL_NETWORK = MultiLayerPerceptron([1, 10, 1])
 
     for CURVE_FUNCTION in CURVE_FUNCTIONS:
@@ -571,11 +631,11 @@ if __name__ == "__main__":
             tempered_load_checkpoint=TEMPERED_LOAD_CHECKPOINT,
             nll_break_condition=NLL_BREAK_CONDITION,
             regularisers=[
+                SquaredDifferenceRegularisation,
                 PointWiseKLRegularisation,
                 PointWiseSymmetricKLRegularisation,
                 PointWiseWassersteinRegularisation,
                 PointWiseBhattacharyyaRegularisation,
-                SquaredDifferenceRegularisation,
                 WassersteinRegularisation,
                 PointWiseRenyiRegularisation,
                 PointWiseHellingerRegularisation,
