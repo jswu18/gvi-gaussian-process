@@ -29,17 +29,15 @@ def split_train_test_data_intervals(
     Returns:
         The x and y data with the chunks removed.
     """
-    total_number_of_intervals = max(
-        total_number_of_intervals, number_of_test_intervals + 5
-    )
     interval_size = x.shape[0] // total_number_of_intervals
+    number_of_intervals_on_edge = int(1 / 4 * total_number_of_intervals)
     test_interval_indices = jax.random.choice(
         subkey,
-        total_number_of_intervals - 4,
+        total_number_of_intervals - 2 * number_of_intervals_on_edge,
         shape=(number_of_test_intervals,),
         replace=False,
     )
-    test_interval_indices = test_interval_indices + 2
+    test_interval_indices = test_interval_indices + number_of_intervals_on_edge
     x_train = jnp.concatenate(
         [
             x[interval_size * interval : interval_size * (interval + 1)]
@@ -130,22 +128,22 @@ def set_up_regression_experiment(
         total_number_of_intervals=total_number_of_intervals,
         train_data_percentage=train_data_percentage,
     )
-    key, subkey = jax.random.split(key)
-    x_inducing, y_inducing = calculate_inducing_points(
-        key=subkey,
-        x=x_train,
-        y=y_train,
-        number_of_inducing_points=number_of_inducing_points,
-        kernel=kernel,
-        kernel_parameters=kernel_parameters,
-    )
+    # key, subkey = jax.random.split(key)
+    # x_inducing, y_inducing = calculate_inducing_points(
+    #     key=subkey,
+    #     x=x_train,
+    #     y=y_train,
+    #     number_of_inducing_points=number_of_inducing_points,
+    #     kernel=kernel,
+    #     kernel_parameters=kernel_parameters,
+    # )
     experiment_data = ExperimentData(
         x=x,
         y=y,
         x_train=x_train,
         y_train=y_train,
-        x_inducing=x_inducing,
-        y_inducing=y_inducing,
+        x_inducing=None,
+        y_inducing=None,
         y_test=y_test,
         x_test=x_test,
         x_validation=x_validation,
