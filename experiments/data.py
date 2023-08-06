@@ -4,36 +4,34 @@ import jax
 from jax import numpy as jnp
 from sklearn.model_selection import train_test_split
 
-from experiments.utils import calculate_inducing_points
-from src.kernels.base import KernelBase, KernelBaseParameters
 from src.utils.custom_types import PRNGKey
 
 
 @dataclass
-class ExperimentData:
+class Data:
     x: jnp.ndarray
     y: jnp.ndarray
-    x_train: jnp.ndarray
-    y_train: jnp.ndarray
-    x_inducing: jnp.ndarray
-    y_inducing: jnp.ndarray
-    x_test: jnp.ndarray
-    y_test: jnp.ndarray
-    x_validation: jnp.ndarray
-    y_validation: jnp.ndarray
+
+    def __add__(self, other):
+        return Data(
+            x=jnp.concatenate([self.x, other.x]),
+            y=jnp.concatenate([self.y, other.y]),
+        )
+
+
+@dataclass
+class ExperimentData:
+    full: Data
+    train: Data
+    test: Data
+    validation: Data
 
     def __add__(self, other):
         return ExperimentData(
-            x=jnp.concatenate([self.x, other.x]),
-            y=jnp.concatenate([self.y, other.y]),
-            x_train=jnp.concatenate([self.x_train, other.x_train]),
-            y_train=jnp.concatenate([self.y_train, other.y_train]),
-            x_inducing=jnp.concatenate([self.x_inducing, other.x_inducing]),
-            y_inducing=jnp.concatenate([self.y_inducing, other.y_inducing]),
-            x_test=jnp.concatenate([self.x_test, other.x_test]),
-            y_test=jnp.concatenate([self.y_test, other.y_test]),
-            x_validation=jnp.concatenate([self.x_validation, other.x_validation]),
-            y_validation=jnp.concatenate([self.y_validation, other.y_validation]),
+            full=self.full + other.full,
+            train=self.train + other.train,
+            test=self.test + other.test,
+            validation=self.validation + other.validation,
         )
 
 
@@ -41,12 +39,9 @@ def set_up_experiment(
     key: PRNGKey,
     x: jnp.ndarray,
     y: jnp.ndarray,
-    number_of_inducing_points: int,
     train_data_percentage: float,
     test_data_percentage: float,
     validation_data_percentage: float,
-    kernel: KernelBase,
-    kernel_parameters: KernelBaseParameters,
 ) -> ExperimentData:
     # adapted from https://datascience.stackexchange.com/questions/15135/train-test-validation-set-splitting-in-sklearn
     key, subkey = jax.random.split(key)
@@ -70,26 +65,10 @@ def set_up_experiment(
         / (test_data_percentage + validation_data_percentage),
         random_state=int(jnp.sum(subkey)) % (2**32 - 1),
     )
-
-    key, subkey = jax.random.split(key)
-    x_inducing, y_inducing = calculate_inducing_points(
-        key=subkey,
-        x=x_train,
-        y=y_train,
-        number_of_inducing_points=number_of_inducing_points,
-        kernel=kernel,
-        kernel_parameters=kernel_parameters,
-    )
     experiment_data = ExperimentData(
-        x=x,
-        y=y,
-        x_train=x_train,
-        y_train=y_train,
-        x_inducing=x_inducing,
-        y_inducing=y_inducing,
-        y_test=y_test,
-        x_test=x_test,
-        x_validation=x_validation,
-        y_validation=y_validation,
+        full=Data(x=x, y=y),
+        train=Data(x=x_train, y=y_train),
+        test=Data(x=x_test, y=y_test),
+        validation=Data(x=x_validation, y=y_validation),
     )
     return experiment_data

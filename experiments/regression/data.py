@@ -4,9 +4,7 @@ import jax
 from jax import numpy as jnp
 from sklearn.model_selection import train_test_split
 
-from experiments.data import ExperimentData
-from experiments.utils import calculate_inducing_points
-from src.kernels.base import KernelBase, KernelBaseParameters
+from experiments.data import Data, ExperimentData, TestData, TrainData, ValidationData
 from src.utils.custom_types import PRNGKey
 
 
@@ -108,10 +106,7 @@ def set_up_regression_experiment(
     y: jnp.ndarray,
     number_of_test_intervals: int,
     total_number_of_intervals: int,
-    number_of_inducing_points: int,
     train_data_percentage: float,
-    kernel: KernelBase,
-    kernel_parameters: KernelBaseParameters,
 ) -> ExperimentData:
     key, subkey = jax.random.split(key)
     key, subkey = jax.random.split(key)
@@ -130,6 +125,7 @@ def set_up_regression_experiment(
         total_number_of_intervals=total_number_of_intervals,
         train_data_percentage=train_data_percentage,
     )
+<<<<<<< Updated upstream
     key, subkey = jax.random.split(key)
     x_inducing, y_inducing = calculate_inducing_points(
         key=subkey,
@@ -150,5 +146,12 @@ def set_up_regression_experiment(
         x_test=x_test,
         x_validation=x_validation,
         y_validation=y_validation,
+=======
+    experiment_data = ExperimentData(
+        full=Data(x=x, y=y),
+        train=TrainData(x=x_train, y=y_train),
+        test=TestData(x=x_test, y=y_test),
+        validation=ValidationData(x=x_validation, y=y_validation),
+>>>>>>> Stashed changes
     )
     return experiment_data

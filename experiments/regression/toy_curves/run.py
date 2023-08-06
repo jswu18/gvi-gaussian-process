@@ -11,12 +11,18 @@ from flax.training import orbax_utils
 from neural_tangents import stax
 
 from experiments.data import ExperimentData
-from experiments.neural_networks import MultiLayerPerceptron
+from experiments.nn_means import MultiLayerPerceptron
+from experiments.nngp_kernels import MultiLayerPerceptronKernel
 from experiments.plotters import plot_losses, plot_two_losses
 from experiments.regression.data import set_up_regression_experiment
 from experiments.regression.plotters import plot_regression
 from experiments.regression.toy_curves.curves import CURVE_FUNCTIONS, Curve
+<<<<<<< Updated upstream
 from experiments.trainers import train_gvi, train_nll, train_tempered_nll
+=======
+from experiments.trainer import train_gvi, train_nll, train_tempered_nll
+from experiments.utils import calculate_inducing_points
+>>>>>>> Stashed changes
 from src import GeneralisedVariationalInference
 from src.distributions import Gaussian
 from src.empirical_risks import NegativeLogLikelihood
@@ -579,22 +585,19 @@ if __name__ == "__main__":
     NLL_BREAK_CONDITION = -1
     X = jnp.linspace(-2, 2, NUMBER_OF_DATA_POINTS, dtype=np.float64).reshape(-1, 1)
 
-    def nngp_kernel_function(parameters, x1, x2):
-        _, _, kernel_fn = stax.serial(
-            stax.Dense(10, W_std=parameters[0]["w_std"], b_std=parameters[0]["b_std"]),
-            stax.Erf(),
-            stax.Dense(1, W_std=parameters[1]["w_std"], b_std=parameters[1]["b_std"]),
-        )
-        return kernel_fn(x1, x2, "nngp")
-
+    nngp_kernel_function = MultiLayerPerceptronKernel(features=[1, 10, 1])
     KERNEL = CustomKernel(kernel_function=nngp_kernel_function)
     KERNEL_PARAMETERS = KERNEL.generate_parameters(
+<<<<<<< Updated upstream
         {
             "custom": [
                 {"w_std": 15.0, "b_std": 15.0},
                 {"w_std": 15.0, "b_std": 15.0},
             ]
         }
+=======
+        {"custom": nngp_kernel_function.initialise_parameters()}
+>>>>>>> Stashed changes
     )
     NEURAL_NETWORK = MultiLayerPerceptron([1, 10, 1])
 
