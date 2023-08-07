@@ -6,11 +6,11 @@ class Optimiser(str, enum.Enum):
     adabeleif = "adabelief"
 
 
-class EmpiricalRiskScheme(str, enum.Enum):
+class EmpiricalRisk(str, enum.Enum):
     negative_log_likelihood = "negative_log_likelihood"
 
 
-class RegularisationScheme(str, enum.Enum):
+class Regularisation(str, enum.Enum):
     squared_difference = "squared_difference"
     wasserstein = "wasserstein"
     point_wise_wasserstein = "point_wise_wasserstein"

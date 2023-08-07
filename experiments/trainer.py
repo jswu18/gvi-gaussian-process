@@ -13,15 +13,16 @@ from tqdm import tqdm
 from experiments.data import Data
 from experiments.schemes import Optimiser
 from src.gps.base.base import GPBase, GPBaseParameters
+from src.module import ModuleParameters
 from src.utils.data import generate_batch
 
 orbax_checkpointer = orbax.checkpoint.PyTreeCheckpointer()
 
 
 @dataclass
-class TrainerParameters:
+class TrainerSettings:
     key: int
-    optimiser: Optimiser
+    optimiser_scheme: Optimiser
     learning_rate: float
     number_of_epochs: int
     batch_size: int
@@ -55,21 +56,20 @@ class Trainer:
 
     def train(
         self,
-        parameters: TrainerParameters,
-        gp: GPBase,
-        gp_parameters: GPBaseParameters,
+        trainer_settings: TrainerSettings,
+        parameters: ModuleParameters,
         data: Data,
         loss_function: Callable[[FrozenDict, jnp.ndarray, jnp.ndarray], float],
-    ) -> Tuple[GPBaseParameters, List[Dict[str, float]]]:
+    ) -> Tuple[ModuleParameters, List[Dict[str, float]]]:
         post_epoch_history = []
         optimiser = Trainer.resolve_optimiser(
-            parameters.optimiser, parameters.learning_rate
+            trainer_settings.optimiser_scheme, trainer_settings.learning_rate
         )
-        opt_state = optimiser.init(gp_parameters.dict())
-        key = jax.random.PRNGKey(parameters.key)
-        for epoch in tqdm(range(parameters.number_of_epochs)):
+        opt_state = optimiser.init(parameters.dict())
+        key = jax.random.PRNGKey(trainer_settings.key)
+        for epoch in tqdm(range(trainer_settings.number_of_epochs)):
             if epoch % self.save_checkpoint_frequency == 0:
-                ckpt = gp_parameters.dict()
+                ckpt = parameters.dict()
                 save_args = orbax_utils.save_args_from_target(ckpt)
                 orbax_checkpointer.save(
                     os.path.join(self.checkpoint_path, f"epoch-{epoch}.ckpt"),
@@ -81,9 +81,9 @@ class Trainer:
             batch_generator = generate_batch(
                 key=subkey,
                 data=(data.x, data.y),
-                batch_size=parameters.batch_size,
-                shuffle=parameters.batch_shuffle,
-                drop_last=parameters.batch_drop_last,
+                batch_size=trainer_settings.batch_size,
+                shuffle=trainer_settings.batch_shuffle,
+                drop_last=trainer_settings.batch_drop_last,
             )
             data_batch = next(batch_generator, None)
             while data_batch is not None:
@@ -94,18 +94,18 @@ class Trainer:
                         x_batch,
                         y_batch,
                     )
-                )(gp_parameters.dict())
+                )(parameters.dict())
                 updates, opt_state = optimiser.update(gradients, opt_state)
-                gp_parameters = gp.generate_parameters(
-                    optax.apply_updates(gp_parameters.dict(), updates)
+                parameters = type(parameters)(
+                    **optax.apply_updates(parameters.dict(), updates)
                 )
                 data_batch = next(batch_generator, None)
-            post_epoch_history.append(self.post_epoch_callback(gp_parameters))
+            post_epoch_history.append(self.post_epoch_callback(parameters))
             if self.break_condition_function and self.break_condition_function(
-                gp_parameters
+                parameters
             ):
                 break
-        return gp_parameters, post_epoch_history
+        return parameters, post_epoch_history
 
 
 #
@@ -117,7 +117,7 @@ class Trainer:
 #     nll_break_condition: float = -float("inf"),
 # ) -> Tuple[GPBaseParameters, List[float]]:
 #     losses = []
-#     opt_state = training_parameters.optimiser.init(gp_parameters.dict())
+#     opt_state = training_parameters.optimiser_scheme.init(gp_parameters.dict())
 #     nll_loss = NegativeLogLikelihood(gp=gp)
 #     key = training_parameters.key
 #     for epoch in tqdm(range(training_parameters.number_of_epochs)):
@@ -148,7 +148,7 @@ class Trainer:
 #                     y=y_batch,
 #                 )
 #             )(gp_parameters.dict())
-#             updates, opt_state = training_parameters.optimiser.update(gradients, opt_state)
+#             updates, opt_state = training_parameters.optimiser_scheme.update(gradients, opt_state)
 #             gp_parameters = gp.generate_parameters(
 #                 optax.apply_updates(gp_parameters.dict(), updates)
 #             )

@@ -1,37 +1,38 @@
 from abc import ABC, abstractmethod
-from typing import Literal, Sequence
+from typing import Dict, Literal, Sequence, Union
 
-from jax.numpy import jnp
+import jax.numpy as jnp
+from flax.core.frozen_dict import FrozenDict
 from neural_tangents import stax
 
 from src.module import ModuleParameters
 from src.utils.custom_types import JaxArrayType
 
 
-class NNGPKernelParameters(ModuleParameters, ABC):
+class NNGPKernelBaseParameters(ModuleParameters, ABC):
     pass
 
 
 class NNGPKernelBase(ABC):
-    Parameters = NNGPKernelParameters
+    Parameters = NNGPKernelBaseParameters
 
     @abstractmethod
-    def initialise_parameters(self) -> NNGPKernelParameters:
+    def initialise_parameters(self) -> NNGPKernelBaseParameters:
         pass
 
     @abstractmethod
     def __call__(
-        self, parameters: NNGPKernelParameters, x1: jnp.ndarray, x2: jnp.ndarray
+        self, parameters: NNGPKernelBaseParameters, x1: jnp.ndarray, x2: jnp.ndarray
     ) -> jnp.ndarray:
         raise NotImplementedError
 
 
-class MultiLayerPerceptronKernelParameters(NNGPKernelParameters):
+class MultiLayerPerceptronKernelParameters(NNGPKernelBaseParameters):
     w_std: JaxArrayType[Literal["float64"]]
     b_std: JaxArrayType[Literal["float64"]]
 
 
-class MultiLayerPerceptronKernel(NNGPKernelParameters):
+class MultiLayerPerceptronKernel(NNGPKernelBase):
     Parameters = MultiLayerPerceptronKernelParameters
 
     def __init__(self, features: Sequence[int]):
@@ -46,10 +47,15 @@ class MultiLayerPerceptronKernel(NNGPKernelParameters):
 
     def __call__(
         self,
-        parameters: MultiLayerPerceptronKernelParameters,
+        parameters: Union[Dict, FrozenDict, MultiLayerPerceptronKernelParameters],
         x1: jnp.ndarray,
         x2: jnp.ndarray,
     ) -> jnp.ndarray:
+        if not isinstance(parameters, self.Parameters):
+            parameters = MultiLayerPerceptronKernelParameters(
+                w_std=parameters["w_std"],
+                b_std=parameters["b_std"],
+            )
         _, _, kernel_fn = stax.serial(
             *[
                 stax.Dense(feat, W_std=parameters.w_std[i], b_std=parameters.b_std[i])
