@@ -1,6 +1,6 @@
 # Generalised Variational Inference for Sparse Gaussian Process Learning
 
-Leveraging Generalised Variational Inference (GVI) to construct loss objectives for sparse Gaussian Process (sGP) learning in the contexts of both regression and classification. This is a flexible framework accommodating any regulariser and any empirical risk. Regularisers are defined with respect to a distance metric for push-forward Gaussian measures in function spaces (i.e. the Wasserstein Metric on Hilbert Spaces). With GVI we are much more flexible in our sGP construction than traditional methods.  For a quick overview of GVI, see my <a href="https://jswu18.github.io/posts/2023/07/generalised-variational-inference/">blog post</a>. Gaussian Wasserstein Inference (GVI with the Wasserstein metric as the regulariser) is developed in <a href="https://arxiv.org/pdf/2205.06342.pdf">this paper</a> by Veit Wild.
+Leveraging Generalised Variational Inference (GVI) to construct loss objectives for sparse Gaussian Process (sGP) learning in the contexts of both regression and classification tasks. This is a flexible framework accommodating the choice of any empirical risk and any regulariser. Regularisers are defined with respect to a distance metric for push-forward Gaussian measures in function spaces (i.e. the Wasserstein Metric on Hilbert Spaces). With GVI we are much more flexible in our sGP construction compared to more traditional methods that have restrictive choices for mean and kernel functions. For a quick overview of GVI, see my <a href="https://jswu18.github.io/posts/2023/07/generalised-variational-inference/">blog post</a>. This extends the work of Gaussian Wasserstein Inference (GVI with the Wasserstein metric as the regulariser) developed in <a href="https://arxiv.org/pdf/2205.06342.pdf">this paper</a> by Veit Wild.
 
 To get set up:
 
@@ -17,11 +17,11 @@ poetry install
 ```
 
 ## Sample Regression Curves
-These are some regression curves showing GVI in action. Sparse GPs are trained on the curves with different regularisers.
+Here are some regression curves showing GVI in action. Sparse GPs are trained on the curves using different regularisers.
 
 ### Curve 0
 <p align="middle">
-  <img src="experiments/regression/toy_curves/outputs/curve0/tempered-PointWiseBhattacharyyaRegularisation.png" width="90%" />
+  <img src="experiments/regression/toy_curves/outputs/curve0/tempered-WassersteinRegularisation.png" width="90%" />
 </p>
 
 ### Curve 1
