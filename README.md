@@ -26,6 +26,7 @@ poetry install
 <p align="middle">
   <img src="experiments/regression/toy_curves/outputs/curve0/tempered-PointWiseBhattacharyyaRegularisation.png" width="90%" />
 </p>
+
 ### Curve 1
 <p align="middle">
   <img src="experiments/regression/toy_curves/outputs/curve1/tempered-PointWiseKLRegularisation.png" width="90%" />
