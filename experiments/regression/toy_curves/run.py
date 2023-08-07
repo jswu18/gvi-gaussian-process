@@ -11,18 +11,13 @@ from flax.training import orbax_utils
 from neural_tangents import stax
 
 from experiments.data import ExperimentData
-from experiments.nn_means import MultiLayerPerceptron
-from experiments.nngp_kernels import MultiLayerPerceptronKernel
+from experiments.neural_networks import MultiLayerPerceptron
 from experiments.plotters import plot_losses, plot_two_losses
 from experiments.regression.data import set_up_regression_experiment
 from experiments.regression.plotters import plot_regression
 from experiments.regression.toy_curves.curves import CURVE_FUNCTIONS, Curve
-<<<<<<< Updated upstream
 from experiments.trainers import train_gvi, train_nll, train_tempered_nll
-=======
-from experiments.trainer import train_gvi, train_nll, train_tempered_nll
 from experiments.utils import calculate_inducing_points
->>>>>>> Stashed changes
 from src import GeneralisedVariationalInference
 from src.distributions import Gaussian
 from src.empirical_risks import NegativeLogLikelihood
@@ -74,6 +69,7 @@ def run_reference_gp(
     load_checkpoint: bool,
     output_folder: str,
     nll_break_condition: float,
+    figure_name_suffix: str = "",
 ) -> Tuple[GPBase, GPBaseParameters]:
     gp = GPRegression(
         x=experiment_data.x_inducing,
@@ -120,14 +116,19 @@ def run_reference_gp(
         fig = plot_losses(
             losses=reference_losses,
             loss_name="Negative Log Likelihood",
-            title=f"Reference GP NLL Loss ({curve_function.__name__})",
+            title=f"Reference GP NLL Loss ({curve_function.__name__}){figure_name_suffix}",
         )
         fig.savefig(
-            os.path.join(output_folder, "reference-losses.png"), bbox_inches="tight"
+            os.path.join(output_folder, f"reference-losses{figure_name_suffix}.png"),
+            bbox_inches="tight",
         )
         plt.close(fig)
         np.save(
-            os.path.join(output_folder, "training-checkpoints", "reference-losses.npy"),
+            os.path.join(
+                output_folder,
+                "training-checkpoints",
+                f"reference-losses{figure_name_suffix}.npy",
+            ),
             np.array(reference_losses),
         )
     predicted_distribution = Gaussian(
@@ -142,7 +143,10 @@ def run_reference_gp(
         covariance=predicted_distribution.covariance,
         title=f"Reference GP ({curve_function.__name__})",
     )
-    fig.savefig(os.path.join(output_folder, "reference.png"), bbox_inches="tight")
+    fig.savefig(
+        os.path.join(output_folder, f"reference{figure_name_suffix}.png"),
+        bbox_inches="tight",
+    )
     plt.close(fig)
     return gp, gp_parameters
 
@@ -165,41 +169,9 @@ def run_approximate_gp(
     output_folder: str,
     regulariser: Type[RegularisationBase],
 ) -> Tuple[ApproximateGPBase, GPBaseParameters]:
-    # kernel_neural_network = MultiLayerPerceptron([1, 10])
-    # base_kernel = NeuralNetworkKernel(
-    #     base_kernel=PolynomialKernel(polynomial_degree=1),
-    #     neural_network=kernel_neural_network,
-    # )
-    # key, subkey = jax.random.split(key)
-    # base_kernel_parameters = base_kernel.generate_parameters(
-    #     {
-    #         "base_kernel": base_kernel.base_kernel.generate_parameters(
-    #             {
-    #                 "log_constant": jnp.log(1),
-    #                 "log_scaling": jnp.log(1/10),
-    #             }
-    #         ),
-    #         "neural_network": kernel_neural_network.init(
-    #                     subkey, experiment_data.x_train[:1, ...]
-    #                 ),
-    #     }
-    # )
-    def base_nngp_kernel_function(parameters, x1, x2):
-        _, _, kernel_fn = stax.serial(
-            stax.Dense(10, W_std=parameters[0]["w_std"], b_std=parameters[0]["b_std"]),
-            stax.Erf(),
-            stax.Dense(1, W_std=parameters[1]["w_std"], b_std=parameters[1]["b_std"]),
-        )
-        return kernel_fn(x1, x2, "nngp")
-
-    base_kernel = CustomKernel(kernel_function=base_nngp_kernel_function)
+    base_kernel = CustomKernel(kernel_function=nngp_kernel_function)
     base_kernel_parameters = base_kernel.generate_parameters(
-        {
-            "custom": [
-                {"w_std": 1.0, "b_std": 1.0},
-                {"w_std": 1.0, "b_std": 1.0},
-            ]
-        }
+        gp_parameters.kernel.dict()
     )
     approximate_gp = ApproximateGPRegression(
         kernel=GeneralisedStochasticVariationalKernel(
@@ -495,28 +467,49 @@ def run_experiment(
         kernel=kernel,
         kernel_parameters=kernel_parameters,
     )
+    for i in range(5):
+        key, subkey = jax.random.split(key)
+        x_inducing, y_inducing = calculate_inducing_points(
+            key=subkey,
+            x=experiment_data.x_train,
+            y=experiment_data.y_train,
+            number_of_inducing_points=number_of_inducing_points,
+            kernel=kernel,
+            kernel_parameters=kernel_parameters,
+        )
+        experiment_data.x_inducing = x_inducing
+        experiment_data.y_inducing = y_inducing
+        fig = plot_regression(
+            experiment_data=experiment_data,
+            title=f"{curve_function.__name__} ({i=})",
+        )
+        fig.savefig(
+            os.path.join(output_folder, f"{curve_name}-{i}.png"), bbox_inches="tight"
+        )
+        plt.close(fig)
+        key, subkey = jax.random.split(key)
+        gp, gp_parameters = run_reference_gp(
+            key=subkey,
+            curve_function=curve_function,
+            experiment_data=experiment_data,
+            kernel=kernel,
+            kernel_parameters=kernel_parameters,
+            lr=reference_gp_lr,
+            training_epochs=reference_gp_training_epochs,
+            save_checkpoint_frequency=reference_save_checkpoint_frequency,
+            batch_size=reference_gp_batch_size,
+            load_checkpoint=reference_load_checkpoint,
+            output_folder=output_folder,
+            nll_break_condition=nll_break_condition,
+            figure_name_suffix=f"-{i}",
+        )
+        kernel = gp.kernel
+        kernel_parameters = gp_parameters.kernel
     fig = plot_regression(
         experiment_data=experiment_data,
         title=f"{curve_function.__name__}",
     )
     fig.savefig(os.path.join(output_folder, f"{curve_name}.png"), bbox_inches="tight")
-    plt.close(fig)
-    _, subkey = jax.random.split(key)
-    gp, gp_parameters = run_reference_gp(
-        key=subkey,
-        curve_function=curve_function,
-        experiment_data=experiment_data,
-        kernel=kernel,
-        kernel_parameters=kernel_parameters,
-        lr=reference_gp_lr,
-        training_epochs=reference_gp_training_epochs,
-        save_checkpoint_frequency=reference_save_checkpoint_frequency,
-        batch_size=reference_gp_batch_size,
-        load_checkpoint=reference_load_checkpoint,
-        output_folder=output_folder,
-        nll_break_condition=nll_break_condition,
-    )
-
     for regulariser in regularisers:
         np.random.seed(CURVE_FUNCTION.seed)
         key, subkey = jax.random.split(jax.random.PRNGKey(CURVE_FUNCTION.seed))
@@ -557,18 +550,18 @@ def run_experiment(
 
 if __name__ == "__main__":
     jax.config.update("jax_enable_x64", True)
-    NUMBER_OF_DATA_POINTS = 500
+    NUMBER_OF_DATA_POINTS = 1000
     SIGMA_TRUE = 0.5
     TRAIN_DATA_PERCENTAGE = 0.8
-    NUMBER_OF_TEST_INTERVALS = 2
-    TOTAL_NUMBER_OF_INTERVALS = 8
-    NUMBER_OF_INDUCING_POINTS = int(2 * np.sqrt(NUMBER_OF_DATA_POINTS))
-    REFERENCE_GP_LR = 1e-2
+    NUMBER_OF_TEST_INTERVALS = 5
+    TOTAL_NUMBER_OF_INTERVALS = 20
+    NUMBER_OF_INDUCING_POINTS = int(np.sqrt(NUMBER_OF_DATA_POINTS))
+    REFERENCE_GP_LR = 5e-5
     REFERENCE_GP_TRAINING_EPOCHS = 20000
     REFERENCE_SAVE_CHECKPOINT_FREQUENCY = 1000
     REFERENCE_GP_BATCH_SIZE = 1000
     REFERENCE_LOAD_CHECKPOINT = False
-    OUTPUT_DIRECTORY = "toy_curves/outputs"
+    OUTPUT_DIRECTORY = "outputs"
     DIAGONAL_REGULARISATION = 1e-10
     INCLUDE_EIGENDECOMPOSITION = False
     EIGENVALUE_REGULARISATION = 1e-10
@@ -582,24 +575,27 @@ if __name__ == "__main__":
     TEMPERED_SAVE_CHECKPOINT_FREQUENCY = 1000
     TEMPERED_GP_BATCH_SIZE = 1000
     TEMPERED_LOAD_CHECKPOINT = False
-    NLL_BREAK_CONDITION = -1
+    NLL_BREAK_CONDITION = -10
     X = jnp.linspace(-2, 2, NUMBER_OF_DATA_POINTS, dtype=np.float64).reshape(-1, 1)
 
-    nngp_kernel_function = MultiLayerPerceptronKernel(features=[1, 10, 1])
+    def nngp_kernel_function(parameters, x1, x2):
+        _, _, kernel_fn = stax.serial(
+            stax.Dense(10, W_std=parameters[0]["w_std"], b_std=parameters[0]["b_std"]),
+            stax.Erf(),
+            stax.Dense(1, W_std=parameters[1]["w_std"], b_std=parameters[1]["b_std"]),
+        )
+        return kernel_fn(x1, x2, "nngp")
+
     KERNEL = CustomKernel(kernel_function=nngp_kernel_function)
     KERNEL_PARAMETERS = KERNEL.generate_parameters(
-<<<<<<< Updated upstream
         {
             "custom": [
-                {"w_std": 15.0, "b_std": 15.0},
-                {"w_std": 15.0, "b_std": 15.0},
+                {"w_std": 1.0, "b_std": 1.0},
+                {"w_std": 1.0, "b_std": 1.0},
             ]
         }
-=======
-        {"custom": nngp_kernel_function.initialise_parameters()}
->>>>>>> Stashed changes
     )
-    NEURAL_NETWORK = MultiLayerPerceptron([1, 10, 1])
+    NEURAL_NETWORK = MultiLayerPerceptron([10, 1])
 
     for CURVE_FUNCTION in CURVE_FUNCTIONS:
         run_experiment(

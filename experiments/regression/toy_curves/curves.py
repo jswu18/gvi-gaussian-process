@@ -75,13 +75,13 @@ class Curve4(Curve):
 
 
 class Curve5(Curve):
-    __name__ = "$y=\sin(\pi x) + 0.3x^3$"
+    __name__ = "$y=2 \sin(\pi x) + 0.5x^3$"
     seed: int = 5
 
     def __call__(self, key: PRNGKey, x: jnp.ndarray, sigma_true: float) -> jnp.ndarray:
         return (
-            jnp.sin(jnp.pi * x)
-            + 0.3 * (x**3)
+            2 * jnp.sin(jnp.pi * x)
+            + 0.5 * (x**3)
             + sigma_true * jax.random.normal(key, shape=x.shape)
         ).reshape(-1)
 
