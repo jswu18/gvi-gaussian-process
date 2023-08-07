@@ -169,25 +169,6 @@ def run_approximate_gp(
     output_folder: str,
     regulariser: Type[RegularisationBase],
 ) -> Tuple[ApproximateGPBase, GPBaseParameters]:
-    # kernel_neural_network = MultiLayerPerceptron([1, 10])
-    # base_kernel = NeuralNetworkKernel(
-    #     base_kernel=PolynomialKernel(polynomial_degree=1),
-    #     neural_network=kernel_neural_network,
-    # )
-    # key, subkey = jax.random.split(key)
-    # base_kernel_parameters = base_kernel.generate_parameters(
-    #     {
-    #         "base_kernel": base_kernel.base_kernel.generate_parameters(
-    #             {
-    #                 "log_constant": jnp.log(1),
-    #                 "log_scaling": jnp.log(1/10),
-    #             }
-    #         ),
-    #         "neural_network": kernel_neural_network.init(
-    #                     subkey, experiment_data.x_train[:1, ...]
-    #                 ),
-    #     }
-    # )
     base_kernel = CustomKernel(kernel_function=nngp_kernel_function)
     base_kernel_parameters = base_kernel.generate_parameters(
         gp_parameters.kernel.dict()
@@ -486,7 +467,7 @@ def run_experiment(
         kernel=kernel,
         kernel_parameters=kernel_parameters,
     )
-    for i in range(20):
+    for i in range(5):
         key, subkey = jax.random.split(key)
         x_inducing, y_inducing = calculate_inducing_points(
             key=subkey,
@@ -575,7 +556,7 @@ if __name__ == "__main__":
     NUMBER_OF_TEST_INTERVALS = 5
     TOTAL_NUMBER_OF_INTERVALS = 20
     NUMBER_OF_INDUCING_POINTS = int(np.sqrt(NUMBER_OF_DATA_POINTS))
-    REFERENCE_GP_LR = 1e-2
+    REFERENCE_GP_LR = 5e-5
     REFERENCE_GP_TRAINING_EPOCHS = 20000
     REFERENCE_SAVE_CHECKPOINT_FREQUENCY = 1000
     REFERENCE_GP_BATCH_SIZE = 1000
@@ -594,7 +575,7 @@ if __name__ == "__main__":
     TEMPERED_SAVE_CHECKPOINT_FREQUENCY = 1000
     TEMPERED_GP_BATCH_SIZE = 1000
     TEMPERED_LOAD_CHECKPOINT = False
-    NLL_BREAK_CONDITION = -1
+    NLL_BREAK_CONDITION = -10
     X = jnp.linspace(-2, 2, NUMBER_OF_DATA_POINTS, dtype=np.float64).reshape(-1, 1)
 
     def nngp_kernel_function(parameters, x1, x2):
@@ -614,7 +595,7 @@ if __name__ == "__main__":
             ]
         }
     )
-    NEURAL_NETWORK = MultiLayerPerceptron([1, 10, 1])
+    NEURAL_NETWORK = MultiLayerPerceptron([10, 1])
 
     for CURVE_FUNCTION in CURVE_FUNCTIONS:
         run_experiment(
