@@ -84,6 +84,7 @@ def run_reference_gp(
             "kernel": kernel_parameters.dict(),
         }
     )
+    print(gp_parameters)
     reference_parameters_path = os.path.join(
         output_folder, "training-checkpoints", f"reference.ckpt"
     )

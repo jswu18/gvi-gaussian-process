@@ -115,7 +115,6 @@ def meta_train_reference_gp(
             empirical_risk_break_condition=empirical_risk_break_condition,
         )
         kernel_parameters = gp_parameters.kernel
-        trainer_settings.learning_rate = trainer_settings.learning_rate / 2
         post_epoch_histories.append(post_epoch_history)
         prediction_x = jnp.linspace(data.x.min(), data.x.max(), num=1000, endpoint=True)
         gp_prediction = Gaussian(

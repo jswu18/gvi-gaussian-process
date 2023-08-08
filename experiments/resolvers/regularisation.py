@@ -51,7 +51,7 @@ def regularisation(
             regulariser=regulariser,
             regulariser_parameters=regulariser_parameters,
         )
-    elif regularisation_scheme == schemes.Regularisation.point_wise_bhattacaryya:
+    elif regularisation_scheme == schemes.Regularisation.point_wise_bhattacharyya:
         return PointWiseBhattacharyyaRegularisation(
             gp=gp,
             regulariser=regulariser,
