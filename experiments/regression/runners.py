@@ -64,12 +64,12 @@ def train_reference_gp(
         checkpoint_path=checkpoint_path,
         post_epoch_callback=lambda parameters: {
             "empirical-risk": empirical_risk.calculate_empirical_risk(
-                parameters, data.x, data.y
+                parameters, inducing_data.x, inducing_data.y
             )
         },
         break_condition_function=(
             lambda parameters: empirical_risk.calculate_empirical_risk(
-                parameters, data.x, data.y
+                parameters, inducing_data.x, inducing_data.y
             )
             < empirical_risk_break_condition
         ),
@@ -115,6 +115,7 @@ def meta_train_reference_gp(
             empirical_risk_break_condition=empirical_risk_break_condition,
         )
         kernel_parameters = gp_parameters.kernel
+        trainer_settings.learning_rate = trainer_settings.learning_rate / 2
         post_epoch_histories.append(post_epoch_history)
         prediction_x = jnp.linspace(data.x.min(), data.x.max(), num=1000, endpoint=True)
         gp_prediction = Gaussian(

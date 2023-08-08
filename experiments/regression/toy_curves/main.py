@@ -34,7 +34,7 @@ sigma_true = 0.5
 number_of_inducing_points = int(np.sqrt(number_of_data_points))
 nn_architecture = [10, 1]
 
-reference_number_of_iterations = 20
+reference_number_of_iterations = 2
 reference_nll_break_condition = -10
 
 approximate_kernel_diagonal_regularisation = 1e-10
@@ -50,7 +50,7 @@ tempered_save_checkpoint_frequency = 1000
 reference_gp_trainer_settings = TrainerSettings(
     key=0,
     optimiser_scheme=schemes.Optimiser.adabeleif,
-    learning_rate=1e-5,
+    learning_rate=1e-2,
     number_of_epochs=20000,
     batch_size=1000,
     batch_shuffle=True,
@@ -141,6 +141,7 @@ for curve_function in CURVE_FUNCTIONS:
             "reference-gp",
         ),
     )
+    print(reference_gp_parameters)
     fig = plotters.plot_prediction(
         experiment_data=experiment_data,
         inducing_data=Data(

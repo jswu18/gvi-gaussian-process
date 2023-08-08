@@ -51,6 +51,8 @@ class Trainer:
             return optax.adam(learning_rate=learning_rate)
         elif optimiser == Optimiser.adabeleif:
             return optax.sgd(learning_rate=learning_rate)
+        elif optimiser == Optimiser.rmsprop:
+            return optax.rmsprop(learning_rate=learning_rate)
         else:
             raise ValueError(f"Unknown optimiser: {optimiser=}")
 

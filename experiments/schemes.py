@@ -4,6 +4,7 @@ import enum
 class Optimiser(str, enum.Enum):
     adam = "adam"
     adabeleif = "adabelief"
+    rmsprop = "rmsprop"
 
 
 class EmpiricalRisk(str, enum.Enum):
