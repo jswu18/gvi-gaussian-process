@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Optional
 
 import jax
 from jax import numpy as jnp
@@ -22,16 +23,27 @@ class Data:
 @dataclass
 class ExperimentData:
     full: Data
-    train: Data
-    test: Data
-    validation: Data
+    train: Optional[Data] = None
+    test: Optional[Data] = None
+    validation: Optional[Data] = None
+
+    @staticmethod
+    def _add_with_none(a, b):
+        if a is None and b is None:
+            return None
+        elif a is None:
+            return b
+        elif b is None:
+            return a
+        else:
+            return a + b
 
     def __add__(self, other):
         return ExperimentData(
-            full=self.full + other.full,
-            train=self.train + other.train,
-            test=self.test + other.test,
-            validation=self.validation + other.validation,
+            full=self._add_with_none(self.full, other.full),
+            train=self._add_with_none(self.train, other.train),
+            test=self._add_with_none(self.test, other.test),
+            validation=self._add_with_none(self.validation, other.validation),
         )
 
 

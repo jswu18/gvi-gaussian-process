@@ -11,11 +11,11 @@ class EmpiricalRisk(str, enum.Enum):
 
 
 class Regularisation(str, enum.Enum):
-    squared_difference = "squared_difference"
-    wasserstein = "wasserstein"
     point_wise_wasserstein = "point_wise_wasserstein"
     point_wise_kl = "point_wise_kl"
     point_wise_symmetric_kl = "point_wise_symmetric_kl"
     point_wise_bhattacaryya = "point_wise_bhattacaryya"
     point_wise_hellinger = "point_wise_hellinger"
     point_wise_renyi = "point_wise_renyi"
+    squared_difference = "squared_difference"
+    wasserstein = "wasserstein"

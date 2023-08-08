@@ -35,8 +35,8 @@ class Trainer:
         self,
         save_checkpoint_frequency: int,
         checkpoint_path: str,
-        post_epoch_callback: Callable[[GPBaseParameters], Dict[str, float]],
-        break_condition_function: Callable[[GPBaseParameters], bool] = None,
+        post_epoch_callback: Callable[[ModuleParameters], Dict[str, float]],
+        break_condition_function: Callable[[ModuleParameters], bool] = None,
     ):
         self.save_checkpoint_frequency = save_checkpoint_frequency
         self.checkpoint_path = checkpoint_path
@@ -60,6 +60,7 @@ class Trainer:
         parameters: ModuleParameters,
         data: Data,
         loss_function: Callable[[FrozenDict, jnp.ndarray, jnp.ndarray], float],
+        disable_tqdm: bool = False,
     ) -> Tuple[ModuleParameters, List[Dict[str, float]]]:
         post_epoch_history = []
         optimiser = Trainer.resolve_optimiser(
@@ -67,7 +68,9 @@ class Trainer:
         )
         opt_state = optimiser.init(parameters.dict())
         key = jax.random.PRNGKey(trainer_settings.key)
-        for epoch in tqdm(range(trainer_settings.number_of_epochs)):
+        for epoch in tqdm(
+            range(trainer_settings.number_of_epochs), disable=disable_tqdm
+        ):
             if epoch % self.save_checkpoint_frequency == 0:
                 ckpt = parameters.dict()
                 save_args = orbax_utils.save_args_from_target(ckpt)
@@ -89,14 +92,14 @@ class Trainer:
             while data_batch is not None:
                 x_batch, y_batch = data_batch
                 gradients = jax.grad(
-                    lambda gp_parameters_dict: loss_function(
-                        gp_parameters_dict,
+                    lambda parameters_dict: loss_function(
+                        parameters_dict,
                         x_batch,
                         y_batch,
                     )
                 )(parameters.dict())
                 updates, opt_state = optimiser.update(gradients, opt_state)
-                parameters = type(parameters)(
+                parameters = parameters.construct(
                     **optax.apply_updates(parameters.dict(), updates)
                 )
                 data_batch = next(batch_generator, None)

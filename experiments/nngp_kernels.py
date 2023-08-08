@@ -41,8 +41,8 @@ class MultiLayerPerceptronKernel(NNGPKernelBase):
 
     def initialise_parameters(self):
         return self.Parameters(
-            w_std=jnp.ones(len(self.features)),
-            b_std=jnp.ones(len(self.features)),
+            w_std=jnp.ones(len(self.features)).astype(jnp.float64),
+            b_std=jnp.ones(len(self.features)).astype(jnp.float64),
         )
 
     def __call__(
@@ -52,14 +52,18 @@ class MultiLayerPerceptronKernel(NNGPKernelBase):
         x2: jnp.ndarray,
     ) -> jnp.ndarray:
         if not isinstance(parameters, self.Parameters):
+            parameters = MultiLayerPerceptronKernelParameters(**parameters)
+        nn_architecture = []
+        for i, feat in enumerate(self.features):
+            nn_architecture.append(
+                stax.Dense(feat, W_std=parameters.w_std[i], b_std=parameters.b_std[i])
+            )
+            nn_architecture.append(stax.Erf())
+        nn_architecture.pop(-1)
+        if not isinstance(parameters, self.Parameters):
             parameters = MultiLayerPerceptronKernelParameters(
                 w_std=parameters["w_std"],
                 b_std=parameters["b_std"],
             )
-        _, _, kernel_fn = stax.serial(
-            *[
-                stax.Dense(feat, W_std=parameters.w_std[i], b_std=parameters.b_std[i])
-                for i, feat in enumerate(self.features)
-            ]
-        )
+        _, _, kernel_fn = stax.serial(*nn_architecture)
         return kernel_fn(x1, x2, "nngp")

@@ -34,7 +34,9 @@ class TemperedKernel(KernelBase):
     def generate_parameters(
         self, parameters: Union[FrozenDict, Dict]
     ) -> TemperedKernelParameters:
-        return TemperedKernel.Parameters(**parameters)
+        return TemperedKernel.Parameters(
+            log_tempering_factor=parameters["log_tempering_factor"]
+        )
 
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def initialise_random_parameters(
