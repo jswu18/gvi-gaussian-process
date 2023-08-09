@@ -2,16 +2,34 @@ from abc import ABC, abstractmethod
 from typing import Callable, Dict, Type, Union
 
 import jax.numpy as jnp
+import orbax
 import pydantic
 from flax.core.frozen_dict import FrozenDict
+from flax.training import orbax_utils
 from pydantic import BaseModel
 
 from src.utils.custom_types import JSON_ENCODERS, PRNGKey
+
+orbax_checkpointer = orbax.checkpoint.PyTreeCheckpointer()
 
 
 class ModuleParameters(BaseModel, ABC):
     class Config:
         json_encoders = JSON_ENCODERS
+
+    def save(self, path: str) -> None:
+        ckpt = self.dict()
+        save_args = orbax_utils.save_args_from_target(ckpt)
+        orbax_checkpointer.save(
+            path,
+            ckpt,
+            save_args=save_args,
+            force=True,
+        )
+
+    def load(self, path: str):
+        ckpt = orbax_checkpointer.restore(path)
+        return self.construct(**ckpt)
 
 
 class Module(ABC):

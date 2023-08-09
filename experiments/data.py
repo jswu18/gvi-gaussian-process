@@ -15,8 +15,8 @@ class Data:
 
     def __add__(self, other):
         return Data(
-            x=jnp.concatenate([self.x, other.x]),
-            y=jnp.concatenate([self.y, other.y]),
+            x=jnp.concatenate([self.x, other.x], axis=0),
+            y=jnp.concatenate([self.y, other.y], axis=0),
         )
 
 
@@ -28,7 +28,7 @@ class ExperimentData:
     validation: Optional[Data] = None
 
     @staticmethod
-    def _add_with_none(a, b):
+    def _add_with_none(a: Optional[Data], b: Optional[Data]) -> Optional[Data]:
         if a is None and b is None:
             return None
         elif a is None:

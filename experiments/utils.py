@@ -1,5 +1,3 @@
-from typing import Tuple
-
 from jax import numpy as jnp
 
 from experiments.data import Data

@@ -226,10 +226,12 @@ for curve_function in CURVE_FUNCTIONS:
             ),
             gp=approximate_gp,
             gp_parameters=approximate_gp_parameters,
-            title=f"""
-                Approximate GP ({approximate_gp_regularisation_scheme_str}): 
-                {curve_function.__name__}
-                """,
+            title=" ".join(
+                [
+                    f"Approximate GP ({approximate_gp_regularisation_scheme_str}):",
+                    f"{curve_function.__name__}",
+                ]
+            ),
             save_path=os.path.join(
                 approximate_experiment_directory,
                 "approximate-gp.png",
@@ -239,9 +241,12 @@ for curve_function in CURVE_FUNCTIONS:
             losses=[x["gvi-objective"] for x in approximate_post_epoch_history],
             labels="gvi-objective",
             loss_name=f"{approximate_gp_empirical_risk_scheme.value}+{approximate_gp_regularisation_scheme_str}",
-            title=f"""
-                Approximate GP Objective ({approximate_gp_regularisation_scheme_str}): 
-                {curve_function.__name__}""",
+            title=" ".join(
+                [
+                    f"Approximate GP Objective ({approximate_gp_regularisation_scheme_str}):",
+                    f"{curve_function.__name__}",
+                ]
+            ),
             save_path=os.path.join(
                 approximate_experiment_directory,
                 "approximate-gp-loss.png",
@@ -252,10 +257,12 @@ for curve_function in CURVE_FUNCTIONS:
             loss1_name=approximate_gp_empirical_risk_scheme.value,
             loss2=[x["regularisation"] for x in approximate_post_epoch_history],
             loss2_name=approximate_gp_regularisation_scheme_str,
-            title=f""""
-                Approximate GP Objective Breakdown ({approximate_gp_regularisation_scheme_str}): 
-                {curve_function.__name__}
-            """,
+            title=" ".join(
+                [
+                    f"Approximate GP Objective Breakdown ({approximate_gp_regularisation_scheme_str}):",
+                    f"{curve_function.__name__}",
+                ]
+            ),
             save_path=os.path.join(
                 approximate_experiment_directory,
                 "approximate-gp-loss-breakdown.png",
@@ -300,10 +307,12 @@ for curve_function in CURVE_FUNCTIONS:
             ),
             gp=tempered_approximate_gp,
             gp_parameters=tempered_gp_parameters,
-            title=f"""
-                Tempered Approximate GP ({approximate_gp_regularisation_scheme_str}): 
-                {curve_function.__name__}
-                """,
+            title=" ".join(
+                [
+                    f"Tempered Approximate GP ({approximate_gp_regularisation_scheme_str}):",
+                    f"{curve_function.__name__}",
+                ]
+            ),
             save_path=os.path.join(
                 approximate_experiment_directory, "tempered-approximate-gp.png"
             ),
@@ -312,10 +321,12 @@ for curve_function in CURVE_FUNCTIONS:
             losses=[x["empirical-risk"] for x in tempered_post_epoch_history],
             labels="empirical-risk",
             loss_name=tempered_gp_empirical_risk_scheme.value,
-            title=f"""
-                Tempered Approximate GP Empirical Risk ({approximate_gp_regularisation_scheme_str}): 
-                {curve_function.__name__}
-            """,
+            title=" ".join(
+                [
+                    f"Tempered Approximate GP Empirical Risk ({approximate_gp_regularisation_scheme_str}):",
+                    f"{curve_function.__name__}",
+                ]
+            ),
             save_path=os.path.join(
                 approximate_experiment_directory,
                 "tempered-approximate-gp-loss.png",

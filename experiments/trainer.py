@@ -16,8 +16,6 @@ from experiments.schemes import Optimiser
 from src.module import ModuleParameters
 from src.utils.data import generate_batch
 
-orbax_checkpointer = orbax.checkpoint.PyTreeCheckpointer()
-
 
 @dataclass
 class TrainerSettings:
@@ -61,13 +59,8 @@ class Trainer:
             range(trainer_settings.number_of_epochs), disable=disable_tqdm
         ):
             if epoch % self.save_checkpoint_frequency == 0:
-                ckpt = parameters.dict()
-                save_args = orbax_utils.save_args_from_target(ckpt)
-                orbax_checkpointer.save(
-                    os.path.join(self.checkpoint_path, f"epoch-{epoch}.ckpt"),
-                    ckpt,
-                    save_args=save_args,
-                    force=True,
+                parameters.save(
+                    path=os.path.join(self.checkpoint_path, f"epoch-{epoch}.ckpt"),
                 )
             key, subkey = jax.random.split(key)
             batch_generator = generate_batch(
