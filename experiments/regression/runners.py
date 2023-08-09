@@ -6,7 +6,7 @@ import jax.numpy as jnp
 from tqdm import tqdm
 
 from experiments import resolvers, schemes
-from experiments.data import Data, ExperimentData
+from experiments.data import Data
 from experiments.regression import plotters
 from experiments.trainer import Trainer, TrainerSettings
 from experiments.utils import calculate_inducing_points
@@ -102,6 +102,7 @@ def meta_train_reference_gp(
     empirical_risk_break_condition: float = -float("inf"),
 ) -> Tuple[GPRegression, GPRegressionParameters, List[List[Dict[str, float]]]]:
     post_epoch_histories = []
+    gp, gp_parameters = None, None
     for i in tqdm(range(number_of_iterations)):
         gp, gp_parameters, post_epoch_history = train_reference_gp(
             data=data,
@@ -123,7 +124,7 @@ def meta_train_reference_gp(
                 x=prediction_x,
             ).dict()
         )
-        fig = plotters.plot_data(
+        plotters.plot_data(
             train_data=data,
             inducing_data=Data(
                 x=gp.x,
@@ -133,13 +134,11 @@ def meta_train_reference_gp(
             mean=gp_prediction.mean,
             covariance=gp_prediction.covariance,
             title=f"Reference GP Iteration {i}",
-        )
-        fig.savefig(
-            os.path.join(
+            save_path=os.path.join(
                 checkpoint_path,
                 f"iteration-{i}",
                 f"reference-gp.png",
-            )
+            ),
         )
     return gp, gp_parameters, post_epoch_histories
 

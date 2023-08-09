@@ -2,7 +2,6 @@ import os
 
 import jax
 import jax.numpy as jnp
-import matplotlib.pyplot as plt
 import numpy as np
 
 from experiments import schemes
@@ -26,7 +25,7 @@ jax.config.update("jax_enable_x64", True)
 output_directory = "outputs"
 checkpoints_folder_name = "training-checkpoints"
 number_of_data_points = 1000
-x = jnp.linspace(-2, 2, number_of_data_points, dtype=np.float64).reshape(-1, 1)
+x = jnp.linspace(-2, 2, number_of_data_points).reshape(-1, 1)
 number_of_test_intervals = 5
 total_number_of_intervals = 20
 train_data_percentage = 0.8
@@ -85,12 +84,11 @@ nn_mean = MultiLayerPerceptron(
 )
 nn_mean_parameters = nn_mean.init(jax.random.PRNGKey(0), x[:1, ...])
 for curve_function in CURVE_FUNCTIONS:
-    if not os.path.exists(
-        os.path.join(output_directory, type(curve_function).__name__.lower())
-    ):
-        os.makedirs(
-            os.path.join(output_directory, type(curve_function).__name__.lower())
-        )
+    curve_directory = os.path.join(
+        output_directory, type(curve_function).__name__.lower()
+    )
+    if not os.path.exists(curve_directory):
+        os.makedirs(curve_directory)
     key = jax.random.PRNGKey(curve_function.seed)
     experiment_data = data.set_up_regression_experiment(
         key=key,
@@ -104,18 +102,16 @@ for curve_function in CURVE_FUNCTIONS:
         total_number_of_intervals=total_number_of_intervals,
         train_data_percentage=train_data_percentage,
     )
-    fig = plotters.plot_data(
+    plotters.plot_data(
         train_data=experiment_data.train,
         test_data=experiment_data.test,
         validation_data=experiment_data.validation,
         title=curve_function.__name__,
         save_path=os.path.join(
-            output_directory,
-            type(curve_function).__name__.lower(),
+            curve_directory,
             "experiment-data.png",
         ),
     )
-    plt.close(fig)
     (
         reference_gp,
         reference_gp_parameters,
@@ -135,13 +131,12 @@ for curve_function in CURVE_FUNCTIONS:
         empirical_risk_break_condition=reference_nll_break_condition,
         save_checkpoint_frequency=reference_save_checkpoint_frequency,
         checkpoint_path=os.path.join(
-            output_directory,
-            type(curve_function).__name__.lower(),
+            curve_directory,
             checkpoints_folder_name,
             "reference-gp",
         ),
     )
-    fig = plotters.plot_prediction(
+    plotters.plot_prediction(
         experiment_data=experiment_data,
         inducing_data=Data(
             x=reference_gp.x,
@@ -151,13 +146,11 @@ for curve_function in CURVE_FUNCTIONS:
         gp_parameters=reference_gp_parameters,
         title=f"Reference GP: {curve_function.__name__}",
         save_path=os.path.join(
-            output_directory,
-            type(curve_function).__name__.lower(),
+            curve_directory,
             "reference-gp.png",
         ),
     )
-    plt.close(fig)
-    fig = plot_losses(
+    plot_losses(
         losses=[
             [x["empirical-risk"] for x in reference_post_epoch_history]
             for reference_post_epoch_history in reference_post_epoch_histories
@@ -166,28 +159,18 @@ for curve_function in CURVE_FUNCTIONS:
         loss_name=reference_gp_empirical_risk_scheme.value,
         title=f"Reference GP Empirical Risk: {curve_function.__name__}",
         save_path=os.path.join(
-            output_directory,
-            type(curve_function).__name__.lower(),
+            curve_directory,
             "reference-gp-losses.png",
         ),
     )
-    plt.close(fig)
 
     for approximate_gp_regularisation_scheme_str in schemes.Regularisation:
-        if not os.path.exists(
-            os.path.join(
-                output_directory,
-                type(curve_function).__name__.lower(),
-                approximate_gp_regularisation_scheme_str,
-            )
-        ):
-            os.makedirs(
-                os.path.join(
-                    output_directory,
-                    type(curve_function).__name__.lower(),
-                    approximate_gp_regularisation_scheme_str,
-                )
-            )
+        approximate_experiment_directory = os.path.join(
+            curve_directory,
+            approximate_gp_regularisation_scheme_str,
+        )
+        if not os.path.exists(approximate_experiment_directory):
+            os.makedirs(approximate_experiment_directory)
         approximate_gp = ApproximateGPRegression(
             mean=CustomMean(
                 mean_function=lambda parameters, x: nn_mean.apply(parameters, x),
@@ -235,7 +218,7 @@ for curve_function in CURVE_FUNCTIONS:
                 approximate_gp_regularisation_scheme_str,
             ),
         )
-        fig = plotters.plot_prediction(
+        plotters.plot_prediction(
             experiment_data=experiment_data,
             inducing_data=Data(
                 x=reference_gp.x,
@@ -243,42 +226,41 @@ for curve_function in CURVE_FUNCTIONS:
             ),
             gp=approximate_gp,
             gp_parameters=approximate_gp_parameters,
-            title=f"Approximate GP: {curve_function.__name__}",
+            title=f"""
+                Approximate GP ({approximate_gp_regularisation_scheme_str}): 
+                {curve_function.__name__}
+                """,
             save_path=os.path.join(
-                output_directory,
-                type(curve_function).__name__.lower(),
-                approximate_gp_regularisation_scheme_str,
+                approximate_experiment_directory,
                 "approximate-gp.png",
             ),
         )
-        plt.close(fig)
-        fig = plot_losses(
+        plot_losses(
             losses=[x["gvi-objective"] for x in approximate_post_epoch_history],
             labels="gvi-objective",
             loss_name=f"{approximate_gp_empirical_risk_scheme.value}+{approximate_gp_regularisation_scheme_str}",
-            title=f"Approximate GP GVI Objective: {curve_function.__name__}",
+            title=f"""
+                Approximate GP Objective ({approximate_gp_regularisation_scheme_str}): 
+                {curve_function.__name__}""",
             save_path=os.path.join(
-                output_directory,
-                type(curve_function).__name__.lower(),
-                approximate_gp_regularisation_scheme_str,
+                approximate_experiment_directory,
                 "approximate-gp-loss.png",
             ),
         )
-        plt.close(fig)
-        fig = plot_two_losses(
+        plot_two_losses(
             loss1=[x["empirical-risk"] for x in approximate_post_epoch_history],
             loss1_name=approximate_gp_empirical_risk_scheme.value,
             loss2=[x["regularisation"] for x in approximate_post_epoch_history],
             loss2_name=approximate_gp_regularisation_scheme_str,
-            title=f"Approximate GP GVI Objective Breakdown: {curve_function.__name__}",
+            title=f""""
+                Approximate GP Objective Breakdown ({approximate_gp_regularisation_scheme_str}): 
+                {curve_function.__name__}
+            """,
             save_path=os.path.join(
-                output_directory,
-                type(curve_function).__name__.lower(),
-                approximate_gp_regularisation_scheme_str,
+                approximate_experiment_directory,
                 "approximate-gp-loss-breakdown.png",
             ),
         )
-        plt.close(fig)
 
         tempered_approximate_gp = type(approximate_gp)(
             mean=approximate_gp.mean,
@@ -310,7 +292,7 @@ for curve_function in CURVE_FUNCTIONS:
                 approximate_gp_regularisation_scheme_str,
             ),
         )
-        fig = plotters.plot_prediction(
+        plotters.plot_prediction(
             experiment_data=experiment_data,
             inducing_data=Data(
                 x=reference_gp.x,
@@ -318,25 +300,24 @@ for curve_function in CURVE_FUNCTIONS:
             ),
             gp=tempered_approximate_gp,
             gp_parameters=tempered_gp_parameters,
-            title=f"Tempered Approximate GP: {curve_function.__name__}",
+            title=f"""
+                Tempered Approximate GP ({approximate_gp_regularisation_scheme_str}): 
+                {curve_function.__name__}
+                """,
             save_path=os.path.join(
-                output_directory,
-                type(curve_function).__name__.lower(),
-                approximate_gp_regularisation_scheme_str,
-                "tempered-approximate-gp.png",
+                approximate_experiment_directory, "tempered-approximate-gp.png"
             ),
         )
-        plt.close(fig)
-        fig = plot_losses(
+        plot_losses(
             losses=[x["empirical-risk"] for x in tempered_post_epoch_history],
-            labels="gvi-loss",
+            labels="empirical-risk",
             loss_name=tempered_gp_empirical_risk_scheme.value,
-            title=f"Tempered Approximate GP Empirical Risk: {curve_function.__name__}",
+            title=f"""
+                Tempered Approximate GP Empirical Risk ({approximate_gp_regularisation_scheme_str}): 
+                {curve_function.__name__}
+            """,
             save_path=os.path.join(
-                output_directory,
-                type(curve_function).__name__.lower(),
-                approximate_gp_regularisation_scheme_str,
+                approximate_experiment_directory,
                 "tempered-approximate-gp-loss.png",
             ),
         )
-        plt.close(fig)

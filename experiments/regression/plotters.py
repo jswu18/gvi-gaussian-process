@@ -8,6 +8,7 @@ from src.gps.base.regression_base import GPRegressionBase
 
 
 def plot_data(
+    save_path: str,
     train_data: Data = None,
     test_data: Data = None,
     validation_data: Data = None,
@@ -16,7 +17,6 @@ def plot_data(
     prediction_x: jnp.ndarray = None,
     mean: jnp.ndarray = None,
     covariance: jnp.ndarray = None,
-    save_path: str = None,
 ):
     fig, ax = plt.subplots(figsize=(13, 6.5))
     fig.tight_layout()
@@ -66,9 +66,8 @@ def plot_data(
     ax.set_xlabel("x")
     ax.set_ylabel("y")
     ax.legend()
-    if save_path is not None:
-        fig.savefig(save_path, bbox_inches="tight")
-    return fig
+    fig.savefig(save_path, bbox_inches="tight")
+    plt.close(fig)
 
 
 def plot_prediction(
@@ -76,8 +75,8 @@ def plot_prediction(
     inducing_data: Data,
     gp: GPRegressionBase,
     gp_parameters: GPBaseParameters,
+    save_path: str,
     title: str = None,
-    save_path: str = None,
 ):
     gaussian_prediction = Gaussian(
         **gp.predict_probability(
@@ -85,7 +84,7 @@ def plot_prediction(
             x=experiment_data.full.x,
         ).dict()
     )
-    return plot_data(
+    plot_data(
         train_data=experiment_data.train,
         test_data=experiment_data.test,
         validation_data=experiment_data.validation,

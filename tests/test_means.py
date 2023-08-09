@@ -94,7 +94,7 @@ def test_nn_mean(
     nn_mean = CustomMean(
         mean_function=lambda parameters, x: neural_network.apply(parameters, x=x),
     )
-    nn_parameters = nn_mean.generate_parameters({"custom": None})
+    nn_parameters = nn_mean.Parameters.construct(custom=None)
     assert jnp.array_equal(nn_mean.predict(parameters=nn_parameters, x=x), mean)
 
 

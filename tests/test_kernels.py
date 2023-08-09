@@ -163,7 +163,7 @@ def test_missing_ard_kernel_parameter(
     [
         [
             CustomKernel(
-                kernel_function=lambda x, y, *args, **kwargs: jnp.ones(
+                kernel_function=lambda parameters, x, y: jnp.ones(
                     (x.shape[0], y.shape[0])
                 )
             ),
@@ -179,7 +179,7 @@ def test_missing_ard_kernel_parameter(
         ],
         [
             CustomKernel(
-                kernel_function=lambda x, y, *args, **kwargs: jnp.ones(
+                kernel_function=lambda parameters, x, y: jnp.ones(
                     (x.shape[0], y.shape[0])
                 ),
                 preprocess_function=lambda x: x.reshape(x.shape[0], -1),
@@ -203,10 +203,11 @@ def test_custom_kernel_grams(
     x2: jnp.ndarray,
     k: float,
 ):
-    if parameters is None:
-        parameters = {}
     assert jnp.array_equal(
-        kernel.calculate_gram(kernel.generate_parameters(parameters), x1=x1, x2=x2), k
+        kernel.calculate_gram(
+            kernel.Parameters.construct(custom=parameters), x1=x1, x2=x2
+        ),
+        k,
     )
 
 
