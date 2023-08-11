@@ -1,0 +1,39 @@
+\typeout{Document Style `jmlr'.}
+
+\newif\if@abbrvbib\@abbrvbibfalse
+\DeclareOption{abbrvbib}{\@abbrvbibtrue}
+
+\newif\if@usehyper\@usehypertrue
+\DeclareOption{nohyperref}{\@usehyperfalse}
+\DeclareOption{hyperref}{\@usehypertrue}
+
+% declare preprint option, which creates a preprint version ready for
+% upload to, e.g., arXiv
+\newif\if@preprint\@preprintfalse
+\DeclareOption{preprint}{
+  \@preprinttrue
+}
+
+\DeclareOption*{\PackageWarning{jmlr}{Unknown ‘\CurrentOption’}}
+\ProcessOptions\relax
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                             REQUIRED PACKAGES
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\RequirePackage{epsfig}
+\RequirePackage{amssymb}
+\RequirePackage{natbib}
+\RequirePackage{graphicx}
+
+\if@usehyper
+\RequirePackage[colorlinks=false,allbordercolors={1 1 1}]{hyperref}
+\fi
+
+\if@abbrvbib
+\bibliographystyle{abbrvnat}
+\else
+\bibliographystyle{plainnat}
+\fi
+
+\bibpunct{(}{)}{;}{a}{,}{,}
