@@ -8,14 +8,17 @@ from flax.core import FrozenDict
 from src.gps.base.base import GPBaseParameters
 from src.gps.base.classification_base import GPClassificationBase
 from src.gps.base.exact_base import ExactGPBase
-from src.kernels import TemperedKernel
-from src.kernels.multi_output_kernel import MultiOutputKernel
+from src.kernels import TemperedKernel, TemperedKernelParameters
+from src.kernels.multi_output_kernel import (
+    MultiOutputKernel,
+    MultiOutputKernelParameters,
+)
 from src.means.base import MeanBase
 from src.utils.custom_types import PRNGKey
 
 
 class GPClassificationParameters(GPBaseParameters):
-    pass
+    kernel: Union[MultiOutputKernelParameters, TemperedKernelParameters]
 
 
 class GPClassification(ExactGPBase, GPClassificationBase):
@@ -54,6 +57,8 @@ class GPClassification(ExactGPBase, GPClassificationBase):
             hermite_polynomial_order=hermite_polynomial_order,
             cdf_lower_bound=cdf_lower_bound,
         )
+        self.mean = mean
+        self.kernel = kernel
 
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def generate_parameters(

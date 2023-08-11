@@ -1,6 +1,6 @@
 from jax import numpy as jnp
 
-from experiments.data import Data
+from experiments.shared.data import Data
 from src.inducing_points_selection import ConditionalVarianceInducingPointsSelector
 from src.kernels.base import KernelBase, KernelBaseParameters
 from src.utils.custom_types import PRNGKey

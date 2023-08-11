@@ -5,14 +5,12 @@ from typing import Callable, Dict, List, Tuple
 import jax
 import jax.numpy as jnp
 import optax
-import orbax
 from flax.core.frozen_dict import FrozenDict
-from flax.training import orbax_utils
 from tqdm import tqdm
 
-from experiments import resolvers
-from experiments.data import Data
-from experiments.schemes import Optimiser
+from experiments.shared.data import Data
+from experiments.shared.resolvers import optimiser_resolver
+from experiments.shared.schemes import OptimiserScheme
 from src.module import ModuleParameters
 from src.utils.data import generate_batch
 
@@ -20,7 +18,7 @@ from src.utils.data import generate_batch
 @dataclass
 class TrainerSettings:
     key: int
-    optimiser_scheme: Optimiser
+    optimiser_scheme: OptimiserScheme
     learning_rate: float
     number_of_epochs: int
     batch_size: int
@@ -50,7 +48,7 @@ class Trainer:
         disable_tqdm: bool = False,
     ) -> Tuple[ModuleParameters, List[Dict[str, float]]]:
         post_epoch_history = []
-        optimiser = resolvers.optimiser(
+        optimiser = optimiser_resolver(
             trainer_settings.optimiser_scheme, trainer_settings.learning_rate
         )
         opt_state = optimiser.init(parameters.dict())

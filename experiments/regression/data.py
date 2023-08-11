@@ -4,7 +4,7 @@ import jax
 from jax import numpy as jnp
 from sklearn.model_selection import train_test_split
 
-from experiments.data import Data, ExperimentData
+from experiments.shared.data import Data, ExperimentData
 from src.utils.custom_types import PRNGKey
 
 
@@ -98,7 +98,7 @@ def split_train_test_validation_data(
     return x_train, y_train, x_test, y_test, x_validation, y_validation
 
 
-def set_up_regression_experiment(
+def set_up_regression_experiment_data(
     key: PRNGKey,
     x: jnp.ndarray,
     y: jnp.ndarray,

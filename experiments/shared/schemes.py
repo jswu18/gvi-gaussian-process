@@ -1,17 +1,17 @@
 import enum
 
 
-class Optimiser(str, enum.Enum):
+class OptimiserScheme(str, enum.Enum):
     adam = "adam"
     adabelief = "adabelief"
     rmsprop = "rmsprop"
 
 
-class EmpiricalRisk(str, enum.Enum):
+class EmpiricalRiskScheme(str, enum.Enum):
     negative_log_likelihood = "negative_log_likelihood"
 
 
-class Regularisation(str, enum.Enum):
+class RegularisationScheme(str, enum.Enum):
     point_wise_wasserstein = "point_wise_wasserstein"
     point_wise_kl = "point_wise_kl"
     point_wise_symmetric_kl = "point_wise_symmetric_kl"

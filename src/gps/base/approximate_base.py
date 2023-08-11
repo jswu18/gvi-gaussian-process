@@ -1,7 +1,9 @@
 from abc import ABC
-from typing import Tuple
+from typing import Dict, Tuple, Union
 
 import jax.numpy as jnp
+import pydantic
+from flax.core import FrozenDict
 
 from src.gps.base.base import GPBase, GPBaseParameters
 from src.kernels.base import KernelBase
@@ -40,3 +42,9 @@ class ApproximateGPBase(GPBase, ABC):
         return self.calculate_prior_covariance(
             parameters=parameters, x=x, full_covariance=full_covariance
         )
+
+    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
+    def generate_parameters(
+        self, parameters: Union[FrozenDict, Dict]
+    ) -> ApproximateGPBaseParameters:
+        pass

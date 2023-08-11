@@ -1,7 +1,7 @@
 import jax.numpy as jnp
 import matplotlib.pyplot as plt
 
-from experiments.data import Data, ExperimentData
+from experiments.shared.data import Data, ExperimentData
 from src.distributions import Gaussian
 from src.gps.base.base import GPBaseParameters
 from src.gps.base.regression_base import GPRegressionBase

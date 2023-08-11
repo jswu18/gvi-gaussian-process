@@ -1,11 +1,9 @@
-import operator
-from functools import reduce
+from typing import List
 
 import jax.numpy as jnp
 import sklearn
 
-from experiments.data import set_up_experiment
-from src.kernels.base import KernelBase, KernelBaseParameters
+from experiments.shared.data import ExperimentData, set_up_experiment
 
 
 def set_up_classification_experiment_data(
@@ -14,14 +12,11 @@ def set_up_classification_experiment_data(
     train_labels,
     one_hot_encoded_labels,
     number_of_points_per_label: int,
-    number_of_inducing_per_label: int,
     labels_to_include,
     train_data_percentage: float,
     test_data_percentage: float,
     validation_data_percentage: float,
-    kernel: KernelBase,
-    kernel_parameters: KernelBaseParameters,
-):
+) -> List[ExperimentData]:
     label_dict = {}
     for label in labels_to_include:
         label_dict[label] = [
@@ -45,19 +40,15 @@ def set_up_classification_experiment_data(
                         for idx in label_dict[label][:number_of_points_per_label]
                     ]
                 ),
-                number_of_inducing_points=number_of_inducing_per_label,
                 train_data_percentage=train_data_percentage,
                 test_data_percentage=test_data_percentage,
                 validation_data_percentage=validation_data_percentage,
-                kernel=kernel,
-                kernel_parameters=kernel_parameters,
             )
         )
-    experiment_data = reduce(operator.add, experiment_data_list)
-    return experiment_data
+    return experiment_data_list
 
 
-def one_hot_encode(y, labels):
+def one_hot_encode(y: jnp.ndarray, labels: List[int]) -> jnp.ndarray:
     label_binarizer = sklearn.preprocessing.LabelBinarizer()
     label_binarizer.fit(labels)
     return label_binarizer.transform(y)

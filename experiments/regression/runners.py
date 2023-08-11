@@ -5,28 +5,20 @@ import jax
 import jax.numpy as jnp
 from tqdm import tqdm
 
-from experiments import resolvers, schemes
-from experiments.data import Data
 from experiments.regression import plotters
-from experiments.trainer import Trainer, TrainerSettings
-from experiments.utils import calculate_inducing_points
-from src import GeneralisedVariationalInference
+from experiments.shared import resolvers, schemes
+from experiments.shared.data import Data
+from experiments.shared.trainer import Trainer, TrainerSettings
+from experiments.shared.utils import calculate_inducing_points
 from src.distributions import Gaussian
-from src.gps import (
-    ApproximateGPRegression,
-    ApproximateGPRegressionParameters,
-    GPRegression,
-    GPRegressionParameters,
-)
-from src.gps.base.base import GPBaseParameters
-from src.gps.base.regression_base import GPRegressionBase
+from src.gps import GPRegression, GPRegressionParameters
 from src.kernels.base import KernelBase, KernelBaseParameters
 from src.means import ConstantMean
 
 
 def train_reference_gp(
     data: Data,
-    empirical_risk_scheme: schemes.EmpiricalRisk,
+    empirical_risk_scheme: schemes.EmpiricalRiskScheme,
     trainer_settings: TrainerSettings,
     kernel: KernelBase,
     kernel_parameters: KernelBaseParameters,
@@ -55,7 +47,7 @@ def train_reference_gp(
             "kernel": kernel_parameters.dict(),
         }
     )
-    empirical_risk = resolvers.empirical_risk(
+    empirical_risk = resolvers.empirical_risk_resolver(
         empirical_risk_scheme=empirical_risk_scheme,
         gp=gp,
     )
@@ -91,7 +83,7 @@ def train_reference_gp(
 
 def meta_train_reference_gp(
     data: Data,
-    empirical_risk_scheme: schemes.EmpiricalRisk,
+    empirical_risk_scheme: schemes.EmpiricalRiskScheme,
     trainer_settings: TrainerSettings,
     kernel: KernelBase,
     kernel_parameters: KernelBaseParameters,
@@ -141,105 +133,3 @@ def meta_train_reference_gp(
             ),
         )
     return gp, gp_parameters, post_epoch_histories
-
-
-def train_approximate_gp(
-    data: Data,
-    empirical_risk_scheme: schemes.EmpiricalRisk,
-    regularisation_scheme: schemes.Regularisation,
-    trainer_settings: TrainerSettings,
-    approximate_gp: ApproximateGPRegression,
-    approximate_gp_parameters: ApproximateGPRegressionParameters,
-    regulariser: GPRegressionBase,
-    regulariser_parameters: GPBaseParameters,
-    save_checkpoint_frequency: int,
-    checkpoint_path: str,
-) -> Tuple[GPBaseParameters, List[Dict[str, float]]]:
-    empirical_risk = resolvers.empirical_risk(
-        empirical_risk_scheme=empirical_risk_scheme,
-        gp=approximate_gp,
-    )
-    regularisation = resolvers.regularisation(
-        regularisation_scheme=regularisation_scheme,
-        gp=approximate_gp,
-        regulariser=regulariser,
-        regulariser_parameters=regulariser_parameters,
-    )
-    gvi = GeneralisedVariationalInference(
-        empirical_risk=empirical_risk,
-        regularisation=regularisation,
-    )
-    trainer = Trainer(
-        save_checkpoint_frequency=save_checkpoint_frequency,
-        checkpoint_path=checkpoint_path,
-        post_epoch_callback=lambda parameters: {
-            "empirical-risk": empirical_risk.calculate_empirical_risk(
-                parameters, data.x, data.y
-            ),
-            "regularisation": regularisation.calculate_regularisation(
-                parameters, data.x
-            ),
-            "gvi-objective": gvi.calculate_loss(parameters, data.x, data.y),
-        },
-    )
-    gp_parameters, post_epoch_history = trainer.train(
-        trainer_settings=trainer_settings,
-        parameters=approximate_gp_parameters,
-        data=data,
-        loss_function=lambda parameters_dict, x, y: gvi.calculate_loss(
-            parameters=parameters_dict, x=x, y=y
-        ),
-    )
-    return approximate_gp.generate_parameters(gp_parameters.dict()), post_epoch_history
-
-
-def train_tempered_gp(
-    data: Data,
-    empirical_risk_scheme: schemes.EmpiricalRisk,
-    trainer_settings: TrainerSettings,
-    tempered_gp: GPRegressionBase,
-    tempered_gp_parameters: GPBaseParameters,
-    save_checkpoint_frequency: int,
-    checkpoint_path: str,
-) -> Tuple[GPBaseParameters, List[Dict[str, float]]]:
-    empirical_risk = resolvers.empirical_risk(
-        empirical_risk_scheme=empirical_risk_scheme,
-        gp=tempered_gp,
-    )
-    trainer = Trainer(
-        save_checkpoint_frequency=save_checkpoint_frequency,
-        checkpoint_path=checkpoint_path,
-        post_epoch_callback=lambda parameters: {
-            "empirical-risk": empirical_risk.calculate_empirical_risk(
-                parameters=tempered_gp_parameters.construct(
-                    log_observation_noise=tempered_gp_parameters.log_observation_noise,
-                    mean=tempered_gp_parameters.mean,
-                    kernel=tempered_gp_parameters.kernel.construct(**parameters.dict()),
-                ),
-                x=data.x,
-                y=data.y,
-            ),
-        },
-    )
-    tempered_kernel_parameters, post_epoch_history = trainer.train(
-        trainer_settings=trainer_settings,
-        parameters=tempered_gp_parameters.kernel,
-        data=data,
-        loss_function=lambda parameters_dict, x, y: empirical_risk.calculate_empirical_risk(
-            parameters=tempered_gp.Parameters(
-                log_observation_noise=tempered_gp_parameters.log_observation_noise,
-                mean=tempered_gp_parameters.mean,
-                kernel=tempered_gp_parameters.kernel.construct(**parameters_dict),
-            ),
-            x=x,
-            y=y,
-        ),
-    )
-    return (
-        tempered_gp.Parameters(
-            log_observation_noise=tempered_gp_parameters.log_observation_noise,
-            mean=tempered_gp_parameters.mean,
-            kernel=tempered_kernel_parameters,
-        ),
-        post_epoch_history,
-    )

@@ -4,14 +4,21 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 
-from experiments import schemes
-from experiments.data import Data
-from experiments.nn_means import MultiLayerPerceptron
-from experiments.nngp_kernels import MultiLayerPerceptronKernel
-from experiments.plotters import plot_losses, plot_two_losses
-from experiments.regression import data, plotters, runners
+from experiments.regression.data import set_up_regression_experiment_data
+from experiments.regression.plotters import plot_data, plot_prediction
+from experiments.regression.runners import meta_train_reference_gp
 from experiments.regression.toy_curves.curves import CURVE_FUNCTIONS
-from experiments.trainer import TrainerSettings
+from experiments.shared.data import Data
+from experiments.shared.nn_means import MultiLayerPerceptron
+from experiments.shared.nngp_kernels import MultiLayerPerceptronKernel
+from experiments.shared.plotters import plot_losses, plot_two_losses
+from experiments.shared.runners import train_approximate_gp, train_tempered_gp
+from experiments.shared.schemes import (
+    EmpiricalRiskScheme,
+    OptimiserScheme,
+    RegularisationScheme,
+)
+from experiments.shared.trainer import TrainerSettings
 from src.gps import ApproximateGPRegression
 from src.kernels import CustomKernel, TemperedKernel
 from src.kernels.approximate.generalised_svgp_kernel import (
@@ -38,9 +45,9 @@ reference_nll_break_condition = -10
 
 approximate_kernel_diagonal_regularisation = 1e-10
 
-reference_gp_empirical_risk_scheme = schemes.EmpiricalRisk.negative_log_likelihood
-approximate_gp_empirical_risk_scheme = schemes.EmpiricalRisk.negative_log_likelihood
-tempered_gp_empirical_risk_scheme = schemes.EmpiricalRisk.negative_log_likelihood
+reference_gp_empirical_risk_scheme = EmpiricalRiskScheme.negative_log_likelihood
+approximate_gp_empirical_risk_scheme = EmpiricalRiskScheme.negative_log_likelihood
+tempered_gp_empirical_risk_scheme = EmpiricalRiskScheme.negative_log_likelihood
 
 reference_save_checkpoint_frequency = 1000
 approximate_save_checkpoint_frequency = 1000
@@ -48,7 +55,7 @@ tempered_save_checkpoint_frequency = 1000
 
 reference_gp_trainer_settings = TrainerSettings(
     key=0,
-    optimiser_scheme=schemes.Optimiser.adabelief,
+    optimiser_scheme=OptimiserScheme.adabelief,
     learning_rate=1e-5,
     number_of_epochs=20000,
     batch_size=1000,
@@ -57,7 +64,7 @@ reference_gp_trainer_settings = TrainerSettings(
 )
 approximate_gp_trainer_settings = TrainerSettings(
     key=0,
-    optimiser_scheme=schemes.Optimiser.adabelief,
+    optimiser_scheme=OptimiserScheme.adabelief,
     learning_rate=1e-3,
     number_of_epochs=20000,
     batch_size=1000,
@@ -66,7 +73,7 @@ approximate_gp_trainer_settings = TrainerSettings(
 )
 tempered_gp_trainer_settings = TrainerSettings(
     key=0,
-    optimiser_scheme=schemes.Optimiser.adabelief,
+    optimiser_scheme=OptimiserScheme.adabelief,
     learning_rate=1e-3,
     number_of_epochs=2000,
     batch_size=1000,
@@ -90,7 +97,7 @@ for curve_function in CURVE_FUNCTIONS:
     if not os.path.exists(curve_directory):
         os.makedirs(curve_directory)
     key = jax.random.PRNGKey(curve_function.seed)
-    experiment_data = data.set_up_regression_experiment(
+    experiment_data = set_up_regression_experiment_data(
         key=key,
         x=x,
         y=curve_function(
@@ -102,7 +109,7 @@ for curve_function in CURVE_FUNCTIONS:
         total_number_of_intervals=total_number_of_intervals,
         train_data_percentage=train_data_percentage,
     )
-    plotters.plot_data(
+    plot_data(
         train_data=experiment_data.train,
         test_data=experiment_data.test,
         validation_data=experiment_data.validation,
@@ -116,7 +123,7 @@ for curve_function in CURVE_FUNCTIONS:
         reference_gp,
         reference_gp_parameters,
         reference_post_epoch_histories,
-    ) = runners.meta_train_reference_gp(
+    ) = meta_train_reference_gp(
         data=experiment_data.train,
         empirical_risk_scheme=reference_gp_empirical_risk_scheme,
         trainer_settings=reference_gp_trainer_settings,
@@ -136,7 +143,7 @@ for curve_function in CURVE_FUNCTIONS:
             "reference-gp",
         ),
     )
-    plotters.plot_prediction(
+    plot_prediction(
         experiment_data=experiment_data,
         inducing_data=Data(
             x=reference_gp.x,
@@ -164,7 +171,7 @@ for curve_function in CURVE_FUNCTIONS:
         ),
     )
 
-    for approximate_gp_regularisation_scheme_str in schemes.Regularisation:
+    for approximate_gp_regularisation_scheme_str in RegularisationScheme:
         approximate_experiment_directory = os.path.join(
             curve_directory,
             approximate_gp_regularisation_scheme_str,
@@ -198,10 +205,10 @@ for curve_function in CURVE_FUNCTIONS:
         (
             approximate_gp_parameters,
             approximate_post_epoch_history,
-        ) = runners.train_approximate_gp(
+        ) = train_approximate_gp(
             data=experiment_data.train,
             empirical_risk_scheme=approximate_gp_empirical_risk_scheme,
-            regularisation_scheme=schemes.Regularisation(
+            regularisation_scheme=RegularisationScheme(
                 approximate_gp_regularisation_scheme_str
             ),
             trainer_settings=approximate_gp_trainer_settings,
@@ -218,7 +225,7 @@ for curve_function in CURVE_FUNCTIONS:
                 approximate_gp_regularisation_scheme_str,
             ),
         )
-        plotters.plot_prediction(
+        plot_prediction(
             experiment_data=experiment_data,
             inducing_data=Data(
                 x=reference_gp.x,
@@ -284,7 +291,7 @@ for curve_function in CURVE_FUNCTIONS:
                 log_tempering_factor=jnp.log(1.0)
             ),
         )
-        tempered_gp_parameters, tempered_post_epoch_history = runners.train_tempered_gp(
+        tempered_gp_parameters, tempered_post_epoch_history = train_tempered_gp(
             data=experiment_data.validation,
             empirical_risk_scheme=tempered_gp_empirical_risk_scheme,
             trainer_settings=tempered_gp_trainer_settings,
@@ -299,7 +306,7 @@ for curve_function in CURVE_FUNCTIONS:
                 approximate_gp_regularisation_scheme_str,
             ),
         )
-        plotters.plot_prediction(
+        plot_prediction(
             experiment_data=experiment_data,
             inducing_data=Data(
                 x=reference_gp.x,

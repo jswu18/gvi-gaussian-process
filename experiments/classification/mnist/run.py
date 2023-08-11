@@ -6,6 +6,9 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
     import numpy as np
     import orbax
+    from experiments.nn_means import ConvNet, MultiLayerPerceptron
+    from experiments.plotters import plot_losses, plot_two_losses
+    from experiments.trainer import train_gvi, train_nll, train_tempered_nll
     from flax.training import orbax_utils
     from mnist import MNIST
     from neural_tangents import stax
@@ -15,9 +18,6 @@ if __name__ == "__main__":
         set_up_classification_experiment_data,
     )
     from experiments.classification.plotters import plot_images
-    from experiments.nn_means import ConvNet, MultiLayerPerceptron
-    from experiments.plotters import plot_losses, plot_two_losses
-    from experiments.trainer import train_gvi, train_nll, train_tempered_nll
     from src.distributions import Multinomial
     from src.empirical_risks import NegativeLogLikelihood
     from src.generalised_variational_inference import GeneralisedVariationalInference

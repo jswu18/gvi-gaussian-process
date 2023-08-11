@@ -1,28 +1,28 @@
-from typing import Callable
+from typing import Callable, List
 
-import jax.numpy as jnp
 import matplotlib.pyplot as plt
+
+from experiments.shared.data import Data
 
 
 def plot_images(
-    x: jnp.ndarray,
-    y: jnp.ndarray,
+    data_list: List[Data],
     reshape_function: Callable,
+    save_path: str,
     max_images: int = 10,
 ):
-    y = jnp.argmax(y, axis=1)  # convert one-hot to class labels
-    unique_classes, count_per_class = jnp.unique(y, return_counts=True)
+    count_per_class = [data.x.shape[0] for data in data_list]
     images_to_show_per_class = int(min(max_images, max(count_per_class)))
     fig, ax = plt.subplots(
-        nrows=len(unique_classes),
+        nrows=len(data_list),
         ncols=images_to_show_per_class,
-        figsize=(images_to_show_per_class, len(unique_classes)),
+        figsize=(images_to_show_per_class, len(data_list)),
     )
 
-    for i, class_label in enumerate(unique_classes):
-        for j, image in enumerate(x[y == class_label][:images_to_show_per_class]):
+    for i, data in enumerate(data_list):
+        for j, image in enumerate(data.x[:images_to_show_per_class]):
             ax[i, j].imshow(reshape_function(image))
             ax[i, j].get_xaxis().set_visible(False)
             ax[i, j].get_yaxis().set_visible(False)
     fig.tight_layout()
-    return fig
+    fig.savefig(save_path, bbox_inches="tight")
