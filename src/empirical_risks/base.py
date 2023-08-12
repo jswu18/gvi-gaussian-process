@@ -1,19 +1,23 @@
 from abc import ABC, abstractmethod
 from typing import Dict, Union
 
+import jax
 import jax.numpy as jnp
 import pydantic
 from flax.core.frozen_dict import FrozenDict
 
 from src.gps.base.base import GPBase, GPBaseParameters
-from src.utils.jit_compiler import JitCompiler
 
 
 class EmpiricalRiskBase(ABC):
     def __init__(self, gp: GPBase):
         self.gp = gp
-        self._jit_compiled_calculate_empirical_risk = JitCompiler(
-            self._calculate_empirical_risk
+        self._jit_compiled_calculate_empirical_risk = jax.jit(
+            lambda parameters, x, y: self._calculate_empirical_risk(
+                parameters=parameters,
+                x=x,
+                y=y,
+            )
         )
 
     @abstractmethod

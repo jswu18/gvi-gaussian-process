@@ -12,7 +12,6 @@ from src.kernels.base import KernelBase, KernelBaseParameters
 from src.means.base import MeanBase, MeanBaseParameters
 from src.module import Module, ModuleParameters
 from src.utils.custom_types import JaxFloatType
-from src.utils.jit_compiler import JitCompiler
 
 
 class GPBaseParameters(ModuleParameters, ABC):
@@ -43,7 +42,9 @@ class GPBase(Module, ABC):
         """
         self.mean = mean
         self.kernel = kernel
-        self._jit_compiled_predict_probability = JitCompiler(self._predict_probability)
+        self._jit_compiled_predict_probability = jax.jit(
+            lambda parameters, x: self._predict_probability(parameters=parameters, x=x)
+        )
         super().__init__(preprocess_function=None)
 
     @abstractmethod

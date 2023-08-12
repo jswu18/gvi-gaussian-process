@@ -1,5 +1,6 @@
 from typing import Dict, Union
 
+import jax
 import jax.numpy as jnp
 import pydantic
 from flax.core.frozen_dict import FrozenDict
@@ -7,7 +8,6 @@ from flax.core.frozen_dict import FrozenDict
 from src.empirical_risks.base import EmpiricalRiskBase
 from src.gps.base.base import GPBaseParameters
 from src.regularisations.base import RegularisationBase
-from src.utils.jit_compiler import JitCompiler
 
 
 class GeneralisedVariationalInference:
@@ -18,7 +18,11 @@ class GeneralisedVariationalInference:
     ):
         self.regularisation = regularisation
         self.empirical_risk = empirical_risk
-        self._jit_compiled_calculate_loss = JitCompiler(self._calculate_loss)
+        self._jit_compiled_calculate_loss = jax.jit(
+            lambda parameters, x, y: self._calculate_loss(
+                parameters=parameters, x=x, y=y
+            )
+        )
 
     def _calculate_loss(
         self,

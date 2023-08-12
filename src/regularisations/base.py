@@ -1,12 +1,12 @@
 from abc import ABC, abstractmethod
 from typing import Dict, Union
 
+import jax
 import jax.numpy as jnp
 import pydantic
 from flax.core.frozen_dict import FrozenDict
 
 from src.gps.base.base import GPBase, GPBaseParameters
-from src.utils.jit_compiler import JitCompiler
 
 
 class RegularisationBase(ABC):
@@ -16,8 +16,11 @@ class RegularisationBase(ABC):
         self.gp = gp
         self.regulariser = regulariser
         self.regulariser_parameters = regulariser_parameters
-        self._jit_compiled_calculate_regularisation = JitCompiler(
-            self._calculate_regularisation
+        self._jit_compiled_calculate_regularisation = jax.jit(
+            lambda parameters, x: self._calculate_regularisation(
+                parameters=parameters,
+                x=x,
+            )
         )
 
     @abstractmethod

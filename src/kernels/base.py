@@ -7,7 +7,6 @@ import pydantic
 
 from src.module import Module, ModuleParameters
 from src.utils.checks import check_matching_dimensions, check_maximum_dimension
-from src.utils.jit_compiler import JitCompiler
 
 
 class KernelBaseParameters(ModuleParameters):
@@ -23,7 +22,11 @@ class KernelBase(Module, ABC):
         preprocess_function: Callable[[jnp.ndarray], jnp.ndarray] = None,
     ):
         self.number_output_dimensions = number_output_dimensions
-        self._jit_compiled_calculate_gram = JitCompiler(self._calculate_gram)
+        self._jit_compiled_calculate_gram = jax.jit(
+            lambda parameters, x1, x2: self._calculate_gram(
+                parameters=parameters, x1=x1, x2=x2
+            )
+        )
         super().__init__(preprocess_function=preprocess_function)
 
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
@@ -114,9 +117,8 @@ class KernelBase(Module, ABC):
             return self._jit_compiled_calculate_gram(parameters.dict(), x1, x2)
         else:
             assert (
-                x1.shape[0] == x2.shape[0],
-                f"{x1.shape[0]=} must be equal to {x2.shape[0]=} for {full_covariance=}",
-            )
+                x1.shape[0] == x2.shape[0]
+            ), f"{x1.shape[0]=} must be equal to {x2.shape[0]=} for {full_covariance=}"
             return (
                 jax.vmap(
                     lambda x1_, x2_: self._jit_compiled_calculate_gram(

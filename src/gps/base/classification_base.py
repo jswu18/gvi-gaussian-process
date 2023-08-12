@@ -37,8 +37,10 @@ class GPClassificationBase(GPBase, ABC):
         self.number_output_dimensions = mean.number_output_dimensions
         self.epsilon = epsilon
         self.cdf_lower_bound = cdf_lower_bound
-        self._hermite_roots, self._hermite_weights = roots_hermite(
-            hermite_polynomial_order
+        hermite_roots, hermite_weights = roots_hermite(hermite_polynomial_order)
+        self._hermite_roots, self._hermite_weights = (
+            jnp.array(hermite_roots),
+            jnp.array(hermite_weights),
         )
         GPBase.__init__(self, mean=mean, kernel=kernel)
 
