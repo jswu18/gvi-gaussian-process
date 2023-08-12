@@ -14,7 +14,7 @@ from experiments.classification.data import (
 from experiments.classification.metrics import calculate_metric
 from experiments.classification.plotters import plot_images
 from experiments.classification.runners import meta_train_reference_gp
-from experiments.classification.schemes import MetricScheme
+from experiments.classification.schemes import ClassificationMetricScheme
 from experiments.shared.nn_means import ConvNet, MultiLayerPerceptron
 from experiments.shared.nngp_kernels import ConvNetKernel, MultiLayerPerceptronKernel
 from experiments.shared.plotters import plot_losses, plot_two_losses
@@ -183,7 +183,7 @@ reference_accuracy = calculate_metric(
     data=reduce(
         operator.add, [experiment_data.test for experiment_data in experiment_data_list]
     ),
-    metric_scheme=MetricScheme.accuracy,
+    metric_scheme=ClassificationMetricScheme.accuracy,
 )
 plot_images(
     data_list=inducing_data_list,
@@ -271,7 +271,7 @@ approximate_accuracy = calculate_metric(
     data=reduce(
         operator.add, [experiment_data.test for experiment_data in experiment_data_list]
     ),
-    metric_scheme=MetricScheme.accuracy,
+    metric_scheme=ClassificationMetricScheme.accuracy,
 )
 plot_losses(
     losses=[x["gvi-objective"] for x in approximate_post_epoch_history],
@@ -372,7 +372,7 @@ tempered_accuracy = calculate_metric(
     data=reduce(
         operator.add, [experiment_data.test for experiment_data in experiment_data_list]
     ),
-    metric_scheme=MetricScheme.accuracy,
+    metric_scheme=ClassificationMetricScheme.accuracy,
 )
 print(
     f"Tempered Approximate GP Accuracy ({approximate_gp_regularisation_scheme.value}):",
