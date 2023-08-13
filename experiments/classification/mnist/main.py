@@ -56,10 +56,10 @@ reference_nll_break_condition = -float("inf")
 
 approximate_kernel_diagonal_regularisation = 1e-10
 
-reference_gp_empirical_risk_scheme = EmpiricalRiskScheme.negative_log_likelihood
-approximate_gp_empirical_risk_scheme = EmpiricalRiskScheme.negative_log_likelihood
-approximate_gp_regularisation_scheme = RegularisationScheme.squared_difference
-tempered_gp_empirical_risk_scheme = EmpiricalRiskScheme.negative_log_likelihood
+reference_gp_empirical_risk_scheme = EmpiricalRiskScheme.cross_entropy
+approximate_gp_empirical_risk_scheme = EmpiricalRiskScheme.cross_entropy
+approximate_gp_regularisation_scheme = RegularisationScheme.multinomial_wasserstein
+tempered_gp_empirical_risk_scheme = EmpiricalRiskScheme.cross_entropy
 
 reference_save_checkpoint_frequency = 1000
 approximate_save_checkpoint_frequency = 1000
@@ -69,17 +69,17 @@ reference_gp_trainer_settings = TrainerSettings(
     key=0,
     optimiser_scheme=OptimiserScheme.adabelief,
     learning_rate=1e-4,
-    number_of_epochs=5000,
-    batch_size=100,
+    number_of_epochs=1000,
+    batch_size=500,
     batch_shuffle=True,
     batch_drop_last=False,
 )
 approximate_gp_trainer_settings = TrainerSettings(
     key=0,
     optimiser_scheme=OptimiserScheme.adabelief,
-    learning_rate=1e-4,
-    number_of_epochs=1000,
-    batch_size=100,
+    learning_rate=1e-3,
+    number_of_epochs=100,
+    batch_size=500,
     batch_shuffle=True,
     batch_drop_last=False,
 )
@@ -87,8 +87,8 @@ tempered_gp_trainer_settings = TrainerSettings(
     key=0,
     optimiser_scheme=OptimiserScheme.adabelief,
     learning_rate=1e-3,
-    number_of_epochs=10,
-    batch_size=10,
+    number_of_epochs=500,
+    batch_size=500,
     batch_shuffle=True,
     batch_drop_last=False,
 )

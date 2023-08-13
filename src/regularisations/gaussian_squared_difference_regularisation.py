@@ -6,7 +6,7 @@ from src.gps.base.base import GPBase, GPBaseParameters
 from src.regularisations.base import RegularisationBase
 
 
-class SquaredDifferenceRegularisation(RegularisationBase):
+class GaussianSquaredDifferenceRegularisation(RegularisationBase):
     def __init__(
         self,
         gp: GPBase,
@@ -68,7 +68,7 @@ class SquaredDifferenceRegularisation(RegularisationBase):
             )
         return jnp.mean(
             jax.vmap(
-                lambda m_p, c_p, m_q, c_q: SquaredDifferenceRegularisation.calculate_squared_distance(
+                lambda m_p, c_p, m_q, c_q: GaussianSquaredDifferenceRegularisation.calculate_squared_distance(
                     m_p=m_p,
                     c_p=c_p,
                     m_q=m_q,

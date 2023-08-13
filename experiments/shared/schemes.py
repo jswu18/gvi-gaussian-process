@@ -19,6 +19,6 @@ class RegularisationScheme(str, enum.Enum):
     point_wise_bhattacharyya = "point_wise_bhattacharyya"
     point_wise_hellinger = "point_wise_hellinger"
     point_wise_renyi = "point_wise_renyi"
-    squared_difference = "squared_difference"
+    gaussian_squared_difference = "gaussian_squared_difference"
     gaussian_wasserstein = "gaussian_wasserstein"
     multinomial_wasserstein = "multinomial_wasserstein"

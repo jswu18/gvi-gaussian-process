@@ -2,9 +2,9 @@ from experiments.shared import schemes
 from src.gps.base.base import GPBase, GPBaseParameters
 from src.gps.base.classification_base import GPClassificationBase
 from src.regularisations import (
+    GaussianSquaredDifferenceRegularisation,
     GaussianWassersteinRegularisation,
     MultinomialWassersteinRegularisation,
-    SquaredDifferenceRegularisation,
 )
 from src.regularisations.base import RegularisationBase
 from src.regularisations.point_wise import (
@@ -23,8 +23,11 @@ def regularisation_resolver(
     regulariser: GPBase,
     regulariser_parameters: GPBaseParameters,
 ) -> RegularisationBase:
-    if regularisation_scheme == schemes.RegularisationScheme.squared_difference:
-        return SquaredDifferenceRegularisation(
+    if (
+        regularisation_scheme
+        == schemes.RegularisationScheme.gaussian_squared_difference
+    ):
+        return GaussianSquaredDifferenceRegularisation(
             gp=gp,
             regulariser=regulariser,
             regulariser_parameters=regulariser_parameters,
