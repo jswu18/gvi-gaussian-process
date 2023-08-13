@@ -154,7 +154,7 @@ and
     \label{gp-epistemic-posterior-covariance}
     \hat{\mathbf{K}}_{p(X_{N*}, X_{N*})} = \mathbf{K}_{p(X_{N*}, X_{N*})} - \mathbf{K}_{p(X_{N*}, X_N)}\mathbf{K}_{p(X_N, X_N)}^{-1}\mathbf{K}_{p(X_N, X_{N*})}
 \end{align}
-With the aleoteric data uncertainty also modelled as a Gaussian in $\ref{aleotric-uncertainty}$, GP regression models the test data responses in closed form:
+With the aleoteric data uncertainty also modelled as a Gaussian in (\ref{aleotric-uncertainty}), GP regression models the test data responses in closed form:
 \begin{align}
     \mathbf{Y}_{N^*} \sim \mathcal{N}\left(\bar{\mathbf{m}}_{p(\mathbf{X}_{N^*})}, \bar{\mathbf{K}}_{p(\mathbf{X}_{N^*}, \mathbf{X}_{N^*})}\right)
     \label{gp-posterior}
@@ -197,7 +197,7 @@ y \sim \Cat \left(s\left(\mathbf{y}^{1:J}\right)\right)
 \end{align}
 where $y \in \{1, \dots, J\}$, the desired label response.
 \subsubsection{The Robust Max Function}
-The formulation in (\ref{gp-classifier}) requires defining $s: \mathbb{R}^J \rightarrow \Delta(J)$, for which there are different choices. Following \cite{wild2022generalized}, we will use robust max function, defining the $j^{th}$ element of the probability simplex:
+The formulation in (\ref{gp-classifier}) requires defining a mapping $s: \mathbb{R}^J \rightarrow \Delta(J)$, for which there are different choices. Following \cite{wild2022generalized}, we will use the robust max function, defining the $j^{th}$ element of the probability simplex:
 \begin{align}
 s_{j, robust}^{(\epsilon)}\left(\mathbf{y}^{1:J}\right) = \begin{cases}
       1-\epsilon, &  \text{if } j = \arg \max\left(\mathbf{y}^{1:J}\right) \\
@@ -205,7 +205,7 @@ s_{j, robust}^{(\epsilon)}\left(\mathbf{y}^{1:J}\right) = \begin{cases}
    \end{cases}
    \label{robust-max-function}
 \end{align}
-where $\epsilon \in [0, 1]$ but in most cases $\epsilon$ is a very small value (i.e. $1e^{-2}$). Constructing the $\Delta(J)$ vector with (\ref{robust-max-function}), we the probability value of $1-\epsilon$ for the label of maximum value and $\frac{\epsilon}{J-1}$ otherwise. This formulation provides robustness to outliers, as it only considers the ranking of the GP models for each label.
+where $\epsilon \in [0, 1]$ but in most cases $\epsilon$ is a very small value (i.e. $1e^{-2}$). Constructing the $\Delta(J)$ vector with (\ref{robust-max-function}), we have the probability value of $1-\epsilon$ for the label of maximum value and $\frac{\epsilon}{J-1}$ otherwise. This formulation provides robustness to outliers, as it only considers the ranking of the GP models for each label.
 \\A benefit of the robust max function is that the expected log-likelihood under $P$, the categorical distribution in (\ref{gp-classifier}), becomes analytically tractable. \cite{wild2022generalized} shows that with $N$ input and response pairs $\{x_n, y_n\}_{n=1}^N$:
 \begin{align}
     \mathbb{E}_{P} \left[\log p\left(y \vert y^{1:J}\right)\right] \approx \sum_{n=1}^N \log(1-\epsilon) S_p(x_n, y_n) + \log\left(\frac{\epsilon}{J-1}\right) \left(1-S_p(x_n, y_n)\right)
@@ -225,7 +225,7 @@ The main drawback of GPs has been their inability to scale with respect to $N$, 
 
 \newpage
 \section{svGPs: Scaleable but \textit{not} Flexible}
-A common approach to scaling GPs to a computationally tractable model is with sparse variational Gaussian Processes (svGPs) developed by \cite{titsias2009variational}. We will review this formulation followed by a discussion of the strengths and weakness of the approach.
+Sparse variational Gaussian Processes (svGPs), proposed by \cite{titsias2009variational}, are a common approach to scaling GPs to a computationally tractable model. We will review this formulation followed by a discussion of the strengths and weakness of the approach.
 
 \subsection{The svGP}
 The svGP assumes that a subset of \textit{inducing points} $\{x_m, y_m\}_{m=1}^{M} \subset \{x_n, y_n\}_{n=1}^{N}$ where $M << N$ can adequately capture the relationships in the full training data. This approach constructs:
@@ -233,7 +233,7 @@ The svGP assumes that a subset of \textit{inducing points} $\{x_m, y_m\}_{m=1}^{
 g(\cdot) \sim \GP\left(m_q^{(\nu)}(\cdot), k_q^{(\nu)}(\cdot, \cdot)\right)
 \label{svgp}
 \end{align}
-an svGP  parameterised by $\nu$ which will include the subset $\{x_m, y_m\}_{m=1}^{M}$ and have $\mathcal{O}(M^3)$ predictive computational complexity. \cite{titsias2009variational} proposes the mean function for a given test point $x^* \in \mathcal{X}$:
+an svGP  parameterised by $\nu$ which includes the choice of subset $\{x_m, y_m\}_{m=1}^{M}$ and has $\mathcal{O}(M^3)$ predictive computational complexity. \cite{titsias2009variational} proposes the mean function for a given test point $x^* \in \mathcal{X}$:
 \begin{align}
     \label{svgp-mean} 
     m_q^{(\nu)}(x^*) = m_p(x^*) + \mathbf{\mu}^T\mathbf{K}_{p(\mathbf{X}_M, x^*)}
@@ -248,11 +248,11 @@ parameterised by a positive definite matrix $\mathbf{\Sigma} \in \mathbb{R}^{M\t
     \Gamma = \left\{\mathbf{\mu} \in \mathbb{R}^{M}, \mathbf{\Sigma} \in \mathbb{R}^{M\times M}_{\succ 0}, \left\{x_m, y_m\right\}_{m=1}^{M} \subset \{x_n, y_n\}_{n=1}^{N}\right\}
     \label{svgp-parameter-space}
 \end{align}
-We wish find $\nu \in \Gamma$ such that the svGP Gaussian distribution $Q^{(\nu)}$ approximates the exact posterior distribution from ($\ref{bayes-posterior}$):
+We wish to find $\nu \in \Gamma$ such that the svGP Gaussian distribution $Q^{(\nu)}$ approximates the exact posterior distribution from ($\ref{bayes-posterior}$):
 \begin{align}
     P\left(Y_{N^*} \vert \mathbf{X}_{N^*}, \mathbf{Y}_N, \mathbf{X}_N\right) \approx Q^{(\nu)}\left(Y_{N^*} \vert \mathbf{X}_{N^*}\right)
 \end{align}
-\cite{titsias2009variational} shows that for a given set of inducing points $\left\{ x_m, y_m\right\}_{m=1}^M$, the optimal choice of $\mu$ and $\mathbf{\Sigma}$ has the closed form:
+\cite{titsias2009variational} shows that for a given set of inducing points $\left\{ x_m, y_m\right\}_{m=1}^M$, the optimal choices $\mu^*$ and $\mathbf{\Sigma}^*$ have the closed forms:
 \begin{align}
     \label{svgp-optimal-mean}
     \mu^* = \mathbf{K}_{p(\mathbf{X}_M, \mathbf{X}_M)} \left( \sigma^2 \mathbf{K}_{p(\mathbf{X}_M, \mathbf{X}_M)} + \mathbf{K}_{p(\mathbf{X}_M, \mathbf{X}_N)}\mathbf{K}_{p(\mathbf{X}_N, \mathbf{X}_M})\right)^{-1}\mathbf{K}_{p(\mathbf{X}_M, \mathbf{X}_N)} \mathbf{Y}_N\\
