@@ -7,7 +7,7 @@ from mockers.kernel import (
     calculate_reference_gram_eye_mock,
 )
 from mockers.mean import MockMean, MockMeanParameters
-from src.empirical_risks import NegativeLogLikelihood
+from src.empirical_risks import CrossEntropy, NegativeLogLikelihood
 from src.gps import (
     ApproximateGPClassification,
     ApproximateGPRegression,
@@ -174,7 +174,7 @@ def test_approximate_gp_regression_nll(
                     [0.1, 0.2, 0.3, 0.4],
                 ]
             ),
-            3.1939816,
+            2.63190702,
         ],
     ],
 )
@@ -207,12 +207,84 @@ def test_gp_classification_nll(
         ),
     )
     assert jnp.isclose(
-        nll._calculate_empirical_risk(
+        nll.calculate_empirical_risk(
             parameters=gp_parameters,
             x=x,
             y=y,
         ),
         negative_log_likelihood,
+    )
+
+
+@pytest.mark.parametrize(
+    "log_observation_noise,number_of_classes,x_train,y_train,x,y,cross_entropy",
+    [
+        [
+            jnp.log(jnp.array([0.1, 0.2, 0.4, 1.8])),
+            4,
+            jnp.array(
+                [
+                    [1.0, 3.0, 2.0],
+                    [1.5, 1.5, 9.5],
+                ]
+            ),
+            jnp.array(
+                [
+                    [0.5, 0.1, 0.2, 0.2],
+                    [0.1, 0.2, 0.3, 0.4],
+                ]
+            ),
+            jnp.array(
+                [
+                    [1.0, 2.0, 3.0],
+                    [1.5, 2.5, 3.5],
+                ]
+            ),
+            jnp.array(
+                [
+                    [0, 0, 0, 1],
+                    [1, 0, 0, 0],
+                ]
+            ),
+            1.306689,
+        ],
+    ],
+)
+def test_gp_classification_cross_entropy(
+    log_observation_noise: float,
+    number_of_classes,
+    x_train: jnp.ndarray,
+    y_train: jnp.ndarray,
+    x: jnp.ndarray,
+    y: jnp.ndarray,
+    cross_entropy: float,
+):
+    gp = GPClassification(
+        mean=MockMean(number_output_dimensions=number_of_classes),
+        kernel=MultiOutputKernel(
+            kernels=[MockKernel(kernel_func=calculate_reference_gram_eye_mock)]
+            * number_of_classes
+        ),
+        x=x_train,
+        y=y_train,
+    )
+    empirical_risk = CrossEntropy(
+        gp=gp,
+    )
+    gp_parameters = gp.Parameters(
+        log_observation_noise=log_observation_noise,
+        mean=MockMeanParameters(),
+        kernel=MultiOutputKernelParameters(
+            kernels=[MockKernelParameters()] * number_of_classes
+        ),
+    )
+    assert jnp.isclose(
+        empirical_risk.calculate_empirical_risk(
+            parameters=gp_parameters,
+            x=x,
+            y=y,
+        ),
+        cross_entropy,
     )
 
 
@@ -234,7 +306,7 @@ def test_gp_classification_nll(
                     [0.1, 0.2, 0.3, 0.4],
                 ]
             ),
-            1.20893853,
+            2.77258869,
         ],
     ],
 )
@@ -266,4 +338,57 @@ def test_gp_approximate_classification_nll(
             y=y,
         ),
         negative_log_likelihood,
+    )
+
+
+@pytest.mark.parametrize(
+    "log_observation_noise,number_of_classes,x,y,cross_entropy",
+    [
+        [
+            jnp.log(jnp.array([0.1, 0.2, 0.4, 1.8])),
+            4,
+            jnp.array(
+                [
+                    [1.0, 2.0, 3.0],
+                    [1.5, 2.5, 3.5],
+                ]
+            ),
+            jnp.array(
+                [
+                    [0, 0, 0, 1],
+                    [0, 1, 0, 0],
+                ]
+            ),
+            1.3862944,
+        ],
+    ],
+)
+def test_gp_approximate_classification_cross_entropy(
+    log_observation_noise: float,
+    number_of_classes,
+    x: jnp.ndarray,
+    y: jnp.ndarray,
+    cross_entropy: float,
+):
+    gp = ApproximateGPClassification(
+        mean=MockMean(number_output_dimensions=number_of_classes),
+        kernel=MultiOutputKernel(kernels=[MockKernel()] * number_of_classes),
+    )
+    empirical_risk = CrossEntropy(
+        gp=gp,
+    )
+    gp_parameters = gp.Parameters(
+        log_observation_noise=log_observation_noise,
+        mean=MockMeanParameters(),
+        kernel=MultiOutputKernelParameters(
+            kernels=[MockKernelParameters()] * number_of_classes
+        ),
+    )
+    assert jnp.isclose(
+        empirical_risk.calculate_empirical_risk(
+            parameters=gp_parameters,
+            x=x,
+            y=y,
+        ),
+        cross_entropy,
     )

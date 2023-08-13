@@ -11,7 +11,7 @@ from src.gps import (
     GPRegression,
 )
 from src.kernels import MultiOutputKernel, MultiOutputKernelParameters
-from src.regularisations import WassersteinRegularisation
+from src.regularisations import GaussianWassersteinRegularisation
 
 config.update("jax_enable_x64", True)
 
@@ -56,7 +56,7 @@ def test_zero_wasserstein_gp_regression(
         mean=MockMean.Parameters(),
         kernel=MockKernel.Parameters(),
     )
-    wasserstein = WassersteinRegularisation(
+    wasserstein = GaussianWassersteinRegularisation(
         gp=gp,
         regulariser=gp,
         regulariser_parameters=gp_parameters,
@@ -101,7 +101,7 @@ def test_zero_wasserstein_approximate_gp_regression(
         mean=MockMean.Parameters(),
         kernel=MockKernel.Parameters(),
     )
-    wasserstein = WassersteinRegularisation(
+    wasserstein = GaussianWassersteinRegularisation(
         gp=gp,
         regulariser=gp,
         regulariser_parameters=gp_parameters,
@@ -162,7 +162,7 @@ def test_wasserstein_gp_regression(
         mean=MockMean.Parameters(),
         kernel=MockKernel.Parameters(),
     )
-    wasserstein = WassersteinRegularisation(
+    wasserstein = GaussianWassersteinRegularisation(
         gp=gp,
         regulariser=regulariser,
         regulariser_parameters=parameters,
@@ -226,7 +226,7 @@ def test_zero_wasserstein_gp_classification(
             kernels=[MockKernelParameters()] * number_of_classes
         ),
     )
-    wasserstein = WassersteinRegularisation(
+    wasserstein = GaussianWassersteinRegularisation(
         gp=gp,
         regulariser=gp,
         regulariser_parameters=gp_parameters,
@@ -275,7 +275,7 @@ def test_zero_wasserstein_approximate_gp_classification(
             kernels=[MockKernelParameters()] * number_of_classes
         ),
     )
-    wasserstein = WassersteinRegularisation(
+    wasserstein = GaussianWassersteinRegularisation(
         gp=gp,
         regulariser=gp,
         regulariser_parameters=gp_parameters,
@@ -345,7 +345,7 @@ def test_wasserstein_gp_classification(
             kernels=[MockKernelParameters()] * number_of_classes
         ),
     )
-    wasserstein = WassersteinRegularisation(
+    wasserstein = GaussianWassersteinRegularisation(
         gp=gp,
         regulariser=regulariser,
         regulariser_parameters=parameters,
