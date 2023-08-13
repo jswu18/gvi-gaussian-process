@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, Literal, Union
+from typing import Callable, Dict, Literal, Union
 
 import pydantic
 from flax.core.frozen_dict import FrozenDict
@@ -6,15 +6,15 @@ from jax import numpy as jnp
 
 from src.kernels.base import KernelBase, KernelBaseParameters
 from src.means.base import MeanBase, MeanBaseParameters
-from src.utils.custom_types import JaxArrayType, PRNGKey
+from src.utils.custom_types import JaxArrayType
 
 
-class StochasticVariationalMeanParameters(MeanBaseParameters):
+class SVGPMeanParameters(MeanBaseParameters):
     weights: JaxArrayType[Literal["float64"]]
 
 
-class StochasticVariationalMean(MeanBase):
-    Parameters = StochasticVariationalMeanParameters
+class SVGPMean(MeanBase):
+    Parameters = SVGPMeanParameters
 
     def __init__(
         self,
@@ -46,7 +46,7 @@ class StochasticVariationalMean(MeanBase):
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def generate_parameters(
         self, parameters: Union[FrozenDict, Dict]
-    ) -> StochasticVariationalMeanParameters:
+    ) -> SVGPMeanParameters:
         """
         Generates a Pydantic model of the parameters for SVGP Mean Functions.
 
@@ -56,11 +56,11 @@ class StochasticVariationalMean(MeanBase):
         Returns: A Pydantic model of the parameters for SVGP Mean Functions.
 
         """
-        return StochasticVariationalMean.Parameters(**parameters)
+        return SVGPMean.Parameters(**parameters)
 
     def _predict(
         self,
-        parameters: StochasticVariationalMeanParameters,
+        parameters: SVGPMeanParameters,
         x: jnp.ndarray,
     ) -> jnp.ndarray:
         """

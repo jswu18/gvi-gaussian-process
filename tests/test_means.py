@@ -7,12 +7,7 @@ from jax.config import config
 from mockers.kernel import MockKernel, MockKernelParameters
 from mockers.mean import MockMean, MockMeanParameters
 from mockers.neural_network import MockNeuralNetwork
-from src.means import (
-    ConstantMean,
-    CustomMean,
-    MultiOutputMean,
-    StochasticVariationalMean,
-)
+from src.means import ConstantMean, CustomMean, MultiOutputMean, SVGPMean
 
 config.update("jax_enable_x64", True)
 
@@ -120,7 +115,7 @@ def test_svgp_mean(
     x: jnp.ndarray,
     mean: float,
 ):
-    svgp_mean = StochasticVariationalMean(
+    svgp_mean = SVGPMean(
         reference_mean_parameters=MockMeanParameters(),
         reference_mean=MockMean(),
         reference_kernel_parameters=MockKernelParameters(),

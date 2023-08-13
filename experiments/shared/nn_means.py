@@ -3,7 +3,7 @@ from typing import Sequence
 import flax.linen as nn
 
 
-class MultiLayerPerceptron(nn.Module):
+class MLP(nn.Module):
     features: Sequence[int]
 
     @nn.compact
@@ -16,7 +16,7 @@ class MultiLayerPerceptron(nn.Module):
         )
 
 
-class ConvNet(nn.Module):
+class CNN(nn.Module):
     # https://flax.readthedocs.io/en/latest/getting_started.html
     number_of_outputs: int
 

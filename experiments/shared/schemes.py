@@ -21,3 +21,31 @@ class RegularisationScheme(str, enum.Enum):
     gaussian_squared_difference = "gaussian_squared_difference"
     gaussian_wasserstein = "gaussian_wasserstein"
     multinomial_wasserstein = "multinomial_wasserstein"
+
+
+class KernelScheme(str, enum.Enum):
+    polynomial = "polynomial"
+    ard = "ard"
+    custom = "custom"
+    neural_network = "neural_network"
+    diagonal_svgp = "diagonal_svgp"
+    kernelised_svgp = "kernelised_svgp"
+    log_svgp = "log_svgp"
+    svgp = "svgp"
+
+
+class MeanScheme(str, enum.Enum):
+    constant = "constant"
+    custom = "custom"
+    multi_output = "multi_output"
+    svgp = "svgp"
+
+
+class NNMeanScheme(str, enum.Enum):
+    mlp = "mlp"
+    cnn = "cnn"
+
+
+class NNGPKernelScheme(str, enum.Enum):
+    mlp = "mlp"
+    cnn = "cnn"

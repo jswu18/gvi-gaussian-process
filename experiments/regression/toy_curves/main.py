@@ -9,8 +9,8 @@ from experiments.regression.plotters import plot_data, plot_prediction
 from experiments.regression.runners import meta_train_reference_gp
 from experiments.regression.toy_curves.curves import CURVE_FUNCTIONS
 from experiments.shared.data import Data
-from experiments.shared.nn_means import MultiLayerPerceptron
-from experiments.shared.nngp_kernels import MultiLayerPerceptronKernel
+from experiments.shared.nn_means import MLP
+from experiments.shared.nngp_kernels import MLPGPKernel
 from experiments.shared.plotters import plot_losses, plot_two_losses
 from experiments.shared.runners import train_approximate_gp, train_tempered_gp
 from experiments.shared.schemes import (
@@ -80,11 +80,11 @@ tempered_gp_trainer_settings = TrainerSettings(
 )
 
 # Run experiment
-nngp_kernel = MultiLayerPerceptronKernel(
+nngp_kernel = MLPGPKernel(
     features=nn_architecture,
 )
 nngp_kernel_parameters = nngp_kernel.initialise_parameters()
-nn_mean = MultiLayerPerceptron(
+nn_mean = MLP(
     features=nn_architecture,
 )
 nn_mean_parameters = nn_mean.init(jax.random.PRNGKey(0), x[:1, ...])

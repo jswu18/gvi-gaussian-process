@@ -27,13 +27,13 @@ class NNGPKernelBase(ABC):
         raise NotImplementedError
 
 
-class MultiLayerPerceptronKernelParameters(NNGPKernelBaseParameters):
+class MLPGPKernelParameters(NNGPKernelBaseParameters):
     w_std: JaxArrayType[Literal["float64"]]
     b_std: JaxArrayType[Literal["float64"]]
 
 
-class MultiLayerPerceptronKernel(NNGPKernelBase):
-    Parameters = MultiLayerPerceptronKernelParameters
+class MLPGPKernel(NNGPKernelBase):
+    Parameters = MLPGPKernelParameters
 
     def __init__(self, features: Sequence[int]):
         self.features = features
@@ -49,12 +49,12 @@ class MultiLayerPerceptronKernel(NNGPKernelBase):
 
     def __call__(
         self,
-        parameters: Union[Dict, FrozenDict, MultiLayerPerceptronKernelParameters],
+        parameters: Union[Dict, FrozenDict, MLPGPKernelParameters],
         x1: jnp.ndarray,
         x2: jnp.ndarray,
     ) -> jnp.ndarray:
         if not isinstance(parameters, self.Parameters):
-            parameters = MultiLayerPerceptronKernelParameters(
+            parameters = MLPGPKernelParameters(
                 w_std=parameters["w_std"],
                 b_std=parameters["b_std"],
             )
@@ -78,18 +78,18 @@ class MultiLayerPerceptronKernel(NNGPKernelBase):
         return kernel_fn(x1, x2, "nngp")
 
 
-class ConvNetKernelParameters(NNGPKernelBaseParameters):
+class CNNGPKernelParameters(NNGPKernelBaseParameters):
     w_std: JaxArrayType[Literal["float64"]]
     b_std: JaxArrayType[Literal["float64"]]
 
 
-class ConvNetKernel(NNGPKernelBase):
+class CNNGPKernel(NNGPKernelBase):
     """
     NNGP kernel for example CNN architecture from
     https://flax.readthedocs.io/en/latest/getting_started.html
     """
 
-    Parameters = ConvNetKernelParameters
+    Parameters = CNNGPKernelParameters
 
     def __init__(self, number_of_outputs: int):
         self.number_of_outputs = number_of_outputs
@@ -103,12 +103,12 @@ class ConvNetKernel(NNGPKernelBase):
 
     def __call__(
         self,
-        parameters: Union[Dict, FrozenDict, ConvNetKernelParameters],
+        parameters: Union[Dict, FrozenDict, CNNGPKernelParameters],
         x1: jnp.ndarray,
         x2: jnp.ndarray,
     ) -> jnp.ndarray:
         if not isinstance(parameters, self.Parameters):
-            parameters = ConvNetKernelParameters(
+            parameters = CNNGPKernelParameters(
                 w_std=parameters["w_std"],
                 b_std=parameters["b_std"],
             )

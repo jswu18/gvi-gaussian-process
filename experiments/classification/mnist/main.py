@@ -15,8 +15,8 @@ from experiments.classification.metrics import calculate_metric
 from experiments.classification.plotters import plot_images
 from experiments.classification.runners import meta_train_reference_gp
 from experiments.classification.schemes import ClassificationMetricScheme
-from experiments.shared.nn_means import ConvNet, MultiLayerPerceptron
-from experiments.shared.nngp_kernels import ConvNetKernel, MultiLayerPerceptronKernel
+from experiments.shared.nn_means import CNN, MLP
+from experiments.shared.nngp_kernels import CNNGPKernel, MLPGPKernel
 from experiments.shared.plotters import plot_losses, plot_two_losses
 from experiments.shared.runners import train_approximate_gp, train_tempered_gp
 from experiments.shared.schemes import (
@@ -49,7 +49,7 @@ number_of_inducing_per_label = int(
 )
 
 
-reference_number_of_iterations = 2
+reference_number_of_iterations = 5
 reference_nll_break_condition = -float("inf")
 
 approximate_kernel_diagonal_regularisation = 1e-10
@@ -57,7 +57,7 @@ approximate_kernel_diagonal_regularisation = 1e-10
 reference_gp_empirical_risk_scheme = EmpiricalRiskScheme.cross_entropy
 approximate_gp_empirical_risk_scheme = EmpiricalRiskScheme.cross_entropy
 approximate_gp_regularisation_scheme = RegularisationScheme.multinomial_wasserstein
-tempered_gp_empirical_risk_scheme = EmpiricalRiskScheme.cross_entropy
+tempered_gp_empirical_risk_scheme = EmpiricalRiskScheme.negative_log_likelihood
 
 reference_save_checkpoint_frequency = 1000
 approximate_save_checkpoint_frequency = 1000
@@ -67,7 +67,7 @@ reference_gp_trainer_settings = TrainerSettings(
     key=0,
     optimiser_scheme=OptimiserScheme.adabelief,
     learning_rate=1e-4,
-    number_of_epochs=1000,
+    number_of_epochs=10000,
     batch_size=500,
     batch_shuffle=True,
     batch_drop_last=False,
@@ -76,7 +76,7 @@ approximate_gp_trainer_settings = TrainerSettings(
     key=0,
     optimiser_scheme=OptimiserScheme.adabelief,
     learning_rate=1e-3,
-    number_of_epochs=100,
+    number_of_epochs=10000,
     batch_size=500,
     batch_shuffle=True,
     batch_drop_last=False,
@@ -85,7 +85,7 @@ tempered_gp_trainer_settings = TrainerSettings(
     key=0,
     optimiser_scheme=OptimiserScheme.adabelief,
     learning_rate=1e-3,
-    number_of_epochs=500,
+    number_of_epochs=10000,
     batch_size=500,
     batch_shuffle=True,
     batch_drop_last=False,
@@ -120,13 +120,13 @@ plot_images(
     save_path=os.path.join(output_directory, "train-images.png"),
 )
 
-# nn_mean = ConvNet(
+# nn_mean = CNN(
 #     number_of_outputs=number_of_labels
 # )
 # nn_mean_parameters = nn_mean.init(
 #     jax.random.PRNGKey(0), experiment_data_list[0].train.x[:1, ...].reshape(-1, 28, 28, 1)
 # )
-nn_mean = MultiLayerPerceptron(
+nn_mean = MLP(
     features=[100, 100, len(labels_to_include)],
 )
 nn_mean_parameters = nn_mean.init(
@@ -139,8 +139,8 @@ custom_mean = CustomMean(
     preprocess_function=lambda x: x.reshape(-1, 784),
 )
 
-nngp_kernel = MultiLayerPerceptronKernel(features=[100, 100, 1])
-# nngp_kernel = ConvNetKernel(number_of_outputs=number_of_labels)
+nngp_kernel = MLPGPKernel(features=[100, 100, 1])
+# nngp_kernel = CNNGPKernel(number_of_outputs=number_of_labels)
 nngp_kernel_parameters = nngp_kernel.initialise_parameters()
 single_label_kernel = CustomKernel(
     kernel_function=nngp_kernel,

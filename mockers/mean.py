@@ -5,10 +5,7 @@ import pydantic
 from flax.core.frozen_dict import FrozenDict
 
 from src.means.base import MeanBase, MeanBaseParameters
-from src.means.stochastic_variational_mean import (
-    StochasticVariationalMean,
-    StochasticVariationalMeanParameters,
-)
+from src.means.svgp_mean import SVGPMean, SVGPMeanParameters
 from src.utils.custom_types import PRNGKey
 
 
@@ -43,20 +40,20 @@ class MockMean(MeanBase):
         return jnp.ones((x.shape[0], self.number_output_dimensions))
 
 
-class MockStochasticVariationalMeanParameter(StochasticVariationalMeanParameters):
+class MockSVGPMeanParameter(SVGPMeanParameters):
     pass
 
 
-class MockStochasticVariationalMean(StochasticVariationalMean):
+class MockSVGPMean(SVGPMean):
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def generate_parameters(
         self, parameters: Union[Dict, FrozenDict]
-    ) -> MockStochasticVariationalMeanParameter:
-        return MockStochasticVariationalMeanParameter()
+    ) -> MockSVGPMeanParameter:
+        return MockSVGPMeanParameter()
 
     def _predict(
         self,
         x: jnp.ndarray,
-        parameters: MockStochasticVariationalMeanParameter = None,
+        parameters: MockSVGPMeanParameter = None,
     ) -> jnp.ndarray:
         return jnp.ones((x.shape[0]))
