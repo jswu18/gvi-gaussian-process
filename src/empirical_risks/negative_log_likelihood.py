@@ -14,7 +14,7 @@ class NegativeLogLikelihood(EmpiricalRiskBase):
     def __init__(self, gp: GPBase):
         super().__init__(gp)
 
-    def _calculate_gaussian_log_likelihood(
+    def _calculate_gaussian_negative_log_likelihood(
         self,
         parameters: GPBaseParameters,
         x: jnp.ndarray,
@@ -54,7 +54,7 @@ class NegativeLogLikelihood(EmpiricalRiskBase):
                 )
             )
 
-    def _calculate_multinomial_log_likelihood(
+    def _calculate_multinomial_negative_log_likelihood(
         self,
         parameters: GPBaseParameters,
         x: jnp.ndarray,
@@ -84,13 +84,13 @@ class NegativeLogLikelihood(EmpiricalRiskBase):
         y: jnp.ndarray,
     ) -> JaxFloatType:
         if isinstance(self.gp, GPRegressionBase):
-            return self._calculate_gaussian_log_likelihood(
+            return self._calculate_gaussian_negative_log_likelihood(
                 parameters=parameters,
                 x=x,
                 y=y,
             )
         elif isinstance(self.gp, GPClassificationBase):
-            return self._calculate_multinomial_log_likelihood(
+            return self._calculate_multinomial_negative_log_likelihood(
                 parameters=parameters,
                 x=x,
                 y=y,

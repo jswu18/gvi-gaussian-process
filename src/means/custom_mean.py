@@ -38,12 +38,5 @@ class CustomMean(MeanBase):
     ) -> CustomMeanParameters:
         return CustomMean.Parameters(custom=parameters["custom"])
 
-    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
-    def initialise_random_parameters(
-        self,
-        key: PRNGKey,
-    ) -> CustomMeanParameters:
-        pass
-
     def _predict(self, parameters: CustomMeanParameters, x: jnp.ndarray) -> jnp.ndarray:
         return self.mean_function(parameters.custom, x)

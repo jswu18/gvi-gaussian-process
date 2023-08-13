@@ -74,20 +74,3 @@ class Module(ABC):
 
         """
         raise NotImplementedError
-
-    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
-    @abstractmethod
-    def initialise_random_parameters(
-        self,
-        key: PRNGKey,
-    ) -> ModuleParameters:
-        """
-        Initialise each parameter of the Module with the appropriate random initialisation.
-
-        Args:
-            key: A random key used to initialise the parameters.
-
-        Returns: A Pydantic model of the parameters for the Module.
-
-        """
-        raise NotImplementedError

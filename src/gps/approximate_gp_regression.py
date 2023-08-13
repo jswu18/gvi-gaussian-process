@@ -58,22 +58,3 @@ class ApproximateGPRegression(ApproximateGPBase, GPRegressionBase):
             mean=self.mean.generate_parameters(parameters["mean"]),
             kernel=self.kernel.generate_parameters(parameters["kernel"]),
         )
-
-    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
-    def initialise_random_parameters(
-        self,
-        key: PRNGKey,
-    ) -> ApproximateGPRegressionParameters:
-        """
-        Initialise each parameter of the Reference Gaussian measure with the appropriate random initialisation.
-
-        Args:
-            key: A random key used to initialise the parameters.
-
-        Returns: A Pydantic model of the parameters for Reference Gaussian Measures.
-
-        """
-        return ApproximateGPRegression.Parameters(
-            mean=self.mean.initialise_random_parameters(key),
-            kernel=self.kernel.initialise_random_parameters(key),
-        )

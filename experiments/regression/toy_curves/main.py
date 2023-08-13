@@ -21,9 +21,7 @@ from experiments.shared.schemes import (
 from experiments.shared.trainer import TrainerSettings
 from src.gps import ApproximateGPRegression
 from src.kernels import CustomKernel, TemperedKernel
-from src.kernels.approximate.generalised_svgp_kernel import (
-    GeneralisedStochasticVariationalKernel,
-)
+from src.kernels.svgp.kernelised_svgp_kernel import KernelisedSVGPKernel
 from src.means import CustomMean
 
 jax.config.update("jax_enable_x64", True)
@@ -182,7 +180,7 @@ for curve_function in CURVE_FUNCTIONS:
             mean=CustomMean(
                 mean_function=lambda parameters, x: nn_mean.apply(parameters, x),
             ),
-            kernel=GeneralisedStochasticVariationalKernel(
+            kernel=KernelisedSVGPKernel(
                 reference_kernel=reference_gp.kernel,
                 reference_kernel_parameters=reference_gp_parameters.kernel,
                 log_observation_noise=reference_gp_parameters.log_observation_noise,
@@ -196,7 +194,7 @@ for curve_function in CURVE_FUNCTIONS:
             mean=CustomMean.Parameters(
                 custom=nn_mean_parameters,
             ),
-            kernel=GeneralisedStochasticVariationalKernel.Parameters(
+            kernel=KernelisedSVGPKernel.Parameters(
                 base_kernel=reference_gp_parameters.kernel.construct(
                     **reference_gp_parameters.kernel.dict()
                 )

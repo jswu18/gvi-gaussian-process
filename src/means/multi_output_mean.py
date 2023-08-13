@@ -39,22 +39,6 @@ class MultiOutputMean(MeanBase):
         assert len(parameters["means"]) == self.number_output_dimensions
         return MultiOutputMean.Parameters(**parameters)
 
-    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
-    def initialise_random_parameters(
-        self,
-        key: PRNGKey,
-    ) -> MultiOutputMeanParameters:
-        """
-        Initialise the parameters of the mean function using a random key.
-
-        Args:
-            key: A random key used to initialise the parameters.
-
-        Returns: A Pydantic model of the parameters for the mean function.
-
-        """
-        pass
-
     def _predict(
         self,
         parameters: MultiOutputMeanParameters,

@@ -27,9 +27,7 @@ from experiments.shared.schemes import (
 from experiments.shared.trainer import TrainerSettings
 from src.gps import ApproximateGPClassification
 from src.kernels import CustomKernel, MultiOutputKernel, TemperedKernel
-from src.kernels.approximate.generalised_svgp_kernel import (
-    GeneralisedStochasticVariationalKernel,
-)
+from src.kernels.svgp.kernelised_svgp_kernel import KernelisedSVGPKernel
 from src.means import CustomMean
 
 jax.config.update("jax_enable_x64", True)
@@ -213,11 +211,11 @@ approximate_experiment_directory = os.path.join(
 )
 if not os.path.exists(approximate_experiment_directory):
     os.makedirs(approximate_experiment_directory)
-svgp_kernels: List[GeneralisedStochasticVariationalKernel] = []
-svgp_kernel_parameters: List[GeneralisedStochasticVariationalKernel.Parameters] = []
+svgp_kernels: List[KernelisedSVGPKernel] = []
+svgp_kernel_parameters: List[KernelisedSVGPKernel.Parameters] = []
 for i in range(number_of_labels):
     svgp_kernels.append(
-        GeneralisedStochasticVariationalKernel(
+        KernelisedSVGPKernel(
             reference_kernel=reference_gp.kernel.kernels[i],
             reference_kernel_parameters=reference_gp_parameters.kernel.kernels[i],
             log_observation_noise=reference_gp_parameters.log_observation_noise[i],
@@ -228,7 +226,7 @@ for i in range(number_of_labels):
         )
     )
     svgp_kernel_parameters.append(
-        GeneralisedStochasticVariationalKernel.Parameters.construct(
+        KernelisedSVGPKernel.Parameters.construct(
             base_kernel=reference_gp_parameters.kernel.kernels[i],
         )
     )

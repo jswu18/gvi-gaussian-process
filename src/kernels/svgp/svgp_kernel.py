@@ -3,18 +3,14 @@ from typing import Callable, Dict, Literal, Tuple, Union
 import jax.numpy as jnp
 import pydantic
 from flax.core.frozen_dict import FrozenDict
-from jax.scipy.linalg import cho_factor, cho_solve
+from jax.scipy.linalg import cho_solve
 
-from src.kernels.approximate.base import (
-    ApproximateBaseKernel,
-    ApproximateBaseKernelParameters,
-)
 from src.kernels.base import KernelBase, KernelBaseParameters
-from src.utils.custom_types import JaxArrayType, PRNGKey
-from src.utils.matrix_operations import add_diagonal_regulariser
+from src.kernels.svgp.base import SVGPBaseKernel, SVGPBaseKernelParameters
+from src.utils.custom_types import JaxArrayType
 
 
-class StochasticVariationalKernelParameters(ApproximateBaseKernelParameters):
+class SVGPKernelParameters(SVGPBaseKernelParameters):
     """
     el_matrix_lower_triangle is a lower triangle of the L matrix
     el_matrix_log_diagonal is the logarithm of the diagonal of the L matrix
@@ -28,12 +24,12 @@ class StochasticVariationalKernelParameters(ApproximateBaseKernelParameters):
     el_matrix_log_diagonal: JaxArrayType[Literal["float64"]]
 
 
-class StochasticVariationalKernel(ApproximateBaseKernel):
+class SVGPKernel(SVGPBaseKernel):
     """
     The stochastic variational Gaussian process kernel as defined in Titsias (2009).
     """
 
-    Parameters = StochasticVariationalKernelParameters
+    Parameters = SVGPKernelParameters
 
     def __init__(
         self,
@@ -46,86 +42,33 @@ class StochasticVariationalKernel(ApproximateBaseKernel):
         is_diagonal_regularisation_absolute_scale: bool = False,
         preprocess_function: Callable[[jnp.ndarray], jnp.ndarray] = None,
     ):
-        """
-        Defining the stochastic variational Gaussian process kernel using the reference Gaussian measure
-        and inducing points.
-
-        Args:
-            reference_kernel_parameters: the parameters of the reference kernel.
-            log_observation_noise: the log observation noise of the model
-            reference_kernel: the kernel of the reference Gaussian measure.
-            inducing_points: the inducing points of the stochastic variational Gaussian process.
-            training_points: the training points of the stochastic variational Gaussian process.
-            el_matrix_diagonal_lower_bound: lower bound (clip) the diagonals of the L parameter matrix for Sigma = LL^T
-            is_diagonal_regularisation_absolute_scale: whether the diagonal regularisation is an absolute scale.
-        """
-        self.log_observation_noise = log_observation_noise
-        self.number_of_dimensions = inducing_points.shape[1]
-        self.inducing_points = inducing_points
-        self.training_points = training_points
-        self.diagonal_regularisation = diagonal_regularisation
-        self.is_diagonal_regularisation_absolute_scale = (
-            is_diagonal_regularisation_absolute_scale
-        )
         super().__init__(
             reference_kernel_parameters=reference_kernel_parameters,
             reference_kernel=reference_kernel,
             preprocess_function=preprocess_function,
+            log_observation_noise=log_observation_noise,
+            inducing_points=inducing_points,
+            training_points=training_points,
+            diagonal_regularisation=diagonal_regularisation,
+            is_diagonal_regularisation_absolute_scale=is_diagonal_regularisation_absolute_scale,
         )
-        self.reference_gram_inducing = self.reference_kernel.calculate_gram(
-            parameters=reference_kernel_parameters,
-            x1=inducing_points,
-            x2=inducing_points,
-        )
-        self.reference_gram_inducing_cholesky_decomposition_and_lower = cho_factor(
-            add_diagonal_regulariser(
-                matrix=self.reference_gram_inducing,
-                diagonal_regularisation=diagonal_regularisation,
-                is_diagonal_regularisation_absolute_scale=is_diagonal_regularisation_absolute_scale,
+
+    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
+    def generate_parameters(
+        self, parameters: Union[FrozenDict, Dict] = None
+    ) -> SVGPKernelParameters:
+        if parameters is None:
+            (
+                el_matrix_lower_triangle,
+                el_matrix_log_diagonal,
+            ) = self.initialise_el_matrix_parameters()
+            return SVGPKernelParameters(
+                el_matrix_lower_triangle=el_matrix_lower_triangle,
+                el_matrix_log_diagonal=el_matrix_log_diagonal,
             )
-        )
-        self.gram_inducing_train = self.reference_kernel.calculate_gram(
-            parameters=reference_kernel_parameters,
-            x1=inducing_points,
-            x2=training_points,
-        )
-
-    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
-    def generate_parameters(self, parameters: Union[FrozenDict, Dict]) -> Parameters:
-        """
-        Generates a Pydantic model of the parameters for Stochastic Variational Gaussian Process Kernels.
-
-        Args:
-            parameters: A dictionary of the parameters for Stochastic Variational Gaussian Process Kernels.
-
-        Returns: A Pydantic model of the parameters for Stochastic Variational Gaussian Process Kernels.
-
-        """
-        return StochasticVariationalKernel.Parameters(**parameters)
-
-    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
-    def initialise_random_parameters(
-        self,
-        key: PRNGKey = None,
-    ) -> StochasticVariationalKernelParameters:
-        """
-        Initialise each parameter of the Stochastic Variational Gaussian Process Kernel with the appropriate random initialisation.
-
-        Args:
-            key: A random key used to initialise the parameters. Not required in this case becasue
-                the parameters are initialised deterministically.
-
-        Returns: A Pydantic model of the parameters for Stochastic Variational Gaussian Process Kernels.
-
-        """
-        # raise warning if key is not None
-        (
-            el_matrix_lower_triangle,
-            el_matrix_log_diagonal,
-        ) = self.initialise_el_matrix_parameters()
-        return StochasticVariationalKernel.Parameters(
-            el_matrix_lower_triangle=el_matrix_lower_triangle,
-            el_matrix_log_diagonal=el_matrix_log_diagonal,
+        return SVGPKernelParameters(
+            el_matrix_lower_triangle=parameters["el_matrix_lower_triangle"],
+            el_matrix_log_diagonal=parameters["el_matrix_log_diagonal"],
         )
 
     def initialise_el_matrix_parameters(
@@ -162,7 +105,7 @@ class StochasticVariationalKernel(ApproximateBaseKernel):
 
     def _calculate_gram(
         self,
-        parameters: Union[Dict, FrozenDict, StochasticVariationalKernelParameters],
+        parameters: Union[Dict, FrozenDict, SVGPKernelParameters],
         x1: jnp.ndarray,
         x2: jnp.ndarray,
     ) -> jnp.ndarray:

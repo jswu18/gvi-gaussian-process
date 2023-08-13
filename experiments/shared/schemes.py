@@ -15,7 +15,6 @@ class EmpiricalRiskScheme(str, enum.Enum):
 class RegularisationScheme(str, enum.Enum):
     point_wise_gaussian_wasserstein = "point_wise_gaussian_wasserstein"
     point_wise_kl = "point_wise_kl"
-    point_wise_symmetric_kl = "point_wise_symmetric_kl"
     point_wise_bhattacharyya = "point_wise_bhattacharyya"
     point_wise_hellinger = "point_wise_hellinger"
     point_wise_renyi = "point_wise_renyi"

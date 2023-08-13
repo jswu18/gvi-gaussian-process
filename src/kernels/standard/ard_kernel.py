@@ -39,22 +39,6 @@ class ARDKernel(StandardKernelBase):
         """
         return ARDKernel.Parameters(**parameters)
 
-    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
-    def initialise_random_parameters(
-        self,
-        key: PRNGKey,
-    ) -> ARDKernelParameters:
-        """
-        Initialise the parameters of the ARDKernel Kernel using a random key.
-
-        Args:
-            key: A random key used to initialise the parameters.
-
-        Returns: A Pydantic model of the parameters for ARDKernel Kernels.
-
-        """
-        pass
-
     @staticmethod
     def _calculate_kernel(
         parameters: ARDKernelParameters,

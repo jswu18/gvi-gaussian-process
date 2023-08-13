@@ -45,27 +45,6 @@ class MultiOutputKernel(KernelBase):
             ]
         )
 
-    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
-    def initialise_random_parameters(
-        self,
-        key: PRNGKey,
-    ) -> MultiOutputKernelParameters:
-        """
-        Initialise the parameters of the Neural Network Gaussian Process Kernel using a random key.
-
-        Args:
-            key: A random key used to initialise the parameters.
-
-        Returns: A Pydantic model of the parameters for Neural Network Gaussian Process Kernels.
-
-        """
-        kernel_parameters = []
-        for kernel in self.kernels:
-            key, subkey = jax.random.split(key=key)
-            kernel_parameters.append(kernel.initialise_random_parameters(key=subkey))
-
-        return MultiOutputKernel.Parameters(kernels=kernel_parameters)
-
     def _calculate_gram(
         self,
         parameters: Union[Dict, FrozenDict, MultiOutputKernelParameters],

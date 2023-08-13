@@ -90,19 +90,3 @@ class MockGP(GPBase):
         return MockGP.Parameters(
             log_observation_noise=parameters["log_observation_noise"],
         )
-
-    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
-    def initialise_random_parameters(
-        self,
-        key: PRNGKey,
-    ) -> MockGPParameters:
-        """
-        Initialise each parameter of the Reference Gaussian measure with the appropriate random initialisation.
-
-        Args:
-            key: A random key used to initialise the parameters.
-
-        Returns: A Pydantic model of the parameters for Reference Gaussian Measures.
-
-        """
-        pass

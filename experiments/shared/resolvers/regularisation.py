@@ -13,7 +13,6 @@ from src.regularisations.point_wise import (
     PointWiseHellingerRegularisation,
     PointWiseKLRegularisation,
     PointWiseRenyiRegularisation,
-    PointWiseSymmetricKLRegularisation,
 )
 
 
@@ -49,12 +48,6 @@ def regularisation_resolver(
         )
     elif regularisation_scheme == schemes.RegularisationScheme.point_wise_kl:
         return PointWiseKLRegularisation(
-            gp=gp,
-            regulariser=regulariser,
-            regulariser_parameters=regulariser_parameters,
-        )
-    elif regularisation_scheme == schemes.RegularisationScheme.point_wise_symmetric_kl:
-        return PointWiseSymmetricKLRegularisation(
             gp=gp,
             regulariser=regulariser,
             regulariser_parameters=regulariser_parameters,

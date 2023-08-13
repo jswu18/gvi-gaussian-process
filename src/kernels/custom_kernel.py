@@ -52,22 +52,6 @@ class CustomKernel(KernelBase):
             custom=parameters["custom"],
         )
 
-    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
-    def initialise_random_parameters(
-        self,
-        key: PRNGKey,
-    ) -> CustomKernelParameters:
-        """
-        Initialise the parameters of the Neural Network Gaussian Process Kernel using a random key.
-
-        Args:
-            key: A random key used to initialise the parameters.
-
-        Returns: A Pydantic model of the parameters for Neural Network Gaussian Process Kernels.
-
-        """
-        pass
-
     def _calculate_gram(
         self,
         parameters: Union[Dict, FrozenDict, CustomKernelParameters],

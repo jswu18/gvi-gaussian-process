@@ -54,22 +54,6 @@ class NeuralNetworkKernel(KernelBase):
             neural_network=parameters["neural_network"],
         )
 
-    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
-    def initialise_random_parameters(
-        self,
-        key: PRNGKey,
-    ) -> NeuralNetworkKernelParameters:
-        """
-        Initialise the parameters of the Neural Network Gaussian Process Kernel using a random key.
-
-        Args:
-            key: A random key used to initialise the parameters.
-
-        Returns: A Pydantic model of the parameters for Neural Network Gaussian Process Kernels.
-
-        """
-        pass
-
     def _calculate_gram(
         self,
         parameters: Union[Dict, FrozenDict, NeuralNetworkKernelParameters],

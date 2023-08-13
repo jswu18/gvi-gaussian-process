@@ -49,10 +49,3 @@ class PolynomialKernel(NonStationaryKernelBase):
             log_constant=parameters["log_constant"],
             log_scaling=parameters["log_scaling"],
         )
-
-    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
-    def initialise_random_parameters(
-        self,
-        key: PRNGKey,
-    ) -> PolynomialKernelParameters:
-        pass

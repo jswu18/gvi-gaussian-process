@@ -12,8 +12,13 @@ from mockers.kernel import (
     calculate_reference_gram_eye_mock,
 )
 from src.kernels import CustomKernel, MultiOutputKernel
-from src.kernels.approximate import StochasticVariationalKernel
 from src.kernels.standard import ARDKernel
+from src.kernels.svgp import (
+    DiagonalSVGPKernel,
+    KernelisedSVGPKernel,
+    LogSVGPKernel,
+    SVGPKernel,
+)
 
 config.update("jax_enable_x64", True)
 
@@ -332,14 +337,14 @@ def test_svgp_sigma_lower_triangle_matrix(
     x_inducing: jnp.ndarray,
     target_el_matrix_lower_triangle: jnp.ndarray,
 ):
-    approximate_kernel = StochasticVariationalKernel(
+    svgp_kernel = SVGPKernel(
         reference_kernel_parameters=MockKernelParameters(),
         log_observation_noise=jnp.log(1),
         reference_kernel=MockKernel(calculate_reference_gram_eye_mock),
         inducing_points=x_inducing,
         training_points=x_train,
     )
-    el_matrix_lower_triangle, _ = approximate_kernel.initialise_el_matrix_parameters()
+    el_matrix_lower_triangle, _ = svgp_kernel.initialise_el_matrix_parameters()
     assert jnp.array_equal(
         el_matrix_lower_triangle,
         target_el_matrix_lower_triangle,
@@ -374,14 +379,14 @@ def test_svgp_sigma_log_diagonal(
     x_inducing: jnp.ndarray,
     target_el_matrix_log_diagonal: jnp.ndarray,
 ):
-    approximate_kernel = StochasticVariationalKernel(
+    svgp_kernel = SVGPKernel(
         reference_kernel_parameters=MockKernelParameters(),
         log_observation_noise=jnp.log(1),
         reference_kernel=MockKernel(calculate_reference_gram_eye_mock),
         inducing_points=x_inducing,
         training_points=x_train,
     )
-    _, el_matrix_log_diagonal = approximate_kernel.initialise_el_matrix_parameters()
+    _, el_matrix_log_diagonal = svgp_kernel.initialise_el_matrix_parameters()
     assert jnp.array_equal(
         el_matrix_log_diagonal,
         target_el_matrix_log_diagonal,
@@ -389,9 +394,13 @@ def test_svgp_sigma_log_diagonal(
 
 
 @pytest.mark.parametrize(
-    "x_train,x_inducing,x,k",
+    "el_matrix_lower_triangle,el_matrix_log_diagonal,x_train,x_inducing,x,k",
     [
         [
+            jnp.array(
+                [[0.0, 0.0], [0.0, 0.0]],
+            ),
+            jnp.array([-0.34657359, -0.34657359]),
             jnp.array(
                 [
                     [1.0, 2.0, 3.0],
@@ -421,22 +430,125 @@ def test_svgp_sigma_log_diagonal(
     ],
 )
 def test_svgp_kernel_grams(
+    el_matrix_lower_triangle: jnp.ndarray,
+    el_matrix_log_diagonal: jnp.ndarray,
     x_train: jnp.ndarray,
     x_inducing: jnp.ndarray,
     x: jnp.ndarray,
     k: jnp.ndarray,
 ):
-    approximate_kernel = StochasticVariationalKernel(
+    svgp_kernel = SVGPKernel(
         reference_kernel_parameters=MockKernelParameters(),
         log_observation_noise=jnp.log(1),
         reference_kernel=MockKernel(calculate_reference_gram_eye_mock),
         inducing_points=x_inducing,
         training_points=x_train,
     )
-    parameters = approximate_kernel.initialise_random_parameters()
-    assert jnp.array_equal(
-        approximate_kernel.calculate_gram(
+    parameters = svgp_kernel.generate_parameters(
+        {
+            "el_matrix_lower_triangle": el_matrix_lower_triangle,
+            "el_matrix_log_diagonal": el_matrix_log_diagonal,
+        }
+    )
+    assert jnp.allclose(
+        svgp_kernel.calculate_gram(
             parameters=parameters, x1=x, x2=x, full_covariance=True
         ),
         k,
+    )
+
+
+@pytest.mark.parametrize(
+    "x_train,x_inducing,x,actual_el_matrix_lower_triangle",
+    [
+        [
+            jnp.array(
+                [
+                    [1.0, 2.0, 3.0],
+                    [5.0, 1.0, 9.0],
+                    [1.5, 2.5, 3.5],
+                ]
+            ),
+            jnp.array(
+                [
+                    [5.0, 1.0, 9.0],
+                    [1.5, 2.5, 3.5],
+                ]
+            ),
+            jnp.array(
+                [
+                    [5.3, 5.0, 6.0],
+                    [2.5, 4.5, 2.5],
+                ]
+            ),
+            jnp.array(
+                [[0.0, 0.0], [0.0, 0.0]],
+            ),
+        ],
+    ],
+)
+def test_initialise_el_matrix_lower_triangle_svgp_kernel_grams(
+    x_train: jnp.ndarray,
+    x_inducing: jnp.ndarray,
+    x: jnp.ndarray,
+    actual_el_matrix_lower_triangle: jnp.ndarray,
+):
+    svgp_kernel = SVGPKernel(
+        reference_kernel_parameters=MockKernelParameters(),
+        log_observation_noise=jnp.log(1),
+        reference_kernel=MockKernel(calculate_reference_gram_eye_mock),
+        inducing_points=x_inducing,
+        training_points=x_train,
+    )
+    el_matrix_lower_triangle, _ = svgp_kernel.initialise_el_matrix_parameters()
+    assert jnp.allclose(
+        el_matrix_lower_triangle,
+        actual_el_matrix_lower_triangle,
+    )
+
+
+@pytest.mark.parametrize(
+    "x_train,x_inducing,x,actual_el_matrix_log_diagonal",
+    [
+        [
+            jnp.array(
+                [
+                    [1.0, 2.0, 3.0],
+                    [5.0, 1.0, 9.0],
+                    [1.5, 2.5, 3.5],
+                ]
+            ),
+            jnp.array(
+                [
+                    [5.0, 1.0, 9.0],
+                    [1.5, 2.5, 3.5],
+                ]
+            ),
+            jnp.array(
+                [
+                    [5.3, 5.0, 6.0],
+                    [2.5, 4.5, 2.5],
+                ]
+            ),
+            jnp.array([-0.34657359, -0.34657359]),
+        ],
+    ],
+)
+def test_initialise_el_matrix_lower_triangle_svgp_kernel_grams(
+    x_train: jnp.ndarray,
+    x_inducing: jnp.ndarray,
+    x: jnp.ndarray,
+    actual_el_matrix_log_diagonal: jnp.ndarray,
+):
+    svgp_kernel = SVGPKernel(
+        reference_kernel_parameters=MockKernelParameters(),
+        log_observation_noise=jnp.log(1),
+        reference_kernel=MockKernel(calculate_reference_gram_eye_mock),
+        inducing_points=x_inducing,
+        training_points=x_train,
+    )
+    _, el_matrix_log_diagonal = svgp_kernel.initialise_el_matrix_parameters()
+    assert jnp.allclose(
+        el_matrix_log_diagonal,
+        actual_el_matrix_log_diagonal,
     )

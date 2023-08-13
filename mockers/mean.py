@@ -35,13 +35,6 @@ class MockMean(MeanBase):
     ) -> MockMeanParameters:
         return MockMeanParameters()
 
-    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
-    def initialise_random_parameters(
-        self,
-        key: PRNGKey,
-    ) -> MockMeanParameters:
-        return MockMeanParameters()
-
     def _predict(
         self,
         x: jnp.ndarray,
@@ -58,13 +51,6 @@ class MockStochasticVariationalMean(StochasticVariationalMean):
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def generate_parameters(
         self, parameters: Union[Dict, FrozenDict]
-    ) -> MockStochasticVariationalMeanParameter:
-        return MockStochasticVariationalMeanParameter()
-
-    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
-    def initialise_random_parameters(
-        self,
-        key: PRNGKey,
     ) -> MockStochasticVariationalMeanParameter:
         return MockStochasticVariationalMeanParameter()
 

@@ -38,13 +38,6 @@ class TemperedKernel(KernelBase):
             log_tempering_factor=parameters["log_tempering_factor"]
         )
 
-    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
-    def initialise_random_parameters(
-        self,
-        key: PRNGKey,
-    ) -> TemperedKernelParameters:
-        pass
-
     def _calculate_gram(
         self,
         parameters: Union[Dict, FrozenDict, TemperedKernelParameters],
