@@ -6,7 +6,7 @@ from src.regularisations.point_wise.base import PointWiseRegularisationBase
 from src.utils.custom_types import JaxFloatType
 
 
-class PointWiseWassersteinRegularisation(PointWiseRegularisationBase):
+class PointWiseGaussianWassersteinRegularisation(PointWiseRegularisationBase):
     def __init__(
         self,
         gp: GPBase,

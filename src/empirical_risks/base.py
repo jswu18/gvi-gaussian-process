@@ -11,7 +11,22 @@ from src.gps.base.base import GPBase, GPBaseParameters
 
 class EmpiricalRiskBase(ABC):
     def __init__(self, gp: GPBase):
-        self.gp = gp
+        self._gp = gp
+        self._jit_compiled_calculate_empirical_risk = jax.jit(
+            lambda parameters, x, y: self._calculate_empirical_risk(
+                parameters=parameters,
+                x=x,
+                y=y,
+            )
+        )
+
+    @property
+    def gp(self) -> GPBase:
+        return self._gp
+
+    @gp.setter
+    def gp(self, gp: GPBase) -> None:
+        self._gp = gp
         self._jit_compiled_calculate_empirical_risk = jax.jit(
             lambda parameters, x, y: self._calculate_empirical_risk(
                 parameters=parameters,

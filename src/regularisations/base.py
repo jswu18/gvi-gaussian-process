@@ -13,9 +13,51 @@ class RegularisationBase(ABC):
     def __init__(
         self, gp: GPBase, regulariser: GPBase, regulariser_parameters: GPBaseParameters
     ):
-        self.gp = gp
-        self.regulariser = regulariser
-        self.regulariser_parameters = regulariser_parameters
+        self._gp = gp
+        self._regulariser = regulariser
+        self._regulariser_parameters = regulariser_parameters
+        self._jit_compiled_calculate_regularisation = jax.jit(
+            lambda parameters, x: self._calculate_regularisation(
+                parameters=parameters,
+                x=x,
+            )
+        )
+
+    @property
+    def gp(self) -> GPBase:
+        return self._gp
+
+    @gp.setter
+    def gp(self, gp: GPBase) -> None:
+        self._gp = gp
+        self._jit_compiled_calculate_regularisation = jax.jit(
+            lambda parameters, x: self._calculate_regularisation(
+                parameters=parameters,
+                x=x,
+            )
+        )
+
+    @property
+    def regulariser(self) -> GPBase:
+        return self._regulariser
+
+    @regulariser.setter
+    def regulariser(self, regulariser: GPBase) -> None:
+        self._regulariser = regulariser
+        self._jit_compiled_calculate_regularisation = jax.jit(
+            lambda parameters, x: self._calculate_regularisation(
+                parameters=parameters,
+                x=x,
+            )
+        )
+
+    @property
+    def regulariser_parameters(self) -> GPBaseParameters:
+        return self._regulariser_parameters
+
+    @regulariser_parameters.setter
+    def regulariser_parameters(self, regulariser_parameters: GPBaseParameters) -> None:
+        self._regulariser_parameters = regulariser_parameters
         self._jit_compiled_calculate_regularisation = jax.jit(
             lambda parameters, x: self._calculate_regularisation(
                 parameters=parameters,

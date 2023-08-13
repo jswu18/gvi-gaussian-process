@@ -9,7 +9,7 @@ def plot_images(
     data_list: List[Data],
     reshape_function: Callable,
     save_path: str,
-    max_images: int = 10,
+    max_images: int = 100,
 ):
     count_per_class = [data.x.shape[0] for data in data_list]
     images_to_show_per_class = int(min(max_images, max(count_per_class)))

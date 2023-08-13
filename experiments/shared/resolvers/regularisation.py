@@ -1,17 +1,19 @@
 from experiments.shared import schemes
 from src.gps.base.base import GPBase, GPBaseParameters
+from src.gps.base.classification_base import GPClassificationBase
 from src.regularisations import (
+    GaussianWassersteinRegularisation,
+    MultinomialWassersteinRegularisation,
     SquaredDifferenceRegularisation,
-    WassersteinRegularisation,
 )
 from src.regularisations.base import RegularisationBase
 from src.regularisations.point_wise import (
     PointWiseBhattacharyyaRegularisation,
+    PointWiseGaussianWassersteinRegularisation,
     PointWiseHellingerRegularisation,
     PointWiseKLRegularisation,
     PointWiseRenyiRegularisation,
     PointWiseSymmetricKLRegularisation,
-    PointWiseWassersteinRegularisation,
 )
 
 
@@ -27,14 +29,17 @@ def regularisation_resolver(
             regulariser=regulariser,
             regulariser_parameters=regulariser_parameters,
         )
-    elif regularisation_scheme == schemes.RegularisationScheme.wasserstein:
-        return WassersteinRegularisation(
+    elif regularisation_scheme == schemes.RegularisationScheme.gaussian_wasserstein:
+        return GaussianWassersteinRegularisation(
             gp=gp,
             regulariser=regulariser,
             regulariser_parameters=regulariser_parameters,
         )
-    elif regularisation_scheme == schemes.RegularisationScheme.point_wise_wasserstein:
-        return PointWiseWassersteinRegularisation(
+    elif (
+        regularisation_scheme
+        == schemes.RegularisationScheme.point_wise_gaussian_wasserstein
+    ):
+        return PointWiseGaussianWassersteinRegularisation(
             gp=gp,
             regulariser=regulariser,
             regulariser_parameters=regulariser_parameters,
@@ -65,6 +70,16 @@ def regularisation_resolver(
         )
     elif regularisation_scheme == schemes.RegularisationScheme.point_wise_renyi:
         return PointWiseRenyiRegularisation(
+            gp=gp,
+            regulariser=regulariser,
+            regulariser_parameters=regulariser_parameters,
+        )
+    elif regularisation_scheme == schemes.RegularisationScheme.multinomial_wasserstein:
+        assert isinstance(gp, GPClassificationBase), "GP must be a classification GP"
+        assert isinstance(
+            regulariser, GPClassificationBase
+        ), "Regulariser must be a classification GP"
+        return MultinomialWassersteinRegularisation(
             gp=gp,
             regulariser=regulariser,
             regulariser_parameters=regulariser_parameters,

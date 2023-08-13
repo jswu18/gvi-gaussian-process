@@ -14,7 +14,7 @@ from src.utils.matrix_operations import (
 )
 
 
-class WassersteinRegularisation(RegularisationBase):
+class GaussianWassersteinRegularisation(RegularisationBase):
     def __init__(
         self,
         gp: GPBase,
@@ -134,7 +134,7 @@ class WassersteinRegularisation(RegularisationBase):
         )
         if include_eigendecomposition:
             batch_size, train_size = gram_batch_train_p.shape
-            cross_covariance_eigenvalues = WassersteinRegularisation._compute_cross_covariance_eigenvalues(
+            cross_covariance_eigenvalues = GaussianWassersteinRegularisation._compute_cross_covariance_eigenvalues(
                 gram_batch_train_p,
                 gram_batch_train_q,
                 eigenvalue_regularisation=eigenvalue_regularisation,
@@ -195,7 +195,7 @@ class WassersteinRegularisation(RegularisationBase):
             )
             return jnp.mean(
                 jax.vmap(
-                    lambda m_p, c_p, m_q, c_q, c_bt_p, c_bt_q: WassersteinRegularisation.calculate_gaussian_wasserstein_metric(
+                    lambda m_p, c_p, m_q, c_q, c_bt_p, c_bt_q: GaussianWassersteinRegularisation.calculate_gaussian_wasserstein_metric(
                         mean_train_p=m_p,
                         covariance_train_p_diagonal=c_p,
                         mean_train_q=m_q,
@@ -219,7 +219,7 @@ class WassersteinRegularisation(RegularisationBase):
         else:
             return jnp.mean(
                 jax.vmap(
-                    lambda m_p, c_p, m_q, c_q: WassersteinRegularisation.calculate_gaussian_wasserstein_metric(
+                    lambda m_p, c_p, m_q, c_q: GaussianWassersteinRegularisation.calculate_gaussian_wasserstein_metric(
                         mean_train_p=m_p,
                         covariance_train_p_diagonal=c_p,
                         mean_train_q=m_q,

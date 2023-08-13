@@ -16,8 +16,34 @@ class GeneralisedVariationalInference:
         regularisation: RegularisationBase,
         empirical_risk: EmpiricalRiskBase,
     ):
-        self.regularisation = regularisation
-        self.empirical_risk = empirical_risk
+        self._regularisation = regularisation
+        self._empirical_risk = empirical_risk
+        self._jit_compiled_calculate_loss = jax.jit(
+            lambda parameters, x, y: self._calculate_loss(
+                parameters=parameters, x=x, y=y
+            )
+        )
+
+    @property
+    def regularisation(self) -> RegularisationBase:
+        return self._regularisation
+
+    @regularisation.setter
+    def regularisation(self, regularisation: RegularisationBase) -> None:
+        self._regularisation = regularisation
+        self._jit_compiled_calculate_loss = jax.jit(
+            lambda parameters, x, y: self._calculate_loss(
+                parameters=parameters, x=x, y=y
+            )
+        )
+
+    @property
+    def empirical_risk(self) -> EmpiricalRiskBase:
+        return self._empirical_risk
+
+    @empirical_risk.setter
+    def empirical_risk(self, empirical_risk: EmpiricalRiskBase) -> None:
+        self._empirical_risk = empirical_risk
         self._jit_compiled_calculate_loss = jax.jit(
             lambda parameters, x, y: self._calculate_loss(
                 parameters=parameters, x=x, y=y

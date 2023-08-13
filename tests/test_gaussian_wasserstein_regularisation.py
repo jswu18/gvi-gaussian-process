@@ -17,7 +17,7 @@ config.update("jax_enable_x64", True)
 
 
 @pytest.mark.parametrize(
-    "log_observation_noise,x_train,y_train,x,wasserstein_regularisation",
+    "log_observation_noise,x_train,y_train,x,gaussian_wasserstein_regularisation",
     [
         [
             jnp.log(1.0),
@@ -38,12 +38,12 @@ config.update("jax_enable_x64", True)
         ],
     ],
 )
-def test_zero_wasserstein_gp_regression(
+def test_zero_gaussian_wasserstein_gp_regression(
     log_observation_noise: float,
     x_train: jnp.ndarray,
     y_train: jnp.ndarray,
     x: jnp.ndarray,
-    wasserstein_regularisation,
+    gaussian_wasserstein_regularisation,
 ):
     gp = GPRegression(
         mean=MockMean(),
@@ -56,7 +56,7 @@ def test_zero_wasserstein_gp_regression(
         mean=MockMean.Parameters(),
         kernel=MockKernel.Parameters(),
     )
-    wasserstein = GaussianWassersteinRegularisation(
+    gaussian_wasserstein = GaussianWassersteinRegularisation(
         gp=gp,
         regulariser=gp,
         regulariser_parameters=gp_parameters,
@@ -64,16 +64,16 @@ def test_zero_wasserstein_gp_regression(
         include_eigendecomposition=True,
     )
     assert jnp.isclose(
-        wasserstein.calculate_regularisation(
+        gaussian_wasserstein.calculate_regularisation(
             parameters=gp_parameters,
             x=x,
         ),
-        wasserstein_regularisation,
+        gaussian_wasserstein_regularisation,
     )
 
 
 @pytest.mark.parametrize(
-    "log_observation_noise,x,wasserstein_regularisation",
+    "log_observation_noise,x,gaussian_wasserstein_regularisation",
     [
         [
             jnp.log(1.0),
@@ -87,10 +87,10 @@ def test_zero_wasserstein_gp_regression(
         ],
     ],
 )
-def test_zero_wasserstein_approximate_gp_regression(
+def test_zero_gaussian_wasserstein_approximate_gp_regression(
     log_observation_noise: float,
     x: jnp.ndarray,
-    wasserstein_regularisation,
+    gaussian_wasserstein_regularisation,
 ):
     gp = ApproximateGPRegression(
         mean=MockMean(),
@@ -101,7 +101,7 @@ def test_zero_wasserstein_approximate_gp_regression(
         mean=MockMean.Parameters(),
         kernel=MockKernel.Parameters(),
     )
-    wasserstein = GaussianWassersteinRegularisation(
+    gaussian_wasserstein = GaussianWassersteinRegularisation(
         gp=gp,
         regulariser=gp,
         regulariser_parameters=gp_parameters,
@@ -110,16 +110,16 @@ def test_zero_wasserstein_approximate_gp_regression(
     )
 
     assert jnp.isclose(
-        wasserstein.calculate_regularisation(
+        gaussian_wasserstein.calculate_regularisation(
             parameters=gp_parameters,
             x=x,
         ),
-        wasserstein_regularisation,
+        gaussian_wasserstein_regularisation,
     )
 
 
 @pytest.mark.parametrize(
-    "log_observation_noise,x_train,y_train,x,wasserstein_regularisation",
+    "log_observation_noise,x_train,y_train,x,gaussian_wasserstein_regularisation",
     [
         [
             jnp.log(1.0),
@@ -140,12 +140,12 @@ def test_zero_wasserstein_approximate_gp_regression(
         ],
     ],
 )
-def test_wasserstein_gp_regression(
+def test_gaussian_wasserstein_gp_regression(
     log_observation_noise: float,
     x_train: jnp.ndarray,
     y_train: jnp.ndarray,
     x: jnp.ndarray,
-    wasserstein_regularisation,
+    gaussian_wasserstein_regularisation,
 ):
     regulariser = GPRegression(
         mean=MockMean(),
@@ -162,23 +162,23 @@ def test_wasserstein_gp_regression(
         mean=MockMean.Parameters(),
         kernel=MockKernel.Parameters(),
     )
-    wasserstein = GaussianWassersteinRegularisation(
+    gaussian_wasserstein = GaussianWassersteinRegularisation(
         gp=gp,
         regulariser=regulariser,
         regulariser_parameters=parameters,
         include_eigendecomposition=True,
     )
     assert jnp.isclose(
-        wasserstein.calculate_regularisation(
+        gaussian_wasserstein.calculate_regularisation(
             parameters=parameters,
             x=x,
         ),
-        wasserstein_regularisation,
+        gaussian_wasserstein_regularisation,
     )
 
 
 @pytest.mark.parametrize(
-    "log_observation_noise,number_of_classes,x_train,y_train,x,wasserstein_regularisation",
+    "log_observation_noise,number_of_classes,x_train,y_train,x,gaussian_wasserstein_regularisation",
     [
         [
             jnp.log(jnp.array([0.1, 0.2, 0.4, 1.8])),
@@ -205,13 +205,13 @@ def test_wasserstein_gp_regression(
         ],
     ],
 )
-def test_zero_wasserstein_gp_classification(
+def test_zero_gaussian_wasserstein_gp_classification(
     log_observation_noise: float,
     number_of_classes,
     x_train: jnp.ndarray,
     y_train: jnp.ndarray,
     x: jnp.ndarray,
-    wasserstein_regularisation: float,
+    gaussian_wasserstein_regularisation: float,
 ):
     gp = GPClassification(
         mean=MockMean(number_output_dimensions=number_of_classes),
@@ -226,7 +226,7 @@ def test_zero_wasserstein_gp_classification(
             kernels=[MockKernelParameters()] * number_of_classes
         ),
     )
-    wasserstein = GaussianWassersteinRegularisation(
+    gaussian_wasserstein = GaussianWassersteinRegularisation(
         gp=gp,
         regulariser=gp,
         regulariser_parameters=gp_parameters,
@@ -234,16 +234,16 @@ def test_zero_wasserstein_gp_classification(
         include_eigendecomposition=True,
     )
     assert jnp.isclose(
-        wasserstein.calculate_regularisation(
+        gaussian_wasserstein.calculate_regularisation(
             parameters=gp_parameters,
             x=x,
         ),
-        wasserstein_regularisation,
+        gaussian_wasserstein_regularisation,
     )
 
 
 @pytest.mark.parametrize(
-    "log_observation_noise,number_of_classes,x,wasserstein_regularisation",
+    "log_observation_noise,number_of_classes,x,gaussian_wasserstein_regularisation",
     [
         [
             jnp.log(jnp.array([0.1, 0.2, 0.4, 1.8])),
@@ -258,11 +258,11 @@ def test_zero_wasserstein_gp_classification(
         ],
     ],
 )
-def test_zero_wasserstein_approximate_gp_classification(
+def test_zero_gaussian_wasserstein_approximate_gp_classification(
     log_observation_noise: float,
     number_of_classes,
     x: jnp.ndarray,
-    wasserstein_regularisation: float,
+    gaussian_wasserstein_regularisation: float,
 ):
     gp = ApproximateGPClassification(
         mean=MockMean(number_output_dimensions=number_of_classes),
@@ -275,7 +275,7 @@ def test_zero_wasserstein_approximate_gp_classification(
             kernels=[MockKernelParameters()] * number_of_classes
         ),
     )
-    wasserstein = GaussianWassersteinRegularisation(
+    gaussian_wasserstein = GaussianWassersteinRegularisation(
         gp=gp,
         regulariser=gp,
         regulariser_parameters=gp_parameters,
@@ -284,16 +284,16 @@ def test_zero_wasserstein_approximate_gp_classification(
     )
 
     assert jnp.isclose(
-        wasserstein.calculate_regularisation(
+        gaussian_wasserstein.calculate_regularisation(
             parameters=gp_parameters,
             x=x,
         ),
-        wasserstein_regularisation,
+        gaussian_wasserstein_regularisation,
     )
 
 
 @pytest.mark.parametrize(
-    "log_observation_noise,number_of_classes,x_train,y_train,x,wasserstein_regularisation",
+    "log_observation_noise,number_of_classes,x_train,y_train,x,gaussian_wasserstein_regularisation",
     [
         [
             jnp.log(jnp.array([0.1, 0.2, 0.4, 1.8])),
@@ -320,13 +320,13 @@ def test_zero_wasserstein_approximate_gp_classification(
         ],
     ],
 )
-def test_wasserstein_gp_classification(
+def test_gaussian_wasserstein_gp_classification(
     log_observation_noise: float,
     number_of_classes,
     x_train: jnp.ndarray,
     y_train: jnp.ndarray,
     x: jnp.ndarray,
-    wasserstein_regularisation: float,
+    gaussian_wasserstein_regularisation: float,
 ):
     regulariser = GPClassification(
         mean=MockMean(number_output_dimensions=number_of_classes),
@@ -345,16 +345,16 @@ def test_wasserstein_gp_classification(
             kernels=[MockKernelParameters()] * number_of_classes
         ),
     )
-    wasserstein = GaussianWassersteinRegularisation(
+    gaussian_wasserstein = GaussianWassersteinRegularisation(
         gp=gp,
         regulariser=regulariser,
         regulariser_parameters=parameters,
         include_eigendecomposition=True,
     )
     assert jnp.isclose(
-        wasserstein.calculate_regularisation(
+        gaussian_wasserstein.calculate_regularisation(
             parameters=parameters,
             x=x,
         ),
-        wasserstein_regularisation,
+        gaussian_wasserstein_regularisation,
     )

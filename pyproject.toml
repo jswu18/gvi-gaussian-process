@@ -26,6 +26,7 @@ tqdm = "^4.65.0"
 jax = { extras = ["cuda12_pip"], version = "0.4.13" } # use for GPU
 #jax="0.4.13" # use for CPU
 #jaxlib="0.4.13" # use for CPU
+jax-metrics = "^0.2.5"
 
 [tool.poetry.dev-dependencies]
 black = "~22.6"

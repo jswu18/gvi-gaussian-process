@@ -14,12 +14,12 @@ from src.regularisations.point_wise.point_wise_symmetric_kl_regularisation impor
     PointWiseSymmetricKLRegularisation,
 )
 from src.regularisations.point_wise.point_wise_wasserstein_regularisation import (
-    PointWiseWassersteinRegularisation,
+    PointWiseGaussianWassersteinRegularisation,
 )
 
 __all__ = [
     "PointWiseBhattacharyyaRegularisation",
-    "PointWiseWassersteinRegularisation",
+    "PointWiseGaussianWassersteinRegularisation",
     "PointWiseKLRegularisation",
     "PointWiseSymmetricKLRegularisation",
     "PointWiseRenyiRegularisation",

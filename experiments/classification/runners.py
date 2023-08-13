@@ -96,7 +96,6 @@ def train_reference_gp(
             x=x,
             y=y,
         ),
-        disable_tqdm=True,
     )
     gp_parameters = gp.generate_parameters(gp_parameters.dict())
     return gp, gp_parameters, post_epoch_history, inducing_data_list
@@ -122,7 +121,7 @@ def meta_train_reference_gp(
     post_epoch_histories: List[List[Dict[str, float]]] = []
     gp, gp_parameters = None, None
     inducing_data_list: List[Data] = []
-    for i in tqdm(range(number_of_iterations)):
+    for i in range(number_of_iterations):
         gp, gp_parameters, post_epoch_history, inducing_data_list = train_reference_gp(
             data_list=data_list,
             empirical_risk_scheme=empirical_risk_scheme,
