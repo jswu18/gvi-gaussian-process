@@ -96,40 +96,39 @@ Summarise your report concisely.
 \setcounter{page}{1}
 \section{GPs: Flexible but \textit{not} Scaleable}
 Gaussian Processes (GPs) are powerful universal function approximators that can be used for both regression and classification tasks. In the following sections we will review GPs followed by a discussion of their strengths and weaknesses.
-\subsection{The GP}
-We introduce the GP following the formulation from \cite{rasmussen2003gaussian}. Given an input space $\mathcal{X}$, a GP is a random function mapping $F(\cdot)$ where a sample function $f(\cdot) \sim F(\cdot)$ applies the mapping $f: \mathcal{X} \rightarrow \mathbb{R}$. Denoted:
+\subsection{The GP}\label{section:the-gp}
+We introduce the GP following the formulation from \cite{rasmussen2003gaussian}. Given an input space $\mathcal{X}$, a GP is a random function mapping $F(\cdot)$ where a sample function $f(\cdot) \sim F(\cdot)$ applies the mapping $f: \mathcal{X} \rightarrow \mathbb{R}$. We denote:
 \begin{align}
-    f(\cdot) \sim F(\cdot) = \GP\left(m_p(\cdot), k_p(\cdot)\right)
+    f(\cdot) \sim F(\cdot) = \GP\left(m_p(\cdot), k_p(\cdot, \cdot)\right)
     \label{gp}
 \end{align}
-a GP is defined with respect to a mean function $m_p: \mathcal{X} \rightarrow \mathbb{R}$ and a positive definite kernel $k_p: \mathcal{X} \times \mathcal{X} \rightarrow \mathbb{R}$ such that:
+where a GP is defined with respect to a mean function $m_p: \mathcal{X} \rightarrow \mathbb{R}$ and a positive definite kernel function $k_p: \mathcal{X} \times \mathcal{X} \rightarrow \mathbb{R}$ such that:
 \begin{align}
     F(\cdot) = \mathcal{N}(m_p(\cdot), k_p(\cdot, \cdot))
     \label{gp-normal}
 \end{align}
-In other words, for $N$ points $\mathbf{X}_N = \left\{ x_n\right\}_{n=1}^N$ where $x_n \in \mathcal{X}$, a GP constructs the Gaussian distribution for a random vector $Y_N \in \mathbb{R}^{N}$:
+In other words, for $N$ points $\mathbf{X}_N = \left\{ x_n\right\}_{n=1}^N$ where $x_n \in \mathcal{X}$, a GP constructs the Gaussian distribution for a random response vector $Y_N \in \mathbb{R}^{N}$:
 \begin{align}
     \label{gp-vector}
     P\left(Y_N \vert \mathbf{X}_N\right) = F\left( \mathbf{X}_N\right) = \mathcal{N}\left(\mathbf{m}_{p\left(\mathbf{X}_N\right)}, \mathbf{K}_{p\left(\mathbf{X}_N, \mathbf{X}_N\right)}\right)
 \end{align}
-%where the evaluation $F_X \coloneqq \left[F(x_1) \cdots F(x_n)\right]^T \in \mathbb{R}^N$ will follow the Gaussian distribution
 where $\mathbf{m}_{p(\mathbf{X}_N)} = \left[ m_p(x_1) \cdots m_p(x_N)\right]^T \in \mathbb{R}^N$ and $\mathbf{K}_{p(\mathbf{X}_N, \mathbf{X}_N)} \in \mathbb{R}^{N \times N}$ having elements:
 \begin{align}
     \left[\mathbf{K}_{p(\mathbf{X}_N, \mathbf{X}_N)}\right]_{n, n'} = k_p(x_n, x_{n'})
 \end{align}
-for $n, n'=1,\dots, N$. Bold font $\mathbf{X}_N$ and $\mathbf{X}_N$ will be a shorthand for denoting known vectors or matrices of the form $\mathbf{X}_N = \left\{ x_n\right\}_{n=1}^N$ and $\mathbf{Y}_N = \left\{ y_n\right\}_{n=1}^N$ respectively. $X_N$ and $Y_N$ will denote random vectors or matrices.
+for $n, n'=1,\dots, N$. Bold font $\mathbf{X}_N$ and $\mathbf{Y}_N$ will be a shorthand for denoting known vectors or matrices of the form $\mathbf{X}_N = \left\{ x_n\right\}_{n=1}^N$ and $\mathbf{Y}_N = \left\{ y_n\right\}_{n=1}^N$ respectively. $X_N$ and $Y_N$ will denote random vectors or matrices.
 \subsection{GP Regression}
-Consider the regression task where we have $N$ observation pairs $\left\{(x_n, y_n)\right\}_{n=1}^{N}$ with $x_n \in \mathcal{X}$ and $y_n \in \mathbb{R}$. GP regression assumes data generating process:
+Consider the regression task where we have $N$ observation pairs $\left\{(x_n, y_n)\right\}_{n=1}^{N}$ with inputs $x_n \in \mathcal{X}$ and responses $y_n \in \mathbb{R}$. GP regression assumes the data generating process:
 \begin{align}
-    y \sim F(x) + E
+    y_n \sim F(x_n) + E
     \label{regression-data-uncertainties}
 \end{align}
-where a random function mapping $F: \mathcal{X} \rightarrow \mathbb{R}$ accounts for the epistemic (model) uncertainty and the random scalar $E$ accounts for the aleatoric (data) uncertainty. In this formulation, we assume that the aleatoric uncertainty is homoscedastic of the form:
+where the GP random function mapping $F(\cdot)$ accounts for the epistemic (model) uncertainty and the random scalar $E$ accounts for the aleatoric (data) uncertainty. In this formulation, we assume that the aleatoric uncertainty is homoscedastic of the form:
 \begin{align}
     E = \mathcal{N} \left(0, \sigma^2\right)
     \label{aleotric-uncertainty}
 \end{align}
-GP regression uses the formulation in (\ref{gp}) to `predict' for $N^*$ test points $\mathbf{X}_{N^*} = \left\{ x_{n^*}\right\}_{n^*=1}^{N^*}$ with a Bayesian posterior. ($\ref{gp-vector}$) provides a prior for the response vector of the test points:
+GP regression uses the formulation in Section~\ref{section:the-gp} to `predict' for $N^*$ test points $\mathbf{X}_{N^*} = \left\{ x_{n^*}\right\}_{n^*=1}^{N^*}$ with a Bayesian posterior. ($\ref{gp-vector}$) provides the prior for the response vector of the test points:
 \begin{align}
     \label{gp-prior}
     P\left(Y_{N^*}\vert \mathbf{X}_{N^*}\right)
@@ -159,12 +158,12 @@ and
     \label{gp-epistemic-posterior-covariance}
     \hat{\mathbf{K}}_{p(\mathbf{X}_{N*}, \mathbf{X}_{N*})} = \mathbf{K}_{p(\mathbf{X}_{N*}, \mathbf{X}_{N*})} - \mathbf{K}_{p(\mathbf{X}_{N*}, \mathbf{X}_N)}\mathbf{K}_{p(\mathbf{X}_N, \mathbf{X}_N)}^{-1}\mathbf{K}_{p(\mathbf{X}_N, \mathbf{X}_{N*})}
 \end{align}
-With the aleoteric data uncertainty also modelled as a Gaussian in (\ref{aleotric-uncertainty}), GP regression models the test data responses in closed form, known as the predictive posterior:
+With the aleoteric data uncertainty also modelled as a Gaussian in (\ref{aleotric-uncertainty}), GP regression models the test data responses in the closed form:
 \begin{align}
     \mathbf{Y}_{N^*} \sim P_{\GP}\left(Y_{N^*} \vert \mathbf{Y}_N, \mathbf{X}_N, \mathbf{X}_{N^*}, \sigma^2\right)
     \label{gp-posterior}
 \end{align}
-where:
+This is known as the predictive posterior where:
 \begin{align}
     P_{\GP}\left(Y_{N^*} \vert \mathbf{Y}_N, \mathbf{X}_N, \mathbf{X}_{N^*}, \sigma^2\right) = \mathcal{N}\left(\bar{\mathbf{m}}_{p(\mathbf{X}_{N^*})}, \bar{\mathbf{K}}_{p(\mathbf{X}_{N^*}, \mathbf{X}_{N^*})}\right)
     \label{gp-posterior-normal}
@@ -194,7 +193,7 @@ where $\mathbf{I}_N \in \mathbb{R}^{N \times N}$ is the identity matrix.
 % \end{align}
 % where $F_c \in \{0, 1\}$ is a random vector, providing the desired binary classifier behaviour.
 % \subsubsection{Multi-label Classification}
-Consider the classification task where we have $N$ observation pairs $\left\{(x_n, y_n)\right\}_{n=1}^{N}$ with $x_n \in \mathcal{X}$ and $y_n \in \{1, \dots, J\}$. In other words, each input $x$ is mapped to one of $J$ labels. Following the GP classification approach from \cite{matthews2017scalable}, we first construct a GP regression model for each label such that for a test point $x \in \mathcal{X}$, the posterior prediction is Gaussian:
+Consider the classification task where we have $N$ observation pairs $\left\{(x_n, y_n)\right\}_{n=1}^{N}$ with inputs $x_n \in \mathcal{X}$ and responses $y_n \in \{1, \dots, J\}$. In other words, each input $x$ is mapped to one of $J$ labels. Following the GP classification approach from \cite{matthews2017scalable}, we first construct a GP regression model for each label such that for a test point $x \in \mathcal{X}$, the posterior prediction is Gaussian:
 \begin{align}
     y^j \sim \mathcal{N}\left(\bar{m}_p^j(x), \bar{k}_p^j(x, x)\right)
     \label{gp-classifier-regressors}
@@ -229,14 +228,14 @@ with:
 where $\left\{w_i, \xi_i\right\}_{i=1}^I$ are the weights and roots of the Hermite polynomial of order $I \in \mathbb{N}$ and  $\phi(\cdot)$ is the standard normal cumulative distribution function. This analytical expression can be used for inference on GP classifier parameters when defining a loss objective with respect to the log-likelihood.
 
 \subsection{The GP Lacks Scaleability}
-In both regression and classification tasks, GPs are an extremely flexible modelling approach. Minimal requirements on the mean function $m_p: \mathcal{X} \rightarrow \mathbb{R}$ and postive definite kernel function $k_p: \mathcal{X} \times \mathcal{X} \rightarrow \mathbb{R}$ in (\ref{gp}) provide endless choices for GP construction. This offers complete control and visibility over the model's behaviour, a strong advantage compared to other modelling approaches. 
+In both regression and classification tasks, GPs are an extremely flexible modelling approach. Minimal requirements on the mean function $m_p: \mathcal{X} \rightarrow \mathbb{R}$ and postive definite kernel function $k_p: \mathcal{X} \times \mathcal{X} \rightarrow \mathbb{R}$ in (\ref{gp}) provide endless choices for GP construction. This offers complete control and visibility into the model's behaviour, a strong advantage compared to other modelling approaches. 
 
-The main drawback of GPs has been their inability to scale with respect to $N$, the number of training points. Both classification and regression relies on evaluating the inversion of an $\mathbb{R}^{N \times N}$ matrix in $\ref{gp-posterior-mean}$ and $\ref{gp-posterior-covariance}$. This operation has computational complexity $\mathcal{O}(N^3)$ and space complexity $\mathcal{O}(N^2)$, both of which quickly become problematic when scaling to larger-sized training sets. Despite their impressive performance and theoretically-driven Bayesian approach, the computational intractability of GPs has been a serious limitation, restricting their application to problem domains with smaller sized training data sets. 
+The main drawback of GPs has been their inability to scale with respect to $N$, the number of training points. Both classification and regression relies on evaluating the inversion of an $\mathbb{R}^{N \times N}$ matrix in $\ref{gp-posterior-mean}$ and $\ref{gp-posterior-covariance}$. This operation has computational complexity $\mathcal{O}(N^3)$ and space complexity $\mathcal{O}(N^2)$, both of which quickly become problematic when scaling to larger-sized training sets. Despite their impressive performance and theoretically-driven Bayesian approach, the computational intractability of GPs has been a serious limitation, restricting their application to problem domains with smaller sized training data sets. In the next section, we will present sparse variational Gaussian Processes (svGPs), a common approach to scaling GPs to larger data sets.
 
 
 \newpage
 \section{svGPs: Scaleable but \textit{not} Flexible}
-Sparse variational Gaussian Processes (svGPs), proposed by \cite{titsias2009variational}, are a common approach to ensuring computational tractability when scaling GPs. We will review this formulation followed by a discussion of the strengths and weakness of the approach.
+Sparse variational Gaussian Processes (svGPs) proposed by \cite{titsias2009variational}, are a common approach to ensuring computational tractability when scaling GPs. We will review this formulation followed by a discussion of the strengths and weakness of the approach.
 
 \subsection{The svGP}
 The svGP assumes that a subset of inducing points $\{x_m, y_m\}_{m=1}^{M} \subset \{x_n, y_n\}_{n=1}^{N}$ where $M << N$ can adequately capture the relationships in the full training data. This approach constructs an svGP:
@@ -258,28 +257,40 @@ where:
     \bar{\mathbf{m}}_{q\left(\mathbf{X}_{N^*}\right)}^{(\nu)} = \mathbf{m}_{p\left(\mathbf{X}_{N^*}\right)} +  \mathbf{K}_{p( \mathbf{X}_{N^*}, \mathbf{X}_M)}\mathbf{K}_{p(\mathbf{X}_M, \mathbf{X}_M)}^{-1} \boldsymbol{\mu}
 \end{align}
 where $\mathbf{X}_M = \left\{ x_m\right\}_{m=1}^M$ and a kernel function parameterised by a positive definite matrix $\mathbf{\Sigma} \in \mathbb{R}^{M\times M}_{\succ 0}$:
-\begin{multline}
-\begin{split}
-\bar{\mathbf{K}}_{q\left(\mathbf{X}_{N^*}, \mathbf{X}_{N^*}\right)}^{(\nu)} &=  \mathbf{K}_{p\left(\mathbf{X}_{N^*}, \mathbf{X}_{N^*}\right)} \\
-& - \mathbf{K}_{p(\mathbf{X}_{N^*}, \mathbf{X}_M)} \mathbf{K}_{p(\mathbf{X}_M, \mathbf{X}_M)}^{-1}\mathbf{K}_{p(\mathbf{X}_M, \mathbf{X}_{N^*})} \\
-& + \mathbf{K}_{p(\mathbf{X}_{N^*}, \mathbf{X}_M)}  \mathbf{K}_{p(\mathbf{X}_M, \mathbf{X}_M)}  ^{-1} \mathbf{\Sigma}\mathbf{K}_{p(\mathbf{X}_M, \mathbf{X}_M)}^{-1} \mathbf{K}_{p(\mathbf{X}_M, \mathbf{X}_{N^*})}
-\end{split}
+% \begin{multline}
+% \begin{split}
+% \bar{\mathbf{K}}_{q\left(\mathbf{X}_{N^*}, \mathbf{X}_{N^*}\right)}^{(\nu)} &=  \mathbf{K}_{p\left(\mathbf{X}_{N^*}, \mathbf{X}_{N^*}\right)} \\
+% & - \mathbf{K}_{p(\mathbf{X}_{N^*}, \mathbf{X}_M)} \mathbf{K}_{p(\mathbf{X}_M, \mathbf{X}_M)}^{-1}\mathbf{K}_{p(\mathbf{X}_M, \mathbf{X}_{N^*})} \\
+% & + \mathbf{K}_{p(\mathbf{X}_{N^*}, \mathbf{X}_M)}  \mathbf{K}_{p(\mathbf{X}_M, \mathbf{X}_M)}  ^{-1} \mathbf{\Sigma}\mathbf{K}_{p(\mathbf{X}_M, \mathbf{X}_M)}^{-1} \mathbf{K}_{p(\mathbf{X}_M, \mathbf{X}_{N^*})}
+% \end{split}
+% \label{svgp-covariance}
+% \end{multline}
+\begin{align}
+\bar{\mathbf{K}}_{q\left(\mathbf{X}_{N^*}, \mathbf{X}_{N^*}\right)}^{(\nu)} & = \mathbf{K}_{p\left(\mathbf{X}_{N^*}, \mathbf{X}_{N^*}\right)} \nonumber \\
+&\qquad - \mathbf{K}_{p(\mathbf{X}_{N^*}, \mathbf{X}_M)} \mathbf{K}_{p(\mathbf{X}_M, \mathbf{X}_M)}^{-1}\mathbf{K}_{p(\mathbf{X}_M, \mathbf{X}_{N^*})} \nonumber \\
+&\qquad + \mathbf{K}_{p(\mathbf{X}_{N^*}, \mathbf{X}_M)}  \mathbf{K}_{p(\mathbf{X}_M, \mathbf{X}_M)}  ^{-1} \mathbf{\Sigma}\mathbf{K}_{p(\mathbf{X}_M, \mathbf{X}_M)}^{-1} \mathbf{K}_{p(\mathbf{X}_M, \mathbf{X}_{N^*})}
 \label{svgp-covariance}
-\end{multline}
-Together, these define the parameter space $\mathbf{\Gamma}$:
+\end{align}
+Together, these define the parameter space:
 \begin{align}
     \mathbf{\Gamma} = \left\{\boldsymbol{\mu} \in \mathbb{R}^{M}, \mathbf{\Sigma} \in \mathbb{R}^{M\times M}_{\succ 0}, \left\{x_m, y_m\right\}_{m=1}^{M} \subset \{x_n, y_n\}_{n=1}^{N}\right\}
     \label{svgp-parameter-space}
 \end{align}
-We wish to find $\nu \in \Gamma$ such that the svGP Gaussian distribution $Q^{(\nu)}$ approximates the exact posterior distribution from ($\ref{bayes-posterior}$):
+We wish to find $\nu^* \in \Gamma$ such that for any test points $\mathbf{X}_{N^*}$ the svGP Gaussian distribution $Q^{(\nu^*)}$ approximates the exact posterior distribution from ($\ref{bayes-posterior}$):
 \begin{align}
-    P_{\GP}\left(Y_{N^*} \vert \mathbf{X}_{N^*}, \mathbf{Y}_N, \mathbf{X}_N, \sigma^2 \right) \approx Q_{\GP}^{(\nu)}\left(Y_{N^*} \vert \mathbf{X}_{N^*}\right)
+    P_{\GP}\left(Y_{N^*} \vert \mathbf{X}_{N^*}, \mathbf{Y}_N, \mathbf{X}_N, \sigma^2 \right) \approx Q_{\GP}^{(\nu^*)}\left(Y_{N^*} \vert \mathbf{X}_{N^*}\right)
+    \label{svgp-desired-approximation}
 \end{align}
-\\ \jw{Show that variational learning approach is the minimisation of the KLD between the exact predictive posterior and the approximate posterior}
+To approximate the exact predictive posterior, \cite{titsias2009variational} derives the free energy lower bound:
+\begin{align}
+    math
+    \label{elbo}
+\end{align}
+Thus, the approximation in (\ref{svgp-desired-approximation}) is equivalent to minimising the KL-divergence:
 \begin{align}
     \nu^* = \argmin_{\nu \in \Gamma}\KLD \left[ Q_{\GP}^{(\nu)}\left(Y_{N^*} \vert \mathbf{X}_{N^*}\right) \Big\| P_{\GP}\left(Y_{N^*} \vert \mathbf{X}_{N^*}, \mathbf{Y}_N, \mathbf{X}_N, \sigma^2 \right) \right]
 \end{align}
-\cite{titsias2009variational} shows that for a given set of inducing points $\left\{ x_m, y_m\right\}_{m=1}^M$, the optimal choices $\boldsymbol{\mu}^*$ and $\mathbf{\Sigma}^*$ have the closed forms:
+for any test points $\mathbf{X}_{N^*}$. \cite{titsias2009variational} shows that for a given set of inducing points $\left\{ x_m, y_m\right\}_{m=1}^M$, the optimal choices $\boldsymbol{\mu}^*$ and $\mathbf{\Sigma}^*$ have the closed forms:
 \begin{align}
     \label{svgp-optimal-mean}
     \boldsymbol{\mu}^* = \sigma^{-2}\mathbf{K}_{p(\mathbf{X}_M, \mathbf{X}_M)} \left( \mathbf{K}_{p(\mathbf{X}_M, \mathbf{X}_M)} + \sigma^{-2}\mathbf{K}_{p(\mathbf{X}_M, \mathbf{X}_N)}\mathbf{K}_{p(\mathbf{X}_N, \mathbf{X}_M)}\right)^{-1}\mathbf{K}_{p(\mathbf{X}_M, \mathbf{X}_N)} \left(\mathbf{Y}_N - \mathbf{m}_{p\left(\mathbf{X}_N\right)}\right)
@@ -289,7 +300,7 @@ and
     \label{svgp-optimal-covariance}
     \mathbf{\Sigma}^* = \mathbf{K}_{p(\mathbf{X}_M, \mathbf{X}_M)} \left(\mathbf{K}_{p(\mathbf{X}_M, \mathbf{X}_M)} +  \sigma^{-2}\mathbf{K}_{p(\mathbf{X}_M, \mathbf{X}_N)}\mathbf{K}_{p(\mathbf{X}_N, \mathbf{X}_M)}\right)^{-1}\mathbf{K}_{p(\mathbf{X}_M, \mathbf{X}_M)}
 \end{align}
-This formulation ensures matrix inversion of matrices of $\mathbb{R}^{M \times M}$ with $\mathcal{O}\left(M^3\right)$ computational complexity. The operation $\mathbf{K}_{p(\mathbf{X}_M, \mathbf{X}_N)}\mathbf{K}_{p(\mathbf{X}_N, \mathbf{X}_M)}$ in (\ref{svgp-optimal-mean}) and (\ref{svgp-optimal-covariance}) has computational complexity $\mathcal{O}\left(NM^2\right)$, but is a pre-computed constant. Thus, the overall predictive computational complexity of this approach is $\mathcal{O}\left(M^3\right)$ and the space complexity is $\mathcal{O}\left(M^2\right)$, significantly improving the scalability of GP approaches.
+This formulation ensures matrix inversion of matrices of $\mathbb{R}^{M \times M}$ with $\mathcal{O}\left(M^3\right)$ computational complexity. The operation $\mathbf{K}_{p(\mathbf{X}_M, \mathbf{X}_N)}\mathbf{K}_{p(\mathbf{X}_N, \mathbf{X}_M)}$ in (\ref{svgp-optimal-mean}) and (\ref{svgp-optimal-covariance}) has computational complexity $\mathcal{O}\left(NM^2\right)$, but is a pre-computed constant. Thus, the predictive computational complexity of this approach is $\mathcal{O}\left(M^3\right)$ with space complexity is $\mathcal{O}\left(M^2\right)$, significantly improving the scalability of GP approaches.
 
 \subsubsection{Inducing Points Selection}
 Finding the optimal inducing points $\left\{x_m, y_m\right\}_{m=1}^{M} \subset \{x_n, y_n\}_{n=1}^{N}$ that optimise the loss objective $\mathcal{L}(\nu)$ in ($\ref{elbo}$) can be computationally expensive. \cite{burt2020convergence} proposes a greedy variance selection method which iteratively selects the next inducing point based on the highest marginal variance in the prior conditioned on the current set of inducing points:
@@ -300,19 +311,42 @@ Finding the optimal inducing points $\left\{x_m, y_m\right\}_{m=1}^{M} \subset \
 where $m < M$, $\mathbf{X}_{m}$ are the $m$ inducing points already chosen, and $\text{index}_{m+1}$ is the index of the next inducing point.
 
 \subsection{The svGP Lacks Flexibility}
-The svGP from \cite{titsias2009variational} provides a solution to the scaling issues of the GP. However, this comes with with an unfortunate drawback. The mean and kernel functions must conform to the formulations of (\ref{svgp-mean}) and (\ref{svgp-covariance}) respectively. Although svGPs are more scaleable, they have lost the powerful modelling flexibility of the GP. In the following sections, we will better understand the reasons for the restrictive mean and kernel function formulations of the svGP. This will include reviewing the link between GPs and Gaussian Measures on function spaces and the mis-match of support problem of the KL-divergence for Gaussian measures on function spaces. 
+The svGP from \cite{titsias2009variational} provides a solution to the scaling issues of the GP but comes with with an unfortunate drawback. The mean and kernel functions must conform to the formulations of (\ref{svgp-mean}) and (\ref{svgp-covariance}) respectively. Although svGPs are more scaleable, they have lost the powerful modelling flexibility of the GP. In the following sections, we will better understand the reasons for the restrictive mean and kernel function formulations of the svGP. This will include reviewing the link between GPs and Gaussian measures (GMs) on function spaces and the mis-match of support problem of the KL-divergence for Gaussian measures on function spaces. 
 
 \subsubsection{The Kolomogorov Extension Theorem}
-A GP can have many Gaussian measure (GM) formulations on different function spaces. To better understand this, we first review the Kolmogorov Extension Theorem:
+A GP is guaranteed to have at least one GM formulations on a function space. To better understand this, we first review the Kolmogorov Extension Theorem:
 \begin{theorem}[Kolmogorov Extension Theorem]
 \label{kolomogorov-extension-theorem}
-\jw{Add Kolomogorov Extension Theorem}
+Given a finite space measure such that:
+\begin{align}
+    consistency 
+    \label{kolomogorov-consistency}
+\end{align}
+Then there exists a probability measure on the product sigma algebra ... 
+\begin{align}
+    measure
+    \label{kolomogorov-measure}
+\end{align}
+In other words, consistency guarantees the existence of a corresponding measure on a function space.
 \end{theorem}
-\\ From (\ref{gp-normal}), we see that a GP will always generate a set of points which conform to a Gaussian distribution. As such, the Kolmogorov Extension Theorem guarantees the existence of at least one GM corresponding to this GP in some measureable function space. However, this GM can be trivially defined over the space of all functions $\mathcal{F} = \left\{f: \mathbb{R}^{N} \rightarrow \mathbb{R} \right\}$. Without stricter restrictions on $\mathcal{F}$, it is difficult to define distance metrics between measures on $\mathcal{F}$. This provides further intuition for why we are so restricted in the svGP formulation in (\ref{svgp-optimal-mean}) and (\ref{svgp-optimal-covariance}) which ensure a valid KL-divergence in the function space.
+From (\ref{gp-vector}), we see that a GP will always generate a set of points which conform to a Gaussian distribution, satisfying the consistency condition of (\ref{kolomogorov-consistency}). As such, the Kolmogorov Extension Theorem guarantees the existence of at least one GM corresponding to this GP in some measureable function space. 
 
-Gaussian measures are typically defined as a Lebesgue measure on a physical probability space $(\Omega, \mathcal{A}, \mathbb{P})$. \cite{matthews2016sparse} explains that there does not exist an infinite-dimensional equivalent to the Lebesgue measure, especially in a space like $\mathcal{F}$. This means that in most cases, we cannot assume the existence of an infinite-dimensional analog of a probability measure that exists in a finite-dimensional space. 
+\subsubsection{The Kullback-Leibler Divergence in Function Spaces}
+The existence of corresponding GM guaranteed by the Kolomogorov Extension Theorem can be trivially constructed over the space of all functions $\mathcal{F} = \left\{f: \mathbb{R}^{N} \rightarrow \mathbb{R} \right\}$. Without other assumptions on the GP construction, we can't ensure the existence of a corresponding GM on a more well-behaved function space. Thus, (\ref{elbo}) requires a KL-divergence on the function space $\mathcal{F}$:
+\begin{align}
+    \label{kld-function-spaces}
+\end{align}
+\cite{matthews2016sparse} shows that ensuring a valid KL divergence on $\mathcal{F}$ requires maintaining the existence of the Radon-Nikodym derivative:
+\begin{align}
+\frac{dQ^{\nu}}{d P^{F \vert \mathbf{Y}_N}}
+\label{radon-nikodym}
+\end{align}
+\cite{matthews2016sparse} explains that the strict svGP formulation of (\ref{svgp-optimal-mean}) and (\ref{svgp-optimal-covariance}) from \cite{titsias2009variational} are necessary to ensure the existence of the Radon-Nikodym derivative in (\ref{radon-nikodym}). In other words, the svGP has limited flexibility due to the problem of support mis-match for the KL-divergence on $\mathcal{F}$.
 
-\subsubsection{The Bayesian Posterior and Kullback-Leibler Divergence}
+\subsubsection{Approximation Approaches}
+\jw{existing approaches to approximate the KL divergence kinda work but dont get to the core problem of the KL divergence. We will show in the next section that the KL divergence is a result of the Bayesian posterior approach}
+\subsubsection{The Bayesian Posterior}
+\\\jw{Explain that we get the KL from our Bayesian approach. Thus the problem of kl-divergence support mismatch can be traces to the bayesian variational inference approach. This motivate the generalised Bayes approach that we will introduce in the next section, which will provide a way to get rid of the KL, freeing us from the support mismatch problem}
 In a Bayesian context (see section \ref{svgp-kld-bayesian} for more details), this involves minimisation of the Kullback-Leibler (KL) divergence:
 \begin{align}
     \nu^* = \argmin_{\nu \in \Gamma} \KLD\left(Q^\nu\left(\mathbf{Y}_{N*} \Big\vert \left\{ x_{n*}\right\}_{n*=1}^{N*}\right) \Big\| P\left(\mathbf{Y}_{N*} \Big\vert \left\{ y_n\right\}_{n=1}^N,  \left\{ x_n\right\}_{n=1}^N,  \left\{ x_{n*}\right\}_{n*=1}^{N*}\right) \right)
@@ -341,7 +375,6 @@ It is shown in \cite{matthews2016sparse} that:
 where $p(y_n)$ is the marginal likelihood or evidence of observing $yx_n$ under the prior $F_P \sim GP(m_p, k_p)$ and observation model $y_n \sim \mathcal{N}(F_P(x_i), \sigma^2)$ with $\sigma^2$ being the aleoteric uncertainty. $\mathcal{L}(\nu)$ is the variational free energy:
 \begin{align}
     \mathcal{L}(\nu) = \mathbb{E}_{F_Q \sim Q_{GP}^{\nu}}\left[\sum_{n=1}^{N}\log p\left(y_n \vert \mu=F_Q(x_n), \sigma^2\right)\right] -\KLD\left(Q^{\nu}_{GP}\Big\| P_{GP}\right)
-    \label{elbo}
 \end{align}
 also referred to as the evidence lower bound (ELBO).
 \\We see from (\ref{svgp-kld-loss-equivalence}) that $\mathcal{L}(\nu)$ is the only dependence on $\nu$, so we can rewrite our minimisation objective in (\ref{svgp-minimiser}):
@@ -359,8 +392,6 @@ Moreover, the lower bound objective in ($\ref{elbo}$) will have the form:
 \end{align}
 where we assume an optimal selection of inducing points $\left\{x_m, y_m\right\}_{m=1}^{M} \subset \{x_n, y_n\}_{n=1}^{N}$.
 \\It is important to note that the existence of the objectives in (\ref{svgp-minimiser}) and (\ref{svgp-minimiser-gvi-kld}) \textit{requires} $P_{GP}^{F \vert \mathbf{Y}_N}$ to dominate $Q_{GP}^{\nu}$, which is \textit{only} guaranteed under the specific formulation of $Q$ in ($\ref{svgp-mean}$) and ($\ref{svgp-covariance}$). This severely restricts our choices for $m_q$ and $k_q$.
-
-\subsubsection{Approximation Approaches}
 
 
 % Often lots of citations here (and elsewhere), e.g. \cite{Rey:D} or \cite[Theorem 2.3]{PriorNOP70}.   Bibtex can help with this, but is not essential. If you want pictures, try
@@ -462,6 +493,8 @@ or more simply:
 signifying that $F$ is a GRE.
 
 \subsubsection{Gaussian Measures in Hilbert Spaces}
+Gaussian measures are typically defined as a Lebesgue measure on a physical probability space $(\Omega, \mathcal{A}, \mathbb{P})$. \cite{matthews2016sparse} explains that there does not exist an infinite-dimensional equivalent to the Lebesgue measure, especially in a space like $\mathcal{F}$. This means that in most cases, we cannot assume the existence of an infinite-dimensional analog of a probability measure that exists in a finite-dimensional space. 
+
 We can define the push-forward measure of $\mathbb{P}$ as $\mathbb{P}^{F}(A) \coloneqq \mathbb{P}(F^{-1}(H))$, through the mapping $F: \Omega \rightarrow \mathcal{H}$, where $F \in \mathcal{H}$ for all Borel-measurable $H \subset \mathcal{H}$. Moreover if $F$ is a GRE, then we can define the corresponding push-forward measure $P \coloneqq \mathbb{P}^{F}$, as a Gaussian measure. This formulation allows us to define a Gaussian distribution $P$ over the infinite-dimensional Hilbert space $\mathcal{H}$. The ability to define the push-forward with the closed-form expressions of (\ref{gm-mean}) and (\ref{gm-covariance}) is a special case, unique to Gaussians.
 \newline
 \\It is shown in \cite{wild2022generalized} that a Gaussian process $P_{GP}$ can be specified as a Gaussian measure $P$ on a Hilbert space of square-integrable functions $L^2(\mathcal{X}, \rho, \mathbb{R})$ if the mean function $m$ satisfies:
@@ -601,4 +634,6 @@ We see from (\ref{log-like-jensen}) that $\mathcal{F(\nu)}$ can also be expresse
 \end{align}
 where we see that $P\left(\mathbf{Y}_M \big\vert \left\{ x_m\right\}, \left\{ y_n\right\}, \left\{ x_n\right\}\right) \propto P\left(\left\{ y_n\right\} \big\vert \mathbf{Y}_M , \left\{ x_m\right\}, \left\{ x_n\right\}\right)P\left(\mathbf{Y}_M \big\vert \left\{ x_m\right\}\right)$, the posterior distribution.
 Thus, the KL-divergence is the natural divergence that arises from a Bayesian approach. (\ref{free-energy-kld}) is the negative KL between the prior of the approximating distribution $Q^{\nu}$ and the \textit{true} Bayesian posterior of $P$. In other words, $Q^{\nu*}$ is the projection of the Bayesian posterior onto the space of approximating GPs $\left\{Q^{\nu}: \nu \in \Gamma\right\}$ with respect to the KL-divergence. This is indicated as the minimisation of the $\KLD$ in (\ref{svgp-minimiser}).
+
+\subsection{Trace Kernel Proof for the NNGP Kernel}\label{svgp-kld-bayesian}
 \end{document}
