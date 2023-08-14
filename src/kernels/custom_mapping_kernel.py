@@ -1,6 +1,5 @@
 from typing import Any, Callable, Dict, Union
 
-import flax.linen as nn
 import jax
 import jax.numpy as jnp
 import pydantic
@@ -11,35 +10,35 @@ from src.kernels.non_stationary.base import (
     NonStationaryKernelBase,
     NonStationaryKernelBaseParameters,
 )
-from src.utils.custom_types import PRNGKey
 
 
-class NeuralNetworkKernelParameters(KernelBaseParameters):
+class CustomMappingKernelParameters(KernelBaseParameters):
     base_kernel: NonStationaryKernelBaseParameters
-    neural_network: Any
+    feature_mapping: Any
 
 
-class NeuralNetworkKernel(KernelBase):
+class CustomMappingKernel(KernelBase):
     """
-    A wrapper class for the kernel function provided by the NTK package.
+    A kernel that uses a custom function to map the inputs to a higher dimensional space
+    and then applies a base kernel to the mapped inputs.
     """
 
-    Parameters = NeuralNetworkKernelParameters
+    Parameters = CustomMappingKernelParameters
 
     def __init__(
         self,
         base_kernel: NonStationaryKernelBase,
-        neural_network: nn.Module,
+        feature_mapping: Callable[[Any, jnp.ndarray], jnp.ndarray],
         preprocess_function: Callable = None,
     ):
         self.base_kernel = base_kernel
-        self.neural_network = neural_network
+        self.feature_mapping = feature_mapping
         super().__init__(preprocess_function=preprocess_function)
 
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def generate_parameters(
         self, parameters: Union[FrozenDict, Dict]
-    ) -> NeuralNetworkKernelParameters:
+    ) -> CustomMappingKernelParameters:
         """
         Generates a Pydantic model of the parameters for Neural Network Gaussian Process Kernel.
 
@@ -49,14 +48,14 @@ class NeuralNetworkKernel(KernelBase):
         Returns: A Pydantic model of the parameters for Neural Network Gaussian Process Kernel.
 
         """
-        return NeuralNetworkKernel.Parameters(
+        return CustomMappingKernel.Parameters(
             base_kernel=self.base_kernel.generate_parameters(parameters["base_kernel"]),
             neural_network=parameters["neural_network"],
         )
 
     def _calculate_gram(
         self,
-        parameters: Union[Dict, FrozenDict, NeuralNetworkKernelParameters],
+        parameters: Union[Dict, FrozenDict, CustomMappingKernelParameters],
         x1: jnp.ndarray,
         x2: jnp.ndarray,
     ) -> jnp.ndarray:
@@ -68,11 +67,11 @@ class NeuralNetworkKernel(KernelBase):
                 lambda x1_: jax.vmap(
                     lambda x2_: self.base_kernel.calculate_gram(
                         parameters=parameters.base_kernel,
-                        x1=self.neural_network.apply(
-                            parameters.neural_network, x1_
+                        x1=self.feature_mapping(
+                            parameters.feature_mapping, x1_
                         ).reshape(1, -1),
-                        x2=self.neural_network.apply(
-                            parameters.neural_network, x2_
+                        x2=self.feature_mapping(
+                            parameters.feature_mapping, x2_
                         ).reshape(1, -1),
                     )
                 )(x2[:, None, ...])
