@@ -6,7 +6,6 @@ import pydantic
 from flax.core.frozen_dict import FrozenDict
 
 from src.kernels.base import KernelBase, KernelBaseParameters
-from src.utils.custom_types import PRNGKey
 
 
 class CustomKernelParameters(KernelBaseParameters):

@@ -1,3 +1,4 @@
+import os
 from dataclasses import dataclass
 from typing import Optional
 
@@ -12,16 +13,31 @@ from src.utils.custom_types import PRNGKey
 class Data:
     x: jnp.ndarray
     y: jnp.ndarray
+    name: str = "data"
 
     def __add__(self, other):
         return Data(
+            name=self.name + other.name,
             x=jnp.concatenate([self.x, other.x], axis=0),
             y=jnp.concatenate([self.y, other.y], axis=0),
         )
 
+    def save(self, path: str):
+        jnp.savez(os.path.join(path, f"{self.name}.npz"), x=self.x, y=self.y)
+
+    @staticmethod
+    def load(path: str, name: str):
+        data_path = os.path.join(path, f"{name}.npz")
+        if os.path.isfile(data_path):
+            data = jnp.load(data_path)
+            return Data(name=name, x=data["x"], y=data["y"])
+        else:
+            return None
+
 
 @dataclass
 class ExperimentData:
+    name: str
     full: Data
     train: Optional[Data] = None
     test: Optional[Data] = None
@@ -40,14 +56,42 @@ class ExperimentData:
 
     def __add__(self, other):
         return ExperimentData(
+            name=self.name + other.name,
             full=self._add_with_none(self.full, other.full),
             train=self._add_with_none(self.train, other.train),
             test=self._add_with_none(self.test, other.test),
             validation=self._add_with_none(self.validation, other.validation),
         )
 
+    def save(self, path: str):
+        save_path = os.path.join(path, self.name)
+        os.makedirs(save_path, exist_ok=True)
+        self.full.name = "full"
+        self.full.save(save_path)
+        if self.train is not None:
+            self.train.name = "train"
+            self.train.save(save_path)
+        if self.test is not None:
+            self.test.name = "test"
+            self.test.save(save_path)
+        if self.validation is not None:
+            self.validation.name = "validation"
+            self.validation.save(save_path)
+
+    @staticmethod
+    def load(path: str, name: str):
+        data_dir = os.path.join(path, name)
+        return ExperimentData(
+            name=name,
+            full=Data.load(path=data_dir, name="full"),
+            train=Data.load(path=data_dir, name="train"),
+            test=Data.load(path=data_dir, name="test"),
+            validation=Data.load(path=data_dir, name="validation"),
+        )
+
 
 def set_up_experiment(
+    name: str,
     key: PRNGKey,
     x: jnp.ndarray,
     y: jnp.ndarray,
@@ -78,6 +122,7 @@ def set_up_experiment(
         random_state=int(jnp.sum(subkey)) % (2**32 - 1),
     )
     experiment_data = ExperimentData(
+        name=name,
         full=Data(x=x, y=y),
         train=Data(x=x_train, y=y_train),
         test=Data(x=x_test, y=y_test),

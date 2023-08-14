@@ -18,13 +18,13 @@ from experiments.classification.schemes import ClassificationMetricScheme
 from experiments.shared.nn_means import CNN, MLP
 from experiments.shared.nngp_kernels import CNNGPKernel, MLPGPKernel
 from experiments.shared.plotters import plot_losses, plot_two_losses
-from experiments.shared.runners import train_approximate_gp, train_tempered_gp
 from experiments.shared.schemes import (
     EmpiricalRiskScheme,
     OptimiserScheme,
     RegularisationScheme,
 )
 from experiments.shared.trainer import TrainerSettings
+from experiments.shared.trainers import train_approximate_gp, train_tempered_gp
 from src.gps import ApproximateGPClassification
 from src.kernels import CustomKernel, MultiOutputKernel, TemperedKernel
 from src.kernels.svgp.kernelised_svgp_kernel import KernelisedSVGPKernel
@@ -76,7 +76,7 @@ approximate_gp_trainer_settings = TrainerSettings(
     key=0,
     optimiser_scheme=OptimiserScheme.adabelief,
     learning_rate=1e-3,
-    number_of_epochs=10000,
+    number_of_epochs=50000,
     batch_size=500,
     batch_shuffle=True,
     batch_drop_last=False,
@@ -120,23 +120,22 @@ plot_images(
     save_path=os.path.join(output_directory, "train-images.png"),
 )
 
-# nn_mean = CNN(
-#     number_of_outputs=number_of_labels
+nn_mean = CNN(number_of_outputs=number_of_labels)
+nn_mean_parameters = nn_mean.init(
+    jax.random.PRNGKey(0),
+    experiment_data_list[0].train.x[:1, ...].reshape(-1, 28, 28, 1),
+)
+# nn_mean = MLP(
+#     features=[100, 100, len(labels_to_include)],
 # )
 # nn_mean_parameters = nn_mean.init(
-#     jax.random.PRNGKey(0), experiment_data_list[0].train.x[:1, ...].reshape(-1, 28, 28, 1)
+#     jax.random.PRNGKey(0), experiment_data_list[0].train.x[:1, ...]
 # )
-nn_mean = MLP(
-    features=[100, 100, len(labels_to_include)],
-)
-nn_mean_parameters = nn_mean.init(
-    jax.random.PRNGKey(0), experiment_data_list[0].train.x[:1, ...]
-)
 custom_mean = CustomMean(
     mean_function=lambda parameters, x: nn_mean.apply(parameters, x),
     number_output_dimensions=number_of_labels,
-    # preprocess_function=lambda x: x.reshape(-1, 28, 28, 1),
-    preprocess_function=lambda x: x.reshape(-1, 784),
+    preprocess_function=lambda x: x.reshape(-1, 28, 28, 1),
+    # preprocess_function=lambda x: x.reshape(-1, 784),
 )
 
 nngp_kernel = MLPGPKernel(features=[100, 100, 1])

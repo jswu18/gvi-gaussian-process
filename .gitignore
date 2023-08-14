@@ -8,6 +8,11 @@ __pycache__
 # IDE
 .idea
 
+# Config files
+*.yaml
+/**/*.yaml
+/**/**/*.yaml
+
 # Model checkpoints
 *.ckpt
 /**/*.ckpt

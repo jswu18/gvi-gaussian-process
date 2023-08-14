@@ -55,7 +55,7 @@ class DiagonalSVGPKernel(SVGPBaseKernel):
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def generate_parameters(
         self, parameters: Union[FrozenDict, Dict] = None
-    ) -> Parameters:
+    ) -> DiagonalSVGPKernelParameters:
         if parameters is None:
             return DiagonalSVGPKernelParameters(
                 log_el_matrix_diagonal=self.initialise_parameters()
@@ -64,7 +64,7 @@ class DiagonalSVGPKernel(SVGPBaseKernel):
             log_el_matrix_diagonal=parameters["log_el_matrix_diagonal"]
         )
 
-    def initialise_parameters(
+    def initialise_diagonal_parameters(
         self,
     ) -> Tuple[jnp.ndarray, jnp.ndarray]:
         """

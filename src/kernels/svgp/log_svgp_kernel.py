@@ -46,7 +46,7 @@ class LogSVGPKernel(SVGPBaseKernel):
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def generate_parameters(
         self, parameters: Union[FrozenDict, Dict] = None
-    ) -> Parameters:
+    ) -> LogSVGPKernelParameters:
         if parameters is None:
             return LogSVGPKernelParameters(
                 log_el_matrix=self.initialise_el_matrix_parameters()
@@ -55,7 +55,7 @@ class LogSVGPKernel(SVGPBaseKernel):
 
     def initialise_el_matrix_parameters(
         self,
-    ) -> Tuple[jnp.ndarray, jnp.ndarray]:
+    ) -> jnp.ndarray:
         reference_gaussian_measure_observation_precision = 1 / jnp.exp(
             self.log_observation_noise
         )

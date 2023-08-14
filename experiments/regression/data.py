@@ -4,7 +4,6 @@ import jax
 from jax import numpy as jnp
 from sklearn.model_selection import train_test_split
 
-from experiments.shared.data import Data, ExperimentData
 from src.utils.custom_types import PRNGKey
 
 
@@ -96,37 +95,3 @@ def split_train_test_validation_data(
         random_state=int(jnp.sum(subkey)) % (2**32 - 1),
     )
     return x_train, y_train, x_test, y_test, x_validation, y_validation
-
-
-def set_up_regression_experiment_data(
-    key: PRNGKey,
-    x: jnp.ndarray,
-    y: jnp.ndarray,
-    number_of_test_intervals: int,
-    total_number_of_intervals: int,
-    train_data_percentage: float,
-) -> ExperimentData:
-    key, subkey = jax.random.split(key)
-    key, subkey = jax.random.split(key)
-    (
-        x_train,
-        y_train,
-        x_test,
-        y_test,
-        x_validation,
-        y_validation,
-    ) = split_train_test_validation_data(
-        key=subkey,
-        x=x,
-        y=y,
-        number_of_test_intervals=number_of_test_intervals,
-        total_number_of_intervals=total_number_of_intervals,
-        train_data_percentage=train_data_percentage,
-    )
-    experiment_data = ExperimentData(
-        full=Data(x=x, y=y),
-        train=Data(x=x_train, y=y_train),
-        test=Data(x=x_test, y=y_test),
-        validation=Data(x=x_validation, y=y_validation),
-    )
-    return experiment_data

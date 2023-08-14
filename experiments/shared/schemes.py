@@ -32,6 +32,7 @@ class KernelScheme(str, enum.Enum):
     kernelised_svgp = "kernelised_svgp"
     log_svgp = "log_svgp"
     svgp = "svgp"
+    multi_output = "multi_output"
 
 
 class MeanScheme(str, enum.Enum):
@@ -41,11 +42,19 @@ class MeanScheme(str, enum.Enum):
     svgp = "svgp"
 
 
-class NNMeanScheme(str, enum.Enum):
-    mlp = "mlp"
-    cnn = "cnn"
+class NeuralNetworkLayerScheme(str, enum.Enum):
+    convolution = "convolution"
+    dense = "dense"
+    average_pool = "average_pool"
+    relu = "relu"
+    tanh = "tanh"
+    flatten = "flatten"
 
 
-class NNGPKernelScheme(str, enum.Enum):
-    mlp = "mlp"
-    cnn = "cnn"
+class NeuralNetworkGaussianProcessLayerScheme(str, enum.Enum):
+    convolution = "convolution"
+    dense = "dense"
+    average_pool = "average_pool"
+    relu = "relu"
+    tanh = "tanh"
+    flatten = "flatten"
