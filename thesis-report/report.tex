@@ -72,7 +72,7 @@ substantially the result of my own work except where explicitly indicated in the
 \emph{Or: }The report will be distributed to the internal and external examiners, but thereafter may not be copied or distrbuted except with permission from the author.}
 \\ \\
 Computational Statistics \& Machine Learning\\ \\
-Supervisors: Veit Wild \& Jeremias Knoblauch}
+Supervisors: Veit D. Wild \& Jeremias Knoblauch}
 
 
 
@@ -497,6 +497,23 @@ Crucially, by replacing the KL-divergence in (\ref{svgp-minimiser-gvi-kld}), we 
 \subsection{Kernel Selection}
 \subsubsection{Neural Network Gaussian Process (NNGP) Kernels}
 \subsubsection{Deep Neural Network Kernels}
+For this model we use $P \sim \mathcal{N}(m_P, k) $ and $Q \sim \mathcal{N}(m_Q, r)$ with 
+\begin{itemize}
+    \item $m_P = 0$ and $k$ an infinite width nn-gp kernel
+    \item The variational mean is a nn with $L \in \bbN$ hiden layers, i.e. 
+    \begin{align}
+        m_Q(x) = w^T \phi\big( h^{L}(x) \big)
+    \end{align}
+    where $\phi$ is a non-linearity and $h^L(x)$ die output of the $L$-th hidden layer. 
+    \item 
+    The variational kernel $r$ is defined as 
+    \begin{align}
+        r(x,x') := r_0(x,x') - r_0(x,Z) \big( r_0(Z,Z) \big)^{-1} r_0(Z,x)
+    \end{align}
+    with $r_0(x,x') = h^{L}(x)^T h^{L}(x')$.
+\end{itemize}
+Maybe you need to use some tricks for training. I.e. training a neural network mean first and then only later use the full loss $L$
+
 \subsubsection{Parameterising the svGP Kernel}
 \subsection{Empirical Risk Selection}
 \subsubsection{Negative Log-Likelihood}
