@@ -94,4 +94,11 @@ def split_train_test_validation_data(
         test_size=1 - train_data_percentage,
         random_state=int(jnp.sum(subkey)) % (2**32 - 1),
     )
-    return x_train, y_train, x_test, y_test, x_validation, y_validation
+    return (
+        jnp.array(x_train),
+        jnp.array(y_train),
+        jnp.array(x_test),
+        jnp.array(y_test),
+        jnp.array(x_validation),
+        jnp.array(y_validation),
+    )

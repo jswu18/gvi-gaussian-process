@@ -9,7 +9,7 @@ from experiments.regression.data import split_train_test_validation_data
 from experiments.regression.plotters import plot_data
 from experiments.regression.trainers import meta_train_reference_gp
 from experiments.shared.data import Data, ExperimentData
-from experiments.shared.resolvers import kernel_resolver
+from experiments.shared.resolvers import kernel_resolver, trainer_settings_resolver
 from experiments.shared.schemes import (
     EmpiricalRiskScheme,
     KernelScheme,
@@ -82,11 +82,9 @@ def run_plot_experiment_data(
 def run_train_reference_model(
     experiment_data_path: str,
     name: str,
-    kernel_scheme: KernelScheme,
-    kernel_kwargs: Union[FrozenDict, Dict],
-    kernel_parameters: Union[FrozenDict, Dict],
+    kernel_config: Union[FrozenDict, Dict],
     empirical_risk_scheme: EmpiricalRiskScheme,
-    trainer_settings: TrainerSettings,
+    trainer_settings_config: Union[FrozenDict, Dict],
     number_of_inducing_points: int,
     number_of_iterations: int,
     empirical_risk_break_condition: float,
@@ -97,10 +95,11 @@ def run_train_reference_model(
         path=experiment_data_path,
         name=name,
     )
+    trainer_settings = trainer_settings_resolver(
+        trainer_settings_config=trainer_settings_config,
+    )
     kernel, kernel_parameters = kernel_resolver(
-        kernel_scheme=kernel_scheme,
-        kernel_kwargs=kernel_kwargs,
-        kernel_parameters=kernel_parameters,
+        kernel_config=kernel_config,
     )
     (
         reference_gp,

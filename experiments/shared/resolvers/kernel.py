@@ -3,7 +3,9 @@ from typing import Dict, Tuple, Union
 import jax.numpy as jnp
 from flax.core.frozen_dict import FrozenDict
 
-from experiments.shared.resolvers import custom_kernel_function_resolver
+from experiments.shared.resolvers.nngp_kernel_function import (
+    nngp_kernel_function_resolver,
+)
 from experiments.shared.schemes import KernelScheme
 from src.kernels import CustomKernel, MultiOutputKernel
 from src.kernels.base import KernelBase, KernelBaseParameters
@@ -17,10 +19,17 @@ from src.kernels.svgp import (
 
 
 def kernel_resolver(
-    kernel_scheme: KernelScheme,
-    kernel_kwargs: Union[FrozenDict, Dict],
-    kernel_parameters: Union[FrozenDict, Dict],
+    kernel_config: Union[FrozenDict, Dict],
 ) -> Tuple[KernelBase, KernelBaseParameters]:
+    assert "kernel_scheme" in kernel_config, "Kernel scheme must be specified."
+    assert "kernel_kwargs" in kernel_config, "Kernel kwargs must be specified."
+    assert "kernel_parameters" in kernel_config, "Kernel parameters must be specified."
+    kernel_scheme: KernelScheme = kernel_config["kernel_scheme"]
+    kernel_kwargs: Union[FrozenDict, Dict] = kernel_config["kernel_kwargs"]
+    kernel_parameters_config: Union[FrozenDict, Dict] = kernel_config[
+        "kernel_parameters"
+    ]
+
     if kernel_scheme == KernelScheme.polynomial:
         assert (
             "polynomial_degree" in kernel_kwargs
@@ -29,12 +38,16 @@ def kernel_resolver(
             polynomial_degree=kernel_kwargs["polynomial_degree"],
         )
 
-        assert "log_constant" in kernel_parameters, "Log constant must be specified."
-        assert "log_scaling" in kernel_parameters, "Log scaling must be specified."
+        assert (
+            "log_constant" in kernel_parameters_config
+        ), "Log constant must be specified."
+        assert (
+            "log_scaling" in kernel_parameters_config
+        ), "Log scaling must be specified."
         kernel_parameters = kernel.generate_parameters(
             {
-                "log_constant": kernel_parameters["log_constant"],
-                "log_scaling": kernel_parameters["log_scaling"],
+                "log_constant": kernel_parameters_config["log_constant"],
+                "log_scaling": kernel_parameters_config["log_scaling"],
             }
         )
         return kernel, kernel_parameters
@@ -44,9 +57,7 @@ def kernel_resolver(
             kernel_parameters_list = []
             for _ in range(kernel_kwargs["repeat"]):
                 kernel, kernel_parameters = kernel_resolver(
-                    kernel_scheme=kernel_kwargs["kernel_scheme"],
-                    kernel_kwargs=kernel_kwargs["kernel_kwargs"],
-                    kernel_parameters=kernel_parameters,
+                    kernel_config=kernel_kwargs,
                 )
                 kernel_list.append(kernel)
                 kernel_parameters_list.append(kernel_parameters)
@@ -59,14 +70,10 @@ def kernel_resolver(
             kernel_list = []
             kernel_parameters_list = []
             for kernel_kwargs_, kernel_parameters_ in zip(
-                kernel_kwargs, kernel_parameters
+                kernel_kwargs, kernel_parameters_config
             ):
                 kernel, kernel_parameters = kernel_resolver(
-                    kernel_scheme=kernel_kwargs[kernel_kwargs_]["kernel_scheme"],
-                    kernel_kwargs=kernel_kwargs[kernel_kwargs_]["kernel_kwargs"],
-                    kernel_parameters=kernel_parameters[kernel_parameters_][
-                        "kernel_parameters"
-                    ],
+                    kernel_config=kernel_kwargs[kernel_kwargs_]
                 )
                 kernel_list.append(kernel)
                 kernel_parameters_list.append(kernel_parameters)
@@ -77,31 +84,20 @@ def kernel_resolver(
             return kernel, kernel_parameters
     elif kernel_scheme == KernelScheme.custom:
         assert (
-            "kernel_function" in kernel_kwargs
-        ), "Custom kernel function must be specified."
-        assert (
-            "custom_kernel_function_scheme" in kernel_kwargs["kernel_function"]
-        ), "Custom kernel function scheme must be specified."
-        assert (
-            "custom_kernel_function_kwargs" in kernel_kwargs["kernel_function"]
+            "nngp_kernel_function_kwargs" in kernel_kwargs
         ), "Custom kernel function kwargs must be specified."
-        kernel_function, kernel_function_parameters = custom_kernel_function_resolver(
-            custom_kernel_function_scheme=kernel_kwargs["kernel_function"][
-                "custom_kernel_function_scheme"
-            ],
-            custom_kernel_function_kwargs=kernel_kwargs["kernel_function"][
-                "custom_kernel_function_kwargs"
-            ],
+        kernel_function, kernel_function_parameters = nngp_kernel_function_resolver(
+            nngp_kernel_function_kwargs=kernel_kwargs["nngp_kernel_function_kwargs"],
         )
 
         assert (
-            "custom_kernel_function_input_shape" in kernel_kwargs["kernel_function"]
+            "input_shape" in kernel_kwargs["nngp_kernel_function_kwargs"]
         ), "Input shape must be specified."
         kernel = CustomKernel(
             kernel_function=kernel_function,
             preprocess_function=lambda x: x.reshape(
                 -1,
-                *kernel_kwargs["kernel_function"]["custom_kernel_function_input_shape"],
+                *kernel_kwargs["nngp_kernel_function_kwargs"]["input_shape"],
             ),
         )
         kernel_parameters = kernel.generate_parameters(
@@ -117,19 +113,8 @@ def kernel_resolver(
         assert (
             "reference_kernel" in kernel_kwargs
         ), "Reference kernel must be specified."
-        assert (
-            "kernel_scheme" in kernel_kwargs["reference_kernel"]
-        ), "Reference kernel kwargs must be specified."
-        assert (
-            "kernel_kwargs" in kernel_kwargs["reference_kernel"]
-        ), "Reference kernel kwargs must be specified."
-        assert (
-            "kernel_parameters" in kernel_kwargs["reference_kernel"]
-        ), "Reference kernel parameters must be specified."
         reference_kernel, reference_kernel_parameters = kernel_resolver(
-            kernel_scheme=kernel_kwargs["reference_kernel"]["kernel_scheme"],
-            kernel_kwargs=kernel_kwargs["reference_kernel"]["kernel_kwargs"],
-            kernel_parameters=kernel_kwargs["reference_kernel"]["kernel_parameters"],
+            kernel_config=kernel_kwargs["reference_kernel"],
         )
 
         assert (
@@ -206,20 +191,8 @@ def kernel_resolver(
             return kernel, kernel_parameters
         elif kernel_scheme == KernelScheme.kernelised_svgp:
             assert "base_kernel" in kernel_kwargs, "Base kernel must be specified."
-
-            assert (
-                "kernel_scheme" in kernel_kwargs["base_kernel"]
-            ), "Base kernel kwargs must be specified."
-            assert (
-                "kernel_kwargs" in kernel_kwargs["base_kernel"]
-            ), "Base kernel kwargs must be specified."
-            assert (
-                "kernel_parameters" in kernel_kwargs["base_kernel"]
-            ), "Base kernel parameters must be specified."
             base_kernel, base_kernel_parameters = kernel_resolver(
-                kernel_scheme=kernel_kwargs["base_kernel"]["kernel_scheme"],
-                kernel_kwargs=kernel_kwargs["base_kernel"]["kernel_kwargs"],
-                kernel_parameters=kernel_kwargs["base_kernel"]["kernel_parameters"],
+                kernel_config=kernel_kwargs["base_kernel"],
             )
             kernel = KernelisedSVGPKernel(
                 base_kernel=base_kernel,

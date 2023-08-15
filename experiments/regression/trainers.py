@@ -28,7 +28,7 @@ def train_reference_gp(
     checkpoint_path: str,
 ) -> Tuple[GPRegression, GPRegressionParameters, List[Dict[str, float]]]:
     inducing_data = calculate_inducing_points(
-        key=jax.random.PRNGKey(trainer_settings.key),
+        key=jax.random.PRNGKey(trainer_settings.seed),
         data=data,
         number_of_inducing_points=number_of_inducing_points,
         kernel=kernel,

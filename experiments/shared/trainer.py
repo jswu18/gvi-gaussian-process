@@ -17,7 +17,7 @@ from src.utils.data import generate_batch
 
 @dataclass
 class TrainerSettings:
-    key: int
+    seed: int
     optimiser_scheme: OptimiserScheme
     learning_rate: float
     number_of_epochs: int
@@ -52,7 +52,7 @@ class Trainer:
             trainer_settings.optimiser_scheme, trainer_settings.learning_rate
         )
         opt_state = optimiser.init(parameters.dict())
-        key = jax.random.PRNGKey(trainer_settings.key)
+        key = jax.random.PRNGKey(trainer_settings.seed)
         for epoch in tqdm(
             range(trainer_settings.number_of_epochs), disable=disable_tqdm
         ):

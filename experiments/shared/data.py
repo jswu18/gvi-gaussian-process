@@ -30,7 +30,7 @@ class Data:
         data_path = os.path.join(path, f"{name}.npz")
         if os.path.isfile(data_path):
             data = jnp.load(data_path)
-            return Data(name=name, x=data["x"], y=data["y"])
+            return Data(name=name, x=jnp.array(data["x"]), y=jnp.array(data["y"]))
         else:
             return None
 
