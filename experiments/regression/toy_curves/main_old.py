@@ -32,7 +32,7 @@ from experiments.shared.trainer import TrainerSettings
 from experiments.shared.trainers import train_approximate_gp, train_tempered_gp
 from src.gps import ApproximateGPRegression
 from src.kernels import CustomKernel, TemperedKernel
-from src.kernels.svgp.kernelised_svgp_kernel import KernelisedSVGPKernel
+from src.kernels.approximate.svgp.kernelised_svgp_kernel import KernelisedSVGPKernel
 from src.means import CustomMean
 
 jax.config.update("jax_enable_x64", True)

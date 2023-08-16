@@ -4,8 +4,8 @@ import jax.numpy as jnp
 import pydantic
 from flax.core.frozen_dict import FrozenDict
 
+from src.kernels.approximate.svgp.base import SVGPBaseKernel, SVGPBaseKernelParameters
 from src.kernels.base import KernelBase, KernelBaseParameters
-from src.kernels.svgp.base import SVGPBaseKernel, SVGPBaseKernelParameters
 
 
 def calculate_reference_gram_mock(

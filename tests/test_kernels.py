@@ -12,13 +12,8 @@ from mockers.kernel import (
     calculate_reference_gram_eye_mock,
 )
 from src.kernels import CustomKernel, MultiOutputKernel
+from src.kernels.approximate import SVGPKernel
 from src.kernels.standard import ARDKernel
-from src.kernels.svgp import (
-    DiagonalSVGPKernel,
-    KernelisedSVGPKernel,
-    LogSVGPKernel,
-    SVGPKernel,
-)
 
 config.update("jax_enable_x64", True)
 

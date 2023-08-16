@@ -5,8 +5,8 @@ import pydantic
 from flax.core.frozen_dict import FrozenDict
 from jax.scipy.linalg import cho_solve
 
+from src.kernels.approximate.svgp.base import SVGPBaseKernel, SVGPBaseKernelParameters
 from src.kernels.base import KernelBase, KernelBaseParameters
-from src.kernels.svgp.base import SVGPBaseKernel, SVGPBaseKernelParameters
 from src.utils.custom_types import JaxArrayType
 
 

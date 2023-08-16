@@ -8,14 +8,14 @@ from experiments.shared.resolvers.nngp_kernel_function import (
 )
 from experiments.shared.schemes import KernelScheme
 from src.kernels import CustomKernel, MultiOutputKernel
-from src.kernels.base import KernelBase, KernelBaseParameters
-from src.kernels.non_stationary import PolynomialKernel
-from src.kernels.svgp import (
+from src.kernels.approximate import (
     DiagonalSVGPKernel,
     KernelisedSVGPKernel,
     LogSVGPKernel,
     SVGPKernel,
 )
+from src.kernels.base import KernelBase, KernelBaseParameters
+from src.kernels.non_stationary import PolynomialKernel
 
 
 def kernel_resolver(
