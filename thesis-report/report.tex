@@ -548,6 +548,8 @@ Maybe you need to use some tricks for training. I.e. training a neural network m
 \newpage
 \section{Future Work}
 \subsection{NLP Named-Entity Recognition}
+\subsection{Inducing Point Selection}
+Not selecting actual training points, but learning points that are most representative of the data? i.e. naively a convex combination of images, or weight params in a single layer NN.
 
 \newpage
 \section{Conclusions}
@@ -559,40 +561,6 @@ Maybe you need to use some tricks for training. I.e. training a neural network m
 \newpage
 \appendix
 \section{Appendix}
-
-\subsection{KL Divergence and the Bayesian Posterior}\label{svgp-kld-bayesian}
-We wish to match the log-likelihood of $P_{GP}$ for training data $\left\{ x_n, y_n\right\}$ by maximising the lower bound with respect to $\nu$ for $Q_{GP}^{\nu}$ on inducing points $\{x_m, y_m\}_{m=1}^{M}$. We begin by reformulating the log-likelihood:
-\begin{align}
-    \mathcal{L} &= \log P\left(\left\{ y_n\right\} \big\vert\left\{ x_n\right\}\right)
-    \\&= \log P\left(\left\{ y_n\right\} \big\vert \mathbf{Y}_M, \left\{ x_m\right\}, \left\{ x_n\right\}\right)
-    \\&= \log \int_{\mathbb{R}^M} P\left(\left\{ y_n\right\}, \mathbf{Y}_M \big\vert \left\{ x_m\right\}, \left\{ x_n\right\}\right) d\mathbf{Y}_M
-\end{align}
-Introducing $Q^{\nu}\left(\mathbf{Y}_M \big\vert \left\{ x_m\right\} \right)$, the $Q_{GP}^{\nu}$ prior on the inducing points, we can equivalently write:
-\begin{align}
-            \mathcal{L} &= \log \int_{\mathbb{R}^M} \frac{P\left(\left\{ y_n\right\}, \mathbf{Y}_M \big\vert \left\{ x_m\right\}, \left\{ x_n\right\}\right)Q^{\nu}\left(\mathbf{Y}_M \big\vert \left\{ x_m\right\} \right)}{Q^{\nu}\left(\mathbf{Y}_M \big\vert \left\{ x_m\right\} \right)} d\mathbf{Y}_M
-    \\&= \log \int_{\mathbb{R}^M} \frac{P\left(\left\{ y_n\right\} \big\vert \mathbf{Y}_M , \left\{ x_m\right\}, \left\{ x_n\right\}\right)P\left(\mathbf{Y}_M \big\vert \left\{ x_m\right\}\right)Q^{\nu}\left(\mathbf{Y}_M \big\vert \left\{ x_m\right\} \right)}{Q^{\nu}\left(\mathbf{Y}_M \big\vert \left\{ x_m\right\} \right)} d\mathbf{Y}_M
-    \\&\qquad\geq  \int_{\mathbb{R}^M} Q^{\nu}\left(\mathbf{Y}_M \big\vert \left\{ x_m\right\} \right) \log \left(\frac{P\left(\left\{ y_n\right\} \big\vert \mathbf{Y}_M , \left\{ x_m\right\}, \left\{ x_n\right\}\right)P\left(\mathbf{Y}_M \big\vert \left\{ x_m\right\}\right)}{Q^{\nu}\left(\mathbf{Y}_M \big\vert \left\{ x_m\right\} \right)} \right)d\mathbf{Y}_M
-    \label{log-like-jensen}
-    \\ & \qquad\qquad \eqqcolon \mathcal{L_{free}(\nu)}
-\end{align}
-where we lower bound the log-likelihood with Jensen's inequality in (\ref{log-like-jensen}). $\mathcal{L_{free}(\nu)}$ is the free energy or evidence lower bound (ELBO) and can be expressed:
-\begin{multline}
-    \mathcal{L_{free}(\nu)} = \int_{\mathbb{R}^M} Q^{\nu}\left(\mathbf{Y}_M \big\vert \left\{ x_m\right\} \right) \log P\left(\left\{ y_n\right\} \big\vert \mathbf{Y}_M , \left\{ x_m\right\}, \left\{ x_n\right\}\right)d\mathbf{Y}_M
-    \\ + \int_{\mathbb{R}^M} Q^{\nu}\left(\mathbf{Y}_M \big\vert \left\{ x_m\right\} \right) \log \left(\frac{P\left(\mathbf{Y}_M \big\vert \left\{ x_m\right\}\right)}{Q^{\nu}\left(\mathbf{Y}_M \big\vert \left\{ x_m\right\} \right)} \right)d\mathbf{Y}_M
-\end{multline}
-Recovering the standard result:
-\begin{align}
-    \mathcal{L_{free}(\nu)} &=  \log P\left(\left\{ y_n\right\} \big\vert \left\{ x_n\right\}\right) - \KLD\left[Q^{\nu}\left(\mathbf{Y}_M \big\vert \left\{ x_m\right\} \right) \| P\left(\mathbf{Y}_M \big\vert \left\{ x_m\right\} \right)\right]
-    \\ &= \sum_{n=1}^N \left[\log P \left(y_n \big\vert  x_n \right)\right] - \KLD\left[Q^{\nu}\left(\mathbf{Y}_M \vert \left\{ x_m\right\} \right) \| P\left(\mathbf{Y}_M \big\vert \left\{ x_m\right\} \right)\right]
-\end{align}
-We see from (\ref{log-like-jensen}) that $\mathcal{L_{free}(\nu)}$ can also be expressed:
-\begin{align}
-    \mathcal{L_{free}(\nu)} &= - \mathbb{E}_{\mathbf{Y}_M \sim Q^{\nu}\left(\mathbf{Y}_M \big\vert \left\{ x_m\right\} \right)} \left[\log \left(\frac{Q^{\nu}\left(\mathbf{Y}_M \big\vert \left\{ x_m\right\} \right)}{P\left(\left\{ y_n\right\} \big\vert \mathbf{Y}_M , \left\{ x_m\right\}, \left\{ x_n\right\}\right)P\left(\mathbf{Y}_M \big\vert \left\{ x_m\right\}\right)} \right) \right]\\
-    &= -\KLD \left[Q^{\nu}\left(\mathbf{Y}_M \big\vert \left\{ x_m\right\} \right) \| P\left(\mathbf{Y}_M \big\vert \left\{ x_m\right\}, \left\{ y_n\right\}, \left\{ x_n\right\}\right) \right]
-    \label{free-energy-kld}
-\end{align}
-where we see that $P\left(\mathbf{Y}_M \big\vert \left\{ x_m\right\}, \left\{ y_n\right\}, \left\{ x_n\right\}\right) \propto P\left(\left\{ y_n\right\} \big\vert \mathbf{Y}_M , \left\{ x_m\right\}, \left\{ x_n\right\}\right)P\left(\mathbf{Y}_M \big\vert \left\{ x_m\right\}\right)$, the posterior distribution.
-Thus, the KL divergence is the natural divergence that arises from a Bayesian approach. (\ref{free-energy-kld}) is the negative KL between the prior of the approximating distribution $Q^{\nu}$ and the \textit{true} Bayesian posterior of $P$. In other words, $Q^{\nu*}$ is the projection of the Bayesian posterior onto the space of approximating GPs $\left\{Q^{\nu}: \nu \in \Gamma\right\}$ with respect to the KL divergence. This is indicated as the minimisation of the $\KLD$ in (\ref{svgp-minimiser}).
 
 \subsection{Trace Kernel Proof for the NNGP Kernel}\label{svgp-kld-bayesian}
 \end{document}
