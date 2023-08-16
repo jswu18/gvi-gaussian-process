@@ -8,42 +8,35 @@ from src.kernels.approximate.base import (
     ApproximateBaseKernel,
     ApproximateBaseKernelParameters,
 )
-from src.kernels.custom_mapping_kernel import (
-    CustomMappingKernel,
-    CustomMappingKernelParameters,
-)
-from src.kernels.non_stationary.base import NonStationaryKernelBase
+from src.kernels.custom_kernel import CustomKernel, CustomKernelParameters
 from src.utils.matrix_operations import add_diagonal_regulariser
 
 
-class CustomMappingApproximateKernelParameters(
-    ApproximateBaseKernelParameters, CustomMappingKernelParameters
+class CustomApproximateKernelParameters(
+    ApproximateBaseKernelParameters, CustomKernelParameters
 ):
     pass
 
 
-class CustomMappingApproximateKernel(CustomMappingKernel, ApproximateBaseKernel):
+class CustomApproximateKernel(CustomKernel, ApproximateBaseKernel):
     """
     Approximate kernels which are defined with respect to a reference kernel
     """
 
-    Parameters = CustomMappingApproximateKernelParameters
+    Parameters = CustomApproximateKernelParameters
 
     def __init__(
         self,
-        base_kernel: NonStationaryKernelBase,
-        feature_mapping: Callable[[Any, jnp.ndarray], jnp.ndarray],
+        kernel_function: Callable[[Any, jnp.ndarray, jnp.ndarray], jnp.float64],
         inducing_points: jnp.ndarray,
         diagonal_regularisation: float = 1e-5,
         is_diagonal_regularisation_absolute_scale: bool = False,
         preprocess_function: Callable = None,
     ):
-        self.base_kernel = base_kernel
-        self.feature_mapping = feature_mapping
-        CustomMappingKernel.__init__(
+        self.kernel_function = kernel_function
+        CustomKernel.__init__(
             self,
-            base_kernel=base_kernel,
-            feature_mapping=feature_mapping,
+            kernel_function=kernel_function,
             preprocess_function=preprocess_function,
         )
         ApproximateBaseKernel.__init__(
@@ -55,11 +48,11 @@ class CustomMappingApproximateKernel(CustomMappingKernel, ApproximateBaseKernel)
 
     def _calculate_gram(
         self,
-        parameters: Union[Dict, FrozenDict, CustomMappingKernelParameters],
+        parameters: Union[Dict, FrozenDict, CustomKernelParameters],
         x1: jnp.ndarray,
         x2: jnp.ndarray,
     ) -> jnp.ndarray:
-        custom_mapping_gram_inducing = CustomMappingKernel._calculate_gram(
+        custom_mapping_gram_inducing = CustomKernel._calculate_gram(
             self,
             parameters=parameters,
             x1=self.inducing_points,
@@ -72,19 +65,19 @@ class CustomMappingApproximateKernel(CustomMappingKernel, ApproximateBaseKernel)
                 is_diagonal_regularisation_absolute_scale=self.is_diagonal_regularisation_absolute_scale,
             )
         )
-        custom_mapping_gram_x1_inducing = CustomMappingKernel._calculate_gram(
+        custom_mapping_gram_x1_inducing = CustomKernel._calculate_gram(
             self,
             parameters=parameters,
             x1=x1,
             x2=self.inducing_points,
         )
-        custom_mapping_gram_x2_inducing = CustomMappingKernel._calculate_gram(
+        custom_mapping_gram_x2_inducing = CustomKernel._calculate_gram(
             self,
             parameters=parameters,
             x1=x2,
             x2=self.inducing_points,
         )
-        custom_mapping_gram_x1_x2 = CustomMappingKernel._calculate_gram(
+        custom_mapping_gram_x1_x2 = CustomKernel._calculate_gram(
             self,
             parameters=parameters,
             x1=x1,

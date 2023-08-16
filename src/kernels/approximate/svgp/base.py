@@ -52,10 +52,6 @@ class SVGPBaseKernel(ApproximateBaseKernel, ABC):
         self.log_observation_noise = log_observation_noise
         self.number_of_dimensions = inducing_points.shape[1]
         self.training_points = training_points
-        self.diagonal_regularisation = diagonal_regularisation
-        self.is_diagonal_regularisation_absolute_scale = (
-            is_diagonal_regularisation_absolute_scale
-        )
         self.reference_gram_inducing = self.reference_kernel.calculate_gram(
             parameters=reference_kernel_parameters,
             x1=inducing_points,
@@ -76,5 +72,7 @@ class SVGPBaseKernel(ApproximateBaseKernel, ABC):
         ApproximateBaseKernel.__init__(
             self,
             inducing_points=inducing_points,
+            diagonal_regularisation=diagonal_regularisation,
+            is_diagonal_regularisation_absolute_scale=is_diagonal_regularisation_absolute_scale,
             preprocess_function=preprocess_function,
         )
