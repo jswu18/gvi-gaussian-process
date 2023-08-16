@@ -23,10 +23,6 @@ class CustomMappingApproximateKernelParameters(
 
 
 class CustomMappingApproximateKernel(CustomMappingKernel, ApproximateBaseKernel):
-    """
-    Approximate kernels which are defined with respect to a reference kernel
-    """
-
     Parameters = CustomMappingApproximateKernelParameters
 
     def __init__(
