@@ -58,7 +58,7 @@ class DiagonalSVGPKernel(SVGPBaseKernel):
     ) -> DiagonalSVGPKernelParameters:
         if parameters is None:
             return DiagonalSVGPKernelParameters(
-                log_el_matrix_diagonal=self.initialise_parameters()
+                log_el_matrix_diagonal=self.initialise_diagonal_parameters()
             )
         return DiagonalSVGPKernelParameters(
             log_el_matrix_diagonal=parameters["log_el_matrix_diagonal"]
