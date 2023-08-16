@@ -12,14 +12,15 @@ from experiments.regression.plotters import plot_data, plot_prediction
 from experiments.regression.toy_curves.curves import CURVE_FUNCTIONS
 from experiments.regression.trainers import meta_train_reference_gp
 from experiments.shared.data import Data, ExperimentData
-from experiments.shared.plotters import plot_losses
+from experiments.shared.plotters import plot_losses, plot_two_losses
 from experiments.shared.resolvers import (
     kernel_resolver,
     mean_resolver,
     trainer_settings_resolver,
 )
 from experiments.shared.trainers import train_approximate_gp
-from src.gps import ApproximateGPRegression
+from src.gps import ApproximateGPRegression, GPRegression
+from src.means import ConstantMean
 
 
 class Actions(str, enum.Enum):
@@ -46,6 +47,14 @@ def construct_train_reference_path(output_path: str, experiment_name: str) -> st
     return os.path.join(
         output_path,
         "reference",
+        experiment_name,
+    )
+
+
+def construct_approximate_reference_path(output_path: str, experiment_name: str) -> str:
+    return os.path.join(
+        output_path,
+        "approximate",
         experiment_name,
     )
 
@@ -137,16 +146,16 @@ def train_reference(config: Dict, output_path: str, experiment_name: str) -> Non
     data_path = construct_data_path(
         output_path=output_path, experiment_name=config["data_name"]
     )
+    trainer_settings = trainer_settings_resolver(
+        trainer_settings_config=config["trainer_settings"],
+    )
+    number_of_inducing_points = int(
+        config["inducing_points_factor"] * jnp.sqrt(len(experiment_data.train.x))
+    )
     for curve_function in CURVE_FUNCTIONS:
         experiment_data = ExperimentData.load(
             path=data_path,
             name=type(curve_function).__name__.lower(),
-        )
-        number_of_inducing_points = int(
-            config["inducing_points_factor"] * jnp.sqrt(len(experiment_data.train.x))
-        )
-        trainer_settings = trainer_settings_resolver(
-            trainer_settings_config=config["trainer_settings"],
         )
         kernel, kernel_parameters = kernel_resolver(
             kernel_config=config["kernel"],
@@ -246,6 +255,12 @@ def train_approximate(config: Dict, output_path: str, experiment_name: str) -> N
     reference_path = construct_train_reference_path(
         output_path=output_path, experiment_name=config["reference_name"]
     )
+    save_path = construct_approximate_reference_path(
+        output_path=output_path, experiment_name=experiment_name
+    )
+    trainer_settings = trainer_settings_resolver(
+        trainer_settings_config=config["trainer_settings"],
+    )
     for curve_function in CURVE_FUNCTIONS:
         experiment_data = ExperimentData.load(
             path=data_path,
@@ -313,31 +328,116 @@ def train_approximate(config: Dict, output_path: str, experiment_name: str) -> N
             mean=mean,
             kernel=kernel,
         )
-        initial_approximate_gp_parameters = approximate_gp.Parameters(
-            mean=mean_parameters,
-            kernel=kernel_parameters,
+        initial_approximate_gp_parameters = approximate_gp.generate_parameters(
+            {
+                "mean": mean_parameters,
+                "kernel": kernel_parameters,
+            }
+        )
+        regulariser_kernel_config_name = config["reference_name"]
+        regulariser_kernel, _ = kernel_resolver(
+            kernel_config={
+                "load_config_paths": {
+                    "config_path": os.path.join(
+                        os.path.dirname(os.path.abspath(__file__)),
+                        "configs",
+                        "train_reference",
+                        f"{regulariser_kernel_config_name}.yaml",
+                    ),
+                    "parameters_path": os.path.join(
+                        construct_train_reference_path(
+                            output_path=output_path,
+                            experiment_name=regulariser_kernel_config_name,
+                        ),
+                        experiment_data.name,
+                        "parameters.ckpt",
+                    ),
+                }
+            },
+        )
+        regulariser = GPRegression(
+            x=inducing_data.x,
+            y=inducing_data.y,
+            kernel=regulariser_kernel,
+            mean=ConstantMean(),
+        )
+        regulariser_parameters = regulariser.generate_parameters(
+            regulariser.Parameters.load(
+                regulariser.Parameters,
+                path=os.path.join(
+                    reference_path,
+                    experiment_data.name,
+                    "parameters.ckpt",
+                ),
+            ).dict()
         )
         (
             approximate_gp_parameters,
             approximate_post_epoch_history,
         ) = train_approximate_gp(
             data=experiment_data.train,
-            empirical_risk_schema=approximate_gp_empirical_risk_schema,
-            regularisation_schema=RegularisationSchema(
-                approximate_gp_regularisation_schema_str
-            ),
-            trainer_settings=approximate_gp_trainer_settings,
+            empirical_risk_schema=config["empirical_risk_schema"],
+            regularisation_schema=config["regularisation_schema"],
+            trainer_settings=trainer_settings,
             approximate_gp=approximate_gp,
             approximate_gp_parameters=initial_approximate_gp_parameters,
-            regulariser=reference_gp,
-            regulariser_parameters=reference_gp_parameters,
-            save_checkpoint_frequency=approximate_save_checkpoint_frequency,
+            regulariser=regulariser,
+            regulariser_parameters=regulariser_parameters,
+            save_checkpoint_frequency=config["save_checkpoint_frequency"],
             checkpoint_path=os.path.join(
-                output_directory,
-                type(curve_function).__name__.lower(),
-                checkpoints_folder_name,
-                "approximate-gp",
-                approximate_gp_regularisation_schema_str,
+                save_path,
+                experiment_data.name,
+                "checkpoints",
+            ),
+        )
+        plot_prediction(
+            experiment_data=experiment_data,
+            inducing_data=inducing_data,
+            gp=approximate_gp,
+            gp_parameters=approximate_gp_parameters,
+            title=" ".join(
+                [
+                    f"Approximate GP ({config['empirical_risk_schema']}+{config['regularisation_schema']}):",
+                    f"{curve_function.__name__}",
+                ]
+            ),
+            save_path=os.path.join(
+                save_path,
+                experiment_data.name,
+                "approximate-gp.png",
+            ),
+        )
+        plot_losses(
+            losses=[x["gvi-objective"] for x in approximate_post_epoch_history],
+            labels="gvi-objective",
+            loss_name=f"{config['empirical_risk_schema']}+{config['regularisation_schema']}",
+            title=" ".join(
+                [
+                    f"Approximate GP Objective ({config['empirical_risk_schema']}+{config['regularisation_schema']}):",
+                    f"{curve_function.__name__}",
+                ]
+            ),
+            save_path=os.path.join(
+                save_path,
+                experiment_data.name,
+                "approximate-gp-loss.png",
+            ),
+        )
+        plot_two_losses(
+            loss1=[x["empirical-risk"] for x in approximate_post_epoch_history],
+            loss1_name=config["empirical_risk_schema"],
+            loss2=[x["regularisation"] for x in approximate_post_epoch_history],
+            loss2_name=config["regularisation_schema"],
+            title=" ".join(
+                [
+                    f"Approximate GP Objective Breakdown ({config['empirical_risk_schema']}+{config['regularisation_schema']}):",
+                    f"{curve_function.__name__}",
+                ]
+            ),
+            save_path=os.path.join(
+                save_path,
+                experiment_data.name,
+                "approximate-gp-loss-breakdown.png",
             ),
         )
 
