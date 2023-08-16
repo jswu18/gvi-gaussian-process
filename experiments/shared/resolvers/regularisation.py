@@ -1,4 +1,4 @@
-from experiments.shared import schemes
+from experiments.shared import schemas
 from src.gps.base.base import GPBase, GPBaseParameters
 from src.gps.base.classification_base import GPClassificationBase
 from src.regularisations import (

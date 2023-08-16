@@ -1,3 +1,7 @@
+from src.kernels.approximate.custom_approximate_kernel import (
+    CustomApproximateKernel,
+    CustomApproximateKernelParameters,
+)
 from src.kernels.approximate.custom_mapping_approximate_kernel import (
     CustomMappingApproximateKernel,
     CustomMappingApproximateKernelParameters,
@@ -25,6 +29,8 @@ __all__ = [
     "KernelisedSVGPKernelParameters",
     "LogSVGPKernel",
     "LogSVGPKernelParameters",
+    "CustomApproximateKernel",
+    "CustomApproximateKernelParameters",
     "CustomMappingApproximateKernel",
     "CustomMappingApproximateKernelParameters",
 ]

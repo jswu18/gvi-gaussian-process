@@ -2,8 +2,8 @@ from typing import Dict, Tuple, Union
 
 from flax.core.frozen_dict import FrozenDict
 
-from experiments.shared.resolvers.nn_mean_function import nn_mean_function_resolver
-from experiments.shared.schemes import MeanScheme
+from experiments.shared.resolvers.nn_function import nn_function_resolver
+from experiments.shared.schemas import MeanScheme
 from src.means import ConstantMean, CustomMean
 from src.means.base import MeanBase, MeanBaseParameters
 
@@ -32,13 +32,13 @@ def mean_resolver(
         return mean, mean_parameters
     if mean_scheme == MeanScheme.custom:
         assert (
-            "nn_mean_function_kwargs" in mean_kwargs
+            "nn_function_kwargs" in mean_kwargs
         ), "Custom mean function kwargs must be specified."
-        mean_function, mean_function_parameters = nn_mean_function_resolver(
-            nn_mean_function_kwargs=mean_kwargs["nn_mean_function_kwargs"],
+        mean_function, mean_function_parameters = nn_function_resolver(
+            nn_function_kwargs=mean_kwargs["nn_function_kwargs"],
         )
         assert (
-            "input_shape" in mean_kwargs["nn_mean_function_kwargs"]
+            "input_shape" in mean_kwargs["nn_function_kwargs"]
         ), "Input shape must be specified."
         assert (
             "number_output_dimensions" in mean_kwargs
@@ -48,7 +48,7 @@ def mean_resolver(
             number_output_dimensions=mean_kwargs["number_output_dimensions"],
             preprocess_function=lambda x: x.reshape(
                 -1,
-                *mean_kwargs["nn_mean_function_kwargs"]["input_shape"],
+                *mean_kwargs["nn_function_kwargs"]["input_shape"],
             ),
         )
         mean_parameters = mean.generate_parameters(

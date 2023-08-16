@@ -10,7 +10,7 @@ from tqdm import tqdm
 from experiments.classification.plotters import plot_images
 from experiments.shared.data import Data
 from experiments.shared.resolvers import empirical_risk_resolver
-from experiments.shared.schemes import EmpiricalRiskScheme
+from experiments.shared.schemas import EmpiricalRiskScheme
 from experiments.shared.trainer import Trainer, TrainerSettings
 from experiments.shared.utils import calculate_inducing_points
 from src.gps import GPClassification, GPClassificationParameters

@@ -3,12 +3,15 @@ from typing import Dict, Tuple, Union
 import jax.numpy as jnp
 from flax.core.frozen_dict import FrozenDict
 
+from experiments.shared.resolvers import nn_function_resolver
 from experiments.shared.resolvers.nngp_kernel_function import (
     nngp_kernel_function_resolver,
 )
-from experiments.shared.schemes import KernelScheme
-from src.kernels import CustomKernel, MultiOutputKernel
+from experiments.shared.schemas import KernelScheme
+from src.kernels import CustomKernel, CustomMappingKernel, MultiOutputKernel
 from src.kernels.approximate import (
+    CustomApproximateKernel,
+    CustomMappingApproximateKernel,
     DiagonalSVGPKernel,
     KernelisedSVGPKernel,
     LogSVGPKernel,
@@ -16,6 +19,7 @@ from src.kernels.approximate import (
 )
 from src.kernels.base import KernelBase, KernelBaseParameters
 from src.kernels.non_stationary import PolynomialKernel
+from src.kernels.non_stationary.base import NonStationaryKernelBase
 
 
 def kernel_resolver(
@@ -102,6 +106,103 @@ def kernel_resolver(
         )
         kernel_parameters = kernel.generate_parameters(
             {"custom": kernel_function_parameters}
+        )
+        return kernel, kernel_parameters
+    elif kernel_scheme == KernelScheme.custom_mapping:
+        assert "base_kernel" in kernel_kwargs, "Base kernel must be specified."
+        assert (
+            "nn_function_kwargs" in kernel_kwargs
+        ), "Feature mapping must be specified."
+
+        base_kernel, base_kernel_parameters = kernel_resolver(
+            kernel_config=kernel_kwargs["base_kernel"],
+        )
+        assert isinstance(
+            base_kernel, NonStationaryKernelBase
+        ), "Base kernel must be non-stationary."
+        feature_mapping, feature_mapping_parameters = nn_function_resolver(
+            nn_function_kwargs=kernel_kwargs["nn_function_kwargs"],
+        )
+        kernel = CustomMappingKernel(
+            base_kernel=base_kernel,
+            feature_mapping=feature_mapping,
+        )
+        kernel_parameters = kernel.generate_parameters(
+            {
+                "base_kernel": base_kernel_parameters,
+                "feature_mapping": feature_mapping_parameters,
+            }
+        )
+        return kernel, kernel_parameters
+    elif kernel_scheme == KernelScheme.custom_approximate:
+        assert (
+            "nngp_kernel_function_kwargs" in kernel_kwargs
+        ), "Custom kernel function kwargs must be specified."
+        assert "inducing_points" in kernel_kwargs, "Inducing points must be specified."
+        assert (
+            "diagonal_regularisation" in kernel_kwargs
+        ), "Diagonal regularisation must be specified."
+        assert (
+            "is_diagonal_regularisation_absolute_scale" in kernel_kwargs
+        ), "Is diagonal regularisation absolute scale must be specified."
+        assert (
+            "input_shape" in kernel_kwargs["nngp_kernel_function_kwargs"]
+        ), "Input shape must be specified."
+        kernel_function, kernel_function_parameters = nngp_kernel_function_resolver(
+            nngp_kernel_function_kwargs=kernel_kwargs["nngp_kernel_function_kwargs"],
+        )
+        kernel = CustomApproximateKernel(
+            kernel_function=kernel_function,
+            inducing_points=kernel_kwargs["inducing_points"],
+            diagonal_regularisation=kernel_kwargs["diagonal_regularisation"],
+            is_diagonal_regularisation_absolute_scale=kernel_kwargs[
+                "is_diagonal_regularisation_absolute_scale"
+            ],
+            preprocess_function=lambda x: x.reshape(
+                -1,
+                *kernel_kwargs["nngp_kernel_function_kwargs"]["input_shape"],
+            ),
+        )
+        kernel_parameters = kernel.generate_parameters(
+            {"custom": kernel_function_parameters}
+        )
+        return kernel, kernel_parameters
+    elif kernel_scheme == KernelScheme.custom_mapping_approximate:
+        assert "base_kernel" in kernel_kwargs, "Base kernel must be specified."
+        assert (
+            "nn_function_kwargs" in kernel_kwargs
+        ), "Feature mapping must be specified."
+        assert "inducing_points" in kernel_kwargs, "Inducing points must be specified."
+        assert (
+            "diagonal_regularisation" in kernel_kwargs
+        ), "Diagonal regularisation must be specified."
+        assert (
+            "is_diagonal_regularisation_absolute_scale" in kernel_kwargs
+        ), "Is diagonal regularisation absolute scale must be specified."
+
+        base_kernel, base_kernel_parameters = kernel_resolver(
+            kernel_config=kernel_kwargs["base_kernel"],
+        )
+        assert isinstance(
+            base_kernel, NonStationaryKernelBase
+        ), "Base kernel must be non-stationary."
+        feature_mapping, feature_mapping_parameters = nn_function_resolver(
+            nn_function_kwargs=kernel_kwargs["nn_function_kwargs"],
+        )
+        kernel = CustomMappingApproximateKernel(
+            base_kernel=base_kernel,
+            feature_mapping=feature_mapping,
+            inducing_points=kernel_kwargs["inducing_points"],
+            diagonal_regularisation=kernel_kwargs["diagonal_regularisation"],
+            is_diagonal_regularisation_absolute_scale=kernel_kwargs[
+                "is_diagonal_regularisation_absolute_scale"
+            ],
+        )
+        kernel_parameters = kernel.generate_parameters(
+            {
+                "base_kernel": base_kernel_parameters,
+                "feature_mapping": feature_mapping_parameters,
+            }
         )
         return kernel, kernel_parameters
     elif kernel_scheme in [

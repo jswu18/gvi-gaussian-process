@@ -5,7 +5,7 @@ from experiments.shared.resolvers import (
     empirical_risk_resolver,
     regularisation_resolver,
 )
-from experiments.shared.schemes import EmpiricalRiskScheme, RegularisationScheme
+from experiments.shared.schemas import EmpiricalRiskScheme, RegularisationScheme
 from experiments.shared.trainer import Trainer, TrainerSettings
 from src import GeneralisedVariationalInference
 from src.gps.base.approximate_base import ApproximateGPBase

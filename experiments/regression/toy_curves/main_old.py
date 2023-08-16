@@ -23,7 +23,7 @@ from experiments.shared.resolvers import (
     mean_resolver,
     trainer_settings_resolver,
 )
-from experiments.shared.schemes import (
+from experiments.shared.schemas import (
     EmpiricalRiskScheme,
     OptimiserScheme,
     RegularisationScheme,

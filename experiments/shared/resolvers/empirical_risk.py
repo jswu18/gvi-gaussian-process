@@ -1,4 +1,4 @@
-from experiments.shared import schemes
+from experiments.shared import schemas
 from src.empirical_risks import NegativeLogLikelihood
 from src.empirical_risks.base import EmpiricalRiskBase
 from src.empirical_risks.cross_entropy import CrossEntropy

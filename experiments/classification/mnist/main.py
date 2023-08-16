@@ -18,7 +18,7 @@ from experiments.classification.schemes import ClassificationMetricScheme
 from experiments.shared.nn_means import CNN, MLP
 from experiments.shared.nngp_kernels import CNNGPKernel, MLPGPKernel
 from experiments.shared.plotters import plot_losses, plot_two_losses
-from experiments.shared.schemes import (
+from experiments.shared.schemas import (
     EmpiricalRiskScheme,
     OptimiserScheme,
     RegularisationScheme,

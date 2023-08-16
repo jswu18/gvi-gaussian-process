@@ -4,7 +4,7 @@ import jax.numpy as jnp
 from flax.core.frozen_dict import FrozenDict
 from neural_tangents import stax
 
-from experiments.shared.schemes import NeuralNetworkGaussianProcessLayerScheme
+from experiments.shared.schemas import NeuralNetworkGaussianProcessLayerScheme
 
 
 def nngp_layer_resolver(

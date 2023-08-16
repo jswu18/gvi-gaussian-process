@@ -10,7 +10,7 @@ from tqdm import tqdm
 
 from experiments.shared.data import Data
 from experiments.shared.resolvers import optimiser_resolver
-from experiments.shared.schemes import OptimiserScheme
+from experiments.shared.schemas import OptimiserScheme
 from src.module import ModuleParameters
 from src.utils.data import generate_batch
 

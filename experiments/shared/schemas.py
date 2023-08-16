@@ -27,12 +27,15 @@ class KernelScheme(str, enum.Enum):
     polynomial = "polynomial"
     ard = "ard"
     custom = "custom"
+    custom_mapping = "custom_mapping"
     neural_network = "neural_network"
     diagonal_svgp = "diagonal_svgp"
     kernelised_svgp = "kernelised_svgp"
     log_svgp = "log_svgp"
     svgp = "svgp"
     multi_output = "multi_output"
+    custom_approximate = "custom_approximate"
+    custom_mapping_approximate = "custom_mapping_approximate"
 
 
 class MeanScheme(str, enum.Enum):

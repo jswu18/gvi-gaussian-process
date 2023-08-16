@@ -4,7 +4,7 @@ import flax.linen as nn
 import jax.numpy as jnp
 from flax.core.frozen_dict import FrozenDict
 
-from experiments.shared.schemes import NeuralNetworkLayerScheme
+from experiments.shared.schemas import NeuralNetworkLayerScheme
 
 
 def nn_layer_resolver(

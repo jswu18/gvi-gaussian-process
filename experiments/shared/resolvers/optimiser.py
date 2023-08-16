@@ -1,6 +1,6 @@
 import optax
 
-from experiments.shared.schemes import OptimiserScheme
+from experiments.shared.schemas import OptimiserScheme
 
 
 def optimiser_resolver(

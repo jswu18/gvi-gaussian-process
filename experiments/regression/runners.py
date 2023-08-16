@@ -10,7 +10,7 @@ from experiments.regression.plotters import plot_data
 from experiments.regression.trainers import meta_train_reference_gp
 from experiments.shared.data import Data, ExperimentData
 from experiments.shared.resolvers import kernel_resolver, trainer_settings_resolver
-from experiments.shared.schemes import (
+from experiments.shared.schemas import (
     EmpiricalRiskScheme,
     KernelScheme,
     RegularisationScheme,

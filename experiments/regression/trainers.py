@@ -6,7 +6,7 @@ import jax.numpy as jnp
 from tqdm import tqdm
 
 from experiments.regression import plotters
-from experiments.shared import resolvers, schemes
+from experiments.shared import resolvers, schemas
 from experiments.shared.data import Data
 from experiments.shared.trainer import Trainer, TrainerSettings
 from experiments.shared.utils import calculate_inducing_points

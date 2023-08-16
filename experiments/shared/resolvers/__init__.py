@@ -1,8 +1,8 @@
 from experiments.shared.resolvers.empirical_risk import empirical_risk_resolver
 from experiments.shared.resolvers.kernel import kernel_resolver
 from experiments.shared.resolvers.mean import mean_resolver
+from experiments.shared.resolvers.nn_function import nn_function_resolver
 from experiments.shared.resolvers.nn_layer import nn_layer_resolver
-from experiments.shared.resolvers.nn_mean_function import nn_mean_function_resolver
 from experiments.shared.resolvers.nngp_kernel_function import (
     nngp_kernel_function_resolver,
 )
@@ -17,7 +17,7 @@ __all__ = [
     "optimiser_resolver",
     "kernel_resolver",
     "mean_resolver",
-    "nn_mean_function_resolver",
+    "nn_function_resolver",
     "nn_layer_resolver",
     "nngp_layer_resolver",
     "nngp_kernel_function_resolver",
