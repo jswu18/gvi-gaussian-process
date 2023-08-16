@@ -19,14 +19,14 @@ def nn_function_resolver(
             for layer in nn_function_kwargs["layers"]:
                 layer_params = nn_function_kwargs["layers"][layer]
                 assert (
-                    "layer_scheme" in layer_params
-                ), f"Layer scheme must be specified for {layer=}."
+                    "layer_schema" in layer_params
+                ), f"Layer schema must be specified for {layer=}."
                 assert (
                     "layer_kwargs" in layer_params
                 ), f"Layer kwargs must be specified for {layer=}."
                 x = nn_layer_resolver(
                     x=x,
-                    nn_layer_scheme=layer_params["layer_scheme"],
+                    nn_layer_schema=layer_params["layer_schema"],
                     nn_layer_kwargs=layer_params["layer_kwargs"],
                 )
             return x.reshape(-1)

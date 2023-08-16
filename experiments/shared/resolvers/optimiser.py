@@ -1,16 +1,16 @@
 import optax
 
-from experiments.shared.schemas import OptimiserScheme
+from experiments.shared.schemas import OptimiserSchema
 
 
 def optimiser_resolver(
-    optimiser_scheme: OptimiserScheme, learning_rate: float
+    optimiser_schema: OptimiserSchema, learning_rate: float
 ) -> optax.GradientTransformation:
-    if optimiser_scheme == OptimiserScheme.adam:
+    if optimiser_schema == OptimiserSchema.adam:
         return optax.adam(learning_rate=learning_rate)
-    elif optimiser_scheme == OptimiserScheme.adabelief:
+    elif optimiser_schema == OptimiserSchema.adabelief:
         return optax.adabelief(learning_rate=learning_rate)
-    elif optimiser_scheme == OptimiserScheme.rmsprop:
+    elif optimiser_schema == OptimiserSchema.rmsprop:
         return optax.rmsprop(learning_rate=learning_rate)
     else:
-        raise ValueError(f"Unknown optimiser: {optimiser_scheme=}")
+        raise ValueError(f"Unknown optimiser: {optimiser_schema=}")

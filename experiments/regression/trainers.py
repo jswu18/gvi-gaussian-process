@@ -18,7 +18,7 @@ from src.means import ConstantMean
 
 def train_reference_gp(
     data: Data,
-    empirical_risk_scheme: schemes.EmpiricalRiskScheme,
+    empirical_risk_schema: schemas.EmpiricalRiskSchema,
     trainer_settings: TrainerSettings,
     kernel: KernelBase,
     kernel_parameters: KernelBaseParameters,
@@ -48,7 +48,7 @@ def train_reference_gp(
         }
     )
     empirical_risk = resolvers.empirical_risk_resolver(
-        empirical_risk_scheme=empirical_risk_scheme,
+        empirical_risk_schema=empirical_risk_schema,
         gp=gp,
     )
     trainer = Trainer(
@@ -83,7 +83,7 @@ def train_reference_gp(
 
 def meta_train_reference_gp(
     data: Data,
-    empirical_risk_scheme: schemes.EmpiricalRiskScheme,
+    empirical_risk_schema: schemas.EmpiricalRiskSchema,
     trainer_settings: TrainerSettings,
     kernel: KernelBase,
     kernel_parameters: KernelBaseParameters,
@@ -98,7 +98,7 @@ def meta_train_reference_gp(
     for i in tqdm(range(number_of_iterations)):
         gp, gp_parameters, post_epoch_history = train_reference_gp(
             data=data,
-            empirical_risk_scheme=empirical_risk_scheme,
+            empirical_risk_schema=empirical_risk_schema,
             trainer_settings=trainer_settings,
             kernel=kernel,
             kernel_parameters=kernel_parameters,

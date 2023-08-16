@@ -10,7 +10,7 @@ from tqdm import tqdm
 
 from experiments.shared.data import Data
 from experiments.shared.resolvers import optimiser_resolver
-from experiments.shared.schemas import OptimiserScheme
+from experiments.shared.schemas import OptimiserSchema
 from src.module import ModuleParameters
 from src.utils.data import generate_batch
 
@@ -18,7 +18,7 @@ from src.utils.data import generate_batch
 @dataclass
 class TrainerSettings:
     seed: int
-    optimiser_scheme: OptimiserScheme
+    optimiser_schema: OptimiserSchema
     learning_rate: float
     number_of_epochs: int
     batch_size: int
@@ -49,7 +49,7 @@ class Trainer:
     ) -> Tuple[ModuleParameters, List[Dict[str, float]]]:
         post_epoch_history = []
         optimiser = optimiser_resolver(
-            trainer_settings.optimiser_scheme, trainer_settings.learning_rate
+            trainer_settings.optimiser_schema, trainer_settings.learning_rate
         )
         opt_state = optimiser.init(parameters.dict())
         key = jax.random.PRNGKey(trainer_settings.seed)

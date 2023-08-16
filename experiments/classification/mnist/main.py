@@ -14,14 +14,14 @@ from experiments.classification.data import (
 from experiments.classification.metrics import calculate_metric
 from experiments.classification.plotters import plot_images
 from experiments.classification.runners import meta_train_reference_gp
-from experiments.classification.schemes import ClassificationMetricScheme
+from experiments.classification.schemas import ClassificationMetricSchema
 from experiments.shared.nn_means import CNN, MLP
 from experiments.shared.nngp_kernels import CNNGPKernel, MLPGPKernel
 from experiments.shared.plotters import plot_losses, plot_two_losses
 from experiments.shared.schemas import (
-    EmpiricalRiskScheme,
-    OptimiserScheme,
-    RegularisationScheme,
+    EmpiricalRiskSchema,
+    OptimiserSchema,
+    RegularisationSchema,
 )
 from experiments.shared.trainer import TrainerSettings
 from experiments.shared.trainers import train_approximate_gp, train_tempered_gp
@@ -54,10 +54,10 @@ reference_nll_break_condition = -float("inf")
 
 approximate_kernel_diagonal_regularisation = 1e-10
 
-reference_gp_empirical_risk_scheme = EmpiricalRiskScheme.cross_entropy
-approximate_gp_empirical_risk_scheme = EmpiricalRiskScheme.cross_entropy
-approximate_gp_regularisation_scheme = RegularisationScheme.multinomial_wasserstein
-tempered_gp_empirical_risk_scheme = EmpiricalRiskScheme.negative_log_likelihood
+reference_gp_empirical_risk_schema = EmpiricalRiskSchema.cross_entropy
+approximate_gp_empirical_risk_schema = EmpiricalRiskSchema.cross_entropy
+approximate_gp_regularisation_schema = RegularisationSchema.multinomial_wasserstein
+tempered_gp_empirical_risk_schema = EmpiricalRiskSchema.negative_log_likelihood
 
 reference_save_checkpoint_frequency = 1000
 approximate_save_checkpoint_frequency = 1000
@@ -65,7 +65,7 @@ tempered_save_checkpoint_frequency = 1000
 
 reference_gp_trainer_settings = TrainerSettings(
     key=0,
-    optimiser_scheme=OptimiserScheme.adabelief,
+    optimiser_schema=OptimiserSchema.adabelief,
     learning_rate=1e-4,
     number_of_epochs=10000,
     batch_size=500,
@@ -74,7 +74,7 @@ reference_gp_trainer_settings = TrainerSettings(
 )
 approximate_gp_trainer_settings = TrainerSettings(
     key=0,
-    optimiser_scheme=OptimiserScheme.adabelief,
+    optimiser_schema=OptimiserSchema.adabelief,
     learning_rate=1e-3,
     number_of_epochs=50000,
     batch_size=500,
@@ -83,7 +83,7 @@ approximate_gp_trainer_settings = TrainerSettings(
 )
 tempered_gp_trainer_settings = TrainerSettings(
     key=0,
-    optimiser_scheme=OptimiserScheme.adabelief,
+    optimiser_schema=OptimiserSchema.adabelief,
     learning_rate=1e-3,
     number_of_epochs=10000,
     batch_size=500,
@@ -156,7 +156,7 @@ single_label_kernel_parameters = CustomKernel.Parameters.construct(
     inducing_data_list,
 ) = meta_train_reference_gp(
     data_list=[experiment_data.train for experiment_data in experiment_data_list],
-    empirical_risk_scheme=reference_gp_empirical_risk_scheme,
+    empirical_risk_schema=reference_gp_empirical_risk_schema,
     trainer_settings=reference_gp_trainer_settings,
     kernel=MultiOutputKernel(
         kernels=[single_label_kernel for _ in range(number_of_labels)]
@@ -180,7 +180,7 @@ reference_accuracy = calculate_metric(
     data=reduce(
         operator.add, [experiment_data.test for experiment_data in experiment_data_list]
     ),
-    metric_scheme=ClassificationMetricScheme.accuracy,
+    metric_schema=ClassificationMetricSchema.accuracy,
 )
 plot_images(
     data_list=inducing_data_list,
@@ -193,7 +193,7 @@ plot_losses(
         for reference_post_epoch_history in reference_post_epoch_histories
     ],
     labels=[f"iteration-{i}" for i in range(reference_number_of_iterations)],
-    loss_name=reference_gp_empirical_risk_scheme.value,
+    loss_name=reference_gp_empirical_risk_schema.value,
     title=f"Reference GP Empirical Risk: MNIST",
     save_path=os.path.join(
         output_directory,
@@ -206,7 +206,7 @@ print(
 
 approximate_experiment_directory = os.path.join(
     output_directory,
-    approximate_gp_regularisation_scheme.value,
+    approximate_gp_regularisation_schema.value,
 )
 if not os.path.exists(approximate_experiment_directory):
     os.makedirs(approximate_experiment_directory)
@@ -248,8 +248,8 @@ approximate_gp_parameters, approximate_post_epoch_history = train_approximate_gp
         operator.add,
         [experiment_data.train for experiment_data in experiment_data_list],
     ),
-    empirical_risk_scheme=approximate_gp_empirical_risk_scheme,
-    regularisation_scheme=approximate_gp_regularisation_scheme,
+    empirical_risk_schema=approximate_gp_empirical_risk_schema,
+    regularisation_schema=approximate_gp_regularisation_schema,
     trainer_settings=approximate_gp_trainer_settings,
     approximate_gp=approximate_gp,
     approximate_gp_parameters=initial_approximate_gp_parameters,
@@ -268,15 +268,15 @@ approximate_accuracy = calculate_metric(
     data=reduce(
         operator.add, [experiment_data.test for experiment_data in experiment_data_list]
     ),
-    metric_scheme=ClassificationMetricScheme.accuracy,
+    metric_schema=ClassificationMetricSchema.accuracy,
 )
 plot_losses(
     losses=[x["gvi-objective"] for x in approximate_post_epoch_history],
     labels="gvi-objective",
-    loss_name=f"{approximate_gp_empirical_risk_scheme.value}+{approximate_gp_regularisation_scheme.value}",
+    loss_name=f"{approximate_gp_empirical_risk_schema.value}+{approximate_gp_regularisation_schema.value}",
     title=" ".join(
         [
-            f"Approximate GP Objective ({approximate_gp_regularisation_scheme.value}):",
+            f"Approximate GP Objective ({approximate_gp_regularisation_schema.value}):",
             "MNIST",
         ]
     ),
@@ -287,12 +287,12 @@ plot_losses(
 )
 plot_two_losses(
     loss1=[x["empirical-risk"] for x in approximate_post_epoch_history],
-    loss1_name=approximate_gp_empirical_risk_scheme.value,
+    loss1_name=approximate_gp_empirical_risk_schema.value,
     loss2=[x["regularisation"] for x in approximate_post_epoch_history],
-    loss2_name=approximate_gp_regularisation_scheme.value,
+    loss2_name=approximate_gp_regularisation_schema.value,
     title=" ".join(
         [
-            f"Approximate GP Objective Breakdown ({approximate_gp_regularisation_scheme.value}):",
+            f"Approximate GP Objective Breakdown ({approximate_gp_regularisation_schema.value}):",
             "MNIST",
         ]
     ),
@@ -302,7 +302,7 @@ plot_two_losses(
     ),
 )
 print(
-    f"Approximate GP Accuracy ({approximate_gp_regularisation_scheme.value}):",
+    f"Approximate GP Accuracy ({approximate_gp_regularisation_schema.value}):",
     approximate_accuracy,
 )
 
@@ -336,7 +336,7 @@ tempered_gp_parameters, tempered_post_epoch_history = train_tempered_gp(
         operator.add,
         [experiment_data.validation for experiment_data in experiment_data_list],
     ),
-    empirical_risk_scheme=tempered_gp_empirical_risk_scheme,
+    empirical_risk_schema=tempered_gp_empirical_risk_schema,
     trainer_settings=tempered_gp_trainer_settings,
     tempered_gp=tempered_approximate_gp,
     tempered_gp_parameters=initial_tempered_gp_parameters,
@@ -345,16 +345,16 @@ tempered_gp_parameters, tempered_post_epoch_history = train_tempered_gp(
         output_directory,
         checkpoints_folder_name,
         "tempered-gp",
-        approximate_gp_regularisation_scheme.value,
+        approximate_gp_regularisation_schema.value,
     ),
 )
 plot_losses(
     losses=[x["empirical-risk"] for x in tempered_post_epoch_history],
     labels="empirical-risk",
-    loss_name=tempered_gp_empirical_risk_scheme.value,
+    loss_name=tempered_gp_empirical_risk_schema.value,
     title=" ".join(
         [
-            f"Tempered Approximate GP Empirical Risk ({approximate_gp_regularisation_scheme.value}):",
+            f"Tempered Approximate GP Empirical Risk ({approximate_gp_regularisation_schema.value}):",
             "MNIST",
         ]
     ),
@@ -369,9 +369,9 @@ tempered_accuracy = calculate_metric(
     data=reduce(
         operator.add, [experiment_data.test for experiment_data in experiment_data_list]
     ),
-    metric_scheme=ClassificationMetricScheme.accuracy,
+    metric_schema=ClassificationMetricSchema.accuracy,
 )
 print(
-    f"Tempered Approximate GP Accuracy ({approximate_gp_regularisation_scheme.value}):",
+    f"Tempered Approximate GP Accuracy ({approximate_gp_regularisation_schema.value}):",
     tempered_accuracy,
 )

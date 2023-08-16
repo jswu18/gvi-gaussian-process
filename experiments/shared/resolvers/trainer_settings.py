@@ -12,8 +12,8 @@ def trainer_settings_resolver(
         "seed" in trainer_settings_config
     ), "Seed must be specified for trainer settings"
     assert (
-        "optimiser_scheme" in trainer_settings_config
-    ), "Optimiser scheme must be specified."
+        "optimiser_schema" in trainer_settings_config
+    ), "Optimiser schema must be specified."
     assert (
         "learning_rate" in trainer_settings_config
     ), "Learning rate must be specified."
@@ -29,7 +29,7 @@ def trainer_settings_resolver(
     ), "Batch drop last must be specified."
     return TrainerSettings(
         seed=trainer_settings_config["seed"],
-        optimiser_scheme=trainer_settings_config["optimiser_scheme"],
+        optimiser_schema=trainer_settings_config["optimiser_schema"],
         learning_rate=trainer_settings_config["learning_rate"],
         number_of_epochs=trainer_settings_config["number_of_epochs"],
         batch_size=trainer_settings_config["batch_size"],

@@ -1,18 +1,18 @@
 import enum
 
 
-class OptimiserScheme(str, enum.Enum):
+class OptimiserSchema(str, enum.Enum):
     adam = "adam"
     adabelief = "adabelief"
     rmsprop = "rmsprop"
 
 
-class EmpiricalRiskScheme(str, enum.Enum):
+class EmpiricalRiskSchema(str, enum.Enum):
     negative_log_likelihood = "negative_log_likelihood"
     cross_entropy = "cross_entropy"
 
 
-class RegularisationScheme(str, enum.Enum):
+class RegularisationSchema(str, enum.Enum):
     point_wise_gaussian_wasserstein = "point_wise_gaussian_wasserstein"
     point_wise_kl = "point_wise_kl"
     point_wise_bhattacharyya = "point_wise_bhattacharyya"
@@ -23,7 +23,7 @@ class RegularisationScheme(str, enum.Enum):
     multinomial_wasserstein = "multinomial_wasserstein"
 
 
-class KernelScheme(str, enum.Enum):
+class KernelSchema(str, enum.Enum):
     polynomial = "polynomial"
     ard = "ard"
     custom = "custom"
@@ -38,14 +38,14 @@ class KernelScheme(str, enum.Enum):
     custom_mapping_approximate = "custom_mapping_approximate"
 
 
-class MeanScheme(str, enum.Enum):
+class MeanSchema(str, enum.Enum):
     constant = "constant"
     custom = "custom"
     multi_output = "multi_output"
     svgp = "svgp"
 
 
-class NeuralNetworkLayerScheme(str, enum.Enum):
+class NeuralNetworkLayerSchema(str, enum.Enum):
     convolution = "convolution"
     dense = "dense"
     average_pool = "average_pool"
@@ -54,7 +54,7 @@ class NeuralNetworkLayerScheme(str, enum.Enum):
     flatten = "flatten"
 
 
-class NeuralNetworkGaussianProcessLayerScheme(str, enum.Enum):
+class NeuralNetworkGaussianProcessLayerSchema(str, enum.Enum):
     convolution = "convolution"
     dense = "dense"
     average_pool = "average_pool"

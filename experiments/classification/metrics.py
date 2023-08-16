@@ -1,7 +1,7 @@
 import jax.numpy as jnp
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
 
-from experiments.classification.schemes import ClassificationMetricScheme
+from experiments.classification.schemas import ClassificationMetricSchema
 from experiments.shared.data import Data
 from src.distributions import Multinomial
 from src.gps.base.base import GPBaseParameters
@@ -12,7 +12,7 @@ def calculate_metric(
     gp: GPClassificationBase,
     gp_parameters: GPBaseParameters,
     data: Data,
-    metric_scheme: ClassificationMetricScheme,
+    metric_schema: ClassificationMetricSchema,
 ) -> float:
     y_pred = jnp.argmax(
         Multinomial(
@@ -21,11 +21,11 @@ def calculate_metric(
         axis=1,
     )
     y_true = jnp.argmax(data.y, axis=1)
-    if metric_scheme == ClassificationMetricScheme.accuracy:
+    if metric_schema == ClassificationMetricSchema.accuracy:
         return accuracy_score(y_true, y_pred)
-    elif metric_scheme == ClassificationMetricScheme.f1:
+    elif metric_schema == ClassificationMetricSchema.f1:
         return f1_score(y_true, y_pred)
-    elif metric_scheme == ClassificationMetricScheme.precision:
+    elif metric_schema == ClassificationMetricSchema.precision:
         return precision_score(y_true, y_pred)
-    elif metric_scheme == ClassificationMetricScheme.recall:
+    elif metric_schema == ClassificationMetricSchema.recall:
         return recall_score(y_true, y_pred)

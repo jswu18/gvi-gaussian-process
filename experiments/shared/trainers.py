@@ -5,7 +5,7 @@ from experiments.shared.resolvers import (
     empirical_risk_resolver,
     regularisation_resolver,
 )
-from experiments.shared.schemas import EmpiricalRiskScheme, RegularisationScheme
+from experiments.shared.schemas import EmpiricalRiskSchema, RegularisationSchema
 from experiments.shared.trainer import Trainer, TrainerSettings
 from src import GeneralisedVariationalInference
 from src.gps.base.approximate_base import ApproximateGPBase
@@ -14,8 +14,8 @@ from src.gps.base.base import GPBase, GPBaseParameters
 
 def train_approximate_gp(
     data: Data,
-    empirical_risk_scheme: EmpiricalRiskScheme,
-    regularisation_scheme: RegularisationScheme,
+    empirical_risk_schema: EmpiricalRiskSchema,
+    regularisation_schema: RegularisationSchema,
     trainer_settings: TrainerSettings,
     approximate_gp: ApproximateGPBase,
     approximate_gp_parameters: GPBaseParameters,
@@ -25,11 +25,11 @@ def train_approximate_gp(
     checkpoint_path: str,
 ) -> Tuple[GPBaseParameters, List[Dict[str, float]]]:
     empirical_risk = empirical_risk_resolver(
-        empirical_risk_scheme=empirical_risk_scheme,
+        empirical_risk_schema=empirical_risk_schema,
         gp=approximate_gp,
     )
     regularisation = regularisation_resolver(
-        regularisation_scheme=regularisation_scheme,
+        regularisation_schema=regularisation_schema,
         gp=approximate_gp,
         regulariser=regulariser,
         regulariser_parameters=regulariser_parameters,
@@ -64,7 +64,7 @@ def train_approximate_gp(
 
 def train_tempered_gp(
     data: Data,
-    empirical_risk_scheme: EmpiricalRiskScheme,
+    empirical_risk_schema: EmpiricalRiskSchema,
     trainer_settings: TrainerSettings,
     tempered_gp: GPBase,
     tempered_gp_parameters: GPBaseParameters,
@@ -72,7 +72,7 @@ def train_tempered_gp(
     checkpoint_path: str,
 ) -> Tuple[GPBaseParameters, List[Dict[str, float]]]:
     empirical_risk = empirical_risk_resolver(
-        empirical_risk_scheme=empirical_risk_scheme,
+        empirical_risk_schema=empirical_risk_schema,
         gp=tempered_gp,
     )
     trainer = Trainer(

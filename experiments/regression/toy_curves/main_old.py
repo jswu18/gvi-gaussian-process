@@ -24,9 +24,9 @@ from experiments.shared.resolvers import (
     trainer_settings_resolver,
 )
 from experiments.shared.schemas import (
-    EmpiricalRiskScheme,
-    OptimiserScheme,
-    RegularisationScheme,
+    EmpiricalRiskSchema,
+    OptimiserSchema,
+    RegularisationSchema,
 )
 from experiments.shared.trainer import TrainerSettings
 from experiments.shared.trainers import train_approximate_gp, train_tempered_gp
@@ -82,9 +82,9 @@ reference_nll_break_condition = -10
 
 approximate_kernel_diagonal_regularisation = 1e-10
 
-reference_gp_empirical_risk_scheme = EmpiricalRiskScheme.negative_log_likelihood
-approximate_gp_empirical_risk_scheme = EmpiricalRiskScheme.negative_log_likelihood
-tempered_gp_empirical_risk_scheme = EmpiricalRiskScheme.negative_log_likelihood
+reference_gp_empirical_risk_schema = EmpiricalRiskSchema.negative_log_likelihood
+approximate_gp_empirical_risk_schema = EmpiricalRiskSchema.negative_log_likelihood
+tempered_gp_empirical_risk_schema = EmpiricalRiskSchema.negative_log_likelihood
 
 reference_save_checkpoint_frequency = 1000
 approximate_save_checkpoint_frequency = 1000
@@ -92,7 +92,7 @@ tempered_save_checkpoint_frequency = 1000
 
 reference_gp_trainer_settings = TrainerSettings(
     seed=0,
-    optimiser_scheme=OptimiserScheme.adabelief,
+    optimiser_schema=OptimiserSchema.adabelief,
     learning_rate=1e-5,
     number_of_epochs=20000,
     batch_size=1000,
@@ -101,7 +101,7 @@ reference_gp_trainer_settings = TrainerSettings(
 )
 approximate_gp_trainer_settings = TrainerSettings(
     seed=0,
-    optimiser_scheme=OptimiserScheme.adabelief,
+    optimiser_schema=OptimiserSchema.adabelief,
     learning_rate=1e-3,
     number_of_epochs=20000,
     batch_size=1000,
@@ -110,7 +110,7 @@ approximate_gp_trainer_settings = TrainerSettings(
 )
 tempered_gp_trainer_settings = TrainerSettings(
     seed=0,
-    optimiser_scheme=OptimiserScheme.adabelief,
+    optimiser_schema=OptimiserSchema.adabelief,
     learning_rate=1e-3,
     number_of_epochs=2000,
     batch_size=1000,
@@ -165,7 +165,7 @@ for curve_function in CURVE_FUNCTIONS:
     #     reference_post_epoch_histories,
     # ) = meta_train_reference_gp(
     #     data=experiment_data.train,
-    #     empirical_risk_scheme=reference_gp_empirical_risk_scheme,
+    #     empirical_risk_schema=reference_gp_empirical_risk_schema,
     #     trainer_settings=reference_gp_trainer_settings,
     #     kernel=CustomKernel(
     #         kernel_function=nngp_kernel,
@@ -203,7 +203,7 @@ for curve_function in CURVE_FUNCTIONS:
     #         for reference_post_epoch_history in reference_post_epoch_histories
     #     ],
     #     labels=[f"iteration-{i}" for i in range(reference_number_of_iterations)],
-    #     loss_name=reference_gp_empirical_risk_scheme.value,
+    #     loss_name=reference_gp_empirical_risk_schema.value,
     #     title=f"Reference GP Empirical Risk: {curve_function.__name__}",
     #     save_path=os.path.join(
     #         curve_directory,
@@ -211,10 +211,10 @@ for curve_function in CURVE_FUNCTIONS:
     #     ),
     # )
     #
-    # for approximate_gp_regularisation_scheme_str in RegularisationScheme:
+    # for approximate_gp_regularisation_schema_str in RegularisationSchema:
     #     approximate_experiment_directory = os.path.join(
     #         curve_directory,
-    #         approximate_gp_regularisation_scheme_str,
+    #         approximate_gp_regularisation_schema_str,
     #     )
     #     if not os.path.exists(approximate_experiment_directory):
     #         os.makedirs(approximate_experiment_directory)
@@ -247,9 +247,9 @@ for curve_function in CURVE_FUNCTIONS:
     #         approximate_post_epoch_history,
     #     ) = train_approximate_gp(
     #         data=experiment_data.train,
-    #         empirical_risk_scheme=approximate_gp_empirical_risk_scheme,
-    #         regularisation_scheme=RegularisationScheme(
-    #             approximate_gp_regularisation_scheme_str
+    #         empirical_risk_schema=approximate_gp_empirical_risk_schema,
+    #         regularisation_schema=RegularisationSchema(
+    #             approximate_gp_regularisation_schema_str
     #         ),
     #         trainer_settings=approximate_gp_trainer_settings,
     #         approximate_gp=approximate_gp,
@@ -262,7 +262,7 @@ for curve_function in CURVE_FUNCTIONS:
     #             type(curve_function).__name__.lower(),
     #             checkpoints_folder_name,
     #             "approximate-gp",
-    #             approximate_gp_regularisation_scheme_str,
+    #             approximate_gp_regularisation_schema_str,
     #         ),
     #     )
     #     plot_prediction(
@@ -275,7 +275,7 @@ for curve_function in CURVE_FUNCTIONS:
     #         gp_parameters=approximate_gp_parameters,
     #         title=" ".join(
     #             [
-    #                 f"Approximate GP ({approximate_gp_regularisation_scheme_str}):",
+    #                 f"Approximate GP ({approximate_gp_regularisation_schema_str}):",
     #                 f"{curve_function.__name__}",
     #             ]
     #         ),
@@ -287,10 +287,10 @@ for curve_function in CURVE_FUNCTIONS:
     #     plot_losses(
     #         losses=[x["gvi-objective"] for x in approximate_post_epoch_history],
     #         labels="gvi-objective",
-    #         loss_name=f"{approximate_gp_empirical_risk_scheme.value}+{approximate_gp_regularisation_scheme_str}",
+    #         loss_name=f"{approximate_gp_empirical_risk_schema.value}+{approximate_gp_regularisation_schema_str}",
     #         title=" ".join(
     #             [
-    #                 f"Approximate GP Objective ({approximate_gp_regularisation_scheme_str}):",
+    #                 f"Approximate GP Objective ({approximate_gp_regularisation_schema_str}):",
     #                 f"{curve_function.__name__}",
     #             ]
     #         ),
@@ -301,12 +301,12 @@ for curve_function in CURVE_FUNCTIONS:
     #     )
     #     plot_two_losses(
     #         loss1=[x["empirical-risk"] for x in approximate_post_epoch_history],
-    #         loss1_name=approximate_gp_empirical_risk_scheme.value,
+    #         loss1_name=approximate_gp_empirical_risk_schema.value,
     #         loss2=[x["regularisation"] for x in approximate_post_epoch_history],
-    #         loss2_name=approximate_gp_regularisation_scheme_str,
+    #         loss2_name=approximate_gp_regularisation_schema_str,
     #         title=" ".join(
     #             [
-    #                 f"Approximate GP Objective Breakdown ({approximate_gp_regularisation_scheme_str}):",
+    #                 f"Approximate GP Objective Breakdown ({approximate_gp_regularisation_schema_str}):",
     #                 f"{curve_function.__name__}",
     #             ]
     #         ),
@@ -333,7 +333,7 @@ for curve_function in CURVE_FUNCTIONS:
     #     )
     #     tempered_gp_parameters, tempered_post_epoch_history = train_tempered_gp(
     #         data=experiment_data.validation,
-    #         empirical_risk_scheme=tempered_gp_empirical_risk_scheme,
+    #         empirical_risk_schema=tempered_gp_empirical_risk_schema,
     #         trainer_settings=tempered_gp_trainer_settings,
     #         tempered_gp=tempered_approximate_gp,
     #         tempered_gp_parameters=initial_tempered_gp_parameters,
@@ -343,7 +343,7 @@ for curve_function in CURVE_FUNCTIONS:
     #             type(curve_function).__name__.lower(),
     #             checkpoints_folder_name,
     #             "tempered-gp",
-    #             approximate_gp_regularisation_scheme_str,
+    #             approximate_gp_regularisation_schema_str,
     #         ),
     #     )
     #     plot_prediction(
@@ -356,7 +356,7 @@ for curve_function in CURVE_FUNCTIONS:
     #         gp_parameters=tempered_gp_parameters,
     #         title=" ".join(
     #             [
-    #                 f"Tempered Approximate GP ({approximate_gp_regularisation_scheme_str}):",
+    #                 f"Tempered Approximate GP ({approximate_gp_regularisation_schema_str}):",
     #                 f"{curve_function.__name__}",
     #             ]
     #         ),
@@ -367,10 +367,10 @@ for curve_function in CURVE_FUNCTIONS:
     #     plot_losses(
     #         losses=[x["empirical-risk"] for x in tempered_post_epoch_history],
     #         labels="empirical-risk",
-    #         loss_name=tempered_gp_empirical_risk_scheme.value,
+    #         loss_name=tempered_gp_empirical_risk_schema.value,
     #         title=" ".join(
     #             [
-    #                 f"Tempered Approximate GP Empirical Risk ({approximate_gp_regularisation_scheme_str}):",
+    #                 f"Tempered Approximate GP Empirical Risk ({approximate_gp_regularisation_schema_str}):",
     #                 f"{curve_function.__name__}",
     #             ]
     #         ),

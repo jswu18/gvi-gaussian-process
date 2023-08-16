@@ -10,7 +10,7 @@ from tqdm import tqdm
 from experiments.classification.plotters import plot_images
 from experiments.shared.data import Data
 from experiments.shared.resolvers import empirical_risk_resolver
-from experiments.shared.schemas import EmpiricalRiskScheme
+from experiments.shared.schemas import EmpiricalRiskSchema
 from experiments.shared.trainer import Trainer, TrainerSettings
 from experiments.shared.utils import calculate_inducing_points
 from src.gps import GPClassification, GPClassificationParameters
@@ -20,7 +20,7 @@ from src.means import ConstantMean
 
 def train_reference_gp(
     data_list: List[Data],
-    empirical_risk_scheme: EmpiricalRiskScheme,
+    empirical_risk_schema: EmpiricalRiskSchema,
     trainer_settings: TrainerSettings,
     kernel: MultiOutputKernel,
     kernel_parameters: MultiOutputKernelParameters,
@@ -69,7 +69,7 @@ def train_reference_gp(
         }
     )
     empirical_risk = empirical_risk_resolver(
-        empirical_risk_scheme=empirical_risk_scheme,
+        empirical_risk_schema=empirical_risk_schema,
         gp=gp,
     )
     trainer = Trainer(
@@ -103,7 +103,7 @@ def train_reference_gp(
 
 def meta_train_reference_gp(
     data_list: List[Data],
-    empirical_risk_scheme: EmpiricalRiskScheme,
+    empirical_risk_schema: EmpiricalRiskSchema,
     trainer_settings: TrainerSettings,
     kernel: MultiOutputKernel,
     kernel_parameters: MultiOutputKernelParameters,
@@ -124,7 +124,7 @@ def meta_train_reference_gp(
     for i in range(number_of_iterations):
         gp, gp_parameters, post_epoch_history, inducing_data_list = train_reference_gp(
             data_list=data_list,
-            empirical_risk_scheme=empirical_risk_scheme,
+            empirical_risk_schema=empirical_risk_schema,
             trainer_settings=trainer_settings,
             kernel=kernel,
             kernel_parameters=kernel_parameters,

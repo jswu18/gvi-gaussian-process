@@ -17,60 +17,60 @@ from src.regularisations.point_wise import (
 
 
 def regularisation_resolver(
-    regularisation_scheme: schemes.RegularisationScheme,
+    regularisation_schema: schemas.RegularisationSchema,
     gp: GPBase,
     regulariser: GPBase,
     regulariser_parameters: GPBaseParameters,
 ) -> RegularisationBase:
     if (
-        regularisation_scheme
-        == schemes.RegularisationScheme.gaussian_squared_difference
+        regularisation_schema
+        == schemas.RegularisationSchema.gaussian_squared_difference
     ):
         return GaussianSquaredDifferenceRegularisation(
             gp=gp,
             regulariser=regulariser,
             regulariser_parameters=regulariser_parameters,
         )
-    elif regularisation_scheme == schemes.RegularisationScheme.gaussian_wasserstein:
+    elif regularisation_schema == schemas.RegularisationSchema.gaussian_wasserstein:
         return GaussianWassersteinRegularisation(
             gp=gp,
             regulariser=regulariser,
             regulariser_parameters=regulariser_parameters,
         )
     elif (
-        regularisation_scheme
-        == schemes.RegularisationScheme.point_wise_gaussian_wasserstein
+        regularisation_schema
+        == schemas.RegularisationSchema.point_wise_gaussian_wasserstein
     ):
         return PointWiseGaussianWassersteinRegularisation(
             gp=gp,
             regulariser=regulariser,
             regulariser_parameters=regulariser_parameters,
         )
-    elif regularisation_scheme == schemes.RegularisationScheme.point_wise_kl:
+    elif regularisation_schema == schemas.RegularisationSchema.point_wise_kl:
         return PointWiseKLRegularisation(
             gp=gp,
             regulariser=regulariser,
             regulariser_parameters=regulariser_parameters,
         )
-    elif regularisation_scheme == schemes.RegularisationScheme.point_wise_bhattacharyya:
+    elif regularisation_schema == schemas.RegularisationSchema.point_wise_bhattacharyya:
         return PointWiseBhattacharyyaRegularisation(
             gp=gp,
             regulariser=regulariser,
             regulariser_parameters=regulariser_parameters,
         )
-    elif regularisation_scheme == schemes.RegularisationScheme.point_wise_hellinger:
+    elif regularisation_schema == schemas.RegularisationSchema.point_wise_hellinger:
         return PointWiseHellingerRegularisation(
             gp=gp,
             regulariser=regulariser,
             regulariser_parameters=regulariser_parameters,
         )
-    elif regularisation_scheme == schemes.RegularisationScheme.point_wise_renyi:
+    elif regularisation_schema == schemas.RegularisationSchema.point_wise_renyi:
         return PointWiseRenyiRegularisation(
             gp=gp,
             regulariser=regulariser,
             regulariser_parameters=regulariser_parameters,
         )
-    elif regularisation_scheme == schemes.RegularisationScheme.multinomial_wasserstein:
+    elif regularisation_schema == schemas.RegularisationSchema.multinomial_wasserstein:
         assert isinstance(gp, GPClassificationBase), "GP must be a classification GP"
         assert isinstance(
             regulariser, GPClassificationBase
@@ -81,4 +81,4 @@ def regularisation_resolver(
             regulariser_parameters=regulariser_parameters,
         )
     else:
-        raise ValueError(f"Unknown regularisation scheme: {regularisation_scheme=}")
+        raise ValueError(f"Unknown regularisation schema: {regularisation_schema=}")

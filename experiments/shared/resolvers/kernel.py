@@ -1,13 +1,15 @@
 from typing import Dict, Tuple, Union
 
 import jax.numpy as jnp
+import orbax
+import yaml
 from flax.core.frozen_dict import FrozenDict
 
-from experiments.shared.resolvers import nn_function_resolver
+from experiments.shared.resolvers.nn_function import nn_function_resolver
 from experiments.shared.resolvers.nngp_kernel_function import (
     nngp_kernel_function_resolver,
 )
-from experiments.shared.schemas import KernelScheme
+from experiments.shared.schemas import KernelSchema
 from src.kernels import CustomKernel, CustomMappingKernel, MultiOutputKernel
 from src.kernels.approximate import (
     CustomApproximateKernel,
@@ -25,16 +27,33 @@ from src.kernels.non_stationary.base import NonStationaryKernelBase
 def kernel_resolver(
     kernel_config: Union[FrozenDict, Dict],
 ) -> Tuple[KernelBase, KernelBaseParameters]:
-    assert "kernel_scheme" in kernel_config, "Kernel scheme must be specified."
+    if "load_config_paths" in kernel_config:
+        assert (
+            "config_path" in kernel_config["load_config_paths"]
+        ), "Must have kernel config path"
+        assert (
+            "parameters_path" in kernel_config["load_config_paths"]
+        ), "Must have parameters path"
+        with open(kernel_config["load_config_paths"]["config_path"], "r") as file:
+            loaded_kernel_config = yaml.safe_load(file)
+
+        kernel, _ = kernel_resolver(loaded_kernel_config["kernel"])
+        orbax_checkpointer = orbax.checkpoint.PyTreeCheckpointer()
+        ckpt = orbax_checkpointer.restore(
+            kernel_config["load_config_paths"]["parameters_path"]
+        )
+        kernel_parameters = kernel.Parameters.construct(**ckpt["kernel"])
+        return kernel, kernel_parameters
+    assert "kernel_schema" in kernel_config, "Kernel schema must be specified."
     assert "kernel_kwargs" in kernel_config, "Kernel kwargs must be specified."
     assert "kernel_parameters" in kernel_config, "Kernel parameters must be specified."
-    kernel_scheme: KernelScheme = kernel_config["kernel_scheme"]
+    kernel_schema: KernelSchema = kernel_config["kernel_schema"]
     kernel_kwargs: Union[FrozenDict, Dict] = kernel_config["kernel_kwargs"]
     kernel_parameters_config: Union[FrozenDict, Dict] = kernel_config[
         "kernel_parameters"
     ]
 
-    if kernel_scheme == KernelScheme.polynomial:
+    if kernel_schema == KernelSchema.polynomial:
         assert (
             "polynomial_degree" in kernel_kwargs
         ), "Polynomial degree must be specified."
@@ -55,7 +74,7 @@ def kernel_resolver(
             }
         )
         return kernel, kernel_parameters
-    elif kernel_scheme == KernelScheme.multi_output:
+    elif kernel_schema == KernelSchema.multi_output:
         if "repeat" in kernel_kwargs:
             kernel_list = []
             kernel_parameters_list = []
@@ -86,7 +105,7 @@ def kernel_resolver(
                 {"kernels": kernel_parameters_list}
             )
             return kernel, kernel_parameters
-    elif kernel_scheme == KernelScheme.custom:
+    elif kernel_schema == KernelSchema.custom:
         assert (
             "nngp_kernel_function_kwargs" in kernel_kwargs
         ), "Custom kernel function kwargs must be specified."
@@ -108,7 +127,7 @@ def kernel_resolver(
             {"custom": kernel_function_parameters}
         )
         return kernel, kernel_parameters
-    elif kernel_scheme == KernelScheme.custom_mapping:
+    elif kernel_schema == KernelSchema.custom_mapping:
         assert "base_kernel" in kernel_kwargs, "Base kernel must be specified."
         assert (
             "nn_function_kwargs" in kernel_kwargs
@@ -134,7 +153,7 @@ def kernel_resolver(
             }
         )
         return kernel, kernel_parameters
-    elif kernel_scheme == KernelScheme.custom_approximate:
+    elif kernel_schema == KernelSchema.custom_approximate:
         assert (
             "nngp_kernel_function_kwargs" in kernel_kwargs
         ), "Custom kernel function kwargs must be specified."
@@ -167,7 +186,7 @@ def kernel_resolver(
             {"custom": kernel_function_parameters}
         )
         return kernel, kernel_parameters
-    elif kernel_scheme == KernelScheme.custom_mapping_approximate:
+    elif kernel_schema == KernelSchema.custom_mapping_approximate:
         assert "base_kernel" in kernel_kwargs, "Base kernel must be specified."
         assert (
             "nn_function_kwargs" in kernel_kwargs
@@ -205,11 +224,11 @@ def kernel_resolver(
             }
         )
         return kernel, kernel_parameters
-    elif kernel_scheme in [
-        KernelScheme.svgp,
-        KernelScheme.diagonal_svgp,
-        KernelScheme.log_svgp,
-        KernelScheme.kernelised_svgp,
+    elif kernel_schema in [
+        KernelSchema.svgp,
+        KernelSchema.diagonal_svgp,
+        KernelSchema.log_svgp,
+        KernelSchema.kernelised_svgp,
     ]:
         assert (
             "reference_kernel" in kernel_kwargs
@@ -229,7 +248,7 @@ def kernel_resolver(
         assert (
             "is_diagonal_regularisation_absolute_scale" in kernel_kwargs
         ), "Is diagonal regularisation absolute scale must be specified."
-        if kernel_scheme == KernelScheme.svgp:
+        if kernel_schema == KernelSchema.svgp:
             kernel = SVGPKernel(
                 reference_kernel=reference_kernel,
                 reference_kernel_parameters=reference_kernel_parameters,
@@ -252,7 +271,7 @@ def kernel_resolver(
                 }
             )
             return kernel, kernel_parameters
-        elif kernel_scheme == KernelScheme.diagonal_svgp:
+        elif kernel_schema == KernelSchema.diagonal_svgp:
             kernel = DiagonalSVGPKernel(
                 reference_kernel=reference_kernel,
                 reference_kernel_parameters=reference_kernel_parameters,
@@ -271,7 +290,7 @@ def kernel_resolver(
                 }
             )
             return kernel, kernel_parameters
-        elif kernel_scheme == KernelScheme.log_svgp:
+        elif kernel_schema == KernelSchema.log_svgp:
             kernel = LogSVGPKernel(
                 reference_kernel=reference_kernel,
                 reference_kernel_parameters=reference_kernel_parameters,
@@ -290,7 +309,7 @@ def kernel_resolver(
                 }
             )
             return kernel, kernel_parameters
-        elif kernel_scheme == KernelScheme.kernelised_svgp:
+        elif kernel_schema == KernelSchema.kernelised_svgp:
             assert "base_kernel" in kernel_kwargs, "Base kernel must be specified."
             base_kernel, base_kernel_parameters = kernel_resolver(
                 kernel_config=kernel_kwargs["base_kernel"],
@@ -299,7 +318,7 @@ def kernel_resolver(
                 base_kernel=base_kernel,
                 reference_kernel=reference_kernel,
                 reference_kernel_parameters=reference_kernel_parameters,
-                log_observation_noise=kernel_kwargs["log_observation_noise"],
+                log_observation_noise=jnp.log(kernel_kwargs["observation_noise"]),
                 inducing_points=kernel_kwargs["inducing_points"],
                 training_points=kernel_kwargs["training_points"],
                 diagonal_regularisation=kernel_kwargs["diagonal_regularisation"],
@@ -314,4 +333,4 @@ def kernel_resolver(
             )
             return kernel, kernel_parameters
     else:
-        raise NotImplementedError(f"Kernel scheme {kernel_scheme} not implemented.")
+        raise NotImplementedError(f"Kernel schema {kernel_schema} not implemented.")

@@ -11,9 +11,9 @@ from experiments.regression.trainers import meta_train_reference_gp
 from experiments.shared.data import Data, ExperimentData
 from experiments.shared.resolvers import kernel_resolver, trainer_settings_resolver
 from experiments.shared.schemas import (
-    EmpiricalRiskScheme,
-    KernelScheme,
-    RegularisationScheme,
+    EmpiricalRiskSchema,
+    KernelSchema,
+    RegularisationSchema,
 )
 from experiments.shared.trainer import TrainerSettings
 from src.utils.custom_types import PRNGKey
@@ -83,7 +83,7 @@ def run_train_reference_model(
     experiment_data_path: str,
     name: str,
     kernel_config: Union[FrozenDict, Dict],
-    empirical_risk_scheme: EmpiricalRiskScheme,
+    empirical_risk_schema: EmpiricalRiskSchema,
     trainer_settings_config: Union[FrozenDict, Dict],
     number_of_inducing_points: int,
     number_of_iterations: int,
@@ -107,7 +107,7 @@ def run_train_reference_model(
         reference_post_epoch_histories,
     ) = meta_train_reference_gp(
         data=experiment_data.train,
-        empirical_risk_scheme=empirical_risk_scheme,
+        empirical_risk_schema=empirical_risk_schema,
         trainer_settings=trainer_settings,
         kernel=kernel,
         kernel_parameters=kernel_parameters,
