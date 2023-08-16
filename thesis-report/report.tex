@@ -265,8 +265,12 @@ We wish to find $\nu^* \in \mathbf{\Gamma}$ such that for any test points $\math
 To approximate the exact predictive posterior, \cite{titsias2009variational} derives the free energy lower bound, by matching the log-likelihood of $P_{\GP}$ with respect to the approximation parameters $\nu \in \Gamma$. This begins with the log-likelihood for the exact GP:
 \begin{align}
     L_{loglike} &= \log P_{\GP}\left(\mathbf{Y}_N \vert \mathbf{X}_N, \sigma^2\right)
-    \\ &= \log \int_{\mathbb{R}^{N^*}} P_{\GP}\left(\mathbf{Y}_N, Y_{N^*} \vert \mathbf{X}_{N^*}, \mathbf{X}_N, \sigma^2\right) d Y_{N^*}
+    \\ &= \log \int_{\mathbb{R}^{N^*}}\int_{\mathbb{R}^{M}} P_{\GP}\left(\mathbf{Y}_N, Y_{N^*}, Y_{M} \vert \mathbf{X}_{N^*}, \mathbf{X}_N, \mathbf{X}_{M}, \sigma^2\right) d Y_{M} d Y_{N^*}
+    \\ &= \log \int_{\mathbb{R}^{N^*}}\int_{\mathbb{R}^{M}} P_{\GP}\left(\mathbf{Y}_N\vert Y_{N^*}, \mathbf{X}_{N^*}, \sigma^2\right) P_{\GP}\left(Y_{N^*} \vert Y_{M}, \mathbf{X}_N, \mathbf{X}_{M}, \sigma^2\right) P_{\GP}\left(Y_{M}\vert \mathbf{X}_{M}, \sigma^2 \right) d Y_{M} d Y_{N^*}
     \label{log-like}
+    % L_{loglike} &= \log P_{\GP}\left(\mathbf{Y}_N \vert \mathbf{X}_N, \sigma^2\right)
+    % \\ &= \log \int_{\mathbb{R}^{N^*}} P_{\GP}\left(\mathbf{Y}_N, Y_{N^*} \vert \mathbf{X}_{N^*}, \mathbf{X}_N, \sigma^2\right) d Y_{N^*}
+    % \label{log-like}
 \end{align}
 Introducing the approximate posterior:
 \begin{align}
