@@ -58,7 +58,7 @@ $\Box$ \end{quotation}}
 
 
 \title{  	{ \includegraphics[scale=.5]{ucl_logo.png}}\\
-{{\Huge Generalised Variational Inference for Sparse Gaussian Process Learning}}\\
+{{\Huge Generalised Variational Inference for Gaussian Processes}}\\
 {\large }\\
 		}
 \date{Submission date: September 2023}
@@ -112,7 +112,7 @@ where the GP is defined with respect to a mean function $m_p: \mathcal{X} \right
 In other words, for any $N$ points $\mathbf{X}_N = \left\{ x_n\right\}_{n=1}^N$ where $x_n \in \mathcal{X}$, a GP constructs the Gaussian distribution for a random response vector $Y_N \in \mathbb{R}^{N}$:
 \begin{align}
     \label{gp-vector}
-    P\left(Y_N \vert \mathbf{X}_N\right) = F\left( \mathbf{X}_N\right) = \mathcal{N}\left(\mathbf{m}_{p\left(\mathbf{X}_N\right)}, \mathbf{K}_{p\left(\mathbf{X}_N, \mathbf{X}_N\right)}\right)
+    P\left(Y_N \vert \mathbf{X}_N\right) = F\left( \mathbf{X}_N\right) = \mathcal{N}\left(\mathbf{m}^p_{\mathbf{X}_N}, \mathbf{K}^p_{\mathbf{X}_N, \mathbf{X}_N}\right)
 \end{align}
 where $\mathbf{m}_{p(\mathbf{X}_N)} = \left[ m_p(x_1) \cdots m_p(x_N)\right]^T \in \mathbb{R}^N$ and $\mathbf{K}_{p(\mathbf{X}_N, \mathbf{X}_N)} \in \mathbb{R}^{N \times N}$ having elements:
 \begin{align}
@@ -487,7 +487,7 @@ Crucially, by replacing the KL-divergence in (\ref{svgp-minimiser-gvi-kld}), we 
 \section{GVI-GPs: Flexible \textit{and} Scaleable}
 \subsection{A Framework for GP Learning}
 \subsection{Implementation Architecture}
-\subsection{Learning Sparse GPs with GVI}
+\subsection{Learning GPs with GVI}
 \subsubsection{Inducing Points and the Regulariser GP}
 \subsubsection{Tempering}
 
