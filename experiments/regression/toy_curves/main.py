@@ -1,7 +1,7 @@
 import argparse
 import enum
 import os
-from typing import Dict
+from typing import Dict, Tuple
 
 import jax
 import jax.numpy as jnp
@@ -18,8 +18,14 @@ from experiments.shared.resolvers import (
     mean_resolver,
     trainer_settings_resolver,
 )
-from experiments.shared.trainers import train_approximate_gp
-from src.gps import ApproximateGPRegression, GPRegression
+from experiments.shared.schemas import EmpiricalRiskSchema
+from experiments.shared.trainers import train_approximate_gp, train_tempered_gp
+from src.gps import (
+    ApproximateGPRegression,
+    ApproximateGPRegressionParameters,
+    GPRegression,
+)
+from src.kernels import TemperedKernel
 from src.means import ConstantMean
 
 
@@ -35,26 +41,10 @@ parser.add_argument("--action", choices=[Actions[a].value for a in Actions])
 parser.add_argument("--config_path", type=str)
 
 
-def construct_data_path(output_path: str, experiment_name: str) -> str:
+def construct_path(output_path: str, experiment_name: str, action: Actions) -> str:
     return os.path.join(
         output_path,
-        "data",
-        experiment_name,
-    )
-
-
-def construct_train_reference_path(output_path: str, experiment_name: str) -> str:
-    return os.path.join(
-        output_path,
-        "reference",
-        experiment_name,
-    )
-
-
-def construct_approximate_reference_path(output_path: str, experiment_name: str) -> str:
-    return os.path.join(
-        output_path,
-        "approximate",
+        action,
         experiment_name,
     )
 
@@ -72,8 +62,10 @@ def build_data_set(config: Dict, output_path: str, experiment_name: str) -> None
     assert "sigma_true" in config, "Sigma true must be specified."
 
     x = jnp.linspace(-2, 2, config["number_of_data_points"]).reshape(-1, 1)
-    data_path = construct_data_path(
-        output_path=output_path, experiment_name=experiment_name
+    data_path = construct_path(
+        output_path=output_path,
+        experiment_name=experiment_name,
+        action=Actions.build_data,
     )
     for curve_function in CURVE_FUNCTIONS:
         y = curve_function(
@@ -140,22 +132,26 @@ def train_reference(config: Dict, output_path: str, experiment_name: str) -> Non
         "save_checkpoint_frequency" in config
     ), "Save checkpoint frequency must be specified for reference training"
     assert "kernel" in config, "Kernel must be specified for reference training"
-    save_path = construct_train_reference_path(
-        output_path=output_path, experiment_name=experiment_name
+    save_path = construct_path(
+        output_path=output_path,
+        experiment_name=experiment_name,
+        action=Actions.train_reference,
     )
-    data_path = construct_data_path(
-        output_path=output_path, experiment_name=config["data_name"]
+    data_path = construct_path(
+        output_path=output_path,
+        experiment_name=config["data_name"],
+        action=Actions.build_data,
     )
     trainer_settings = trainer_settings_resolver(
         trainer_settings_config=config["trainer_settings"],
-    )
-    number_of_inducing_points = int(
-        config["inducing_points_factor"] * jnp.sqrt(len(experiment_data.train.x))
     )
     for curve_function in CURVE_FUNCTIONS:
         experiment_data = ExperimentData.load(
             path=data_path,
             name=type(curve_function).__name__.lower(),
+        )
+        number_of_inducing_points = int(
+            config["inducing_points_factor"] * jnp.sqrt(len(experiment_data.train.x))
         )
         kernel, kernel_parameters = kernel_resolver(
             kernel_config=config["kernel"],
@@ -227,6 +223,78 @@ def train_reference(config: Dict, output_path: str, experiment_name: str) -> Non
         )
 
 
+def _build_approximate_gp(
+    config: Dict,
+    config_directory_parent_path: str,
+    inducing_points: jnp.ndarray,
+    training_points: jnp.ndarray,
+    output_path: str,
+    experiment_data_name: str,
+) -> Tuple[ApproximateGPRegression, ApproximateGPRegressionParameters]:
+    config["kernel"]["kernel_kwargs"]["inducing_points"] = inducing_points
+    config["kernel"]["kernel_kwargs"]["training_points"] = training_points
+
+    if "reference_kernel" in config["kernel"]["kernel_kwargs"]:
+        reference_kernel_config_name = config["kernel"]["kernel_kwargs"][
+            "reference_kernel"
+        ]["load_config"]
+        config["kernel"]["kernel_kwargs"]["reference_kernel"]["load_config_paths"] = {
+            "config_path": os.path.join(
+                config_directory_parent_path,
+                "configs",
+                Actions.train_reference,
+                f"{reference_kernel_config_name}.yaml",
+            ),
+            "parameters_path": os.path.join(
+                construct_path(
+                    output_path=output_path,
+                    experiment_name=reference_kernel_config_name,
+                    action=Actions.train_reference,
+                ),
+                experiment_data_name,
+                "parameters.ckpt",
+            ),
+        }
+    if "base_kernel" in config["kernel"]["kernel_kwargs"]:
+        base_kernel_config_name = config["kernel"]["kernel_kwargs"]["base_kernel"][
+            "load_config"
+        ]
+        config["kernel"]["kernel_kwargs"]["base_kernel"]["load_config_paths"] = {
+            "config_path": os.path.join(
+                config_directory_parent_path,
+                "configs",
+                Actions.train_reference,
+                f"{base_kernel_config_name}.yaml",
+            ),
+            "parameters_path": os.path.join(
+                construct_path(
+                    output_path=output_path,
+                    experiment_name=base_kernel_config_name,
+                    action=Actions.train_reference,
+                ),
+                experiment_data_name,
+                "parameters.ckpt",
+            ),
+        }
+    kernel, kernel_parameters = kernel_resolver(
+        kernel_config=config["kernel"],
+    )
+    mean, mean_parameters = mean_resolver(
+        mean_config=config["mean"],
+    )
+    gp = ApproximateGPRegression(
+        mean=mean,
+        kernel=kernel,
+    )
+    gp_parameters = gp.generate_parameters(
+        {
+            "mean": mean_parameters,
+            "kernel": kernel_parameters,
+        }
+    )
+    return gp, gp_parameters
+
+
 def train_approximate(config: Dict, output_path: str, experiment_name: str) -> None:
     assert "data_name" in config, "Data name must be specified for approximate training"
     assert (
@@ -249,14 +317,20 @@ def train_approximate(config: Dict, output_path: str, experiment_name: str) -> N
     ), "Save checkpoint frequency must be specified for approximate training"
     assert "mean" in config, "Mean must be specified for reference training"
     assert "kernel" in config, "Kernel must be specified for reference training"
-    data_path = construct_data_path(
-        output_path=output_path, experiment_name=config["data_name"]
+    data_path = construct_path(
+        output_path=output_path,
+        experiment_name=config["data_name"],
+        action=Actions.build_data,
     )
-    reference_path = construct_train_reference_path(
-        output_path=output_path, experiment_name=config["reference_name"]
+    reference_path = construct_path(
+        output_path=output_path,
+        experiment_name=config["reference_name"],
+        action=Actions.train_reference,
     )
-    save_path = construct_approximate_reference_path(
-        output_path=output_path, experiment_name=experiment_name
+    save_path = construct_path(
+        output_path=output_path,
+        experiment_name=experiment_name,
+        action=Actions.train_approximate,
     )
     trainer_settings = trainer_settings_resolver(
         trainer_settings_config=config["trainer_settings"],
@@ -273,66 +347,13 @@ def train_approximate(config: Dict, output_path: str, experiment_name: str) -> N
             ),
             name="inducing",
         )
-        config["kernel"]["kernel_kwargs"]["inducing_points"] = inducing_data.x
-        config["kernel"]["kernel_kwargs"]["training_points"] = experiment_data.train.x
-
-        if "reference_kernel" in config["kernel"]["kernel_kwargs"]:
-            reference_kernel_config_name = config["kernel"]["kernel_kwargs"][
-                "reference_kernel"
-            ]["load_config"]
-            config["kernel"]["kernel_kwargs"]["reference_kernel"][
-                "load_config_paths"
-            ] = {
-                "config_path": os.path.join(
-                    os.path.dirname(os.path.abspath(__file__)),
-                    "configs",
-                    "train_reference",
-                    f"{reference_kernel_config_name}.yaml",
-                ),
-                "parameters_path": os.path.join(
-                    construct_train_reference_path(
-                        output_path=output_path,
-                        experiment_name=reference_kernel_config_name,
-                    ),
-                    experiment_data.name,
-                    "parameters.ckpt",
-                ),
-            }
-        if "base_kernel" in config["kernel"]["kernel_kwargs"]:
-            base_kernel_config_name = config["kernel"]["kernel_kwargs"]["base_kernel"][
-                "load_config"
-            ]
-            config["kernel"]["kernel_kwargs"]["base_kernel"]["load_config_paths"] = {
-                "config_path": os.path.join(
-                    os.path.dirname(os.path.abspath(__file__)),
-                    "configs",
-                    "train_reference",
-                    f"{base_kernel_config_name}.yaml",
-                ),
-                "parameters_path": os.path.join(
-                    construct_train_reference_path(
-                        output_path=output_path,
-                        experiment_name=base_kernel_config_name,
-                    ),
-                    experiment_data.name,
-                    "parameters.ckpt",
-                ),
-            }
-        kernel, kernel_parameters = kernel_resolver(
-            kernel_config=config["kernel"],
-        )
-        mean, mean_parameters = mean_resolver(
-            mean_config=config["mean"],
-        )
-        approximate_gp = ApproximateGPRegression(
-            mean=mean,
-            kernel=kernel,
-        )
-        initial_approximate_gp_parameters = approximate_gp.generate_parameters(
-            {
-                "mean": mean_parameters,
-                "kernel": kernel_parameters,
-            }
+        approximate_gp, initial_approximate_gp_parameters = _build_approximate_gp(
+            config=config,
+            config_directory_parent_path=os.path.dirname(os.path.abspath(__file__)),
+            inducing_points=inducing_data.x,
+            training_points=experiment_data.train.x,
+            output_path=output_path,
+            experiment_data_name=experiment_data.name,
         )
         regulariser_kernel_config_name = config["reference_name"]
         regulariser_kernel, _ = kernel_resolver(
@@ -341,13 +362,14 @@ def train_approximate(config: Dict, output_path: str, experiment_name: str) -> N
                     "config_path": os.path.join(
                         os.path.dirname(os.path.abspath(__file__)),
                         "configs",
-                        "train_reference",
+                        Actions.train_reference,
                         f"{regulariser_kernel_config_name}.yaml",
                     ),
                     "parameters_path": os.path.join(
-                        construct_train_reference_path(
+                        construct_path(
                             output_path=output_path,
                             experiment_name=regulariser_kernel_config_name,
+                            action=Actions.train_reference,
                         ),
                         experiment_data.name,
                         "parameters.ckpt",
@@ -390,6 +412,19 @@ def train_approximate(config: Dict, output_path: str, experiment_name: str) -> N
                 "checkpoints",
             ),
         )
+        approximate_gp_parameters.save(
+            path=os.path.join(
+                save_path,
+                experiment_data.name,
+                "parameters.ckpt",
+            ),
+        )
+        gvi_loss_configuration = "+".join(
+            [
+                config["empirical_risk_schema"],
+                config["regularisation_schema"],
+            ]
+        )
         plot_prediction(
             experiment_data=experiment_data,
             inducing_data=inducing_data,
@@ -397,7 +432,7 @@ def train_approximate(config: Dict, output_path: str, experiment_name: str) -> N
             gp_parameters=approximate_gp_parameters,
             title=" ".join(
                 [
-                    f"Approximate GP ({config['empirical_risk_schema']}+{config['regularisation_schema']}):",
+                    f"Approximate GP ({gvi_loss_configuration}):",
                     f"{curve_function.__name__}",
                 ]
             ),
@@ -413,7 +448,7 @@ def train_approximate(config: Dict, output_path: str, experiment_name: str) -> N
             loss_name=f"{config['empirical_risk_schema']}+{config['regularisation_schema']}",
             title=" ".join(
                 [
-                    f"Approximate GP Objective ({config['empirical_risk_schema']}+{config['regularisation_schema']}):",
+                    f"Approximate GP Objective ({gvi_loss_configuration}):",
                     f"{curve_function.__name__}",
                 ]
             ),
@@ -430,7 +465,7 @@ def train_approximate(config: Dict, output_path: str, experiment_name: str) -> N
             loss2_name=config["regularisation_schema"],
             title=" ".join(
                 [
-                    f"Approximate GP Objective Breakdown ({config['empirical_risk_schema']}+{config['regularisation_schema']}):",
+                    f"Approximate GP Objective Breakdown ({gvi_loss_configuration}):",
                     f"{curve_function.__name__}",
                 ]
             ),
@@ -438,6 +473,145 @@ def train_approximate(config: Dict, output_path: str, experiment_name: str) -> N
                 save_path,
                 experiment_data.name,
                 "approximate-gp-loss-breakdown.png",
+            ),
+        )
+
+
+def temper_approximate(config: Dict, output_path: str, experiment_name: str) -> None:
+    assert "data_name" in config, "Data name must be specified for approximate training"
+    assert (
+        "trainer_settings" in config
+    ), "Trainer settings must be specified for approximate training"
+    assert (
+        "save_checkpoint_frequency" in config
+    ), "Save checkpoint frequency must be specified for approximate training"
+    data_path = construct_path(
+        output_path=output_path,
+        experiment_name=config["data_name"],
+        action=Actions.build_data,
+    )
+    approximate_path = construct_path(
+        output_path=output_path,
+        experiment_name=experiment_name,
+        action=Actions.train_approximate,
+    )
+    save_path = construct_path(
+        output_path=output_path,
+        experiment_name=experiment_name,
+        action=Actions.temper_approximate,
+    )
+    trainer_settings = trainer_settings_resolver(
+        trainer_settings_config=config["trainer_settings"],
+    )
+    for curve_function in CURVE_FUNCTIONS:
+        experiment_data = ExperimentData.load(
+            path=data_path,
+            name=type(curve_function).__name__.lower(),
+        )
+        approximate_config_path = os.path.join(
+            os.path.join(
+                os.path.dirname(os.path.abspath(__file__)),
+                "configs",
+                Actions.train_approximate,
+                f"{config['approximate_name']}.yaml",
+            )
+        )
+
+        with open(approximate_config_path, "r") as approximate_config_file:
+            approximate_config = yaml.safe_load(approximate_config_file)
+        reference_path = construct_path(
+            output_path=output_path,
+            experiment_name=approximate_config["reference_name"],
+            action=Actions.train_reference,
+        )
+        inducing_data = Data.load(
+            path=os.path.join(
+                reference_path,
+                experiment_data.name,
+            ),
+            name="inducing",
+        )
+        approximate_gp, _ = _build_approximate_gp(
+            config=approximate_config,
+            config_directory_parent_path=os.path.dirname(os.path.abspath(__file__)),
+            inducing_points=inducing_data.x,
+            training_points=experiment_data.train.x,
+            output_path=output_path,
+            experiment_data_name=experiment_data.name,
+        )
+        approximate_gp_parameters = approximate_gp.generate_parameters(
+            approximate_gp.Parameters.load(
+                approximate_gp.Parameters,
+                path=os.path.join(
+                    approximate_path,
+                    experiment_data.name,
+                    "parameters.ckpt",
+                ),
+            ).dict()
+        )
+        tempered_gp = type(approximate_gp)(
+            mean=approximate_gp.mean,
+            kernel=TemperedKernel(
+                base_kernel=approximate_gp.kernel,
+                base_kernel_parameters=approximate_gp_parameters.kernel,
+                number_output_dimensions=approximate_gp.kernel.number_output_dimensions,
+            ),
+        )
+        initial_tempered_gp_parameters = approximate_gp.Parameters.construct(
+            log_observation_noise=approximate_gp_parameters.log_observation_noise,
+            mean=approximate_gp_parameters.mean,
+            kernel=TemperedKernel.Parameters.construct(
+                log_tempering_factor=jnp.log(1.0)
+            ),
+        )
+        tempered_gp_parameters, tempered_post_epoch_history = train_tempered_gp(
+            data=experiment_data.validation,
+            empirical_risk_schema=EmpiricalRiskSchema.negative_log_likelihood,
+            trainer_settings=trainer_settings,
+            tempered_gp=tempered_gp,
+            tempered_gp_parameters=initial_tempered_gp_parameters,
+            save_checkpoint_frequency=config["save_checkpoint_frequency"],
+            checkpoint_path=os.path.join(
+                save_path,
+                experiment_data.name,
+                "checkpoints",
+            ),
+        )
+        approximate_gp_gvi_loss_configuration = "+".join(
+            [
+                approximate_config["empirical_risk_schema"],
+                approximate_config["regularisation_schema"],
+            ]
+        )
+        plot_prediction(
+            experiment_data=experiment_data,
+            inducing_data=inducing_data,
+            gp=tempered_gp,
+            gp_parameters=tempered_gp_parameters,
+            title=" ".join(
+                [
+                    f"Tempered Approximate GP ({approximate_gp_gvi_loss_configuration}):",
+                    f"{curve_function.__name__}",
+                ]
+            ),
+            save_path=os.path.join(
+                save_path, experiment_data.name, "tempered-approximate-gp.png"
+            ),
+        )
+        plot_losses(
+            losses=[x["empirical-risk"] for x in tempered_post_epoch_history],
+            labels="empirical-risk",
+            loss_name=EmpiricalRiskSchema.negative_log_likelihood,
+            title=" ".join(
+                [
+                    f"Tempered Approximate GP Empirical Risk ({approximate_gp_gvi_loss_configuration}):",
+                    f"{curve_function.__name__}",
+                ]
+            ),
+            save_path=os.path.join(
+                save_path,
+                experiment_data.name,
+                "tempered-approximate-gp-loss.png",
             ),
         )
 
@@ -467,4 +641,8 @@ if __name__ == "__main__":
             config=loaded_config, output_path=OUTPUT_PATH, experiment_name=file_name
         )
     elif args.action == Actions.temper_approximate.value:
-        pass
+        temper_approximate(
+            config=loaded_config, output_path=OUTPUT_PATH, experiment_name=file_name
+        )
+    else:
+        raise ValueError(f"Invalid action {args.action}")
