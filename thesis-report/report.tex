@@ -84,7 +84,7 @@ Supervisors: Veit D. Wild \& Jeremias Knoblauch}
 \newpage
 \setcounter{page}{1}
 \pagenumbering{roman}
-\sectioN^*{Acknowledgements}
+\section*{Acknowledgements}
 Thanks mom!
 \newpage
 
@@ -104,21 +104,21 @@ We introduce the GP following the formulation from \cite{rasmussen2003gaussian}.
     f(\cdot) \sim F(\cdot) = \GP\left(m^p(\cdot), k^p(\cdot, \cdot)\right)
     \label{gp}
 \end{align}
-where the GP is defined with respect to a mean function $m^p: \mathcal{X} \rightarrow \mathbb{R}$ and a positive definite kernel function $k^p: \mathcal{X} \times \mathcal{X} \rightarrow \mathbb{R}$ such that:
+where the GP is defined with respect to a mean function $m^p: \mathcal{X} \rightarrow \mathbb{R}$ and a positive definite kernel function $k^p: \mathcal{X} \times \mathcal{X} \rightarrow \mathbb{R}$ such that the probability of $F(\cdot)$:
 \begin{align}
-    F(\cdot) = \mathcal{N}(m^p(\cdot), k^p(\cdot, \cdot))
+    P\left(F\left(\cdot \right)\right) =  \mathcal{N}(m^p(\cdot), k^p(\cdot, \cdot))
     \label{gp-normal}
 \end{align}
-In other words, for any $N$ points $\mathbf{X}_N = \left\{ x_n\right\}_{n=1}^N$ where $x_n \in \mathcal{X}$, a GP constructs the Gaussian distribution for a random response vector $Y_N \in \mathbb{R}^{N}$:
+In other words, for any $N$ points $\mathbf{X}_N = \left\{ x_n\right\}_{n=1}^N$ where $x_n \in \mathcal{X}$, a GP constructs a Gaussian distribution:
 \begin{align}
     \label{gp-vector}
-    P\left(Y_N \vert \mathbf{X}_N\right) = F\left( \mathbf{X}_N\right) = \mathcal{N}\left(\mathbf{m}^p_{\mathbf{X}_N}, \mathbf{K}^{p}_{\mathbf{X}_N, \mathbf{X}_N}\right)
+    P\left(F\left(\mathbf{X}_N\right)\right) = P\left(Y_N \vert \mathbf{X}_N\right) = \mathcal{N}\left(\mathbf{m}^p_{\mathbf{X}_N}, \mathbf{K}^{p}_{\mathbf{X}_N, \mathbf{X}_N}\right)
 \end{align}
-where $\mathbf{m}^p_{\mathbf{X}_N} = \left[ m^p(x_1) \cdots m^p(x_N)\right]^T \in \mathbb{R}^N$ and $\mathbf{K}^p_{\mathbf{X}_N, \mathbf{X}_N} \in \mathbb{R}^{N \times N}$ having elements:
+for the random response vector $Y_N \in \mathbb{R}^{N}$ where $\mathbf{m}^p_{\mathbf{X}_N} = \left[ m^p(x_1) \cdots m^p(x_N)\right]^T \in \mathbb{R}^N$ and $\mathbf{K}^p_{\mathbf{X}_N, \mathbf{X}_N} \in \mathbb{R}^{N \times N}$ having elements:
 \begin{align}
     \left[\mathbf{K}^p_{\mathbf{X}_N, \mathbf{X}_N}\right]_{n, n'} = k^p(x_n, x_{n'})
 \end{align}
-for $n, n'=1,\dots, N$. Bold font $\mathbf{X}_N$ and $\mathbf{Y}_N$ will be a shorthand for denoting known vectors or matrices of the form $\mathbf{X}_N = \left\{ x_n\right\}_{n=1}^N$ and $\mathbf{Y}_N = \left\{ y_n\right\}_{n=1}^N$ respectively. $X_N$ and $Y_N$ will denote random vectors or matrices.
+for $n, n'=1,\dots, N$. Bold font $\mathbf{X}_N$ and $\mathbf{Y}_N$ will be a shorthand for denoting known vectors or matrices of the form $\mathbf{X}_N = \left\{ x_n\right\}_{n=1}^N$ and $\mathbf{Y}_N = \left\{ y_n\right\}_{n=1}^N$ respectively. $X_N$ and $Y_N$ will denote random vectors or matrices with respect to $N$ points.
 \subsection{GP Regression}
 Consider the regression task where we have $N$ observation pairs $\left\{(x_n, y_n)\right\}_{n=1}^{N}$ with inputs $x_n \in \mathcal{X}$ and responses $y_n \in \mathbb{R}$. GP regression assumes the data generating process:
 \begin{align}
@@ -130,66 +130,66 @@ where the GP random function mapping $F(\cdot)$ accounts for the epistemic (mode
     E = \mathcal{N} \left(0, \sigma^2\right)
     \label{aleotric-uncertainty}
 \end{align}
-GP regression uses the formulation in Section~\ref{section:the-gp} to `predict' for $N^*$ test points $\mathbf{X}_{N^*} = \left\{ x_{n^*}\right\}_{n^*=1}^{N^*}$ with a Bayesian posterior. ($\ref{gp-vector}$) provides the prior for the response vector of the test points:
+GP regression uses the formulation in Section~\ref{section:the-gp} to `predict' for $N^*$ test points $\mathbf{X}_{N*} = \left\{ x_{n^*}\right\}_{n^*=1}^{N^*}$ with a Bayesian posterior. ($\ref{gp-vector}$) provides the prior for the response vector of the test points:
 \begin{align}
     \label{gp-prior}
-    P\left(Y_{N^*}\vert \mathbf{X}_{N^*}\right)
+    P\left(Y_{N*}\vert \mathbf{X}_{N*}\right)
 \end{align}
 Evaluating the known training response vector $\mathbf{Y}_{N}$ provides the likelihood:
 \begin{align}
      \label{gp-likelihood}
-    P\left(\mathbf{Y}_{N} \vert Y_{N^*}, \mathbf{X}_{N^*}, \mathbf{X}_{N} \right)
+    P\left(\mathbf{Y}_{N} \vert \mathbf{X}_{N} \right)
 \end{align}
 With Bayes' Rule, the posterior of the response vector is proportional to the prior and likelihood:
 \begin{align}
-     P\left(Y_{N^*} | \mathbf{Y}_{N},  \mathbf{X}_{N},  \mathbf{X}_{N^*}\right) \propto P\left(\mathbf{Y}_{N} \vert Y_{N^*}, \mathbf{X}_{N^*}, \mathbf{X}_{N} \right) P\left(Y_{N^*}\vert \mathbf{X}_{N^*}\right)
+     P\left(Y_{N*} | \mathbf{Y}_{N},  \mathbf{X}_{N},  \mathbf{X}_{N*}\right) \propto P\left(\mathbf{Y}_{N} \vert \mathbf{X}_{N} \right) P\left(Y_{N*}\vert \mathbf{X}_{N*}\right)
     \label{bayes-posterior}
 \end{align}
 In GP regression, (\ref{bayes-posterior}) acts as a `prediction' for the epistemic uncertainty of the test data responses. With all terms being Gaussian, the posterior in (\ref{bayes-posterior}) has the form:
 \begin{align}
-    P\left(Y_{N^*} | \mathbf{Y}_{N},  \mathbf{X}_{N},  \mathbf{X}_{N^*}\right)  =  \mathcal{N}\left(\hat{\mathbf{m}}_{p(\mathbf{X}_{N^*})}, \hat{\mathbf{K}}_{p(\mathbf{X}_{N^*}, \mathbf{X}_{N^*})}\right)
+    P\left(Y_{N*} | \mathbf{Y}_{N},  \mathbf{X}_{N},  \mathbf{X}_{N*}\right)  =  \mathcal{N}\left(\hat{\mathbf{m}}^p_{\mathbf{X}_{N*}}, \hat{\mathbf{K}}^p_{\mathbf{X}_{N*}, \mathbf{X}_{N*}}\right)
     \label{gp-epistemic-posterior}
 \end{align}
 with:
 \begin{align}
     \label{gp-epistemic-posterior-mean}
-    \hat{\mathbf{m}}^p_{\mathbf{X}_{N^*}} = \mathbf{m}^p_{\mathbf{X}_{N^*}} + \mathbf{K}^p_{\mathbf{X}_{N^*}, \mathbf{X}_N} \left(\mathbf{K}^p_{\mathbf{X}_N, \mathbf{X}_N}\right)^{-1} \left( \mathbf{Y}_N - \mathbf{m}^p_{\mathbf{X}_N}\right)
+    \hat{\mathbf{m}}^p_{\mathbf{X}_{N*}} = \mathbf{m}^p_{\mathbf{X}_{N*}} + \mathbf{K}^p_{\mathbf{X}_{N*}, \mathbf{X}_N} \left(\mathbf{K}^p_{\mathbf{X}_N, \mathbf{X}_N}\right)^{-1} \left( \mathbf{Y}_N - \mathbf{m}^p_{\mathbf{X}_N}\right)
 \end{align}
 and
 \begin{align}
     \label{gp-epistemic-posterior-covariance}
-    \hat{\mathbf{K}}^p_{\mathbf{X}_{N^*}, \mathbf{X}_{N^*}} = \mathbf{K}^p_{\mathbf{X}_{N^*}, \mathbf{X}_{N^*}} - \mathbf{K}^p_{\mathbf{X}_{N^*}, \mathbf{X}_N}\left(\mathbf{K}^p_{\mathbf{X}_N, \mathbf{X}_N}\right)^{-1}\mathbf{K}^p_{\mathbf{X}_N, \mathbf{X}_{N^*}}
+    \hat{\mathbf{K}}^p_{\mathbf{X}_{N*}, \mathbf{X}_{N*}} = \mathbf{K}^p_{\mathbf{X}_{N*}, \mathbf{X}_{N*}} - \mathbf{K}^p_{\mathbf{X}_{N*}, \mathbf{X}_N}\left(\mathbf{K}^p_{\mathbf{X}_N, \mathbf{X}_N}\right)^{-1}\mathbf{K}^p_{\mathbf{X}_N, \mathbf{X}_{N*}}
 \end{align}
 With the aleoteric data uncertainty also modelled as a Gaussian in (\ref{aleotric-uncertainty}), GP regression models the test data responses in the closed form:
 \begin{align}
-    \mathbf{Y}_{N^*} \sim P_{\GP}\left(Y_{N^*} \vert \mathbf{Y}_N, \mathbf{X}_N, \mathbf{X}_{N^*}, \sigma^2\right)
+    \mathbf{Y}_{N*} \sim P_{\GP}\left(Y_{N*} \vert \mathbf{Y}_N, \mathbf{X}_N, \mathbf{X}_{N*}, \sigma^2\right)
     \label{gp-posterior}
 \end{align}
-This is known as the predictive posterior where:
+This is the GP predictive posterior where:
 \begin{align}
-    P_{\GP}\left(Y_{N^*} \vert \mathbf{Y}_N, \mathbf{X}_N, \mathbf{X}_{N^*}, \sigma^2\right) = \mathcal{N}\left(\bar{\mathbf{m}}^p_{\mathbf{X}_{N^*}}, \bar{\mathbf{K}}^p_{\mathbf{X}_{N^*}, \mathbf{X}_{N^*}}\right)
+    P_{\GP}\left(Y_{N*} \vert \mathbf{Y}_N, \mathbf{X}_N, \mathbf{X}_{N*}, \sigma^2\right) = \mathcal{N}\left(\bar{\mathbf{m}}^p_{\mathbf{X}_{N*}}, \bar{\mathbf{K}}^p_{\mathbf{X}_{N*}, \mathbf{X}_{N*}}\right)
     \label{gp-posterior-normal}
 \end{align}
 with:
 \begin{align}
     \label{gp-posterior-mean}
-    \bar{\mathbf{m}}^p_{\mathbf{X}_{N^*}} = \mathbf{m}^p_{\mathbf{X}_{N^*}} + \mathbf{K}^p_{\mathbf{X}_{N^*}, \mathbf{X}_N} \left( \mathbf{K}^p_{\mathbf{X}_N, \mathbf{X}_N} + \sigma^2 \mathbf{I}_N\right)^{-1} \left( \mathbf{Y}_N - \mathbf{m}^p_{\mathbf{X}_N}\right)
+    \bar{\mathbf{m}}^p_{\mathbf{X}_{N*}} = \mathbf{m}^p_{\mathbf{X}_{N*}} + \mathbf{K}^p_{\mathbf{X}_{N*}, \mathbf{X}_N} \left( \mathbf{K}^p_{\mathbf{X}_N, \mathbf{X}_N} + \sigma^2 \mathbf{I}_N\right)^{-1} \left( \mathbf{Y}_N - \mathbf{m}^p_{\mathbf{X}_N}\right)
 \end{align}
 and
 \begin{align}
     \label{gp-posterior-covariance}
-    \bar{\mathbf{K}}^p_{\mathbf{X}_{N^*}, \mathbf{X}_{N^*}} = \mathbf{K}^p_{\mathbf{X}_{N^*}, \mathbf{X}_{N^*}} - \mathbf{K}^p_{\mathbf{X}_{N^*}, \mathbf{X}_N}\left( \mathbf{K}^p_{\mathbf{X}_N, \mathbf{X}_N} + \sigma^2 \mathbf{I}_N\right)^{-1}\mathbf{K}^p_{\mathbf{X}_N, \mathbf{X}_{N^*}}
+    \bar{\mathbf{K}}^p_{\mathbf{X}_{N*}, \mathbf{X}_{N*}} = \mathbf{K}^p_{\mathbf{X}_{N*}, \mathbf{X}_{N*}} - \mathbf{K}^p_{\mathbf{X}_{N*}, \mathbf{X}_N}\left( \mathbf{K}^p_{\mathbf{X}_N, \mathbf{X}_N} + \sigma^2 \mathbf{I}_N\right)^{-1}\mathbf{K}^p_{\mathbf{X}_N, \mathbf{X}_{N*}}
 \end{align}
 where $\mathbf{I}_N \in \mathbb{R}^{N \times N}$ is the identity matrix.
 
 \subsection{GP Classification}
-Consider the classification task where we have $N$ observation pairs $\left\{(x_n, y_n)\right\}_{n=1}^{N}$ with inputs $x_n \in \mathcal{X}$ and responses $y_n \in \{1, \dots, J\}$. In other words, we wish to map each input $x_n$ to one of $J$ labels. Following the GP classification approach from \cite{matthews2017scalable}, we first construct a GP regression model for each label such that for a test point $x \in \mathcal{X}$, the posterior prediction is Gaussian:
+Consider the classification task where we have $N$ observation pairs $\left\{(x_n, y_n)\right\}_{n=1}^{N}$ with inputs $x_n \in \mathcal{X}$ and responses $y_n \in \{1, \dots, J\}$. In other words, we wish to map each input $x_n$ to one of $J$ labels. Following the GP classification approach from \cite{matthews2017scalable}, we first construct a GP regression model for each label such that for a test point $x_n \in \mathcal{X}$, the posterior prediction is Gaussian:
 \begin{align}
     y_n^j \sim \mathcal{N}\left(\bar{m}^p_j(x_n), \bar{k}^p_j(x_n, x_n)\right)
     \label{gp-classifier-regressors}
 \end{align}
 where $j=1, \dots, J$, defining $J$ i.i.d. random vectors from $J$ i.i.d GPs.
-Concatenating $\mathbf{y}_n^{1:J} = [y_n^1 \cdots y_n^J]^T \in \mathbb{R}^{J}$, this real-valued vector is mapped to one of $J$ labels through a series of operations to the GP classifier:
+Concatenating $\mathbf{y}_n^{1:J} = [y_n^1 \cdots y_n^J]^T \in \mathbb{R}^{J}$, this real-valued vector is mapped to one of $J$ labels through a series of operations to construct the GP classifier:
 \begin{align}
 y_n \sim \Cat \left(s\left(\mathbf{y}_n^{1:J}\right)\right)
 \label{gp-classifier}
@@ -197,7 +197,7 @@ y_n \sim \Cat \left(s\left(\mathbf{y}_n^{1:J}\right)\right)
 where $y_n \in \{1, \dots, J\}$, the desired label response. This approach requires choosing $s: \mathbb{R}^J \rightarrow \Delta(J)$, a mapping from a $J$ dimensional real vector to a $J$ dimensional probability simplex $\Delta(J)$ which is used to parameterise a categorical distribution $\Cat$ (a generalisation of the Bernoulli distribution to $J$ labels).
 
 \subsubsection{The Robust Max Function}
-The formulation in (\ref{gp-classifier}) requires defining a mapping $s: \mathbb{R}^J \rightarrow \Delta(J)$. \cite{matthews2017scalable} provides a few different choices for $s$. Following \cite{wild2022generalized}, we will use the robust max function, defining the $j^{th}$ element of the probability simplex:
+\cite{matthews2017scalable} provides a few different choices for defining the mapping $s: \mathbb{R}^J \rightarrow \Delta(J)$ in (\ref{gp-classifier}). We follow \cite{wild2022generalized}, using the robust max function to define the $j^{th}$ element of the probability simplex:
 \begin{align}
 s_{robust, j}^{(\epsilon)}\left(\mathbf{y}_n^{1:J}\right) = \begin{cases}
       1-\epsilon, &  \text{if } j = \arg \max\left(\mathbf{y}_n^{1:J}\right) \\
@@ -215,41 +215,43 @@ with $P$ being the distribution in (\ref{gp-classifier}) and
 \begin{align}
     S_p(x_n, j) \coloneqq \frac{1}{\sqrt{\pi}}\sum_{i=1}^{I} w_i \left(\prod_{j'=1, j'\neq j}^J \phi\left(\frac{\xi_i\sqrt{(2 \bar{k}^{j'}_p(x_n, x_n)}+\bar{m}^{j}_p(x_n) - \bar{m}^{j'}_p(x_n)}{\sqrt{\bar{k}^{j'}_p(x_n, x_n)}}\right)\right)
 \end{align}
-where $\left\{w_i, \xi_i\right\}_{i=1}^I$ are the weights and roots of the Hermite polynomial of order $I \in \mathbb{N}$ and  $\phi(\cdot)$ is the standard normal cumulative distribution function. This analytical expression can be used for inference on GP classifier parameters when defining a loss objective with respect to the log-likelihood.
+where $\left\{w_i, \xi_i\right\}_{i=1}^I$ are respectively the weights and roots of the Hermite polynomial of order $I \in \mathbb{N}$. $\phi(\cdot)$ is the standard normal cumulative distribution function. This analytical expression can be used for inference on GP classifier parameters when defining a loss objective with respect to the log-likelihood.
 
-\subsection{The GP Lacks Scaleability}
-In both regression and classification tasks, GPs are an extremely flexible modelling approach. Minimal requirements on the mean function $m^p: \mathcal{X} \rightarrow \mathbb{R}$ and postive definite kernel function $k^p: \mathcal{X} \times \mathcal{X} \rightarrow \mathbb{R}$ in (\ref{gp}) provide endless choices for GP construction. This offers complete control and visibility into the model's behaviour, a strong advantage compared to other modelling approaches. 
+\subsection{The GP Lacks Scaleability}\label{section:gp-problems}
+In both regression and classification tasks, GPs are an extremely flexible modelling approach. Minimal restrictions for choosing the mean function $m^p: \mathcal{X} \rightarrow \mathbb{R}$ and postive definite kernel function $k^p: \mathcal{X} \times \mathcal{X} \rightarrow \mathbb{R}$ in (\ref{gp}) provide endless possibilities for GP construction. This offers complete control and visibility into the model's behaviour, a strong advantage compared to other modelling approaches. 
 
-A major drawback of GPs has been their inability to scale with respect to $N$, the number of training points. Both classification and regression relies on evaluating the inversion of an $\mathbb{R}^{N \times N}$ matrix in $\ref{gp-posterior-mean}$ and $\ref{gp-posterior-covariance}$. This operation has computational complexity $\mathcal{O}(N^3)$ and space complexity $\mathcal{O}(N^2)$, both of which quickly become problematic when scaling to larger-sized training sets. Despite their impressive performance and theoretically-driven Bayesian approach, the computational intractability of GPs has been a serious limitation, restricting their application to problem domains with smaller sized training data sets. In Section \ref{section:the-svgp}, we will present sparse variational Gaussian Processes (svGPs), a common approach to scaling GPs to larger data sets.
+\cite{novak2019neural} has shown that the GP is an important construction for understanding the theoretical properties of many neural network architectures. Showing that the infinite width limit of many such architectures can be expressed as a GP has provided a theoretical framework for analysing these approaches typically viewed as black boxes. This provides further motivation for the potential and importance of GP models.
+
+A major drawback of GPs has been their inability to scale with respect to $N$, the number of training points. Both classification and regression relies on evaluating the inversion of an $\mathbb{R}^{N \times N}$ matrix in $\ref{gp-posterior-mean}$ and $\ref{gp-posterior-covariance}$. This operation has computational complexity $\mathcal{O}(N^3)$ and space complexity $\mathcal{O}(N^2)$, both of which quickly become problematic when scaling to larger-sized training sets. Despite their impressive performance and theoretically-driven approach, the computational intractability of GPs has been a serious limitation, restricting their use to problem domains having smaller sized data sets. In Section \ref{section:the-svgp}, we will present sparse variational Gaussian Processes (svGPs), a common approach to scaling GPs to larger data sets.
 \\\jw{Talk about the difficulties with choosing the correct kernel and discuss that more expression kernels like the NNGP and deep kernels will be introduced in later sections}
 
 \newpage
 \section{svGPs: Scaleable but \textit{not} Flexible}\label{section:the-svgp}
-Proposed by \cite{titsias2009variational}, sparse variational Gaussian Processes (svGPs) have become a common approach to ensuring computational tractability when scaling GPs. We will review this formulation followed by a discussion of the strengths and weakness of the approach.
+Proposed by \cite{titsias2009variational}, sparse variational Gaussian Processes (svGPs) have become a common approach to ensuring computational tractability when scaling GPs. We will review this formulation followed by a discussion of the strengths and weaknesses of the approach.
 
 \subsection{The svGP}
 The svGP assumes that a subset of inducing points $\{x_m, y_m\}_{m=1}^{M} \subset \{x_n, y_n\}_{n=1}^{N}$ where $M << N$ can adequately capture the input/response relationships in the full training data. This approach constructs an svGP:
 \begin{align}
-g(\cdot) \sim \GP\left(m^{q(\nu)}(\cdot), k^{q(\nu)}(\cdot, \cdot)\right)
+g(\cdot) \sim \GP^{(\nu)}\left(m^{q}(\cdot), k^{q}(\cdot, \cdot)\right)
 \label{svgp}
 \end{align}
-parameterised by $\nu$ which includes the choice of subset $\{x_m, y_m\}_{m=1}^{M}$ and has $\mathcal{O}(M^3)$ predictive computational complexity. For $N^*$ test points $\mathbf{X}_{N^*}$, the svGP has an approximate predictive posterior:
+parameterised by $\nu$ which includes the choice of subset $\{x_m, y_m\}_{m=1}^{M}$ and has $\mathcal{O}(M^3)$ predictive computational complexity. For $N^*$ test points $\mathbf{X}_{N*}$, the svGP has an approximate predictive posterior:
 \begin{align}
-    \mathbf{Y}_{N^*} \sim Q_{\GP}^{(\nu)}\left(Y_{N^*} \vert \mathbf{X}_{N^*}\right)
+    \mathbf{Y}_{N*} \sim Q_{\GP}^{(\nu)}\left(Y_{N*} \vert \mathbf{X}_{N*}\right)
 \end{align}
 where:
 \begin{align}
-    Q_{\GP}^{(\nu)}\left(Y_{N^*} \vert \mathbf{X}_{N^*}\right) = \mathcal{N}\left(\bar{\mathbf{m}}_{\mathbf{X}_{N^*}}^{q(\nu)}, \bar{\mathbf{K}}_{\mathbf{X}_{N^*}, \mathbf{X}_{N^*}}^{q(\nu)}\right)
+    Q_{\GP}^{(\nu)}\left(Y_{N*} \vert \mathbf{X}_{N*}\right) = \mathcal{N}\left(\bar{\mathbf{m}}_{\mathbf{X}_{N*}}^{q}, \bar{\mathbf{K}}_{\mathbf{X}_{N*}, \mathbf{X}_{N*}}^{q}\right)
 \end{align}
 \cite{titsias2009variational} formulates an approximate predictive posterior mean function parameterised by a vector $\boldsymbol{\mu} \in \mathbb{R}^M$:
 \begin{align}
     \label{svgp-mean} 
-    \bar{\mathbf{m}}_{\mathbf{X}_{N^*}}^{q(\nu)} = \mathbf{m}^p_{\mathbf{X}_{N^*}} + \mathbf{K}^p_{\mathbf{X}_{N^*}, \mathbf{X}_M}\left(\mathbf{K}^p_{\mathbf{X}_M,\mathbf{X}_M}\right)^{-1} \boldsymbol{\mu}
+    \bar{\mathbf{m}}_{\mathbf{X}_{N*}}^{q} = \mathbf{m}^p_{\mathbf{X}_{N*}} + \mathbf{K}^p_{\mathbf{X}_{N*}, \mathbf{X}_M}\left(\mathbf{K}^p_{\mathbf{X}_M,\mathbf{X}_M}\right)^{-1} \boldsymbol{\mu}
 \end{align}
 where $\mathbf{X}_M = \left\{ x_m\right\}_{m=1}^M$ and a kernel function parameterised by a positive definite matrix $\mathbf{\Sigma} \in \mathbb{R}^{M\times M}_{\succ 0}$:
 \begin{align}
-\bar{\mathbf{K}}_{\mathbf{X}_{N^*}, \mathbf{X}_{N^*}}^{q(\nu)} & = \mathbf{K}^p_{\mathbf{X}_{N^*}, \mathbf{X}_{N^*}} - \mathbf{K}^p_{\mathbf{X}_{N^*}, \mathbf{X}_M} \left(\mathbf{K}^p_{\mathbf{X}_M, \mathbf{X}_M}\right)^{-1}\mathbf{K}_{\mathbf{X}_M, \mathbf{X}_{N^*}} \nonumber \\
-&\qquad + \mathbf{K}^p_{\mathbf{X}_{N^*}, \mathbf{X}_M}  \left(\mathbf{K}^p_{\mathbf{X}_M, \mathbf{X}_M}\right)  ^{-1} \mathbf{\Sigma} \left(\mathbf{K}^p_{\mathbf{X}_M, \mathbf{X}_M}\right)^{-1}\mathbf{K}^p_{\mathbf{X}_M, \mathbf{X}_{N^*}}
+\bar{\mathbf{K}}_{\mathbf{X}_{N*}, \mathbf{X}_{N*}}^{q} & = \mathbf{K}^p_{\mathbf{X}_{N*}, \mathbf{X}_{N*}} - \mathbf{K}^p_{\mathbf{X}_{N*}, \mathbf{X}_M} \left(\mathbf{K}^p_{\mathbf{X}_M, \mathbf{X}_M}\right)^{-1}\mathbf{K}_{\mathbf{X}_M, \mathbf{X}_{N*}} \nonumber \\
+&\qquad + \mathbf{K}^p_{\mathbf{X}_{N*}, \mathbf{X}_M}  \left(\mathbf{K}^p_{\mathbf{X}_M, \mathbf{X}_M}\right)  ^{-1} \mathbf{\Sigma} \left(\mathbf{K}^p_{\mathbf{X}_M, \mathbf{X}_M}\right)^{-1}\mathbf{K}^p_{\mathbf{X}_M, \mathbf{X}_{N*}}
 \label{svgp-covariance}
 \end{align}
 Together, these define the parameter space:
@@ -257,53 +259,48 @@ Together, these define the parameter space:
     \mathbf{\Gamma} = \left\{\boldsymbol{\mu} \in \mathbb{R}^{M}, \mathbf{\Sigma} \in \mathbb{R}^{M\times M}_{\succ 0}, \left\{x_m, y_m\right\}_{m=1}^{M} \subset \{x_n, y_n\}_{n=1}^{N}\right\}
     \label{svgp-parameter-space}
 \end{align}
-We wish to find $\nu^* \in \mathbf{\Gamma}$ such that for any test points $\mathbf{X}_{N^*}$ the svGP Gaussian distribution $Q^{(\nu^*)}$ approximates the exact posterior distribution from ($\ref{bayes-posterior}$):
+We wish to find $\nu^* \in \mathbf{\Gamma}$ such that for any test points $\mathbf{X}_{N*}$ the svGP Gaussian distribution $Q^{(\nu^*)}$ approximates the exact posterior distribution from ($\ref{bayes-posterior}$):
 \begin{align}
-    P_{\GP}\left(Y_{N^*} \vert \mathbf{X}_{N^*}, \mathbf{Y}_N, \mathbf{X}_N, \sigma^2 \right) \approx Q_{\GP}^{(\nu^*)}\left(Y_{N^*} \vert \mathbf{X}_{N^*}\right)
+    P_{\GP}\left(Y_{N*} \vert \mathbf{X}_{N*}, \mathbf{Y}_N, \mathbf{X}_N, \sigma^2 \right) \approx Q_{\GP}^{(\nu^*)}\left(Y_{N*} \vert \mathbf{X}_{N*}\right)
     \label{svgp-desired-approximation}
 \end{align}
-To approximate the exact predictive posterior, \cite{titsias2009variational} derives the free energy lower bound, by matching the log-likelihood of $P_{\GP}$ with respect to the approximation parameters $\nu \in \Gamma$. This begins with the log-likelihood for the exact GP:
+To approximate the exact predictive posterior, \cite{titsias2009variational} matches $L_{\ell \ell}$, the log-likelihood of $P_{\GP}$, with respect to the approximation parameters $\nu \in \Gamma$ by deriving the free energy lower bound:
 \begin{align}
-    L_{loglike} &= \log P_{\GP}\left(\mathbf{Y}_N \vert \mathbf{X}_N, \sigma^2\right)
-    \\ &= \log \int_{\mathbb{R}^{N^*}}\int_{\mathbb{R}^{M}} P_{\GP}\left(\mathbf{Y}_N, Y_{N^*}, Y_{M} \vert \mathbf{X}_{N^*}, \mathbf{X}_N, \mathbf{X}_{M}, \sigma^2\right) d Y_{M} d Y_{N^*}
-    \\ &= \log \int_{\mathbb{R}^{N^*}}\int_{\mathbb{R}^{M}} P_{\GP}\left(\mathbf{Y}_N\vert Y_{N^*}, \mathbf{X}_{N^*}, \sigma^2\right) P_{\GP}\left(Y_{N^*} \vert Y_{M}, \mathbf{X}_N, \mathbf{X}_{M}, \sigma^2\right) P_{\GP}\left(Y_{M}\vert \mathbf{X}_{M}, \sigma^2 \right) d Y_{M} d Y_{N^*}
+    L_{\ell \ell} &= \log P_{\GP}\left(\mathbf{Y}_N \vert \mathbf{X}_N, \sigma^2\right)
+    \\ &= \log \int_{\mathbb{R}^{N^*}} P_{\GP}\left(\mathbf{Y}_N, Y_{N*} \vert \mathbf{X}_{N}, \mathbf{X}_{N*}, \sigma^2\right) d Y_{N*}
+    % \\ &= \log \int_{\mathbb{R}^{N^*}} P_{\GP} \left(\mathbf{Y}_N \vert Y_{N*}, \mathbf{X}_{N}, \mathbf{X}_{N*}, \sigma^2\right) P_{\GP}\left(Y_{N*}\vert \mathbf{X}_{N*}, \sigma^2 \right) d Y_{N*}
     \label{log-like}
-    % L_{loglike} &= \log P_{\GP}\left(\mathbf{Y}_N \vert \mathbf{X}_N, \sigma^2\right)
-    % \\ &= \log \int_{\mathbb{R}^{N^*}} P_{\GP}\left(\mathbf{Y}_N, Y_{N^*} \vert \mathbf{X}_{N^*}, \mathbf{X}_N, \sigma^2\right) d Y_{N^*}
-    % \label{log-like}
 \end{align}
 Introducing the approximate posterior:
 \begin{align}
-     L_{loglike} &= \log \int_{\mathbb{R}^{N^*}} \frac{P_{\GP}\left(\mathbf{Y}_N, Y_{N^*} \vert \mathbf{X}_{N^*}, \mathbf{X}_N, \sigma^2\right) Q^{(\nu)}_{\GP}(Y_{N^*} \vert \mathbf{X}_{N^*})}{Q^{(\nu)}_{\GP}(Y_{N^*} \vert \mathbf{X}_{N^*})} d Y_{N^*}
-     \\ &= \log \int_{\mathbb{R}^{N^*}} \frac{P_{\GP}\left(\mathbf{Y}_N \vert Y_{N^*},  \mathbf{X}_{N^*}, \mathbf{X}_N, \sigma^2\right) P_{\GP}\left( Y_{N^*} \vert \mathbf{X}_{N^*}, \sigma^2\right) Q^{(\nu)}_{\GP}(Y_{N^*} \vert \mathbf{X}_{N^*})}{Q^{(\nu)}_{\GP}(Y_{N^*} \vert \mathbf{X}_{N^*})} d Y_{N^*}
-     \\ & \geq \int_{\mathbb{R}^{N^*}} Q^{(\nu)}_{\GP}(Y_{N^*} \vert \mathbf{X}_{N^*}) \log \left(\frac{P_{\GP}\left(\mathbf{Y}_N \vert Y_{N^*},  \mathbf{X}_{N^*}, \mathbf{X}_N, \sigma^2\right) P_{\GP}\left( Y_{N^*} \vert \mathbf{X}_{N^*}, \sigma^2\right) }{Q^{(\nu)}_{\GP}(Y_{N^*} \vert \mathbf{X}_{N^*})}\right) d Y_{N^*}
-     \label{elbo-jensen}
-     \\ & \qquad \eqqcolon L_{free}(\nu)
-     \label{elbo-definition}
+L_{\ell \ell} &= \log \int_{\mathbb{R}^{N^*}} Q^{(\nu)}_{\GP}\left(Y_{N*} \vert \mathbf{X}_{N*}\right) \frac{P_{\GP}\left(\mathbf{Y}_N, Y_{N*} \vert \mathbf{X}_{N}, \mathbf{X}_{N*}, \sigma^2\right)}{Q^{(\nu)}_{\GP}\left(Y_{N*} \vert \mathbf{X}_{N*}\right)} d Y_{N*}\\
+&\geq \int_{\mathbb{R}^{N^*}} Q^{(\nu)}_{\GP}\left(Y_{N*} \vert \mathbf{X}_{N*}\right) \log\left(\frac{P_{\GP}\left(\mathbf{Y}_N, Y_{N*} \vert \mathbf{X}_{N}, \mathbf{X}_{N*}, \sigma^2\right)}{Q^{(\nu)}_{\GP}\left(Y_{N*} \vert \mathbf{X}_{N*}\right)} \right)d Y_{N*}
+ \label{elbo-jensen}
+ \\ & \qquad \eqqcolon L_{free}(\nu)
+ \label{elbo-definition}
 \end{align}
-where we lower bound the log-likelihood with Jensen's inequality in (\ref{elbo-jensen}). $L_{free}(\nu)$ is known as the free energy or evidence lower bound (ELBO), which we can rewrite:
+where we lower bound the log-likelihood with Jensen's inequality in (\ref{elbo-jensen}). $L_{free}(\nu)$ is known as the free energy or evidence lower bound (ELBO). Given that we can decompose:
 \begin{align}
-    L_{free}(\nu) &= \int_{\mathbb{R}^{N^*}} Q^{(\nu)}_{\GP}(Y_{N^*} \vert \mathbf{X}_{N^*}) \log \left(P_{\GP}\left(\mathbf{Y}_N \vert Y_{N^*},  \mathbf{X}_{N^*}, \mathbf{X}_N\right), \sigma^2\right) d Y_{N^*} \nonumber
-    \\ & \qquad + \int_{\mathbb{R}^{N^*}} Q^{(\nu)}_{\GP}(Y_{N^*} \vert \mathbf{X}_{N^*}) \log \left(\frac{P_{\GP}\left( Y_{N^*} \vert \mathbf{X}_{N^*}, \sigma^2\right) }{Q^{(\nu)}_{\GP}(Y_{N^*} \vert \mathbf{X}_{N^*})}\right) d Y_{N^*}
+    P_{\GP}\left(\mathbf{Y}_N, Y_{N*} \vert \mathbf{X}_{N}, \mathbf{X}_{N*}, \sigma^2\right) = P_{\GP} \left(\mathbf{Y}_N \vert \mathbf{X}_{N}, \sigma^2\right) P_{\GP}\left(Y_{N*}\vert \mathbf{X}_{N*}, \sigma^2 \right)
+    \label{decomposed-numerator}
+\end{align}
+we can rewrite:
+\begin{align}
+    L_{free}(\nu) &= \int_{\mathbb{R}^{N^*}} Q^{(\nu)}_{\GP}(Y_{N*} \vert \mathbf{X}_{N*}) \log \left(P_{\GP}\left(\mathbf{Y}_N \vert \mathbf{X}_{N}, \sigma^2\right)\right) d Y_{N*} \nonumber
+    \\ & \qquad + \int_{\mathbb{R}^{N^*}} Q^{(\nu)}_{\GP}(Y_{N*} \vert \mathbf{X}_{N*}) \log \left(\frac{P_{\GP}\left( Y_{N*} \vert \mathbf{X}_{N*}, \sigma^2\right) }{Q^{(\nu)}_{\GP}\left(Y_{N*} \vert \mathbf{X}_{N*}\right)}\right) d Y_{N*}
     \label{elbo-broken-down}
 \end{align}
-for the Bayesian variational inference loss objective:
+for the Bayesian Variational Inference loss objective:
 \begin{align}
-    L_{free}(\nu) &=\mathbb{E}_{(\mathbf{x}_n, \mathbf{y}_n)}\left[ \log Q^{(\nu)}_{\GP}(\mathbf{y}_n \vert \mathbf{x}_n)\right] - \KLD \left[ Q^{(\nu)}_{\GP}(Y_{N^*} \vert \mathbf{X}_{N^*}) \| P_{\GP}\left( Y_{N^*} \vert \mathbf{X}_{N^*}\right) \right]
     \label{bvi-loss}
+    L_{free}(\nu) &=\mathbb{E}_{Q^{(\nu)}_{\GP}}\left[\log \left(P_{\GP}\left(\mathbf{Y}_N \vert \mathbf{X}_{N}, \sigma^2\right)\right)\right] \nonumber \\
+    & \qquad - \KLD \left[Q^{(\nu)}_{\GP}\left(Y_{N*} \vert \mathbf{X}_{N*}\right) \| P_{\GP}\left( Y_{N*} \vert \mathbf{X}_{N*}, \sigma^2\right) \right] \\
+    &=\mathbb{E}_{Q^{(\nu)}_{\GP}}\left[\sum_{n=1}^N\log \left(P_{\GP}\left(y_n \vert x_n, \sigma^2\right)\right)\right] \nonumber \\
+    & \qquad - \KLD \left[Q^{(\nu)}_{\GP}\left(Y_{N*} \vert \mathbf{X}_{N*}\right) \| P_{\GP}\left( Y_{N*} \vert \mathbf{X}_{N*}, \sigma^2\right) \right]
+    \label{bvi-loss-breakdown}
 \end{align}
 where $\KLD$ is the Kullback Leibler (KL) divergence.
-Solving for the approximation in (\ref{svgp-desired-approximation}) with variational inference involves maximising the lower bound in (\ref{elbo-jensen}), equivalent to solving:
-\begin{align}
-    \nu^* = \argmin_{\nu \in \mathbf{\Gamma}}\KLD \left[ Q_{\GP}^{(\nu)}\left(Y_{N^*} \vert \mathbf{X}_{N^*}\right) \Big\| P_{\GP}\left(Y_{N^*} \vert \mathbf{X}_{N^*}, \mathbf{Y}_N, \mathbf{X}_N, \sigma^2 \right) \right]
-    \label{elbo-kld}
-\end{align}
-minimising the KL divergence between the approximate posterior and the exact Bayesian posterior, which naturally appears as it is proportional to the numerator of (\ref{elbo-jensen}):
-\begin{align}
-    P_{\GP}\left(Y_{N^*} \vert \mathbf{X}_{N^*}, \mathbf{Y}_N, \mathbf{X}_N, \sigma^2 \right) \propto P_{\GP}\left(\mathbf{Y}_N \vert Y_M,  \mathbf{X}_M, \mathbf{X}_N, \sigma^2\right) P_{\GP}\left( Y_M \vert \mathbf{X}_M, \sigma^2\right) 
-    \label{bayes-posterior-prop}
-\end{align}
-\cite{titsias2009variational} shows that for a given set of inducing points $\left\{ x_m, y_m\right\}_{m=1}^M$, the optimal choices $\boldsymbol{\mu}^*$ and $\mathbf{\Sigma}^*$ solving (\ref{elbo-kld}) have the closed forms:
+\cite{titsias2009variational} shows that for a given set of inducing points $\left\{ x_m, y_m\right\}_{m=1}^M$ to maximise (\ref{bvi-loss}), the optimal choices $\boldsymbol{\mu}^*$ and $\mathbf{\Sigma}^*$ have the closed forms:
 \begin{align}
     \label{svgp-optimal-mean}
     \boldsymbol{\mu}^* = \sigma^{-2}\mathbf{K}^p_{\mathbf{X}_M, \mathbf{X}_M}  \left(\mathbf{\Sigma}_M\right)^{-1}\mathbf{K}^p_{\mathbf{X}_M, \mathbf{X}_N}  \left(\mathbf{Y}_N - \mathbf{m}^p_{\mathbf{X}_N}\right)
@@ -318,6 +315,11 @@ where
     \mathbf{\Sigma}_M \coloneqq \mathbf{K}^p_{\mathbf{X}_M, \mathbf{X}_M}  + \sigma^{-2}\mathbf{K}^p_{\mathbf{X}_M, \mathbf{X}_N} \mathbf{K}^p_{\mathbf{X}_N, \mathbf{X}_M} 
     \label{svgp-optimal-sigma-m}
 \end{align}
+parameterising the approximate GP with:
+\begin{align}
+    \nu = \left\{ \left\{ x_m, y_m\right\}_{m=1}^M, \boldsymbol{\mu}^*, \mathbf{\Sigma}^*\right\}
+    \label{titsias-svgp-parameters}
+\end{align}
 This formulation ensures matrix inversion of $\mathbb{R}^{M \times M}$ matrices having $\mathcal{O}\left(M^3\right)$ computational complexity. The operation $\mathbf{K}^p_{\mathbf{X}_M, \mathbf{X}_N} \mathbf{K}^p_{\mathbf{X}_N, \mathbf{X}_M} $ in (\ref{svgp-optimal-sigma-m}) has computational complexity $\mathcal{O}\left(NM^2\right)$, but is a pre-computed constant. Thus, the predictive computational complexity of this approach remains $\mathcal{O}\left(M^3\right)$ with space complexity $\mathcal{O}\left(M^2\right)$. This significantly improves the scalability of GP approaches from the traditional GP in Section \ref{section:the-gp}.
 
 \subsubsection{Inducing Points Selection}
@@ -326,14 +328,14 @@ Finding the optimal inducing points $\left\{x_m, y_m\right\}_{m=1}^{M} \subset \
     \label{greedy-varaince-selection}
     \text{index}_{m+1} = \argmax \left(\diag \left(\mathbf{K}^p_{\mathbf{X}_N, \mathbf{X}_N} - \mathbf{K}^p_{\mathbf{X}_N, \mathbf{X}_{m}} \left(\mathbf{K}^p_{\mathbf{X}_{m}, \mathbf{X}_{m}}\right)^{-1}\mathbf{K}^p_{\mathbf{X}_{m}, \mathbf{X}_N}\right)\right)
 \end{align}
-where $m < M$, $\mathbf{X}_{m}$ are the $m$ inducing points already chosen, and $\text{index}_{m+1}$ is the index of the next inducing point.
+where $m < M$, $\mathbf{X}_{m} \in \mathcal{X}^m$ are the $m$ inducing points already chosen, and $\text{index}_{m+1}$ is the index of the next inducing point.
 \\\jw{Add other results from \cite{burt2020convergence}. Maybe any guarantees from this method?}
 
-\subsection{The svGP Lacks Flexibility}
-The svGP from \cite{titsias2009variational} provides a solution to the scaling issues of the GP but comes with its own drawback. The mean and kernel functions must now conform to the formulations of (\ref{svgp-mean}) and (\ref{svgp-covariance}) respectively. The svGP formulation from \cite{titsias2009variational} defines an approximate GP space with respect to $\mathbf{\Gamma}$, which is limited compared to the over-parameterised model spaces of neural networks. As such, svGPs are unable to compete with the predictive performance of neural networks, even though they've overcome the scalability issues of the GP. In the following sections, we will better understand the reasons for the restrictive mean and kernel function formulations of the svGP. This will involve reviewing the link between GPs and Gaussian measures (GMs) on function spaces and the mis-match of support problem of the KL divergence on function spaces. 
+\subsection{The svGP Lacks Flexibility}\label{section:svgp-problems}
+The svGP from \cite{titsias2009variational} provides a solution to the scaling issues of the GP but comes with its own drawback. The mean and kernel functions must now conform to the formulations of (\ref{svgp-mean}) and (\ref{svgp-covariance}) respectively. This approach defines an approximate GP space with respect to $\mathbf{\Gamma}$, which is quite limited compared to the over-parameterised architectures of neural networks. As such, svGPs are unable to compete with the predictive performance of neural networks, even though they've overcome the scalability issues of the GP. In the following sections, we will review the reasons explained by \cite{matthews2016sparse} for the restrictive mean and kernel function formulations of the svGP. This will introduce the link between GPs and Gaussian measures (GMs) on function spaces and the mis-match of support problem of the KL divergence on function spaces. 
 
 \subsubsection{The Kolomogorov Extension Theorem}
-A GP is guaranteed to have at least one GM formulation on a function space. To better understand this, we first review the Kolmogorov Extension Theorem:
+A GP is guaranteed to have at least one GM formulation on a function space. To better understand this, we first review the Kolmogorov Extension Theorem as presented by ... :
 \begin{theorem}[Kolmogorov Extension Theorem]
 \label{kolomogorov-extension-theorem}
 Given a finite space measure such that:
@@ -347,54 +349,88 @@ Then there exists a probability measure on the product sigma algebra ...
     \label{kolomogorov-measure}
 \end{align}
 \end{theorem}
-In other words, an object that satisfies the consistency requirements of (\ref{kolomogorov-consistency}) guarantees the existence of a corresponding measure on a function space. From (\ref{gp-vector}), we see that a GP will always generate a set of points which conform to a Gaussian distribution (i.e. for any $\mathbf{X}_{N^*}$), satisfying the consistency condition of (\ref{kolomogorov-consistency}). As such, the Kolmogorov Extension Theorem guarantees the existence of at least one GM corresponding to this GP in some measureable function space. 
+In other words, an object that satisfies the consistency requirements of (\ref{kolomogorov-consistency}) guarantees the existence of a corresponding measure on a function space. From (\ref{gp-vector}), we see that a GP will always generate a set of points which conform to a Gaussian distribution (i.e. for any $\mathbf{X}_{N*}$ the random response vector $Y_{N*}$ always follows a Gaussian), satisfying the consistency condition of (\ref{kolomogorov-consistency}). As such, the Kolmogorov Extension Theorem guarantees the existence of at least one GM corresponding to this GP in some measureable function space. 
 
 \subsubsection{The Kullback-Leibler Divergence in Function Spaces}
-The corresponding GM guaranteed by the Kolomogorov Extension Theorem can be trivially constructed over the space of all functions $\mathcal{F} = \left\{f: \mathbb{R}^{N} \rightarrow \mathbb{R} \right\}$. Thus (\ref{elbo-kld}) can be a equivalently expressed as:
+Maximising $L_{free}$ in (\ref{bvi-loss}) with respect to $\nu \in \mathbf{\Gamma}$ is equivalent to solving:
 \begin{align}
-    \KLD\left[ \mathbb{Q}_\mathcal{F} \| \mathbb{P}_\mathcal{F} \right] = \int_{\mathcal{F}} \log \left( \frac{d \mathbb{Q}_\mathcal{F}}{d \mathbb{P}_\mathcal{F}} (f)\right)d \mathbb{Q}_\mathcal{F}(f)
-    \label{kld-function-spaces}
+    \nu^* = \argmin_{\nu \in \mathbf{\Gamma}}\KLD \left[ Q_{\GP}^{(\nu)}\left(Y_{N*} \vert \mathbf{X}_{N*}\right) \Big\| P_{\GP}\left(Y_{N*} \vert \mathbf{X}_{N*}, \mathbf{Y}_N, \mathbf{X}_N, \sigma^2 \right) \right]
+    \label{elbo-kld}
 \end{align}
-where $\mathbb{Q}_\mathcal{F}$ and $\mathbb{P}_\mathcal{F}$ are GMs on $\mathcal{F}$ corresponding to our approximate and exact GPs $Q_{\GP}^{(\nu)}\left(Y_{N^*} \vert \mathbf{X}_{N^*}\right) $ and $P_{\GP}\left(Y_{N^*} \vert \mathbf{X}_{N^*}, \mathbf{Y}_N, \mathbf{X}_N, \sigma^2 \right)$ respectively. Without other assumptions on the GP construction, we're unable to assume the existence of a corresponding GM on a more well-behaved function space. This means that (\ref{elbo-kld}) can be viewed as a minimisation of the KL divergence between GMs on the function space $\mathcal{F}$. \cite{matthews2016sparse} explains that the strict svGP formulation of (\ref{svgp-optimal-mean}) and (\ref{svgp-optimal-covariance}) from \cite{titsias2009variational} are necessary to ensure the existence of the Radon-Nikodym derivative $d \mathbb{Q}_\mathcal{F}/d \mathbb{P}_\mathcal{F}$ and by extension, ensuring that (\ref{kld-function-spaces}) is a valid KL divergence. In other words, the svGP has limited flexibility due to the problem of support mis-match for the KL divergence on $\mathcal{F}$.
+minimising the KL divergence between the approximate posterior and the exact Bayesian posterior, which naturally appears as it is proportional to the numerator of (\ref{elbo-jensen}). 
 
-\subsubsection{The Bayesian Posterior}
-Most existing approaches attempt to approximate an ill-defined KL divergence caused by GP constructions that are not the svGP from \cite{titsias2009variational}. However, \cite{wild2022generalized} identifies that Bayesian variational inference is the root cause of the inflexible svGP construction, as it necessitates a KL divergence in $\mathcal{F}$. The next section will introduce Generalised variational inference (GVI), a variational inference framework that does not require the approximation in (\ref{svgp-desired-approximation}) to involve the KL divergence or Bayesian posterior, removing the support mis-match problem and allowing for more expressive GP approximation spaces.
+Having corresponding GM guaranteed by the Kolomogorov Extension Theorem can be trivially constructed over the space of all functions $\mathcal{F} = \left\{f: \mathbb{R}^{N} \rightarrow \mathbb{R} \right\}$. Thus (\ref{elbo-kld}) can be a equivalently expressed as:
+\begin{align}
+    \label{kld-function-spaces}
+    \nu^* &= \argmin_{\nu \in \mathbf{\Gamma}} \KLD\left[ \mathbb{Q}^{(\nu)}_\mathcal{F} \| \mathbb{P}^B_\mathcal{F} \right] \\
+    &= \argmin_{\nu \in \mathbf{\Gamma}} \int_{\mathcal{F}} \log \left( \frac{d \mathbb{Q}^{(\nu)}_\mathcal{F}}{d \mathbb{P}^B_\mathcal{F}} (f)\right)d \mathbb{Q}^{(\nu)}_\mathcal{F}(f)
+    \label{radon-nikodym}
+\end{align}
+where $\mathbb{Q}^{(\nu)}_\mathcal{F}$ is the GM on $\mathcal{F}$ corresponding to $Q_{\GP}^{(\nu)}\left(Y_{N*} \vert \mathbf{X}_{N*}\right)$, the approximate GP predictive posterior and $\mathbb{P}^B_\mathcal{F}$ is the GM on $\mathcal{F}$ corresponding to $P_{\GP}\left(Y_{N*} \vert \mathbf{X}_{N*}, \mathbf{Y}_N, \mathbf{X}_N, \sigma^2 \right)$, the exact Bayesian GP predictive posterior. Following loss objective form in (\ref{bvi-loss}) we can also write:
+\begin{align}
+    \nu^* = \argmin \mathbb{E}_{Q^{(\nu)}_{\GP}}\left[-\log \left(P_{\GP}\left(\mathbf{Y}_N \vert \mathbf{X}_{N}, \sigma^2\right)\right)\right] + \KLD \left[\mathbb{Q}^{(\nu)}_{\mathcal{F}} \| \mathbb{P}_{\mathcal{F}} \right]
+    \label{bvi-gm-loss}
+\end{align}
+where $\mathbb{P}_\mathcal{F}$ corresponds to $P_{\GP}\left(Y_{N*} \vert \mathbf{X}_{N*}, \sigma^2 \right)$, the GP prior.
+
+Without other assumptions on the GP construction, we're unable to show the existence of corresponding GMs on a more well-behaved function space. This means that Bayesian Variational Inference for GPs can be viewed as a minimisation of the KL divergence between GMs on $\mathcal{F}$. \cite{matthews2016sparse} explains that the strict svGP formulation of (\ref{svgp-optimal-mean}) and (\ref{svgp-optimal-covariance}) from \cite{titsias2009variational} are necessary to ensure the existence of the Radon-Nikodym derivative $d \mathbb{Q}_\mathcal{F}/d \mathbb{P}_\mathcal{F}$ shown explicitly in (\ref{radon-nikodym}) to ensure valid KL divergences in (\ref{kld-function-spaces}) and (\ref{bvi-gm-loss}). In other words, the svGP approximation space is restricted due to the problem of support mis-match for the KL divergence on $\mathcal{F}$.
+
+\subsubsection{Bayesian Variational Inference is the Root Cause}
+Most existing approaches attempt to approximate an ill-defined KL divergence caused by GP constructions that are not the svGP. However, \cite{wild2022generalized} identifies that Bayesian Variational Inference is the root cause of the inflexible svGP construction, as learning in this framework necessitates a KL divergence in $\mathcal{F}$. The next section will introduce Generalised Variational Inference (GVI), a learning framework that does not depend on the KL divergence, thus avoiding the support mis-match problem and allowing us to formulate and learn in richer GP approximation spaces.
 
 \newpage
 \section{Generalised Variational Inference (GVI) for GPs}
-This section introduces Generalised variational inference (GVI), showing that a variational approximation learned from (\ref{elbo-kld}) involving the KL divergence and Bayesian posterior can be interpreted as a special case within a more general learning framework.
+This section reviews Generalised Variational Inference (GVI) as introduced by \cite{knoblauch2022optimization}, showing that a variational approximation learned from (\ref{elbo-kld}) involving the KL divergence and Bayesian posterior can be interpreted as a special case within a more general learning framework. This is followed by work from \cite{wild2022generalized} showing that GVI can be applied as a GP learning framework.
 
-\subsection{Generalising the Bayesian Posterior}
-Statistical modelling is traditionally focused on characterising an underlying data generation process. In a Bayesian context, this involves updating the beliefs on a model's parameterisation. Given a model parameterised by $\theta$, Bayesian inference can be viewed as an update rule on $\pi(\theta)$, the prior belief of $\theta$. For new observations $x_{1:N}$ and a likelihood function $p(x_{1:N}|\theta)$, the belief for $\theta$ is updated as:
+\subsection{Generalising Bayesian Variational Inference}
+Statistical modelling is traditionally focused on characterising an underlying data generation process. In a Bayesian context, this involves updating out prior belief model $P_{\GP}\left(Y_{N*}\vert \mathbf{X}_{N*}, \sigma^2\right)$ with observations $\left\{x_n, y_n\right\}_{n=1}^N$ through $P_{\GP}\left(\mathbf{Y}_N|\mathbf{X}_N, \sigma^2\right)$, the likelihood of the data under our model:
 \begin{align}
-q_B^*(\theta) = \frac{p(x_{1:N}|\theta) \pi(\theta)}{\int_{\Theta} p(x_{1:N}|\theta) d \pi(\theta)}
 \label{bayesian-posterior}
+P_{\GP}\left(Y_{N*} \vert \mathbf{Y}_N, \mathbf{X}_N, \mathbf{X}_{N*}, \sigma^2 \right) &= \frac{P_{\GP}\left(\mathbf{Y}_N|\mathbf{X}_N, \sigma^2\right)P_{\GP}\left(Y_{N*}\vert \mathbf{X}_{N*}, \sigma^2\right)}{\int_{\mathbb{R}^{N}} P_{\GP}\left(Y_{N*} Y_N  \vert, \mathbf{X}_N, \mathbf{X}_{N*}, \sigma^2 \right) d Y_{N}} \\
+\label{bayesian-posterior-definition}
+&\eqqcolon P_{\GP}^B \left(Y_{N*} \vert\mathbf{X}_{N*}, \sigma^2 \right)
 \end{align}
-where $q_B^*(\theta)$ is known as the \textit{Bayesian posterior}. The validity of the Bayesian Posterior relies on three assumptions concerning the prior, the likelihood, and the normaliser. In contrast to traditional statistical modelling, larger-scaled models like Bayesian Neural Networks are typically focused on \textit{predictive performance} rather than \textit{model specification}. In these settings, the three  assumptions for the Bayesian posterior quickly breakdown, making it no longer reasonable to view $q_B^*(\theta)$ as a Bayesian belief update.
+deriving the Bayesian posterior $P_{\GP}^B$, our updated belief of the data generation process from the prior $P_{\GP}$. The validity of the Bayesian posterior relies on three assumptions concerning the prior, the likelihood, and the normaliser. However, larger scaled models are typically constructed for predictive performance rather than model specification. These approaches typically violate the assumptions such that it no longer reasonable to view (\ref{bayesian-posterior}) as a valid Bayesian belief update.
 
-\subsubsection{The Bayesian Posterior Interpretation Breaks Down}
-Bayesian inference assumes a prior $\pi(\theta)$ that is well-specified and informative of $\theta^*$, the `true' model parameters. The prior is interpreted as embodying \textit{all} previous knowledge about the data generating process such as previously observed data. Alternatively, the prior can also be interpreted as representing \textit{pseudo} observations about how we believe the data behaves.Larger-scaled models are often over-parameterised black box models, such as the weights of a Bayesian neural network. These parameters are essentially uninterpretable and priors are chosen out of convenience (i.e. Gaussians) with little thought given to their true parameterisation. In these settings, it is no longer practical to view $\pi(\theta)$ as a prior belief in the parameters of the data generating model as it is most definitely mis-specified.
-\\Bayesian inference assumes that there exists $\theta^* \in \Theta$, such that $x_i \sim p(x_n | \theta^*)$ for some unknown but fixed $\theta^*$. In other words $p(x_n | \theta^*)$, the likelihood function that is chosen is \textit{exactly} the true data generating process and is parameterised by $\theta$. In this case, the problem is simply a matter of finding $\theta^*$. Although model mis-specification occurs in traditional Bayesian inference, techniques such as hypothesis testing, residual analysis, and domain expertise can help guide the construction of a reasonably well-specified setting. However, the intentions behind using larger-scaled models is completely different. It is not to \textit{understand} the data generating process, but rather to have superior \textit{predictive performance}. With over-parameterisation, these black box models are most definitely mis-specified but often provide high prediction accuracy. As such, model parameters are typically chosen through an optimisation process (i.e. gradient descent), no longer adhering to the spirit of traditional Bayesian inference. For larger-scaled models, it is almost never fair to assume that $x_n \sim p(x|\theta)$ for \textit{any} $\theta \in \Theta$.
-\\Bayesian inference assumes that the normaliser $\int_{\Theta} p(x_{1:N}|\theta) d \pi(\theta)$ is a tractable integral or is computationally tractable. Computational tractability assumes access to  adequate computational resources and time to reasonably approximate the integral. This means that in traditional Bayesian inference, the computational complexities of evaluating $q_B^*(\theta)$ can be ignored. The use of conjugate priors is the only case when there exists closed form expressions for $\int_{\Theta} p(x_{1:N}|\theta) d \pi(\theta)$ to ensure tractable evaluation of $q_B^*(\theta)$. For over-parameterised black-box models, $q_B^*(\theta)$ will need to be approximated either through sampling approximations of the normaliser or variational approximations of $q_B^*(\theta)$.
-\newline
-\\Samplers such as Metropolis Hastings or Markov Chain Monte Carlo only have convergence guarantees in the infinite limit. For small/moderately sized models, large enough samples will practically converge to the desired posterior. However, larger-scaled models generally require access to much more computational resources and time that is often impractical.
-\newline
-\\Approximating $q_B^*(\theta)$ involves solving for $q_A^*(\theta) \in \mathcal{Q}_{A}$, where $\mathcal{Q}_{A}$ is often viewed as distributions of a simpler form. For example mean field approximations define a family of distributions $\mathcal{Q}_{MF} = \left\{\prod_i q_i(\theta_i)\right\}$, a product of independent distributions. Variational inference is motivated to finding a $q_A^*(\theta) \in \mathcal{Q}_{A}$ that \textit{approximates} $q_B^*(\theta)$, through the minimisation of some divergence between the two, $D(q_A^*(\theta)\| q_B^*(\theta))$. However the space of distributions $\mathcal{Q}_{A}$ is usually severely restrictive in its expressiveness and $q_A^*(\theta)$ is almost never a fair depiction of the structure of $q_B^*(\theta)$. Realistically, $\mathcal{Q}_{A}$ is chosen purely for computational convenience. With larger-scaled models, it is often no longer reasonable to assume that the normaliser of the Bayesian posterior will be tractable or that $q_B^*(\theta)$ can be reasonably approximated in a tractable manner.
+\subsubsection{Standard Bayesian Posterior Interpretations Break}
+Bayesian inference assumes our prior $P_{\GP}\left(Y_{N*}\vert \mathbf{X}_{N*}, \sigma^2\right)$ is well-specified and informative of the true data generation process. The prior is interpreted as embodying all previous knowledge about the generation process including any previously observed data. As discussed in Section \ref{section:gp-problems}, correctly specifying $m^p(\cdot)$ and $k^p(\cdot, \cdot)$ to construct the GP prior is often difficult. Thus it is no longer reasonable to view the prior as an initial belief in the data generating model because in most practical settings, it is almost definitely mis-specified.
 
-\subsubsection{The Generalised Posterior}
-Interpreting the mechanism behind calculating the Bayesian posterior in the context of optimisation can provide a more reasonable depiction of $q_B^*(\theta)$ for larger-scaled models. It can be shown that $q_B^*(\theta)$ solves a special case of a general variational inference (GVI) problem:
+ The data input/response relationship is modelled for GP regression in (\ref{regression-data-uncertainties}). Bayesian inference assumes that $y_n \sim F(x_n) + E$ exactly models the true data generating process and that the data likelihood is accurately evaluated with $P_{\GP}\left(\mathbf{Y}_N \vert \mathbf{X}_N, \sigma^2\right)$. Model mis-specification can often occur in traditional Bayesian inference, but techniques such as hypothesis testing, residual analysis, and domain expertise can help guide the construction of a reasonably well-specified setting. However, when constructing models for predictive performance, model parameters are typically learned through an optimisation process on the hyper-parameters of $m^p(\cdot)$ and $k^p(\cdot, \cdot)$, no longer adhering to the spirit of the likelihood function in traditional Bayesian inference. In practice, the likelihood model from the formulation in (\ref{regression-data-uncertainties}) is almost definitely mis-specified for any $m^p(\cdot)$ and $k^p(\cdot, \cdot)$.
+
+Bayesian inference assumes that the normaliser $\int_{\mathbb{R}^{N}} P_{\GP}\left(Y_{N*} Y_N  \vert, \mathbf{X}_N, \mathbf{X}_{N*}, \sigma^2 \right) d Y_{N}$ is a tractable integral, computationally tractable, such that the Bayesian posterior can be tractably calculated or adequately approximated. Being in an exclusively Gaussian setting, the GP predictive posterior is analytically tractable as shown in (\ref{gp-posterior}) but is computationally intractable scaling with $\mathcal{O}(N^3)$ compute and $\mathcal{O}(N^2)$ space, as discussed in Section \ref{section:gp-problems}. This motivates the Bayesian Variation Inference approximation by \cite{titsias2009variational} reviewed in Section \ref{section:the-svgp}. More generally, we can interpret the approximation by \cite{titsias2009variational} as solving for $Q_{\GP}^{(\nu*)} \in \mathcal{Q}_{\mathbf{\Gamma}}$ where:
 \begin{align}
-q^*(\theta) = \argmin_{q \in \Pi} \left\{ \mathbb{E}_{q(\theta)}\left[\frac{1}{N}\sum_{n=1}^N \ell(\theta, x_n)\right] + \D(q\|\pi)\right\}
+    \boldsymbol{Q}_{\GP}^{(\nu)} \coloneqq \left\{Q_{\GP}^{(\nu)}: \nu \in \mathbf{\Gamma}\right\}
+    \label{svgp-space}
+\end{align}
+the svGP approximation space defined with respect to the parameter space $\mathbf{\Gamma}$. Traditional variational inference involves solving for $Q_{\GP}^{(\nu*)} \in \boldsymbol{Q}_{\GP}^{(\nu)}$ that approximates the Bayesian posterior in (\ref{bayesian-posterior}), by minimising some divergence between the two: $\D\left(Q_{\GP}^{(\nu*)}\|P_{\GP}^B\right)$, where in the case of Bayesian variational inference $\D$ is the KL divergence, as shown in (\ref{elbo-kld}).
+However, as discussed in Section \ref{section:svgp-problems}, $\boldsymbol{Q}_{\GP}^{(\nu)}$ is a restricted approximation space chosen to ensure a valid KL divergence rather than to ensure expressiveness to adequately approximate $P_{\GP}^B$. Thus, it is no longer reasonable to assume that $Q_{\GP}^{(\nu*)}$ is a valid approximation of the Bayesian posterior.
+
+\subsubsection{The GVI Interpretation}
+\cite{knoblauch2022optimization} explains that interpreting the Bayesian posterior as a solution of an optimisation problem can provide a more reasonable depiction of approximate posteriors like the svGP from $\cite{titsias2009variational}$. In particular, \cite{knoblauch2022optimization} shows that the Bayesian posterior $P_{\GP}^B$ solves a special case of the General Variational Inference (GVI) objective:
+\begin{align}
+Q_{\GP}^* = \argmin_{Q_{\GP} \in \boldsymbol{Q}_{\GP}} \left\{ \mathbb{E}_{Q_{\GP}}\left[\frac{1}{N}\sum_{n=1}^N \ell(y_n, x_n)\right] + \D\left(Q_{\GP}\|P_{\GP}\right)\right\}
 \label{general-posterior}
 \end{align}
-where $q_B^*(\theta)$ is recovered by choosing the negative log-likelihood loss $\ell(\theta, \cdot) = -\log p(\cdot | \theta)$, the Kullback-Leibler divergence $\D(\cdot \| \pi) = \KLD(\cdot \| \pi)$, and the feasible set $\Pi = \mathcal{P}(\Theta)$. No longer deriving $q_B^*(\theta)$ from a belief update, we are no longer burdened to fulfill the assumptions required for the Bayesian inference interpretation of $q_B^*(\theta)$. We can re-interpret the role of the prior, likelihood, and choosing tractable normaliser approximations, in the context of an optimisation problem.
-\\In the optimisation context of (\ref{general-posterior}), we can see that the prior $\pi$ only exists in the divergence term. As such, $\pi$ defines the regulariser of an empirical risk minimisation optimisation problem which is solved by the Bayesian posterior $q_B^*(\theta)$. The choice of prior controls model complexity and prevents overfitting to the empirical risk. Unlike in the Bayesian interpretation, in this optimisation setup $\pi$ is no longer required to be a well-specified prior. Thus in larger-scaled models where prior mis-specification is almost guaranteed, it is more appropriate to view the prior as a regulariser on model complexity rather than a prior belief in the model parameters.
-\\From (\ref{general-posterior}), the likelihood term exists only in the expectation. Note that the empirical risk is defined as:
+by choosing the negative log-likelihood loss:
 \begin{align}
-\mathcal{E}(\theta) = \mathbb{E}_{q(\theta)}\left[\frac{1}{N}\sum_{n=1}^N \ell\left(x_n, \theta\right)\right]
+    \ell(y_n, x_n) = -\log P_{\GP}\left(y_n \vert x_n, \sigma^2\right)
+\end{align}
+the KL divergence:
+\begin{align}
+    \D\left(Q_{\GP}\|P_{\GP}\right) = \KLD\left(Q_{\GP}\|P_{\GP}\right)
+\end{align}
+and an unrestricted feasible set for $\boldsymbol{Q}_{\GP}$. Moreover, $Q_{\GP}^{(\nu*)}$ is the solution of (\ref{general-posterior}) when restricting the feasible set to the approximation space $\boldsymbol{Q}_{\GP}^{(\nu)}$ recovering (\ref{bvi-loss-breakdown}) and the svGP. No longer deriving the Bayesian posterior through a belief update, we are no longer burdened to approximating the exact Bayesian posterior as the variational inference target. Instead, $Q_{\GP}^*$ approximates a generalised posterior, defined with respect to the choice of loss $\ell(y_n, x_n)$ and regulariser $\D\left(\cdot \| P_{\GP}\right)$.  \cite{knoblauch2022optimization} re-interprets the role of the prior, likelihood, and approximation space, in the context of this optimisation problem.
+
+The empirical risk is defined as: 
+\begin{align}
+\mathcal{E}(\nu) = \mathbb{E}_{Q_{\GP}^{(\nu)}}\left[\frac{1}{N}\sum_{n=1}^N \ell\left(y_n, x_n\right)\right]
 \label{empirical-risk}
 \end{align}
-where $\ell$ is some loss function. We can see that defining $\ell$ as the negative log-likelihood, we recover an empirical risk of the model over empirical data that is equivalent to the expectation term of (\ref{general-posterior}). This interprets the likelihood function as a special loss definition for an optimisation problem. In other words, $q_B^*(\theta)$ is the minimiser of a regularised empirical risk with a log-likelihood loss, defined with respect to its predictive performance rather than its belief updates on model parameters. By pivoting from the Bayesian interpretation of $q_B^*(\theta)$, we no longer need to have a well-specified likelihood function because we can view the posterior as empirical risk minimisation for a special loss definition.
+equivalent to the expectation term in the GVI objective from (\ref{general-posterior}). This shows that the negative log-likelihood is just a specific loss definition for empirical risk minimisation. Targeting predictive performance rather than model specification, the generalised posterior the likelihood to be a well-specified.
+
+The prior $P_{\GP}$ only exists in the divergence term of (\ref{general-posterior}), defining a regulariser for empirical risk minimisation. In this context, the choice of prior and discrepancy $\D$ controls model complexity and prevents overfitting to the empirical risk term. Unlike in the Bayesian interpretation, $P_{\GP}$ is no longer required to be a well-specified prior. This is a more appropriate interpretation in practical GP modelling, where prior mis-specification is almost certainly guaranteed.
+
+With the GVI interpretation, $P_{\GP}^B$ becomes the minimiser of regularised empirical risk. This redefines the Bayesian posterior as an optimal solution for predictive performance rather than as an often ill-posed belief update. By pivoting from the standard Bayesian interpretation of $P_{\GP}^B$, we no longer need to have a well-specified likelihood, prior, or approximation space.
 
 \subsection{GPs as Gaussian Measures on Hilbert Spaces}
 However, there are special cases where it is possible to define a closed-form expression for a \textit{push-forward} measure from $(\Omega, \mathcal{A}, \mathbb{P})$ to an infinite-dimensional space. In the following, we define the infinite-dimensional analog of a Gaussian measure  $\mathbb{P}^{F}(A)$, a push-forward measure constructed from an underlying finite-dimensional $(\Omega, \mathcal{A}, \mathbb{P})$. In particular, we will define $\mathbb{P}^{F}(A)$ on a Hilbert space $\mathcal{H}$ with inner product $\langle \cdot, \cdot \rangle_\mathcal{H}$.
@@ -517,7 +553,7 @@ For this model we use $P \sim \mathcal{N}(m^p, k) $ and $Q \sim \mathcal{N}(m_Q,
 \end{itemize}
 Maybe you need to use some tricks for training. I.e. training a neural network mean first and then only later use the full loss $L$
 
-\subsubsection{Parameterising the svGP Kernel}
+\subsubsection{Variational Kernels}
 \subsection{Empirical Risk Selection}
 \subsubsection{Negative Log-Likelihood}
 \subsubsection{Cross Entropy}
