@@ -58,13 +58,13 @@ $\Box$ \end{quotation}}
 
 
 \title{  	{ \includegraphics[scale=.5]{ucl_logo.png}}\\
-{{\Huge Generalised Variational Inference for Gaussian Process Learning}}\\
+{{\Huge Generalised Variational Inference for Gaussian Processes}}\\
 {\large }\\
 		}
 \date{Submission date: September 2023}
 \author{James (Jian Shu) Wu\thanks{
-{\bf Disclaimer:}
-This report is submitted as part requirement for the Master's in Computational Statistics \& Machine Learning Degree at UCL. It is
+{\bf Disclaimer:} 
+This report is submitted as part requirement for the Master's in Computational Statistics \& Machine Learning Degree at University College London (UCL). It is
 substantially the result of my own work except where explicitly indicated in the text.
 \newline  %% \\ screws it up
 \emph{Either: }The report may be freely copied and distributed provided the source is explicitly acknowledged
@@ -223,7 +223,7 @@ In both regression and classification tasks, GPs are an extremely flexible model
 \cite{novak2019neural} has shown that the GP is an important construction for understanding the theoretical properties of many neural network architectures. Showing that the infinite width limit of many such architectures can be expressed as a GP has provided a theoretical framework for analysing these approaches typically viewed as black boxes. This provides further motivation for the potential and importance of GP models.
 
 A major drawback of GPs has been their inability to scale with respect to $N$, the number of training points. Both classification and regression relies on evaluating the inversion of an $\mathbb{R}^{N \times N}$ matrix in $\ref{gp-posterior-mean}$ and $\ref{gp-posterior-covariance}$. This operation has computational complexity $\mathcal{O}(N^3)$ and space complexity $\mathcal{O}(N^2)$, both of which quickly become problematic when scaling to larger-sized training sets. Despite their impressive performance and theoretically-driven approach, the computational intractability of GPs has been a serious limitation, restricting their use to problem domains having smaller sized data sets. In Section \ref{section:the-svgp}, we will present sparse variational Gaussian Processes (svGPs), a common approach to scaling GPs to larger data sets.
-\\\jw{Talk about the difficulties with choosing the correct kernel and discuss that more expression kernels like the NNGP and deep kernels will be introduced in later sections}
+\\\jw{Talk about the difficulties with choosing the correct kernel and discuss that more expressive kernels like the NNGP and deep kernels will be introduced in later sections}
 
 \newpage
 \section{svGPs: Scaleable but \textit{not} Flexible}\label{section:the-svgp}
