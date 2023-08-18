@@ -515,14 +515,52 @@ where our regulariser is now between the GMs on $\mathcal{L}^2(\mathcal{X}, \rho
 \newpage
 \section{GVI-GPs: Flexible \textit{and} Scaleable}
 \subsection{A Framework for GP Learning}
+Building on \cite{wild2022generalized}, we propose the general GVI-GP objective:
+\begin{align}
+Q_{\GP}^* = \argmin_{Q_{\GP} \in \boldsymbol{Q}_{\mathcal{L}^2}} \left\{ \mathbb{E}_{Q_{\GP}}\left[\frac{1}{N}\sum_{n=1}^N \ell(y_n, x_n)\right] + \D\left[\mathbb{Q}_{\mathcal{L}^2}, \mathbb{P}_{\mathcal{L}^2}\right]\right\}
+\label{gvi-gp-objective}
+\end{align}
+where we define a general approximation space:
+\begin{align}
+    \boldsymbol{Q}_{\mathcal{L}^2} \coloneqq \left\{ 
+    \left(m^q, k^q\right): m^q \in \mathcal{L}(\mathcal{X}, \rho, \mathbb{R}), \int_{\mathcal{X}} k^q(x, x)d\rho(x) < \infty
+    \right\}
+\end{align}
+containing all valid mean and kernel functions that ensure the existence of a GM on the $\mathcal{L}(\mathcal{X}, \rho, \mathbb{R})$ Hilbert space. In practice, we choose a subset $\boldsymbol{Q}_{\boldsymbol{\Theta}} \subset \boldsymbol{Q}_{\mathcal{L}^2}$:
+\begin{align}
+    \boldsymbol{Q}_{\boldsymbol{\Theta}} \coloneqq \left\{ 
+    Q^{(\theta)}_{\GP}: \theta \in \boldsymbol{\Theta}
+    \right\}
+\end{align}
+such that we can construct a gradient-based optimisation strategy with respect to some parameter space $\boldsymbol{\Theta}$ for the mean and kernel functions:
+\begin{align}
+    \boldsymbol{\Theta} \coloneqq \left\{\theta^m \in \boldsymbol{\Theta}^m, \theta^k \in \boldsymbol{\Theta}^k \right\}
+\end{align}
+where $\boldsymbol{\Theta}^m$ is the mean function parameter space, $\boldsymbol{\Theta}^k$ is the kernel function parameter space. $\boldsymbol{Q}_{\boldsymbol{\Theta}}$ remains a very general approximation space. For example if we choose the mean parameter space $\mathbb{R}^M$ and the kernel parameter space $\mathbb{R}^{M\times M}_{\succ 0}$ and inducing points $\left\{x_m, y_m\right\}_{m=1}^{M} \subset \{x_n, y_n\}_{n=1}^{N}$ we can recover the svGP parameter space $\boldsymbol{\Gamma}$, assuming the svGP has a corresponding GM on $\mathcal{L}(\mathcal{X}, \rho, \mathbb{R})$. 
+
+Defining an approximation space $\boldsymbol{Q}_{\mathcal{L}^2}$ ensures that GVI-GPs are extremely flexible, with the potential to learn in complex problem domains traditionally dominated by neural network architectures.
+By choosing variational kernels of $\mathcal{O}(M^3)$ computational complexity, we ensure the scaleability of GVI-GPs. 
+In Section \ref{section:gvi-gp-construction}, we present different choices of mean and kernel functions with corresponding parameter spaces $\boldsymbol{\Theta}^m$ and $\boldsymbol{\Theta}^k$ respectively. 
+We will also propose different choices of discrepancies and priors for the regulariser $\D\left[\cdot, \mathbb{P}_{\mathcal{L}^2}\right]$ and loss $\ell(y_n, x_n)$ terms in (\ref{gvi-gp-objective}) to demonstrate the flexibility of learning GVI-GPs within this framework.
+
 \subsection{Implementation Architecture}
-\subsection{Learning GPs with GVI}
+
+The implementation is with JAX in Python. Wanted to ensure compatability with the neural-tangent's package from \cite{novak2019neural} which is also implemented in JAX. Describe abstractions and implementation choices (symmetric matrices in the wasserstein distance, adding jitter, cholesky decomp for matrix inversions), pydantic typing checks, tests, mockers. gp implementation of abc's for classifier vs regression and exact vs approximate.
+
+\subsection{Learning Procedure}
 \subsubsection{Inducing Points and the Regulariser GP}
 \subsubsection{Tempering}
 
 
 \newpage
-\section{GVI-GP Construction}
+\section{GVI-GP Construction}\label{section:gvi-gp-construction}
+\subsection{Means}
+Neural Networks!!!
+
+Leverage existing architectures that have proved successful in their respective problem domains. CNN for images, Fully connected for regression, transformers for text?
+
+But technically can be anything, i.e. random forest, KNN, etc.
+
 \subsection{Kernels}\label{section:kernels}
 \subsubsection{Neural Network Gaussian Process (NNGP) Kernels}
 \subsubsection{Deep Neural Network Kernels}
@@ -543,17 +581,27 @@ For this model we use $P \sim \mathcal{N}(m^p, k) $ and $Q \sim \mathcal{N}(m_Q,
 \end{itemize}
 Maybe you need to use some tricks for training. I.e. training a neural network mean first and then only later use the full loss $L$
 
-\subsubsection{Variational Kernels}
-\subsection{Empirical Risk Selection}
+\subsection{Variational Kernels}
+\subsubsection{svGP Kernels}
+Inspired by the svGP kernel from \cite{titsias2009variational}
+
+\subsubsection{Need a Name Kernels}
+\begin{align}
+            r(x,x') := r_0(x,x') - r_0(x,Z) \big( r_0(Z,Z) \big)^{-1} r_0(Z,x)
+\end{align}
+where we can parameterise the base kernel $r_0$ however we want, i.e. with a deep NN kernel or a NNGP kernel.
+\subsection{Empirical Risks}
 \subsubsection{Negative Log-Likelihood}
 \subsubsection{Cross Entropy}
-\subsection{Regularisation Selection}
+\subsection{Regularisations}
 \subsubsection{Naive Squared Difference}
 \subsubsection{Wasserstein Distances}
 \subsubsection{Pointwise Pseudo-Divergences}
 
 \newpage
 \section{Experimental Results}
+\subsection{Experimental Design}
+Describe experimentation framework with resolvers and schemas so that experiments can be defined with yaml configuration files.
 \subsection{Regression Visualisations}
 \begin{figure}[h!]
 \centering
