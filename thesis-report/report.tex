@@ -76,7 +76,7 @@ $\Box$ \end{quotation}}
 	% \vfill
 
 	\vspace{1cm}
-	{\Large\itshape James (Jian Shu) Wu\par}
+	{\Large\itshape James Wu\par}
 	\vspace{0.5cm}
 	supervised by\par 
 	\vspace{0.25cm}
@@ -118,20 +118,15 @@ Summarise your report concisely.
 \section{GPs: Expressive but \textit{not Scaleable}}
 Gaussian processes (GPs) are powerful universal function approximators that can be used for both regression and classification tasks. In the following sections we will review GPs followed by a discussion of their strengths and weaknesses.
 \subsection{The GP}\label{section:the-gp}
-We introduce the GP following the formulation from \cite{rasmussen2003gaussian}. For an input space $\mathcal{X}$, a GP is a random function mapping $F(\cdot)$ where a sample function $f(\cdot) \sim F(\cdot)$ applies the mapping $f: \mathcal{X} \rightarrow \mathbb{R}$. We denote:
+We introduce the GP following the formulation from \cite{rasmussen2003gaussian}. For an input space $\mathcal{X}$, a GP is a random function mapping $F(\cdot)$ where a sample function $f(\cdot) \sim F(\cdot)$ applies the mapping $f: \mathcal{X} \rightarrow \mathbb{R}$. The probability of $F(\cdot)$ follows a Gaussian distribution:
 \begin{align}
-    f(\cdot) \sim F(\cdot) = \GP\left(m^p(\cdot), k^p(\cdot, \cdot)\right)
-    \label{gp}
-\end{align}
-where the GP is defined with respect to a mean function $m^p: \mathcal{X} \rightarrow \mathbb{R}$ and a positive definite kernel function $k^p: \mathcal{X} \times \mathcal{X} \rightarrow \mathbb{R}$ such that the probability of $F(\cdot)$ follows a Gaussian distribution:
-\begin{align}
-    P\left(F\left(\cdot \right)\right) =  \mathcal{N}(m^p(\cdot), k^p(\cdot, \cdot))
+    P_{\GP}\left(F\left(\cdot \right)\right) =  \mathcal{N}(m^p(\cdot), k^p(\cdot, \cdot))
     \label{gp-normal}
 \end{align}
-In other words, for any $N$ points $\mathbf{X}_N = \left\{ x_n\right\}_{n=1}^N$ where $x_n \in \mathcal{X}$, a GP constructs the Gaussian distribution:
+defined with respect to a mean function $m^p: \mathcal{X} \rightarrow \mathbb{R}$ and a positive definite kernel function $k^p: \mathcal{X} \times \mathcal{X} \rightarrow \mathbb{R}$. In other words, for any $N$ points $\mathbf{X}_N = \left\{ x_n\right\}_{n=1}^N$ where $x_n \in \mathcal{X}$, a GP constructs the Gaussian distribution:
 \begin{align}
     \label{gp-vector}
-    P\left(F\left(\mathbf{X}_N\right)\right) = P\left(Y_N \vert \mathbf{X}_N\right) = \mathcal{N}\left(\mathbf{m}^p_{\mathbf{X}_N}, \mathbf{K}^{p}_{\mathbf{X}_N, \mathbf{X}_N}\right)
+    P_{\GP}\left(F\left(\mathbf{X}_N\right)\right) = P_{\GP}\left(Y_N \vert \mathbf{X}_N\right) = \mathcal{N}\left(\mathbf{m}^p_{\mathbf{X}_N}, \mathbf{K}^{p}_{\mathbf{X}_N, \mathbf{X}_N}\right)
 \end{align}
 where $Y_N \in \mathbb{R}^{N}$ is the random response vector, $\mathbf{m}^p_{\mathbf{X}_N} = \left[ m^p(x_1) \cdots m^p(x_N)\right]^T \in \mathbb{R}^N$, and $\mathbf{K}^p_{\mathbf{X}_N, \mathbf{X}_N} \in \mathbb{R}^{N \times N}$ having elements:
 \begin{align}
@@ -153,12 +148,12 @@ where the GP random function mapping $F(\cdot)$ accounts for the epistemic (mode
 GP regression uses the formulation in Section \ref{section:the-gp} to `predict' for $N^*$ test points $\mathbf{X}_{N*} = \left\{ x_{n^*}\right\}_{n^*=1}^{N^*}$ with a Bayesian posterior. (\ref{gp-vector}) provides the prior for the response vector of the test points:
 \begin{align}
     \label{gp-prior}
-    P\left(Y_{N*}\vert \mathbf{X}_{N*}\right) = \mathcal{N}\left(\mathbf{m}^p_{\mathbf{X}_{N*}}, \mathbf{K}^p_{\mathbf{X}_{N*}, \mathbf{X}_{N*}}\right)
+    P_{\GP}\left(Y_{N*}\vert \mathbf{X}_{N*}\right) = \mathcal{N}\left(\mathbf{m}^p_{\mathbf{X}_{N*}}, \mathbf{K}^p_{\mathbf{X}_{N*}, \mathbf{X}_{N*}}\right)
 \end{align}
 Evaluating the known training response vector $\mathbf{Y}_{N}$ provides the likelihood:
 \begin{align}
      \label{gp-likelihood}
-    P\left(\mathbf{Y}_{N} \vert \mathbf{X}_{N} \right) = \left(2 \pi\right)^{-N/2} \det\left(\mathbf{K}^p_{\mathbf{X}_{N}, \mathbf{X}_{N}}\right)^{-1/2} \exp\left(-\frac{1}{2}\left(\mathbf{e}^p_N\right)^T\left(\mathbf{K}^p_{\mathbf{X}_{N}, \mathbf{X}_{N}}\right)^{-1}\mathbf{e}^p_N\right)
+    P_{\GP}\left(\mathbf{Y}_{N} \vert \mathbf{X}_{N} \right) = \left(2 \pi\right)^{-N/2} \det\left(\mathbf{K}^p_{\mathbf{X}_{N}, \mathbf{X}_{N}}\right)^{-1/2} \exp\left(-\frac{1}{2}\left(\mathbf{e}^p_N\right)^T\left(\mathbf{K}^p_{\mathbf{X}_{N}, \mathbf{X}_{N}}\right)^{-1}\mathbf{e}^p_N\right)
     \label{likelihood-normal}
 \end{align}
 defining:
@@ -168,12 +163,12 @@ defining:
 \end{align}
 With Bayes' Rule, the posterior of the response vector is proportional to the prior and likelihood:
 \begin{align}
-     P\left(Y_{N*} | \mathbf{Y}_{N},  \mathbf{X}_{N},  \mathbf{X}_{N*}\right) \propto P\left(\mathbf{Y}_{N} \vert \mathbf{X}_{N} \right) P\left(Y_{N*}\vert \mathbf{X}_{N*}\right)
+     P_{\GP}\left(Y_{N*} | \mathbf{Y}_{N},  \mathbf{X}_{N},  \mathbf{X}_{N*}\right) \propto P_{\GP}\left(\mathbf{Y}_{N} \vert \mathbf{X}_{N} \right) P_{\GP}\left(Y_{N*}\vert \mathbf{X}_{N*}\right)
     \label{bayes-posterior}
 \end{align}
 In GP regression, (\ref{bayes-posterior}) acts as a `prediction' for the epistemic uncertainty of the test data responses. With all terms being Gaussian, the posterior in (\ref{bayes-posterior}) has the form:
 \begin{align}
-    P\left(Y_{N*} | \mathbf{Y}_{N},  \mathbf{X}_{N},  \mathbf{X}_{N*}\right)  =  \mathcal{N}\left(\hat{\mathbf{m}}^p_{\mathbf{X}_{N*}}, \hat{\mathbf{K}}^p_{\mathbf{X}_{N*}, \mathbf{X}_{N*}}\right)
+    P_{\GP}\left(Y_{N*} | \mathbf{Y}_{N},  \mathbf{X}_{N},  \mathbf{X}_{N*}\right)  =  \mathcal{N}\left(\hat{\mathbf{m}}^p_{\mathbf{X}_{N*}}, \hat{\mathbf{K}}^p_{\mathbf{X}_{N*}, \mathbf{X}_{N*}}\right)
     \label{gp-epistemic-posterior}
 \end{align}
 with:
@@ -265,7 +260,7 @@ Proposed by \cite{titsias2009variational}, sparse variational Gaussian Processes
 \subsection{The svGP}
 The svGP assumes that a subset of inducing points $\{x_m, y_m\}_{m=1}^{M} \subset \{x_n, y_n\}_{n=1}^{N}$ where $M << N$ can adequately capture the input/response relationships in the full training data. This approach constructs an svGP:
 \begin{align}
-g(\cdot) \sim \GP^{(\gamma)}\left(m^{q}(\cdot), k^{q}(\cdot, \cdot)\right)
+g(\cdot) \sim Q^{(\gamma)}_{\GP}(G(\cdot)) = \mathcal{N}\left(m^{q}(\cdot), k^{q}(\cdot, \cdot)\right)
 \label{svgp}
 \end{align}
 parameterised by $\gamma$ which includes the choice of subset $\{x_m, y_m\}_{m=1}^{M}$. For $N^*$ test points $\mathbf{X}_{N*}$, the svGP approximates the predictive posterior:
@@ -593,7 +588,7 @@ The implementation is with JAX in Python. Wanted to ensure compatability with th
 \end{algorithm}
 
 \subsubsection{Inducing Points and the Prior GP}
-describe chicken and egg problem
+\jw{describe chicken and egg problem}
 
 
 \begin{algorithm}
