@@ -566,13 +566,13 @@ Motivated by \cite{wild2022generalized} and the GVI framework from \cite{knoblau
 Q_{\GP}^* = \argmin_{Q_{\GP} \in \boldsymbol{Q}_{\mathcal{L}^2}} \left\{ \mathbb{E}_{Q_{\GP}}\left[\frac{1}{N}\sum_{n=1}^N \ell(y_n, x_n)\right] + \D\left[\mathbb{Q}_{\mathcal{L}^2}, \mathbb{P}_{\mathcal{L}^2}\right]\right\}
 \label{gvi-gp-objective}
 \end{align}
-where there exists a corresponding $\mathbb{P}_{\mathcal{L}^2}$ for $P_{\GP}$ and we define a general approximation space:
+where there exists a corresponding $\mathbb{P}_{\mathcal{L}^2} \in \mathcal{L}^2(\mathcal{X}, \rho, \mathbb{R})$ for $P_{\GP}$ and we define a general approximation space:
 \begin{align}
     \boldsymbol{Q}_{\mathcal{L}^2} \coloneqq \left\{ 
-    \left(m^q, k^q\right): m^q \in \mathcal{L}(\mathcal{X}, \rho, \mathbb{R}), \int_{\mathcal{X}} k^q(x, x)d\rho(x) < \infty
+    \left(m^q, k^q\right): m^q \in \mathcal{L}^2(\mathcal{X}, \rho, \mathbb{R}), \int_{\mathcal{X}} k^q(x, x)d\rho(x) < \infty
     \right\}
 \end{align}
-containing all valid mean and kernel functions that ensure the existence of a GM on the $\mathcal{L}^2(\mathcal{X}, \rho, \mathbb{R})$ Hilbert space. It is important to note that the space $\boldsymbol{Q}_{\mathcal{L}^2}$ is defined independently of $\mathbb{P}_{\mathcal{L}^2}$. This decoupling of the approximation space from the prior is only possible because of the GVI from \cite{knoblauch2022optimization}. In practice, we choose a subset $\boldsymbol{Q}_{\boldsymbol{\Theta}} \subset \boldsymbol{Q}_{\mathcal{L}^2}$:
+containing all valid mean and kernel functions that ensure the existence of a GM on the $\mathcal{L}^2(\mathcal{X}, \rho, \mathbb{R})$ Hilbert space. It is important to note that the space $\boldsymbol{Q}_{\mathcal{L}^2}$ is defined independently of $\mathbb{P}_{\mathcal{L}^2}$. This decoupling of the approximation space from the prior is only possible because of the connection between GPs and GMs on Hilbert spaces shown in \cite{wild2022generalized} and GVI from \cite{knoblauch2022optimization}. In practice, we choose a subset $\boldsymbol{Q}_{\boldsymbol{\Theta}} \subset \boldsymbol{Q}_{\mathcal{L}^2}$:
 \begin{align}
     \boldsymbol{Q}_{\boldsymbol{\Theta}} \coloneqq \left\{ 
     Q^{(\theta)}_{\GP}: \theta \in \boldsymbol{\Theta}
@@ -583,8 +583,8 @@ such that we can construct a gradient-based optimisation strategy with respect t
     \boldsymbol{\Theta} \coloneqq \left\{\theta^m \in \boldsymbol{\Theta}^m, \theta^k \in \boldsymbol{\Theta}^k \right\}
 \end{align}
 where $\boldsymbol{\Theta}^m$ is the mean function parameter space and $\boldsymbol{\Theta}^k$ is the kernel function parameter space. $\boldsymbol{Q}_{\boldsymbol{\Theta}}$ remains a very general and expressive GP approximation space. 
-In Section \ref{section:gvi-gp-construction}, we present some choices for mean and kernel functions with corresponding parameter spaces $\boldsymbol{\Theta}^m$ and $\boldsymbol{\Theta}^k$ to construct $\boldsymbol{Q}_{\boldsymbol{\Theta}}$. 
-Moreover, if we choose the mean parameter space $\mathbb{R}^M$ for the mean function in (\ref{svgp-mean}) and the kernel parameter space $\mathbb{R}^{M\times M}_{\succ 0}$ for the kernel function in (\ref{svgp-covariance}) with inducing points $\left\{x_m, y_m\right\}_{m=1}^{M} \subset \{x_n, y_n\}_{n=1}^{N}$ we can recover the svGP, assuming there exists a corresponding GM on $\mathcal{L}^2(\mathcal{X}, \rho, \mathbb{R})$. 
+In Section \ref{section:gvi-gp-construction}, we present some choices for mean and variational kernel functions with corresponding parameter spaces $\boldsymbol{\Theta}^m$ and $\boldsymbol{\Theta}^k$ to construct $\boldsymbol{Q}_{\boldsymbol{\Theta}}$. 
+If we choose the mean parameter space $\mathbb{R}^M$ with the svGP mean function in (\ref{svgp-mean}) and the kernel parameter space $\mathbb{R}^{M\times M}_{\succ 0}$ with the kernel function in (\ref{svgp-covariance}) as well as the inducing points $\left\{x_m, y_m\right\}_{m=1}^{M} \subset \{x_n, y_n\}_{n=1}^{N}$ we can recover the svGP, assuming there exists a corresponding GM on $\mathcal{L}^2(\mathcal{X}, \rho, \mathbb{R})$. 
 
 $\boldsymbol{Q}_{\mathcal{L}^2}$ provides an expressive approximation space for GVI-GPs, with the potential to learn in complex problem domains traditionally dominated by neural network architectures.
 By choosing variational kernels, we also ensure the scaleability of GVI-GPs. 
