@@ -589,33 +589,33 @@ Section \ref{section:gvi-gp-construction} will also propose different choices of
 
 \jw{The implementation is with JAX in Python. Wanted to ensure compatability with the neural-tangent's package from \cite{novak2019neural} which is also implemented in JAX. Describe abstractions and implementation choices (symmetric matrices in the wasserstein distance, adding jitter, cholesky decomp for matrix inversions), pydantic typing checks, tests, mockers. gp implementation of abc's for classification vs regression and exact vs approximate.}
 
-\subsection{Learning Procedure}
+\subsection{Training Procedure}
 
 \begin{algorithm}
-\caption{GVI-GP Learning Procedure}\label{alg:gvi-gp}
+\caption{GVI-GP Training Procedure}\label{alg:gvi-gp}
 \begin{algorithmic}
 \begin{enumerate}
-    \item Learn the prior GP and choose the inducing points
+    \item Training the prior GP and selecting the inducing points
     \item Learn the approximate GP with a chosen formulation of the GVI objective
     \item Temper the approximate GP
 \end{enumerate}
 \end{algorithmic}
 \end{algorithm}
 
-\subsubsection{Learning Inducing Points and the Prior GP}
+\subsubsection{Inducing Points Selection and Prior GP Training}
 \jw{describe chicken and egg problem}
-
 
 \begin{algorithm}
 \caption{Prior GP Learning and Inducing Points Selection}\label{alg:gvi-gp}
 \begin{algorithmic}
- \State Select the inducing points $\left\{x_m, y_m\right\}_{m=1}^{M} \subset \{x_n, y_n\}_{n=1}^{N}$ with the initial prior GP kernel
+ \State Select the inducing points $\left\{x_m\right\}_{m=1}^{M} \subset \{x_n\}_{n=1}^{N}$ with the initial prior GP kernel
 \While{the inducing points have not converged}
-\State Empirical risk minimisation to learn the prior GP
-\State  Select the inducing points with the learned prior GP kernel
+\State Train the prior GP on selected inducing points and their responses $\left\{x_m, y_m\right\}_{m=1}^{M}$
+\State  Select new inducing points with the trained prior GP kernel
 \EndWhile
 \end{algorithmic}
 \end{algorithm}
+\jw{incorporates response data into the inducing point selection through the empirical risk minimisation training process. previously, inducing point selection only looked at $\mathbf{X}_N$}
 
 \subsubsection{Regression Tempering}
 \subsubsection{Classification Tempering}
