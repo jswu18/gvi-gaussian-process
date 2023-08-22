@@ -436,8 +436,8 @@ P_{\GP}\left(Y_{N*} \vert \mathbf{Y}_N, \mathbf{X}_N, \mathbf{X}_{N*}, \sigma^2 
 where $P_{\GP}^B \left(Y_{N*} \vert\mathbf{X}_{N*}, \sigma^2 \right)$ is the Bayesian posterior, an update on the prior belief of the data generation process. The validity of the Bayesian posterior belief update relies on assumptions concerning the prior, the likelihood, and tractability. However in practice, variational GP learning is motivated by predictive performance and computational tractability rather than correct model specification, often violating the assumptions necessary for a valid Bayesian belief learning framework.
 
 \subsubsection{The Bayesian Interpretation Breaks}
-Bayesian approaches involve careful selection of the model prior $P_{\GP}(Y_{N*}\vert \mathbf{X}_{N*})$, often with domain expertise. The prior is assumed to be well-specified and well-informed. However, correctly specifying $m^p(\cdot)$ and $k^p(\cdot, \cdot)$ to construct the GP prior is often difficult. In practice, the hyper-parameters of the mean and kernel are learned through some loss minimisation procedure of the predictive posterior likelihood on the training data (i.e. negative log-likelihood minimisation).
-It seems no longer reasonable to view $P_{\GP}(Y_{N*}\vert \mathbf{X}_{N*})$ as a prior belief before observing the training data when we are working backwards and learning the prior mean and kernel with the training data itself.
+Bayesian approaches involve careful selection of the model prior $P_{\GP}(Y_{N*}\vert \mathbf{X}_{N*})$, often with domain expertise. The prior is assumed to be well-specified and well-informed. However, correctly specifying $m^p(\cdot)$ and $k^p(\cdot, \cdot)$ to construct the GP prior is difficult. In practice, the hyper-parameters of the mean and kernel are learned through some loss minimisation procedure of the predictive posterior likelihood on the training data (i.e. negative log-likelihood minimisation).
+Thus, it would no longer seem reasonable to view $P_{\GP}(Y_{N*}\vert \mathbf{X}_{N*})$ as a prior belief before observing the training data when we are working backwards and learning the prior mean and kernel with the training data itself.
 
  Bayesian inference assumes that $y_n \sim F(x_n) + E$, the data input/response relationship modelled for GP regression, is the true data generating process and therefore the data likelihood can be evaluated with $P_{\GP}\left(\mathbf{Y}_N \vert \mathbf{X}_N, \sigma^2\right)$. Model mis-specification can often occur in traditional Bayesian inference, but techniques such as hypothesis testing, residual analysis, and domain expertise can help guide the construction of a reasonably well-specified setting. However in practice, this GP regression model is generally selected for its predictive performance and the conveniences of working with Gaussians. Thus, the likelihood model in (\ref{gp-likelihood-normal}) is almost definitely mis-specified. 
  
@@ -451,7 +451,7 @@ the svGP approximation space defined with respect to the parameter space $\mathb
 Q^{(\gamma^*)}_{\GP} = \argmin_{Q^{(\gamma)}_{\GP} \in \boldsymbol{Q}_{\boldsymbol{\Gamma}}}\D\left[Q_{\GP}^{(\gamma)}, P_{\GP}^B\right]
 \end{align}
 where in the case of standard variational inference as shown in (\ref{elbo-kld}), $\D$ is the KL divergence.
-However, as discussed in Section \ref{section:svgp-problems}, $\boldsymbol{Q}_{\boldsymbol{\Gamma}}$ must be a restricted approximation space to ensure a valid KL divergence, sacrificing the expressiveness of the space to adequately approximate $P_{\GP}^B$. Given that $\boldsymbol{Q}_{\boldsymbol{\Gamma}}$ is mostly chosen for computational convenience, it's no longer necessarily valid to assume that $Q_{\GP}^{(\gamma^*)}$ will be a reasonable approximation of the Bayesian posterior.
+However, as discussed in Section \ref{section:svgp-problems}, $\boldsymbol{Q}_{\boldsymbol{\Gamma}}$ must be a restricted approximation space to ensure a valid KL divergence, sacrificing the expressiveness of the space and adequate approximations of $P_{\GP}^B$. Given that $\boldsymbol{Q}_{\boldsymbol{\Gamma}}$ is mostly chosen for computational convenience, it's no longer reasonable to assume that $Q_{\GP}^{(\gamma^*)}$ will be a good approximation of the Bayesian posterior.
 
 With the Bayesian interpretation of Variational Inference often violating core Bayesian assumptions, \cite{knoblauch2022optimization} proposes the GVI framework, which moves away from the traditional focus on correct model specification. GVI contextualises the Bayesian posterior in a learning framework focused on optimisation for predictive performance, more in line with the priorities of GP inference in practice.
 
@@ -469,23 +469,7 @@ the KL divergence between the corresponding GMs on $\mathcal{F}$:
 \begin{align}
     \D \left[Q_{\GP}, P_{\GP}\right] = \mathbb{D}_{\mathcal{F}, \text{KL}}\left[\mathbb{Q}_{\mathcal{F}}, \mathbb{P}_{\mathcal{F}}\right]
 \end{align}
-and an unrestricted feasible set for $\boldsymbol{Q}_{\GP}$. Moreover, the solution is $Q_{\GP}^{(\gamma^*)}$ when restricting the feasible set to the svGP approximation space $\boldsymbol{Q}_{\boldsymbol{\Gamma}}$ recovering (\ref{bvi-loss}) and the optimal solution from \cite{titsias2009variational}. But no longer deriving the Bayesian posterior through a belief update, we are no longer required to approximate the exact Bayesian posterior as the inference target. Instead, $Q_{\GP}^*$ approximates a generalised posterior defined with respect to a choice of loss $\ell(y_n, x_n)$ and regulariser $\D\left[\wc, P_{\GP}\right]$. Loosely interpreting \cite{knoblauch2022optimization} in the context of GPs, losses are lower bounded functions 
-\begin{align}
-    \ell: \boldsymbol{Q}_{\GP} \times \mathcal{X} \times \mathbb{R} \rightarrow \mathbb{R}
-    \label{loss-definition}
-\end{align}
-statistical divergences are functions:
-\begin{align}
-    \D: \boldsymbol{Q}_{\GP} \times \boldsymbol{Q}_{\GP} \rightarrow \mathbb{R}_{\geq0}
-\end{align} such that:
-\begin{align}
-    \D\left[Q_{\GP}, P_{\GP}\right] \geq 0
-\end{align} 
-and 
-\begin{align}
-    \D\left[Q_{\GP}, P_{\GP}\right] = 0 \Leftrightarrow Q_{\GP}(Y_{N*} \vert \mathbf{X}_{N*}) = P_{\GP}(Y_{N*} \vert \mathbf{X}_{N*})
-\end{align}
-for any $\mathbf{X}_{N*} \in \mathcal{X}^{N^*}$. \cite{knoblauch2022optimization} re-interprets the role of the prior, likelihood, and approximation space, in the context of this optimisation framework.
+and an unrestricted feasible set for $\boldsymbol{Q}_{\GP}$. Moreover, the solution is $Q_{\GP}^{(\gamma^*)}$ when restricting the feasible set to the svGP approximation space $\boldsymbol{Q}_{\boldsymbol{\Gamma}}$ recovering (\ref{bvi-loss}) and the optimal solution from \cite{titsias2009variational}. But no longer deriving the Bayesian posterior through a belief update, we are no longer required to approximate the exact Bayesian posterior as the inference target. Instead, $Q_{\GP}^*$ approximates a generalised posterior defined with respect to a choice of loss $\ell(y_n, x_n)$ and regulariser $\D\left[\wc, P_{\GP}\right]$. \cite{knoblauch2022optimization} re-interprets the role of the prior, likelihood, and approximation space, in the context of this optimisation framework.
 
 The empirical risk: 
 \begin{align}
@@ -558,7 +542,7 @@ Motivated by \cite{wild2022generalized} and the GVI framework from \cite{knoblau
 Q_{\GP}^* = \argmin_{Q_{\GP} \in \boldsymbol{Q}_{\mathcal{G}}} \left\{ \mathbb{E}_{Q_{\GP}}\left[\frac{1}{N}\sum_{n=1}^N \ell(y_n, x_n)\right] + \D_{\mathcal{G}}\left[\mathbb{Q}_{\mathcal{G}}, \mathbb{P}_{\mathcal{G}}\right]\right\}
 \label{gvi-gp-objective}
 \end{align}
-where $P_{\GP}$ must have a corresponding $\mathbb{P}_{\mathcal{G}}$ on some function space $\mathcal{G}$ and we define a general approximation space:
+where the prior GP must have a corresponding GM on the function space $\mathcal{G}$ and we define a general approximation space:
 \begin{align}
     \boldsymbol{Q}_{\mathcal{G}} \coloneqq \left\{ 
     Q_{\GP} :  \exists \mathbb{Q}_{\mathcal{G}},  \D_{\mathcal{G}}\left[\mathbb{Q}_{\mathcal{G}}, \mathbb{P}_{\mathcal{G}}\right] < \infty
@@ -576,7 +560,7 @@ containing all valid mean and kernel functions that ensure the existence of a GM
 
 If we choose the mean parameter space $\mathbb{R}^M$ with the svGP mean function in (\ref{svgp-mean}) and the kernel parameter space $\mathbb{R}^{M\times M}_{\succ 0}$ with the kernel function in (\ref{svgp-covariance}) as well as the inducing points $\left\{x_m, y_m\right\}_{m=1}^{M} \subset \{x_n, y_n\}_{n=1}^{N}$, and approximation space $\boldsymbol{Q}_{\boldsymbol{\Gamma}}$, we can also recover the svGP from \cite{titsias2009variational}.
 
-It is important to note that unlike $\boldsymbol{Q}_{\boldsymbol{\Gamma}}$, the space $\boldsymbol{Q}_{\mathcal{L}^2}$ is defined independently of the prior GP. This decoupling of the approximation space from the prior is only possible because of the connection between GPs and GMs on Hilbert spaces shown in \cite{wild2022generalized} and GVI from \cite{knoblauch2022optimization}. Thus depending on the divergence and function space, the approximation space $\boldsymbol{Q}_{\mathcal{G}}$ may not necessarily depend on the prior GP. 
+It is important to note that unlike $\boldsymbol{Q}_{\boldsymbol{\Gamma}}$, the space $\boldsymbol{Q}_{\mathcal{L}^2}$ is defined independently of the prior GP. This decoupling of the approximation space from the prior is only possible because of the connection between GPs and GMs on Hilbert spaces shown in \cite{wild2022generalized} and GVI from \cite{knoblauch2022optimization}. Thus depending on the divergence and function space, the approximation space $\boldsymbol{Q}_{\mathcal{G}}$ may not necessarily depend on the prior GP, which will be useful for defining more expressive approximation spaces.
 
 In practice, we choose a subset:
 \begin{align}
@@ -594,10 +578,6 @@ In Section \ref{section:gvi-gp-construction}, we present some choices for mean a
 $\boldsymbol{Q}_{\mathcal{G}}$ provides an expressive approximation space for GVI-GPs, with the potential to learn in complex problem domains traditionally dominated by neural network architectures.
 By choosing variational kernels, we also ensure the scaleability of GVI-GPs. 
 Section \ref{section:gvi-gp-construction} will also propose different choices of discrepancies and priors for the regulariser $\D_{\mathcal{G}}\left[\wc, \mathbb{P}_{\mathcal{G}}\right]$ and the loss $\ell(y_n, x_n)$ in (\ref{gvi-gp-objective}). This demonstrates the flexibility of GVI-GP learning to approximate general posteriors beyond the exact Bayesian posterior.
-
-\subsection{Implementation Architecture}
-
-\jw{The implementation is with JAX in Python. Wanted to ensure compatability with the neural-tangent's package from \cite{novak2019neural} which is also implemented in JAX. Describe abstractions and implementation choices (symmetric matrices in the wasserstein distance, adding jitter, cholesky decomp for matrix inversions), pydantic typing checks, tests, mockers. gp implementation of abc's for classification vs regression and exact vs approximate.}
 
 \subsection{The GVI-GP Training Procedure}
 
@@ -703,6 +683,26 @@ no longer have gradient passing through matrix inverse for faster training.
 \newpage
 \section{GVI-GP Learning}\label{section:gvi-gp-learning}
 In the following sections we will present some empirical risks and regulariser formulations that were explored for our GVI-GP experiments.
+
+\jw{needs work $\downarrow$}
+Loosely interpreting \cite{knoblauch2022optimization} in the context of GPs, losses are lower bounded functions 
+\begin{align}
+    \ell: \boldsymbol{Q}_{\GP} \times \mathcal{X} \times \mathbb{R} \rightarrow \mathbb{R}
+    \label{loss-definition}
+\end{align}
+statistical divergences are functions:
+\begin{align}
+    \D: \boldsymbol{Q}_{\GP} \times \boldsymbol{Q}_{\GP} \rightarrow \mathbb{R}_{\geq0}
+\end{align} such that:
+\begin{align}
+    \D\left[Q_{\GP}, P_{\GP}\right] \geq 0
+\end{align} 
+and 
+\begin{align}
+    \D\left[Q_{\GP}, P_{\GP}\right] = 0 \Leftrightarrow Q_{\GP}(Y_{N*} \vert \mathbf{X}_{N*}) = P_{\GP}(Y_{N*} \vert \mathbf{X}_{N*})
+\end{align}
+for any $\mathbf{X}_{N*} \in \mathcal{X}^{N^*}$. 
+
 \subsection{Regressor-based and Classifier-based Learning}
 To construct a GVI-GP objective following (\ref{gvi-gp-objective}), we can choose any valid empirical risk and regularisation. In the context of regression, these will be constructed with respect to the GP predictive posterior in (\ref{gp-posterior}) for loss functions $\ell^{(\mathcal{N})}(y_n, x_n)$ and divergences $\D_{\mathcal{G}}^{(\mathcal{N})}[\wc, \wc]$.
 
@@ -770,6 +770,10 @@ by choosing $\mathbb{D}_{\mathbb{R}^D}^{(\mathcal{N})}$,  any valid divergence b
 
 \newpage
 \section{Experimental Results}
+\subsection{Implementation Architecture}
+
+\jw{The implementation is with JAX in Python. Wanted to ensure compatability with the neural-tangent's package from \cite{novak2019neural} which is also implemented in JAX. Describe abstractions and implementation choices (symmetric matrices in the wasserstein distance, adding jitter, cholesky decomp for matrix inversions), pydantic typing checks, tests, mockers. gp implementation of abc's for classification vs regression and exact vs approximate.}
+
 \subsection{Experimental Design}
 \jw{Describe experimentation framework with resolvers and schemas so that experiments can be defined with yaml configuration files.}
 \subsection{Regression Visualisations}
