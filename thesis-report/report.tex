@@ -44,7 +44,7 @@ $\Box$ \end{quotation}}
 \newcommand{\ints}{\mbox{\(\mathbb Z\)}}
 \newcommand{\Cat}{\operatorname{\mathcal{C}}}
 \newcommand{\Chol}{\operatorname{Chol}}
-\newcommand{\KLD}{\operatorname{\mathbb{D}_{KL}}}
+\newcommand{\KLD}{\operatorname{\mathbb{D}_{\text{KL}}}}
 \newcommand{\D}{\operatorname{\mathbb{D}}}
 \newcommand{\WD}{\operatorname{\mathbb{D}_{W_2}}}
 \newcommand{\tr}{\operatorname{tr}}
@@ -321,17 +321,14 @@ for the Variational Inference loss objective:
     \label{bvi-loss}
     L_{free}(\gamma) &=\mathbb{E}_{Q^{(\gamma)}_{\GP}}\left[\frac{1}{N}\sum_{n=1}^N\log \left(P_{\GP}\left(y_n \vert x_n, \sigma^2\right)\right)\right] \nonumber \\
     & \qquad - \KLD \left[Q^{(\gamma)}_{\GP}\left(Y_{N*} \vert \mathbf{X}_{N*}\right), P_{\GP}\left( Y_{N*} \vert \mathbf{X}_{N*}, \sigma^2\right) \right]
-    \label{bvi-loss}
 \end{align}
 where $\KLD[\wc, \wc]$ is the Kullback Leibler (KL) divergence. In this set-up the KL divergence has the closed-form:
-\\\jw{need to double check this bc there should be mean vectors in a scalar calculation}
-\begin{align}
-    \KLD \left[Q^{(\gamma)}_{\GP}\left(Y_{N*} \vert \mathbf{X}_{N*}\right), P_{\GP}\left( Y_{N*} \vert \mathbf{X}_{N*}, \sigma^2\right) \right] &= \frac{1}{2} \tr\left(\left(\mathbf{K}^{p, \sigma^2}_{\mathbf{X}_M, \mathbf{X}_M}\right)^{-1} \boldsymbol{\Sigma}\right)  \nonumber \\
-    & \qquad  + \frac{1}{2}\boldsymbol{\mu}^T \left(\mathbf{K}^{p, \sigma^2}_{\mathbf{X}_M, \mathbf{X}_M}\right)^{-1} \boldsymbol{\mu}  \nonumber \\
-    & \qquad -  \mathbf{m}^p_{\mathbf{X}_M} \nonumber - \mathbf{m}^q_{\mathbf{X}_M} \nonumber \\
-    & \qquad + \frac{1}{2} \log\left(\frac{\det\left(\mathbf{K}^{p, \sigma^2}_{\mathbf{X}_M, \mathbf{X}_M}\right)}{\det\left(\boldsymbol{\Sigma}\right)}\right)
+  \begin{multline}
+    \KLD \left[Q^{(\gamma)}_{\GP}\left(Y_{N*} \vert \mathbf{X}_{N*}\right), P_{\GP}\left( Y_{N*} \vert \mathbf{X}_{N*}, \sigma^2\right) \right] \\
+    = \frac{1}{2}\left( \tr\left(\left(\mathbf{K}^{p, \sigma^2}_{\mathbf{X}_M, \mathbf{X}_M}\right)^{-1} \boldsymbol{\Sigma}\right) - M +
+    \left(\mathbf{m}^p_{\mathbf{X}_m} - \boldsymbol{\mu}\right)^T \left(\mathbf{K}^{p, \sigma^2}_{\mathbf{X}_M, \mathbf{X}_M}\right)^{-1} \left(\mathbf{m}^p_{\mathbf{X}_m} - \boldsymbol{\mu}\right)+ \log\left(\frac{\det\left(\mathbf{K}^{p, \sigma^2}_{\mathbf{X}_M, \mathbf{X}_M}\right)}{\det\left(\boldsymbol{\Sigma}\right)}\right) \right)
     \label{kld-closed-form}
-\end{align}
+  \end{multline}
 \cite{titsias2009variational} shows that for a given set of inducing points $\mathbf{X}_M$, the optimal choices $\boldsymbol{\mu}^*$ and $\mathbf{\Sigma}^*$ to maximise (\ref{bvi-loss}) have the closed forms:
 \begin{align}
     \label{svgp-optimal-mean}
@@ -370,7 +367,8 @@ Each element in the diagonal has computational complexity $\mathcal{O}(M^2)$ fro
 The svGP from \cite{titsias2009variational} provides a solution to the scaling issues of the GP but comes with its own drawback. The mean and kernel functions must now conform to the formulations of (\ref{svgp-mean}) and (\ref{svgp-covariance}) respectively. This approach defines an approximate GP space with respect to $\mathbf{\Gamma}$, which is quite limited compared to the original GP formulation. In the following sections, we will review the reasons for these restrictive mean and kernel functions as explained by \cite{matthews2017scalable}. This will introduce the link between GPs and Gaussian measures (GMs) on function spaces and the mis-match of support problem of the KL divergence on function spaces. 
 
 \subsubsection{The Kolomogorov Extension Theorem}
-A GP is guaranteed to have at least one GM formulation on a function space. To explain this, we first review the Kolmogorov Extension Theorem as presented by ... :
+The KL divergence in the Variational Inference objective (\ref{bvi-loss}) is vaguely defined. Divergences are defined with respect to probability measures that exist on a measurable space. Because GPs aren't probability measures, for a well-defined KL divergence between two GPs we need to first define corresponding measures on a measurable space. In other words, we need distributions on function spaces in order to compare distributions with a divergence.
+Thus, we begin by reviewing the Kolmogorov Extension Theorem as presented by ... which guarantees a GP to have at least one GM formulation on a function space. 
 \begin{theorem}[Kolmogorov Extension Theorem]
 \label{kolomogorov-extension-theorem}
 Given a finite space measure such that:
@@ -394,16 +392,16 @@ Maximising $L_{free}$ in (\ref{bvi-loss}) with respect to $\gamma \in \mathbf{\G
 \end{align}
 minimising the KL divergence between the approximate posterior and the exact Bayesian posterior, which is proportional to the numerator of (\ref{elbo-jensen}). 
 
-Guaranteed by the Kolomogorov Extension Theorem, the corresponding GMs of these GPs can be trivially constructed over the space of all functions $\mathcal{F} = \left\{f: \mathbb{R}^{N^*} \rightarrow \mathbb{R} \right\}$. Thus (\ref{elbo-kld}) can be a equivalently expressed as:
+Guaranteed by the Kolomogorov Extension Theorem, the corresponding GMs of these GPs can be trivially constructed over the space of all functions $\mathcal{F} = \left\{f: \mathbb{R}^{N^*} \rightarrow \mathbb{R} \right\}$. We can now more precisely construct  (\ref{elbo-kld}):
 \begin{align}
     \label{kld-function-spaces}
-    \gamma^* &=\argmin_{\gamma \in \mathbf{\Gamma}}  \left\{ \KLD\left[ \mathbb{Q}^{(\gamma)}_\mathcal{F},  \mathbb{P}^B_\mathcal{F}\right] \right\} \\
+    \gamma^* &=\argmin_{\gamma \in \mathbf{\Gamma}}  \left\{ \mathbb{D}_{\mathcal{F}, \text{\text{KL}}}\left[ \mathbb{Q}^{(\gamma)}_\mathcal{F},  \mathbb{P}^B_\mathcal{F}\right] \right\} \\
     &= \argmin_{\gamma \in \mathbf{\Gamma}} \left\{\int_{\mathcal{F}} \log \left( \frac{d \mathbb{Q}^{(\gamma)}_\mathcal{F}}{d \mathbb{P}^B_\mathcal{F}} (f)\right)d \mathbb{Q}^{(\gamma)}_\mathcal{F}(f) \right\}
     \label{radon-nikodym}
 \end{align}
-where $\mathbb{Q}^{(\gamma)}_\mathcal{F}$ is the GM on $\mathcal{F}$ corresponding to $Q_{\GP}^{(\gamma)}\left(Y_{N*} \vert \mathbf{X}_{N*}\right)$, the approximate GP predictive posterior and $\mathbb{P}^B_\mathcal{F}$ is the GM on $\mathcal{F}$ corresponding to $P_{\GP}\left(Y_{N*} \vert \mathbf{X}_{N*}, \mathbf{Y}_N, \mathbf{X}_N, \sigma^2 \right)$, the exact GP Bayesian predictive posterior. Following the loss objective form in (\ref{bvi-loss}) we can also write:
+where we can now denote that the KL divergence is with respect to measures on $\mathcal{F}$. $\mathbb{Q}^{(\gamma)}_\mathcal{F}$ is the GM on $\mathcal{F}$ corresponding to $Q_{\GP}^{(\gamma)}\left(Y_{N*} \vert \mathbf{X}_{N*}\right)$, the approximate GP predictive posterior and $\mathbb{P}^B_\mathcal{F}$ is the GM on $\mathcal{F}$ corresponding to $P_{\GP}\left(Y_{N*} \vert \mathbf{X}_{N*}, \mathbf{Y}_N, \mathbf{X}_N, \sigma^2 \right)$, the exact GP Bayesian predictive posterior. Following the loss objective form in (\ref{bvi-loss}) we can also more precisely formulate the Variational Inference objective:
 \begin{align}
-    \gamma^* = \argmin \left\{ \mathbb{E}_{Q^{(\gamma)}_{\GP}}\left[\frac{1}{N}\sum_{n=1}^N\log \left(P_{\GP}\left(y_n \vert x_n, \sigma^2\right)\right)\right] + \KLD \left[\mathbb{Q}^{(\gamma)}_{\mathcal{F}}, \mathbb{P}_{\mathcal{F}} \right] \right\}
+    \gamma^* = \argmin \left\{ \mathbb{E}_{Q^{(\gamma)}_{\GP}}\left[\frac{1}{N}\sum_{n=1}^N\log \left(P_{\GP}\left(y_n \vert x_n, \sigma^2\right)\right)\right] + \mathbb{D}_{\mathcal{F}, \text{KL}} \left[\mathbb{Q}^{(\gamma)}_{\mathcal{F}}, \mathbb{P}_{\mathcal{F}} \right] \right\}
     \label{bvi-gm-loss}
 \end{align}
 where $\mathbb{P}_\mathcal{F}$ corresponds to $P_{\GP}\left(Y_{N*} \vert \mathbf{X}_{N*}, \sigma^2 \right)$, the GM of the exact GP prior.
@@ -469,7 +467,7 @@ by choosing the negative log-likelihood loss:
 \end{align}
 the KL divergence between the corresponding GMs on $\mathcal{F}$:
 \begin{align}
-    \D\left[Q_{\GP}, P_{\GP}\right] = \KLD\left[\mathbb{Q}_{\mathcal{F}}, \mathbb{P}_{\mathcal{F}}\right]
+    \D \left[Q_{\GP}, P_{\GP}\right] = \mathbb{D}_{\mathcal{F}, \text{KL}}\left[\mathbb{Q}_{\mathcal{F}}, \mathbb{P}_{\mathcal{F}}\right]
 \end{align}
 and an unrestricted feasible set for $\boldsymbol{Q}_{\GP}$. Moreover, the solution is $Q_{\GP}^{(\gamma^*)}$ when restricting the feasible set to the svGP approximation space $\boldsymbol{Q}_{\boldsymbol{\Gamma}}$ recovering (\ref{bvi-loss}) and the optimal solution from \cite{titsias2009variational}. But no longer deriving the Bayesian posterior through a belief update, we are no longer required to approximate the exact Bayesian posterior as the inference target. Instead, $Q_{\GP}^*$ approximates a generalised posterior defined with respect to a choice of loss $\ell(y_n, x_n)$ and regulariser $\D\left[\wc, P_{\GP}\right]$. Loosely interpreting \cite{knoblauch2022optimization} in the context of GPs, losses are lower bounded functions 
 \begin{align}
@@ -515,7 +513,6 @@ then we can define the corresponding push-forward measure as a GM on the Hilbert
     \label{smooth-mean-function-condition}
     m^p(\cdot) \in \mathcal{L}^2(\mathcal{X}, \rho, \mathbb{R})
 \end{align}
-\jw{Do NN's with relu last layer satisfy this?}
 and the kernel function is a trace class kernel satisfying:
 \begin{align}
     \int_{\mathcal{X}} k^p(x, x) d\rho(x) < \infty
@@ -532,58 +529,71 @@ for any function $f \in \mathcal{L}^2(\mathcal{X}, \rho, \mathbb{R})$. This ensu
 Having shown that a GP can exist as a GM on a Hilbert space, \cite{wild2022generalized} uses the GVI framework from \cite{knoblauch2022optimization} to modify the objective in (\ref{bvi-gm-loss}):
 \begin{align}
     \label{gwi-objective}
-    \gamma^* = \argmin_{\gamma \in \boldsymbol{\Gamma}}\left\{ \mathbb{E}_{Q^{(\gamma)}_{\GP}}\left[- \frac{1}{N}\sum_{n=1}^N \log P_{\GP}\left(y_n \vert x_n, \sigma^2\right) \right] + \D \left[\mathbb{Q}^{(\gamma)}_{\mathcal{H}}, \mathbb{P}_{\mathcal{H}} \right]\right\}
+    \gamma^* = \argmin_{\gamma \in \boldsymbol{\Gamma}}\left\{ \mathbb{E}_{Q^{(\gamma)}_{\GP}}\left[- \frac{1}{N}\sum_{n=1}^N \log P_{\GP}\left(y_n \vert x_n, \sigma^2\right) \right] + \D_{\mathcal{H}} \left[\mathbb{Q}^{(\gamma)}_{\mathcal{H}}, \mathbb{P}_{\mathcal{H}} \right]\right\}
 \end{align}
 where $\mathbb{Q}^{(\gamma)}_{\mathcal{H}}$ and $\mathbb{P}_{\mathcal{H}}$ are GMs on Hilbert spaces corresponding to $Q^{(\gamma)}_{\GP}$ and $P_{\GP}$ respectively. By shifting from a divergence on $\mathcal{F}$ to a divergence on $\mathcal{H}$ and using GVI which allows for any valid divergence $\mathbb{D}$, we are no longer restricted to the svGP from \cite{titsias2009variational}, which was necessary to ensure a valid $\KLD\left[\mathbb{Q}_{\mathcal{F}},  \mathbb{P}_{\mathcal{F}}\right]$. 
 
 \cite{wild2022generalized} proposes replacing the KL divergence on $\mathcal{F}$ with the Wasserstein distance between GMs on a Hilbert space. For two GMs $\mathbb{P}_{\mathcal{L}^2} = \mathcal{N}(m^p, C^p)$ and $\mathbb{Q}^{(\gamma)}_{\mathcal{L}^2} = \mathcal{N}(m^q, C^q)$ on the Hilbert space $\mathcal{L}^2(\mathcal{X}, \rho, \mathbb{R})$, the squared 2-Wasserstein distance between $\mathbb{P}_{\mathcal{L}^2}$ and $\mathbb{Q}_{\mathcal{L}^2}$ on (seperable) Hilbert spaces is:
 \begin{align}
     \label{wasserstein-distance}
-    \WD \left[\mathbb{P}_{\mathcal{L}^2}, \mathbb{Q}^{(\gamma)}_{\mathcal{L}^2}\right]^2 = \| m^p - m^q\|_2^2 + \tr(C^p) + \tr(C^q) - 2 \cdot \tr \left[ \left( \left(C^p\right)^{\frac{1}{2}} \left(C^q\right) \left(C^p\right)^{\frac{1}{2}}\right)^{\frac{1}{2}}\right]
+    \mathbb{D}_{\mathcal{L}^2, \text{W}_2} \left[\mathbb{P}_{\mathcal{L}^2}, \mathbb{Q}^{(\gamma)}_{\mathcal{L}^2}\right]^2 = \| m^p - m^q\|_2^2 + \tr(C^p) + \tr(C^q) - 2 \cdot \tr \left[ \left( \left(C^p\right)^{\frac{1}{2}} \left(C^q\right) \left(C^p\right)^{\frac{1}{2}}\right)^{\frac{1}{2}}\right]
 \end{align}
 where $\tr$ is the trace of an operator and $\left(C^p\right)^{1/2}$ is the square root of the positive, self-adjoint operator $C^p$. 
 
 This motivates the Gaussian Wasserstein Inference objective from \cite{wild2022generalized}:
 \begin{align}
     \label{gwi-objective}
-    L_{gwi}(\gamma) = \mathbb{E}_{Q_{\GP}}\left[- \frac{1}{N}\sum_{n=1}^N \log P_{\GP}\left(y_n \vert x_n, \sigma^2\right) \right] + \WD \left[\mathbb{P}_{\mathcal{L}^2}, \mathbb{Q}^{(\gamma)}_{\mathcal{L}^2}\right]^2
+    L_{gwi}(\gamma) = \mathbb{E}_{Q_{\GP}}\left[- \frac{1}{N}\sum_{n=1}^N \log P_{\GP}\left(y_n \vert x_n, \sigma^2\right) \right] + \mathbb{D}_{\mathcal{L}^2, \text{W}_2} \left[\mathbb{P}_{\mathcal{L}^2}, \mathbb{Q}^{(\gamma)}_{\mathcal{L}^2}\right]^2
 \end{align}
 where the regularisation is now between GMs on $\mathcal{L}^2(\mathcal{X}, \rho, \mathbb{R})$. Most mean and kernel functions satisfy (\ref{smooth-mean-function-condition}) and (\ref{trace-kernel-condition}) ensuring the existence of $\mathbb{P}_{\mathcal{L}^2}$ and $\mathbb{Q}^{(\gamma)}_{\mathcal{L}^2}$, providing significantly more freedom in defining $Q^{(\gamma)}_{\GP}$ than the svGP approach from \cite{titsias2009variational}. With (\ref{gwi-objective}), \cite{wild2022generalized} trains GWI-net, constructing $Q^{(\gamma)}_{\GP}$ with a neural network mean function to replace the svGP mean in (\ref{svgp-mean}), showing the potential of this new approach.
 
 
 \newpage
 \section{GVI-GPs: Expressive \textit{and} Scaleable}
-In this section, we present GVI-GPs, Gaussian process models learned through the GVI framework.
+In this section, we present GVI-GPs (Generalised Variational Inference Gaussian Processes), GPs learned through the GVI framework.
 
-\subsection{A New Framework for GP Learning}
-Motivated by \cite{wild2022generalized} and the GVI framework from \cite{knoblauch2022optimization}, we propose the general GVI-GP learning objective:
+\subsection{A General Framework for GP Learning}
+Motivated by \cite{wild2022generalized} and the GVI framework from \cite{knoblauch2022optimization}, we propose the general objective for learning GVI-GPs:
 \begin{align}
-Q_{\GP}^* = \argmin_{Q_{\GP} \in \boldsymbol{Q}_{\mathcal{L}^2}} \left\{ \mathbb{E}_{Q_{\GP}}\left[\frac{1}{N}\sum_{n=1}^N \ell(y_n, x_n)\right] + \D\left[\mathbb{Q}_{\mathcal{L}^2}, \mathbb{P}_{\mathcal{L}^2}\right]\right\}
+Q_{\GP}^* = \argmin_{Q_{\GP} \in \boldsymbol{Q}_{\mathcal{G}}} \left\{ \mathbb{E}_{Q_{\GP}}\left[\frac{1}{N}\sum_{n=1}^N \ell(y_n, x_n)\right] + \D_{\mathcal{G}}\left[\mathbb{Q}_{\mathcal{G}}, \mathbb{P}_{\mathcal{G}}\right]\right\}
 \label{gvi-gp-objective}
 \end{align}
-where $P_{\GP}$ is chosen to ensure a corresponding $\mathbb{P}_{\mathcal{L}^2}$ on $\mathcal{L}^2(\mathcal{X}, \rho, \mathbb{R})$ and we define a general approximation space:
+where $P_{\GP}$ must have a corresponding $\mathbb{P}_{\mathcal{G}}$ on some function space $\mathcal{G}$ and we define a general approximation space:
+\begin{align}
+    \boldsymbol{Q}_{\mathcal{G}} \coloneqq \left\{ 
+    Q_{\GP} :  \exists \mathbb{Q}_{\mathcal{G}},  \D_{\mathcal{G}}\left[\mathbb{Q}_{\mathcal{G}}, \mathbb{P}_{\mathcal{G}}\right] < \infty
+    \right\}
+\end{align}
+where $\mathbb{Q}_{\mathcal{G}}$ is a corresponding GM on $\mathcal{G}$ and $\D_{\mathcal{G}}\left[\mathbb{Q}_{\mathcal{G}}, \mathbb{P}_{\mathcal{G}}\right] < \infty$ indicates a valid divergence with respect to the regulariser $\D_{\mathcal{G}}[\wc, \mathbb{P}_{\mathcal{G}}]$. 
+
+We can recover a general form of Gaussian Wasserstein Inference from \cite{wild2022generalized}, by choosing the squared 2-Wasserstein distance on $\mathcal{L}^2(\mathcal{X}, \rho, \mathbb{R})$ and the approximation space:
 \begin{align}
     \boldsymbol{Q}_{\mathcal{L}^2} \coloneqq \left\{ 
     \left(m^q, k^q\right): m^q \in \mathcal{L}^2(\mathcal{X}, \rho, \mathbb{R}), \int_{\mathcal{X}} k^q(x, x)d\rho(x) < \infty
     \right\}
 \end{align}
-containing all valid mean and kernel functions that ensure the existence of a GM on the $\mathcal{L}^2(\mathcal{X}, \rho, \mathbb{R})$ Hilbert space. It is important to note that unlike $\boldsymbol{Q}_{\boldsymbol{\Gamma}}$, the space $\boldsymbol{Q}_{\mathcal{L}^2}$ is defined independently of the prior GP. This decoupling of the approximation space from the prior is only possible because of the connection between GPs and GMs on Hilbert spaces shown in \cite{wild2022generalized} and GVI from \cite{knoblauch2022optimization}. In practice, we choose a subset $\boldsymbol{Q}_{\boldsymbol{\Theta}} \subset \boldsymbol{Q}_{\mathcal{L}^2}$:
+containing all valid mean and kernel functions that ensure the existence of a GM on $\mathcal{L}^2(\mathcal{X}, \rho, \mathbb{R})$. 
+
+If we choose the mean parameter space $\mathbb{R}^M$ with the svGP mean function in (\ref{svgp-mean}) and the kernel parameter space $\mathbb{R}^{M\times M}_{\succ 0}$ with the kernel function in (\ref{svgp-covariance}) as well as the inducing points $\left\{x_m, y_m\right\}_{m=1}^{M} \subset \{x_n, y_n\}_{n=1}^{N}$, and approximation space $\boldsymbol{Q}_{\boldsymbol{\Gamma}}$, we can also recover the svGP from \cite{titsias2009variational}.
+
+It is important to note that unlike $\boldsymbol{Q}_{\boldsymbol{\Gamma}}$, the space $\boldsymbol{Q}_{\mathcal{L}^2}$ is defined independently of the prior GP. This decoupling of the approximation space from the prior is only possible because of the connection between GPs and GMs on Hilbert spaces shown in \cite{wild2022generalized} and GVI from \cite{knoblauch2022optimization}. Thus depending on the divergence and function space, the approximation space $\boldsymbol{Q}_{\mathcal{G}}$ may not necessarily depend on the prior GP. 
+
+In practice, we choose a subset:
 \begin{align}
     \boldsymbol{Q}_{\boldsymbol{\Theta}} \coloneqq \left\{ 
-    Q^{(\theta)}_{\GP}: \theta \in \boldsymbol{\Theta}
-    \right\}
+    Q^{(\theta)}_{\GP}: \theta \in \boldsymbol{\Theta} 
+    \right\} \subset \boldsymbol{Q}_{\mathcal{G}}
 \end{align}
-such that we can construct an optimisation strategy with respect to some parameter space $\boldsymbol{\Theta}$ for the mean and kernel functions:
+such that we can construct an optimisation strategy with respect to some finite hyper-parameter space $\boldsymbol{\Theta}$ for the mean and kernel functions:
 \begin{align}
     \boldsymbol{\Theta} \coloneqq \left\{\theta^m \in \boldsymbol{\Theta}^m, \theta^k \in \boldsymbol{\Theta}^k \right\}
 \end{align}
-where $\boldsymbol{\Theta}^m$ is the mean function parameter space and $\boldsymbol{\Theta}^k$ is the kernel function parameter space. $\boldsymbol{Q}_{\boldsymbol{\Theta}}$ remains a very general and expressive GP approximation space. 
-In Section \ref{section:gvi-gp-construction}, we present some choices for mean and variational kernel functions with corresponding parameter spaces $\boldsymbol{\Theta}^m$ and $\boldsymbol{\Theta}^k$ to construct $\boldsymbol{Q}_{\boldsymbol{\Theta}}$. 
-If we choose the mean parameter space $\mathbb{R}^M$ with the svGP mean function in (\ref{svgp-mean}) and the kernel parameter space $\mathbb{R}^{M\times M}_{\succ 0}$ with the kernel function in (\ref{svgp-covariance}) as well as the inducing points $\left\{x_m, y_m\right\}_{m=1}^{M} \subset \{x_n, y_n\}_{n=1}^{N}$ we can recover the svGP, assuming there exists a corresponding GM on $\mathcal{L}^2(\mathcal{X}, \rho, \mathbb{R})$. 
+where $\boldsymbol{\Theta}^m$ is the mean function hyper-parameter space and $\boldsymbol{\Theta}^k$ is the kernel function hyper-parameter space. $\boldsymbol{Q}_{\boldsymbol{\Theta}}$ remains a very general and expressive GP approximation space. 
+In Section \ref{section:gvi-gp-construction}, we present some choices for mean and variational kernel functions with corresponding hyper-parameter spaces $\boldsymbol{\Theta}^m$ and $\boldsymbol{\Theta}^k$ to construct $\boldsymbol{Q}_{\boldsymbol{\Theta}}$. 
 
-$\boldsymbol{Q}_{\mathcal{L}^2}$ provides an expressive approximation space for GVI-GPs, with the potential to learn in complex problem domains traditionally dominated by neural network architectures.
+$\boldsymbol{Q}_{\mathcal{G}}$ provides an expressive approximation space for GVI-GPs, with the potential to learn in complex problem domains traditionally dominated by neural network architectures.
 By choosing variational kernels, we also ensure the scaleability of GVI-GPs. 
-Section \ref{section:gvi-gp-construction} will also propose different choices of discrepancies and priors for the regulariser $\D\left[\wc, \mathbb{P}_{\mathcal{L}^2}\right]$ and the loss $\ell(y_n, x_n)$ in (\ref{gvi-gp-objective}). This demonstrates the flexibility of GVI-GP learning to approximate general posteriors beyond the exact Bayesian posterior.
+Section \ref{section:gvi-gp-construction} will also propose different choices of discrepancies and priors for the regulariser $\D_{\mathcal{G}}\left[\wc, \mathbb{P}_{\mathcal{G}}\right]$ and the loss $\ell(y_n, x_n)$ in (\ref{gvi-gp-objective}). This demonstrates the flexibility of GVI-GP learning to approximate general posteriors beyond the exact Bayesian posterior.
 
 \subsection{Implementation Architecture}
 
@@ -659,11 +669,11 @@ For this model we use $P \sim \mathcal{N}(m^p, k) $ and $Q \sim \mathcal{N}(m_Q,
 Maybe you need to use some tricks for training. I.e. training a neural network mean first and then only later use the full loss $L$
 
 \subsection{Variational Kernels}
-All require the selection of inducing points $\mathbf{X}_M$. 
+\jw{All require the selection of inducing points $\mathbf{X}_M$. We want it to somehow mimic the posterior covariance behaviour of greater uncertainty around previously unseen data.}
 
 
 \subsubsection{Extended svGP Kernels}
-Inspired by the svGP kernel from \cite{titsias2009variational}
+Inspired by the svGP kernel from \cite{titsias2009variational}:
 
 \begin{align}
             \bar{\mathbf{K}}^q_{\mathbf{X}_{N*}, \mathbf{X}_{N*}} := \mathbf{K}^p_{\mathbf{X}_{N*}, \mathbf{X}_{N*}} - \mathbf{K}^p_{\mathbf{X}_{N*}, \mathbf{X}_M}\left(\mathbf{K}^p_{\mathbf{X}_{M}, \mathbf{X}_M}\right)^{-1}\mathbf{K}^p_{\mathbf{X}_M, \mathbf{X}_{N*}} + \mathbf{\Sigma}^{\zeroslash}_{\mathbf{X}_{N*}, \mathbf{X}_{N*}} 
@@ -673,17 +683,18 @@ where $\mathbf{\Sigma}^{\zeroslash}_{\mathbf{X}_{N*}, \mathbf{X}_{N*}} \in \math
 with $\mathcal{O}(M^3)$ computational complexity better than $\mathcal{O}(NM^2)$ of svGP kernel.
 
 
-\subsubsection{Need a Name Kernels}
+\subsubsection{Sparse Posterior Kernels}
+Inspired by the GP posterior covariance in (\ref{gp-posterior-covariance}):
 \begin{align}
             \bar{\mathbf{K}}^q_{\mathbf{X}_{N*}, \mathbf{X}_{N*}} := \mathbf{K}^{\zeroslash}_{\mathbf{X}_{N*}, \mathbf{X}_{N*}} - \mathbf{K}^{\zeroslash}_{\mathbf{X}_{N*}, \mathbf{X}_M} \left( \mathbf{K}^{\zeroslash}_{\mathbf{X}_M, \mathbf{X}_M} \right)^{-1} \mathbf{K}^{\zeroslash}_{\mathbf{X}_M, \mathbf{X}_{N*}}
 \end{align}
-where $k^{\zeroslash}(\cdot, \cdot)$ is a base kernel parameterised by $\theta^k \in \boldsymbol{\Theta}^k$, which can be chosen as any kernel from Section \ref{section:kernels} i.e. with a deep NN kernel or a NNGP kernel. Need a Name kernels $k^q(\cdot, \cdot)$ have the same parameter space as $k^{\zeroslash}(\cdot, \cdot)$.
+where $k^{\zeroslash}(\cdot, \cdot)$ is a base kernel function parameterised by $\theta^k \in \boldsymbol{\Theta}^k$, which can be chosen as any kernel from Section \ref{section:kernels} i.e. with a deep NN kernel or a NNGP kernel. Need a Name kernels $k^q(\cdot, \cdot)$ have the same parameter space as $k^{\zeroslash}(\cdot, \cdot)$.
 
 with $\mathcal{O}(M^3)$ computational complexity better than $\mathcal{O}(NM^2)$ of svGP kernel.
 
 During prediction, $\left( \mathbf{K}^{(\theta^k)}_{\mathbf{X}_M, \mathbf{X}_M} \right)^{-1}$ is a constant. During inference, gradients must pass through this to learn the parameters of the base kernel.
 
-\subsubsection{Fixed-Inversion Need a Name Kernels}
+\subsubsection{Fixed Sparse Posterior Kernels}
 \begin{align}
             \bar{\mathbf{K}}^q_{\mathbf{X}_{N*}, \mathbf{X}_{N*}} := \mathbf{K}^{\zeroslash}_{\mathbf{X}_{N*}, \mathbf{X}_{N*}} - \mathbf{K}^{\zeroslash}_{\mathbf{X}_{N*}, \mathbf{X}_M} \left( \mathbf{K}^{p}_{\mathbf{X}_M, \mathbf{X}_M} \right)^{-1} \mathbf{K}^{\zeroslash}_{\mathbf{X}_M, \mathbf{X}_{N*}}
 \end{align}
@@ -691,42 +702,28 @@ no longer have gradient passing through matrix inverse for faster training.
 
 \newpage
 \section{GVI-GP Learning}\label{section:gvi-gp-learning}
-In the following sections we will present some empirical risks and regulariser formulations that were explored for GVI-GP learning.
+In the following sections we will present some empirical risks and regulariser formulations that were explored for our GVI-GP experiments.
 \subsection{Regressor-based and Classifier-based Learning}
-To construct a GVI-GP objective following (\ref{gvi-gp-objective}), we can choose any valid empirical risk and regularisation. In the context of regression, these will be constructed with respect to the GP predictive posterior in (\ref{gp-posterior}) for loss functions:
-\begin{align}
-    \ell^{(\mathcal{N})}(y_n, x_n)
-\end{align}
-and divergences:
-\begin{align}
-    \D^{(\mathcal{N})}[\wc, \wc]
-\end{align}
-In the context of classification, there are two choices. We can define these quantities with respect to each of the $J$ GPs for loss functions:
+To construct a GVI-GP objective following (\ref{gvi-gp-objective}), we can choose any valid empirical risk and regularisation. In the context of regression, these will be constructed with respect to the GP predictive posterior in (\ref{gp-posterior}) for loss functions $\ell^{(\mathcal{N})}(y_n, x_n)$ and divergences $\D_{\mathcal{G}}^{(\mathcal{N})}[\wc, \wc]$.
+
+In the context of classification, there are two choices. We can similarly define these quantities directly between the classifiers for loss functions $\ell^{(\mathcal{C})}(y_n, x_n)$ and divergences $\D^{(\mathcal{C})}_{\mathcal{G}}[\wc, \wc]$ involving the probability simplex of each categorical distribution $\mathbf{p}^p, \mathbf{p}^q \in \Delta(J)$, constructed using the formulation in Section \ref{section:gp-classifiers}. We can also define these quantities with respect to each of the $J$ GPs for loss functions:
 \begin{align}
     \ell^{(\mathcal{C})}(y_n, x_n) = \frac{1}{J}\sum_{j=1}^{J}\ell_j^{(\mathcal{N})}(y^j_n, x_n)
 \end{align}
 and divergences:
 \begin{align}
-    \D^{(\mathcal{C})}[\wc, \wc] = \frac{1}{J}\sum_{j=1}^{J}\D_j^{(\mathcal{N})}[\wc, \wc]
+    \D^{(\mathcal{C})}_{\mathcal{G}}[\wc, \wc] = \frac{1}{J}\sum_{j=1}^{J}\D_{\mathcal{G}, j}^{(\mathcal{N})}[\wc, \wc]
 \end{align}
-by averaging across the labels. We can also define these quantities directly between the classifiers for loss functions:
-\begin{align}
-    \ell^{(\mathcal{C})}(y_n, x_n)
-\end{align}
-and divergences:
-\begin{align}
-    \D^{(\mathcal{C})}[\wc, \wc]
-\end{align}
-involving the probability simplex of each categorical distribution $\mathbf{p}^p, \mathbf{p}^q \in \Delta(J)$, constructed using the formulation in Section \ref{section:gp-classifiers}. 
+by averaging across the labels. 
 
 \subsection{Empirical Risks}
 \subsubsection{Negative Log-Likelihood}
 \begin{align}
-    \ell_{n\ell\ell}^{(\mathcal{N})}(y_n, x_n) = 
+    \ell_{\text{nll}}^{(\mathcal{N})}(y_n, x_n) = 
 \end{align}
 \subsubsection{Cross Entropy}
 \begin{align}
-    \ell_{ce}^{(\mathcal{C})}(y_n, x_n) = 
+    \ell_{\text{ce}}^{(\mathcal{C})}(y_n, x_n) = 
 \end{align}
 \subsection{The Regulariser GP}
 The GP prior and the KL divergence construct the regulariser that can recover the Bayesian posterior. However in the context of GVI, the regulariser can be constructed with any GP and any divergence. We will explore traditional regularisers of the form:
@@ -743,21 +740,17 @@ constructed with a `lightweight' Bayesian posterior of the GP with respect to th
 \begin{align}
     P^{B, M}_{\GP}\left(Y_{N*} \vert \mathbf{X}_{N*}, \mathbf{Y}_M, \mathbf{X}_M, \sigma^2\right) \propto P_{\GP}\left(\mathbf{Y}_M \vert \mathbf{X}_M, \sigma^2\right) P_{\GP}\left(Y_{N*} \vert \mathbf{X}_{N*}, \sigma^2\right)
 \end{align}
-These posterior regularisers would violate the traditional Bayesian interpretation of a prior, however in the context of optimisation, this computationally tractable posterior remains a valid regulariser for GP learning, albeit a less traditional approach. Computational tractability is maintained with $\mathcal{O}(M^3)$ matrix inversion complexity.
+These posterior regularisers would violate the traditional Bayesian interpretation of a prior, however in the context of optimisation, this computationally tractable posterior remains a valid regulariser for GP learning, albeit a less traditional approach. Computational tractability is maintained with $\mathcal{O}(M^3)$ matrix inversions.
 
 \subsection{Regularisations}
-\subsubsection{Naive Squared Difference}
-\begin{align}
-    \mathbb{D}_{naive}^{(\mathcal{N})} \left[\mathbb{Q}^{(\theta)}_{\mathcal{L}^2}, \mathbb{P}_{\mathcal{L}^2}\right]^2 = \|\mathbf{m}_{\mathbf{X}_N}^p - \mathbf{m}_{\mathbf{X}_N}^q\|_2^2 + \|\mathbf{K}_{\mathbf{X}_N, \mathbf{X}_N}^p - \mathbf{K}_{\mathbf{X}_N, \mathbf{X}_N}^q\|_2^2
-\end{align}
 \subsubsection{Wasserstein Distances}
 \begin{align}
-    \mathbb{D}_{W_2}^{(\mathcal{C})} \left[Q^{(\theta)}_{\mathcal{C}}, P_{\mathcal{C}}\right]^2 = \|\mathbf{c}^p - \mathbf{c}^q\|_2^2
+    \mathbb{D}_{\text{W}_2}^{(\mathcal{C})} \left[Q^{(\theta)}_{\mathcal{C}}, P_{\mathcal{C}}\right]^2 = \|\mathbf{c}^p - \mathbf{c}^q\|_2^2
 \end{align}
 
 \cite{wild2022generalized} also provides the batched approximation of the Wasserstein distance for $N$ data points:
 \begin{align}
-    \mathbb{D}_{W_2}^{(\mathcal{N})} \left[\mathbb{Q}^{(\theta)}_{\mathcal{L}^2}, \mathbb{P}_{\mathcal{L}^2}\right]^2 &\approx \frac{1}{N_B}\sum_{n_b=1}^{N_B} \left(m^p(x_{n_b}) - m^q(x_{n_b})\right)^2 \nonumber \\
+    \mathbb{D}_{\mathcal{L}^2, \text{W}_2}^{(\mathcal{N})} \left[\mathbb{Q}^{(\theta)}_{\mathcal{L}^2}, \mathbb{P}_{\mathcal{L}^2}\right]^2 &\approx \frac{1}{N_B}\sum_{n_b=1}^{N_B} \left(m^p(x_{n_b}) - m^q(x_{n_b})\right)^2 \nonumber \\
     & \qquad + \frac{1}{N_B} \sum_{n_b=1}^{N_B} k^p(x_{n_b}, x_{n_b}) + \frac{1}{N_B} \sum_{n_b=1}^{N_B} k^q(x_{n_b}, x_{n_b}) \nonumber \\
     & \qquad - \frac{2}{\sqrt{N_B N_S}} \sum_{n_s=1}^{N_S} \sqrt{\lambda_{n_s}\left(\mathbf{K}^q_{\mathbf{X}_{N_S}, \mathbf{X}_{N_B}}\mathbf{K}^p_{\mathbf{X}_{N_B}, \mathbf{X}_{N_S}}\right)}
     \label{wasserstein-distance-approximation}
@@ -765,11 +758,15 @@ These posterior regularisers would violate the traditional Bayesian interpretati
 where $N_B < N$ and $N_S < N$ are two independent batches from the full data and $\lambda_{n_s}(\cdot)$ evaluates the $n_s^{th}$ eigenvalue. 
 
 \subsubsection{Pseudo-Divergences}
-Pseudo-divergences do not strictly satisfy the requirements of a divergence as defined by \cite{knoblauch2022optimization} but have been shown to perform well in our experiments. They can be computationally more stable and faster than other divergences introduced in this section. Moreover, they do not require the existence of a GM on any function space. Their general formulation for $N$ sets of $D$ points $\left\{\mathbf{X}_{D, n}\right\}_{n=1}^N$ follows:
+Pseudo-divergences do not strictly satisfy the requirements of a divergence as defined by \cite{knoblauch2022optimization} but have been shown to perform well in our experiments. They can be computationally more stable and faster than other divergences introduced in this section. Moreover, they do not require the existence of a GM on any specific function space. For $N$ batches of $D$ points $\left\{\mathbf{X}_{D, n}\right\}_{n=1}^N$ where $\mathbf{X}_{D, n}=\left\{x_{d, n}\right\}_{d=1}^D$ and $x_{d, n} \in \mathcal{X}$, pseudo-divergences follow the general formulation:
 \begin{align}
-    \mathbb{D}_{pseudo}^{(\mathcal{N})} \left[Q_{\GP}^{(\theta)}, P_{\GP}\right] = \frac{1}{N}\sum_{n=1}^N \mathbb{D}_{\mathbb{R}^D}^{(\mathcal{N})}\left[Q_{\GP}^{(\theta)}(Y_D\vert \mathbf{X}_{D, n}), P_{\GP}(Y_D\vert \mathbf{X}_{D, n})\right]
+    \mathbb{D}_{\mathcal{G}, \text{pseudo}}^{(\mathcal{N})} \left[Q_{\GP}^{(\theta)}, P_{\GP}\right] = \frac{1}{N}\sum_{n=1}^N \mathbb{D}_{\mathbb{R}^D}^{(\mathcal{N})}\left[Q_{\GP}^{(\theta)}(Y_D\vert \mathbf{X}_{D, n}), P_{\GP}(Y_D\vert \mathbf{X}_{D, n})\right]
 \end{align}
-where $\mathbf{X}_{D, n}=\left\{x_{d, n}\right\}_{d=1}^D$, $x_{d, n} \in \mathcal{X}$, and $\mathbb{D}_{\mathbb{R}^D}^{(\mathcal{N})}$ is any valid divergence between Gaussian distributions on $\mathbb{R}^D$. In our experiments, we choose $D=1$, to construct point-wise pseudo-divergences.
+by choosing $\mathbb{D}_{\mathbb{R}^D}^{(\mathcal{N})}$,  any valid divergence between Gaussian distributions on $\mathbb{R}^D$. In our experiments, we choose $D=1$ to construct point-wise pseudo-divergences. Below, divergences used in our experiments.
+\\Naive squared divergence:
+\begin{align}
+    \mathbb{D}_{\mathbb{R}^D, \text{naive}_2}^{(\mathcal{N})} \left[Q_{\GP}^{(\theta)}, P_{\GP}\right] = \|\mathbf{m}_{\mathbf{X}_D}^p - \mathbf{m}_{\mathbf{X}_D}^q\|_2^2 + \|\mathbf{K}_{\mathbf{X}_D, \mathbf{X}_D}^p - \mathbf{K}_{\mathbf{X}_D, \mathbf{X}_D}^q\|_2^2
+\end{align}
 
 \newpage
 \section{Experimental Results}
