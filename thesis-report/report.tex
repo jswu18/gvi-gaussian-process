@@ -688,7 +688,9 @@ no longer have gradient passing through matrix inverse.
 
 \newpage
 \section{GVI-GP Learning}\label{section:gvi-gp-learning}
-In the following sections we will propose some empirical risks and regulariser formulations that were explored for GVI-GP learning. To construct a GVI-GP objective following (\ref{gvi-gp-objective}), we can choose any valid empirical risk and regularisation. In the context of regression, these will be constructed with respect to the GP predictive posterior in (\ref{gp-posterior}) for loss functions:
+In the following sections we will propose some empirical risks and regulariser formulations that were explored for GVI-GP learning.
+\subsection{Regressor-based and Classifier-based Learning}
+To construct a GVI-GP objective following (\ref{gvi-gp-objective}), we can choose any valid empirical risk and regularisation. In the context of regression, these will be constructed with respect to the GP predictive posterior in (\ref{gp-posterior}) for loss functions:
 \begin{align}
     \ell^{(\mathcal{N})}(y_n, x_n)
 \end{align}
@@ -723,7 +725,7 @@ involving the probability simplex of each categorical distribution $\mathbf{p}^p
 \begin{align}
     \ell_{ce}^{(\mathcal{C})}(y_n, x_n) = 
 \end{align}
-\subsection{Regularisations}
+\subsection{The Regulariser GP}
 The GP prior and the KL divergence construct the regulariser that can recover the Bayesian posterior. However in the context of GVI, the regulariser can be constructed with any GP and any divergence. We explore prior regularisers of the form:
 \begin{align}
     \D^{(\mathcal{N})}\left[\wc, P_{\GP}\right]
@@ -740,6 +742,7 @@ the Bayesian posterior of the GP with respect to the $M$ inducing points such th
 \end{align}
 These posterior regularisers would violate the traditional Bayesian interpretation of a prior, however in the context of optimisation, this `lightweight' posterior on the inducing points remains a valid regulariser for GP learning, albeit a less traditional approach. Having complexity $\mathcal{O}(M^3)$ from matrix inversion, they also maintain computational tractability during learning.
 
+\subsection{Regularisations}
 \subsubsection{Naive Squared Difference}
 \begin{align}
     \mathbb{D}_{naive}^{(\mathcal{N})} \left[\mathbb{Q}^{(\theta)}_{\mathcal{L}^2}, \mathbb{P}_{\mathcal{L}^2}\right]^2 = \|\mathbf{m}_{\mathbf{X}_N}^p - \mathbf{m}_{\mathbf{X}_N}^q\|_2^2 + \|\mathbf{K}_{\mathbf{X}_N, \mathbf{X}_N}^p - \mathbf{K}_{\mathbf{X}_N, \mathbf{X}_N}^q\|_2^2
