@@ -354,7 +354,7 @@ parameterising the approximate GP with:
 \end{align}
 This formulation ensures the matrix inversion of $\mathbb{R}^{M \times M}$ matrices having $\mathcal{O}\left(M^3\right)$ computational complexity and the operation $\mathbf{K}^p_{\mathbf{X}_M, \mathbf{X}_N} \mathbf{K}^p_{\mathbf{X}_N, \mathbf{X}_M} $ in (\ref{svgp-optimal-sigma-m}) having computational complexity $\mathcal{O}\left(NM^2\right)$. Thus, the computational complexity of this approach is $\mathcal{O}\left(NM^2\right)$ with space complexity $\mathcal{O}\left(NM\right)$. This significantly improves the scalability of GP approaches from the traditional GP in Section \ref{section:the-gp}. $M$ is typically chosen as $\mathcal{O}(N^{1/2})$ such that the svGP has $\mathcal{O}(N^{2})$ and $\mathcal{O}(N^{3/2})$ time and space complexity respectively.
 
-\subsubsection{Inducing Points Selection}
+\subsection{Inducing Points Selection}
 Finding the inducing points $\mathbf{X}_M = \left\{x_m\right\}_{m=1}^{M} \subset \{x_n\}_{n=1}^{N}$ that optimise the variational objective $L_{free}(\gamma)$ in ($\ref{elbo-definition}$) can be computationally expensive \jw{citation needed}. \cite{burt2020convergence} proposes an iterative selection procedure that greedily chooses the next inducing point based on the highest marginal variance in the prior when conditioned on the currently selected set of inducing points:
 \begin{align}
     \label{greedy-varaince-selection}
@@ -589,29 +589,32 @@ Section \ref{section:gvi-gp-construction} will also propose different choices of
 
 \jw{The implementation is with JAX in Python. Wanted to ensure compatability with the neural-tangent's package from \cite{novak2019neural} which is also implemented in JAX. Describe abstractions and implementation choices (symmetric matrices in the wasserstein distance, adding jitter, cholesky decomp for matrix inversions), pydantic typing checks, tests, mockers. gp implementation of abc's for classification vs regression and exact vs approximate.}
 
-\subsection{Training Procedure}
+\subsection{The GVI-GP Training Procedure}
 
 \begin{algorithm}
 \caption{GVI-GP Training Procedure}\label{alg:gvi-gp}
 \begin{algorithmic}
 \begin{enumerate}
-    \item Training the prior GP and selecting the inducing points
-    \item Learn the approximate GP with a chosen formulation of the GVI objective
-    \item Temper the approximate GP
+    \item Choose a prior GP construction.
+    \item Train the prior GP and select the inducing points.
+    \item Choose a GVI-GP construction.
+    \item Construct a GVI-GP objective.
+    \item Train the GVI-GP.
+    \item Temper the GVI-GP.
 \end{enumerate}
 \end{algorithmic}
 \end{algorithm}
 
-\subsubsection{Inducing Points Selection and Prior GP Training}
+\subsubsection{Prior GP Training and Inducing Points Selection}
 \jw{describe chicken and egg problem}
 
 \begin{algorithm}
-\caption{Prior GP Learning and Inducing Points Selection}\label{alg:gvi-gp}
+\caption{Prior GP Training and Inducing Points Selection}\label{alg:gvi-gp}
 \begin{algorithmic}
- \State Select the inducing points $\left\{x_m\right\}_{m=1}^{M} \subset \{x_n\}_{n=1}^{N}$ with the initial prior GP kernel
+ \State Select the inducing points $\left\{x_m\right\}_{m=1}^{M} \subset \{x_n\}_{n=1}^{N}$ with the initial prior GP kernel.
 \While{the inducing points have not converged}
-\State Train the prior GP on selected inducing points and their responses $\left\{x_m, y_m\right\}_{m=1}^{M}$
-\State  Select new inducing points with the trained prior GP kernel
+\State Train the prior GP on selected inducing points and their responses $\left\{x_m, y_m\right\}_{m=1}^{M}$.
+\State  Select new inducing points with the trained prior GP kernel.
 \EndWhile
 \end{algorithmic}
 \end{algorithm}
@@ -635,7 +638,7 @@ But technically can be anything, i.e. random forest, KNN, etc.
 A common practical drawback of GP modelling are the traditionally available kernel functions when constructing GPs. More traditional kernels (i.e. squared exponential kernels, periodic kernels, etc) have few learnable hyper-parameters compared to highly parameterised neural networks. This can limit the performance of GPs in problem domains involving structured high-dimensional data like image or text data, even if the problem of scalability is ignored. In this section we review the NNGP kernels from \cite{novak2019neural} and also present a form of deep neural network kernels, both with potential applications in problem domains typically under-represented by GP approaches.
 
 \subsubsection{Neural Network Gaussian Process (NNGP) Kernels}
-\subsubsection{Deep Neural Network Kernels}
+\subsubsection{Neural Network Kernels}
 Recommend using non-stationary base kernel to pass gradients through the kernel to the NN. 
 
 For this model we use $P \sim \mathcal{N}(m^p, k) $ and $Q \sim \mathcal{N}(m_Q, r)$ with 
@@ -665,7 +668,7 @@ Inspired by the svGP kernel from \cite{titsias2009variational}
 \begin{align}
             \bar{\mathbf{K}}^q_{\mathbf{X}_{N*}, \mathbf{X}_{N*}} := \mathbf{K}^p_{\mathbf{X}_{N*}, \mathbf{X}_{N*}} - \mathbf{K}^p_{\mathbf{X}_{N*}, \mathbf{X}_M}\left(\mathbf{K}^p_{\mathbf{X}_{M}, \mathbf{X}_M}\right)^{-1}\mathbf{K}^p_{\mathbf{X}_M, \mathbf{X}_{N*}} + \mathbf{\Sigma}^{\zeroslash}_{\mathbf{X}_{N*}, \mathbf{X}_{N*}} 
 \end{align}
-where $\mathbf{\Sigma}^{\zeroslash}_{\mathbf{X}_{N*}, \mathbf{X}_{N*}} \in \mathbb{R}^{N^*\times N^*}_{\succ 0}$ is any positive definite matrix formulation constructed with respect to the test points $\mathbf{X}_{N*}$ and parameterised by $\theta^k \in \boldsymbol{\Theta}^k$. \jw{Go over different paramterisations, i.e. diagonal, kernel, etc.}which can be chosen as any kernel from Section \ref{section:kernels} i.e. with a deep NN kernel or a NNGP kernel.
+where $\mathbf{\Sigma}^{\zeroslash}_{\mathbf{X}_{N*}, \mathbf{X}_{N*}} \in \mathbb{R}^{N^*\times N^*}_{\succ 0}$ is any positive definite matrix constructed with respect to the test points $\mathbf{X}_{N*}$ and parameterised by $\theta^k \in \boldsymbol{\Theta}^k$. \jw{Go over different paramterisations, i.e. diagonal, kernel, etc.}which can be chosen as any kernel from Section \ref{section:kernels} i.e. with a deep NN kernel or a NNGP kernel.
 
 with $\mathcal{O}(M^3)$ computational complexity better than $\mathcal{O}(NM^2)$ of svGP kernel.
 
@@ -674,21 +677,21 @@ with $\mathcal{O}(M^3)$ computational complexity better than $\mathcal{O}(NM^2)$
 \begin{align}
             \bar{\mathbf{K}}^q_{\mathbf{X}_{N*}, \mathbf{X}_{N*}} := \mathbf{K}^{\zeroslash}_{\mathbf{X}_{N*}, \mathbf{X}_{N*}} - \mathbf{K}^{\zeroslash}_{\mathbf{X}_{N*}, \mathbf{X}_M} \left( \mathbf{K}^{\zeroslash}_{\mathbf{X}_M, \mathbf{X}_M} \right)^{-1} \mathbf{K}^{\zeroslash}_{\mathbf{X}_M, \mathbf{X}_{N*}}
 \end{align}
-where $k^{\zeroslash}(\cdot, \cdot)$ is a base kernel parameterised by $\theta^k \in \boldsymbol{\Theta}^k$, which can be chosen as any kernel from Section \ref{section:kernels} i.e. with a deep NN kernel or a NNGP kernel. Need a Name kernels $k^q(\cdot, \cdot)$ have the same parameter space as $k^{(\theta^k)}(\cdot, \cdot)$.
+where $k^{\zeroslash}(\cdot, \cdot)$ is a base kernel parameterised by $\theta^k \in \boldsymbol{\Theta}^k$, which can be chosen as any kernel from Section \ref{section:kernels} i.e. with a deep NN kernel or a NNGP kernel. Need a Name kernels $k^q(\cdot, \cdot)$ have the same parameter space as $k^{\zeroslash}(\cdot, \cdot)$.
 
 with $\mathcal{O}(M^3)$ computational complexity better than $\mathcal{O}(NM^2)$ of svGP kernel.
 
 During prediction, $\left( \mathbf{K}^{(\theta^k)}_{\mathbf{X}_M, \mathbf{X}_M} \right)^{-1}$ is a constant. During inference, gradients must pass through this to learn the parameters of the base kernel.
 
-\subsubsection{Fixed Need a Name Kernels}
+\subsubsection{Fixed-Inversion Need a Name Kernels}
 \begin{align}
             \bar{\mathbf{K}}^q_{\mathbf{X}_{N*}, \mathbf{X}_{N*}} := \mathbf{K}^{\zeroslash}_{\mathbf{X}_{N*}, \mathbf{X}_{N*}} - \mathbf{K}^{\zeroslash}_{\mathbf{X}_{N*}, \mathbf{X}_M} \left( \mathbf{K}^{p}_{\mathbf{X}_M, \mathbf{X}_M} \right)^{-1} \mathbf{K}^{\zeroslash}_{\mathbf{X}_M, \mathbf{X}_{N*}}
 \end{align}
-no longer have gradient passing through matrix inverse. 
+no longer have gradient passing through matrix inverse for faster training.
 
 \newpage
 \section{GVI-GP Learning}\label{section:gvi-gp-learning}
-In the following sections we will propose some empirical risks and regulariser formulations that were explored for GVI-GP learning.
+In the following sections we will present some empirical risks and regulariser formulations that were explored for GVI-GP learning.
 \subsection{Regressor-based and Classifier-based Learning}
 To construct a GVI-GP objective following (\ref{gvi-gp-objective}), we can choose any valid empirical risk and regularisation. In the context of regression, these will be constructed with respect to the GP predictive posterior in (\ref{gp-posterior}) for loss functions:
 \begin{align}
@@ -726,21 +729,21 @@ involving the probability simplex of each categorical distribution $\mathbf{p}^p
     \ell_{ce}^{(\mathcal{C})}(y_n, x_n) = 
 \end{align}
 \subsection{The Regulariser GP}
-The GP prior and the KL divergence construct the regulariser that can recover the Bayesian posterior. However in the context of GVI, the regulariser can be constructed with any GP and any divergence. We explore prior regularisers of the form:
+The GP prior and the KL divergence construct the regulariser that can recover the Bayesian posterior. However in the context of GVI, the regulariser can be constructed with any GP and any divergence. We will explore traditional regularisers of the form:
 \begin{align}
     \D^{(\mathcal{N})}\left[\wc, P_{\GP}\right]
     \label{prior-regulariser}
 \end{align}
-constructed with the GP prior having $\mathcal{O}(1)$ computational complexity and more computationally heavy posterior regularisers
+constructed with a GP prior having $\mathcal{O}(1)$ computational complexity and more computationally heavy posterior regularisers:
 \begin{align}
     \D^{(\mathcal{N})}\left[\wc, P^{B, M}_{\GP}\right]
     \label{posterior-regulariser}
 \end{align}
-the Bayesian posterior of the GP with respect to the $M$ inducing points such that:
+constructed with a `lightweight' Bayesian posterior of the GP with respect to the $M$ inducing points such that:
 \begin{align}
     P^{B, M}_{\GP}\left(Y_{N*} \vert \mathbf{X}_{N*}, \mathbf{Y}_M, \mathbf{X}_M, \sigma^2\right) \propto P_{\GP}\left(\mathbf{Y}_M \vert \mathbf{X}_M, \sigma^2\right) P_{\GP}\left(Y_{N*} \vert \mathbf{X}_{N*}, \sigma^2\right)
 \end{align}
-These posterior regularisers would violate the traditional Bayesian interpretation of a prior, however in the context of optimisation, this `lightweight' posterior on the inducing points remains a valid regulariser for GP learning, albeit a less traditional approach. Having complexity $\mathcal{O}(M^3)$ from matrix inversion, they also maintain computational tractability during learning.
+These posterior regularisers would violate the traditional Bayesian interpretation of a prior, however in the context of optimisation, this computationally tractable posterior remains a valid regulariser for GP learning, albeit a less traditional approach. Computational tractability is maintained with $\mathcal{O}(M^3)$ matrix inversion complexity.
 
 \subsection{Regularisations}
 \subsubsection{Naive Squared Difference}
@@ -761,17 +764,17 @@ These posterior regularisers would violate the traditional Bayesian interpretati
 \end{align}
 where $N_B < N$ and $N_S < N$ are two independent batches from the full data and $\lambda_{n_s}(\cdot)$ evaluates the $n_s^{th}$ eigenvalue. 
 
-\subsubsection{Point-wise Pseudo-Divergences}
-Point-wise pseudo-divergences do not strictly  satisfy the requirements of a divergence as defined by \cite{knoblauch2022optimization} but have been shown to perform well in our experiments. They can be computationally more stable and faster than other divergences introduced in this section. Moreover, they do not require the existence of a GM on any function space. Their general formulation for $N$ points $\mathbf{X}_N$ follows:
+\subsubsection{Pseudo-Divergences}
+Pseudo-divergences do not strictly satisfy the requirements of a divergence as defined by \cite{knoblauch2022optimization} but have been shown to perform well in our experiments. They can be computationally more stable and faster than other divergences introduced in this section. Moreover, they do not require the existence of a GM on any function space. Their general formulation for $N$ sets of $D$ points $\left\{\mathbf{X}_{D, n}\right\}_{n=1}^N$ follows:
 \begin{align}
-    \mathbb{D}_{p. pseudo}^{(\mathcal{N})} \left[Q_{\GP}^{(\theta)}, P_{\GP}\right] = \frac{1}{N}\sum_{n=1}^N \mathbb{D}_{\mathbb{R}}^{(\mathcal{N})}\left[Q_{\GP}^{(\theta)}(y\vert x_n), P_{\GP}(y\vert x_n)\right]
+    \mathbb{D}_{pseudo}^{(\mathcal{N})} \left[Q_{\GP}^{(\theta)}, P_{\GP}\right] = \frac{1}{N}\sum_{n=1}^N \mathbb{D}_{\mathbb{R}^D}^{(\mathcal{N})}\left[Q_{\GP}^{(\theta)}(Y_D\vert \mathbf{X}_{D, n}), P_{\GP}(Y_D\vert \mathbf{X}_{D, n})\right]
 \end{align}
-where $\mathbb{D}_{\mathbb{R}}^{(\mathcal{N})}$ is any valid divergence between Gaussian distributions on $\mathbb{R}$. 
+where $\mathbf{X}_{D, n}=\left\{x_{d, n}\right\}_{d=1}^D$, $x_{d, n} \in \mathcal{X}$, and $\mathbb{D}_{\mathbb{R}^D}^{(\mathcal{N})}$ is any valid divergence between Gaussian distributions on $\mathbb{R}^D$. In our experiments, we choose $D=1$, to construct point-wise pseudo-divergences.
 
 \newpage
 \section{Experimental Results}
 \subsection{Experimental Design}
-Describe experimentation framework with resolvers and schemas so that experiments can be defined with yaml configuration files.
+\jw{Describe experimentation framework with resolvers and schemas so that experiments can be defined with yaml configuration files.}
 \subsection{Regression Visualisations}
 \begin{figure}[h!]
 \centering
@@ -783,7 +786,7 @@ Describe experimentation framework with resolvers and schemas so that experiment
   \centering
   \includegraphics[width=0.9\linewidth]{experiments/regression/toy_curves/outputs/curve4/tempered-PointWiseRenyiRegularisation.png}
 \end{minipage}
-\caption{GVI-GPs for Regression}
+\caption{Example GVI-GPs for Regression}
 \end{figure}
 \subsection{Regression Results}
 
@@ -792,14 +795,14 @@ Describe experimentation framework with resolvers and schemas so that experiment
 \newpage
 \section{Future Work}
 \subsection{NLP Named-Entity Recognition}
-Putting pre-trained transformers in the mean and kernels. 
+\jw{Putting pre-trained transformers in the mean and kernels.} 
 
 
-\subsection{Inducing Point Selection}
+\subsection{Inducing Points Selection}
 \subsubsection{Not using actual data points}
-Not selecting actual training points, but learning points that are most representative of the data? i.e. naively a convex combination of images, or weight params in a single layer NN.
+\jw{Not selecting actual training points, but learning points that are most representative of the data? i.e. naively a convex combination of images, or weight params in a single layer NN.}
 \subsubsection{Selecting in a Feature Space}
-i.e. choosing inducing points from the feature representation of the data points from a NN.
+\jw{i.e. choosing inducing points from the feature representation of the data points from a NN feature extractor}
 
 
 \newpage
