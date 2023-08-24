@@ -13,8 +13,8 @@ from experiments.classification.data import (
 )
 from experiments.classification.metrics import calculate_metric
 from experiments.classification.plotters import plot_images
-from experiments.classification.runners import meta_train_reference_gp
 from experiments.classification.schemas import ClassificationMetricSchema
+from experiments.classification.trainers import meta_train_reference_gp
 from experiments.shared.nn_means import CNN, MLP
 from experiments.shared.nngp_kernels import CNNGPKernel, MLPGPKernel
 from experiments.shared.plotters import plot_losses, plot_two_losses

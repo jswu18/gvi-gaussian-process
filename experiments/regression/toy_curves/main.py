@@ -81,7 +81,8 @@ def build_data_set(config: Dict, output_path: str, experiment_name: str) -> None
             x_validation,
             y_validation,
         ) = split_train_test_validation_data(
-            key=jax.random.PRNGKey(config["seed"]),
+            seed=jax.random.PRNGKey(config["seed"]),
+            split_seed=jax.random.PRNGKey(curve_function.seed),
             x=x,
             y=y,
             number_of_test_intervals=config["number_of_test_intervals"],
@@ -151,7 +152,8 @@ def train_reference(config: Dict, output_path: str, experiment_name: str) -> Non
             name=type(curve_function).__name__.lower(),
         )
         number_of_inducing_points = int(
-            config["inducing_points_factor"] * jnp.sqrt(len(experiment_data.train.x))
+            config["inducing_points_factor"]
+            * jnp.power(len(experiment_data.train.x), 1 / 2)
         )
         kernel, kernel_parameters = kernel_resolver(
             kernel_config=config["kernel"],
@@ -234,7 +236,10 @@ def _build_approximate_gp(
     config["kernel"]["kernel_kwargs"]["inducing_points"] = inducing_points
     config["kernel"]["kernel_kwargs"]["training_points"] = training_points
 
-    if "reference_kernel" in config["kernel"]["kernel_kwargs"]:
+    if (
+        "reference_kernel" in config["kernel"]["kernel_kwargs"]
+        and "load_config" in config["kernel"]["kernel_kwargs"]["reference_kernel"]
+    ):
         reference_kernel_config_name = config["kernel"]["kernel_kwargs"][
             "reference_kernel"
         ]["load_config"]
@@ -255,7 +260,10 @@ def _build_approximate_gp(
                 "parameters.ckpt",
             ),
         }
-    if "base_kernel" in config["kernel"]["kernel_kwargs"]:
+    if (
+        "base_kernel" in config["kernel"]["kernel_kwargs"]
+        and "load_config" in config["kernel"]["kernel_kwargs"]["base_kernel"]
+    ):
         base_kernel_config_name = config["kernel"]["kernel_kwargs"]["base_kernel"][
             "load_config"
         ]

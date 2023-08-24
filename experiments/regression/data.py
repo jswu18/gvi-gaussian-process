@@ -8,7 +8,7 @@ from src.utils.custom_types import PRNGKey
 
 
 def split_train_test_data_intervals(
-    subkey: PRNGKey,
+    seed: PRNGKey,
     x: jnp.ndarray,
     y: jnp.ndarray,
     number_of_test_intervals: int,
@@ -17,7 +17,7 @@ def split_train_test_data_intervals(
     """Split data into test and train data by randomly selecting intervals.
 
     Args:
-        subkey: The random key.
+        seed: The random key.
         x: The x data.
         y: The y data.
         number_of_test_intervals: The number of chunks in the test data.
@@ -27,9 +27,9 @@ def split_train_test_data_intervals(
         The x and y data with the chunks removed.
     """
     interval_size = x.shape[0] // total_number_of_intervals
-    number_of_intervals_on_edge = int(1 / 4 * total_number_of_intervals)
+    number_of_intervals_on_edge = int(1 / 8 * total_number_of_intervals)
     test_interval_indices = jax.random.choice(
-        subkey,
+        seed,
         total_number_of_intervals - 2 * number_of_intervals_on_edge,
         shape=(number_of_test_intervals,),
         replace=False,
@@ -67,32 +67,31 @@ def split_train_test_data_intervals(
 
 
 def split_train_test_validation_data(
-    key: PRNGKey,
+    seed: PRNGKey,
+    split_seed: PRNGKey,
     x: jnp.ndarray,
     y: jnp.ndarray,
     number_of_test_intervals: int,
     total_number_of_intervals: int,
     train_data_percentage: float,
 ):
-    key, subkey = jax.random.split(key)
     (
         x_train_validation,
         y_train_validation,
         x_test,
         y_test,
     ) = split_train_test_data_intervals(
-        subkey=subkey,
+        seed=split_seed,
         x=x,
         y=y,
         number_of_test_intervals=number_of_test_intervals,
         total_number_of_intervals=total_number_of_intervals,
     )
-    key, subkey = jax.random.split(key)
     x_train, x_validation, y_train, y_validation = train_test_split(
         x_train_validation,
         y_train_validation,
         test_size=1 - train_data_percentage,
-        random_state=int(jnp.sum(subkey)) % (2**32 - 1),
+        random_state=int(jnp.sum(seed)) % (2**32 - 1),
     )
     return (
         jnp.array(x_train),

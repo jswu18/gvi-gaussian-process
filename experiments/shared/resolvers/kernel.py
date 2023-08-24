@@ -20,7 +20,7 @@ from src.kernels.approximate import (
     SVGPKernel,
 )
 from src.kernels.base import KernelBase, KernelBaseParameters
-from src.kernels.non_stationary import PolynomialKernel
+from src.kernels.non_stationary import InnerProductKernel, PolynomialKernel
 from src.kernels.non_stationary.base import NonStationaryKernelBase
 
 
@@ -52,8 +52,18 @@ def kernel_resolver(
     kernel_parameters_config: Union[FrozenDict, Dict] = kernel_config[
         "kernel_parameters"
     ]
-
-    if kernel_schema == KernelSchema.polynomial:
+    if kernel_schema == KernelSchema.inner_product:
+        assert (
+            "scaling" in kernel_config["kernel_parameters"]
+        ), "Scaling must be specified."
+        kernel = InnerProductKernel()
+        kernel_parameters = kernel.generate_parameters(
+            {
+                "log_scaling": jnp.log(kernel_config["kernel_parameters"]["scaling"]),
+            }
+        )
+        return kernel, kernel_parameters
+    elif kernel_schema == KernelSchema.polynomial:
         assert (
             "polynomial_degree" in kernel_kwargs
         ), "Polynomial degree must be specified."
@@ -61,16 +71,12 @@ def kernel_resolver(
             polynomial_degree=kernel_kwargs["polynomial_degree"],
         )
 
-        assert (
-            "log_constant" in kernel_parameters_config
-        ), "Log constant must be specified."
-        assert (
-            "log_scaling" in kernel_parameters_config
-        ), "Log scaling must be specified."
+        assert "constant" in kernel_parameters_config, "Constant must be specified."
+        assert "scaling" in kernel_parameters_config, "Scaling must be specified."
         kernel_parameters = kernel.generate_parameters(
             {
-                "log_constant": kernel_parameters_config["log_constant"],
-                "log_scaling": kernel_parameters_config["log_scaling"],
+                "log_constant": jnp.log(kernel_parameters_config["constant"]),
+                "log_scaling": jnp.log(kernel_parameters_config["scaling"]),
             }
         )
         return kernel, kernel_parameters
@@ -112,7 +118,6 @@ def kernel_resolver(
         kernel_function, kernel_function_parameters = nngp_kernel_function_resolver(
             nngp_kernel_function_kwargs=kernel_kwargs["nngp_kernel_function_kwargs"],
         )
-
         assert (
             "input_shape" in kernel_kwargs["nngp_kernel_function_kwargs"]
         ), "Input shape must be specified."
@@ -202,8 +207,9 @@ def kernel_resolver(
         base_kernel, base_kernel_parameters = kernel_resolver(
             kernel_config=kernel_kwargs["base_kernel"],
         )
-        assert isinstance(
-            base_kernel, NonStationaryKernelBase
+        assert isinstance(base_kernel, NonStationaryKernelBase) or (
+            isinstance(base_kernel, CustomKernel)
+            or (isinstance(base_kernel, CustomMappingKernel))
         ), "Base kernel must be non-stationary."
         feature_mapping, feature_mapping_parameters = nn_function_resolver(
             nn_function_kwargs=kernel_kwargs["nn_function_kwargs"],

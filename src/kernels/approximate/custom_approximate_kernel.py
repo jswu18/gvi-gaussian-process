@@ -1,6 +1,7 @@
 from typing import Any, Callable, Dict, Union
 
 import jax.numpy as jnp
+import pydantic
 from flax.core.frozen_dict import FrozenDict
 from jax.scipy.linalg import cho_factor, cho_solve
 
@@ -44,6 +45,23 @@ class CustomApproximateKernel(CustomKernel, ApproximateBaseKernel):
             inducing_points=inducing_points,
             diagonal_regularisation=diagonal_regularisation,
             is_diagonal_regularisation_absolute_scale=is_diagonal_regularisation_absolute_scale,
+        )
+
+    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
+    def generate_parameters(
+        self, parameters: Union[FrozenDict, Dict]
+    ) -> CustomApproximateKernelParameters:
+        """
+        Generates a Pydantic model of the parameters for Neural Network Gaussian Process Kernel.
+
+        Args:
+            parameters: A dictionary of the parameters for Neural Network Gaussian Process Kernel.
+
+        Returns: A Pydantic model of the parameters for Neural Network Gaussian Process Kernel.
+
+        """
+        return CustomApproximateKernel.Parameters(
+            custom=parameters["custom"],
         )
 
     def _calculate_gram(

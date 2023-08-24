@@ -33,7 +33,7 @@ class CustomMappingKernel(KernelBase):
     ):
         self.base_kernel = base_kernel
         self.feature_mapping = feature_mapping
-        super().__init__(preprocess_function=preprocess_function)
+        KernelBase.__init__(self, preprocess_function=preprocess_function)
 
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def generate_parameters(
@@ -50,7 +50,7 @@ class CustomMappingKernel(KernelBase):
         """
         return CustomMappingKernel.Parameters(
             base_kernel=self.base_kernel.generate_parameters(parameters["base_kernel"]),
-            neural_network=parameters["neural_network"],
+            feature_mapping=parameters["feature_mapping"],
         )
 
     def _calculate_gram(

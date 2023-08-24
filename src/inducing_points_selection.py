@@ -140,7 +140,12 @@ class ConditionalVarianceInducingPointsSelector(InducingPointsSelector):
             except FloatingPointError:
                 pass
             di = jnp.clip(di, 0, None)
-            indices[m + 1] = jnp.argmax(di)  # select first point, add to index 0
+            # added to original code to prevent picking the same point twice
+            for next_idx in reversed(jnp.argsort(di)):
+                if next_idx not in indices[:m]:
+                    indices[m + 1] = next_idx
+                    break
+            # indices[m + 1] = jnp.argmax(di)  # select first point, add to index 0
             # sum of di is tr(Kff-Qff), if this is small things are ok
             if jnp.sum(jnp.clip(di, 0, None)) < self.threshold:
                 indices = indices[:m]

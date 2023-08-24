@@ -32,7 +32,7 @@ class CustomKernel(KernelBase):
             preprocess_function: preprocess inputs before passing to kernel function
         """
         self.kernel_function = kernel_function
-        super().__init__(preprocess_function=preprocess_function)
+        KernelBase.__init__(self, preprocess_function=preprocess_function)
 
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def generate_parameters(

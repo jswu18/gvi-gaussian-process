@@ -5,7 +5,6 @@ from typing import Dict, List, Tuple
 
 import jax
 import jax.numpy as jnp
-from tqdm import tqdm
 
 from experiments.classification.plotters import plot_images
 from experiments.shared.data import Data
@@ -46,7 +45,7 @@ def train_reference_gp(
     ):
         inducing_data_list.append(
             calculate_inducing_points(
-                key=jax.random.PRNGKey(trainer_settings.key),
+                key=jax.random.PRNGKey(trainer_settings.seed),
                 data=data,
                 number_of_inducing_points=number_of_inducing_per_label,
                 kernel=single_label_kernel,

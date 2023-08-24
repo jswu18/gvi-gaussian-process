@@ -3,7 +3,6 @@ from typing import Dict, List, Tuple
 
 import jax
 import jax.numpy as jnp
-from tqdm import tqdm
 
 from experiments.regression import plotters
 from experiments.shared import resolvers, schemas
@@ -75,7 +74,6 @@ def train_reference_gp(
             x=x,
             y=y,
         ),
-        disable_tqdm=True,
     )
     gp_parameters = gp.generate_parameters(gp_parameters.dict())
     return gp, gp_parameters, post_epoch_history
@@ -95,7 +93,7 @@ def meta_train_reference_gp(
 ) -> Tuple[GPRegression, GPRegressionParameters, List[List[Dict[str, float]]]]:
     post_epoch_histories = []
     gp, gp_parameters = None, None
-    for i in tqdm(range(number_of_iterations)):
+    for i in range(number_of_iterations):
         gp, gp_parameters, post_epoch_history = train_reference_gp(
             data=data,
             empirical_risk_schema=empirical_risk_schema,

@@ -38,14 +38,19 @@ class PointWiseRegularisationBase(RegularisationBase):
         parameters: GPBaseParameters,
         x: jnp.ndarray,
     ) -> jnp.float64:
-        gaussian_p = self.regulariser.calculate_prediction_gaussian(
+        # gaussian_p = self.regulariser.calculate_prediction_gaussian(
+        #     parameters=self.regulariser_parameters,
+        #     x=x,
+        #     full_covariance=False,
+        # )
+        # mean_p, covariance_p = (
+        #     gaussian_p.mean,
+        #     gaussian_p.covariance,
+        # )
+        mean_p, covariance_p = self.regulariser.calculate_prior(
             parameters=self.regulariser_parameters,
             x=x,
             full_covariance=False,
-        )
-        mean_p, covariance_p = (
-            gaussian_p.mean,
-            gaussian_p.covariance,
         )
         gaussian_q = self.gp.calculate_prediction_gaussian(
             parameters=parameters,

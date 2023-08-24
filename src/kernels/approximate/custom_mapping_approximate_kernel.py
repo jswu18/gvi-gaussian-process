@@ -1,6 +1,7 @@
 from typing import Any, Callable, Dict, Union
 
 import jax.numpy as jnp
+import pydantic
 from flax.core.frozen_dict import FrozenDict
 from jax.scipy.linalg import cho_factor, cho_solve
 
@@ -8,6 +9,7 @@ from src.kernels.approximate.base import (
     ApproximateBaseKernel,
     ApproximateBaseKernelParameters,
 )
+from src.kernels.custom_kernel import CustomKernel
 from src.kernels.custom_mapping_kernel import (
     CustomMappingKernel,
     CustomMappingKernelParameters,
@@ -27,7 +29,7 @@ class CustomMappingApproximateKernel(CustomMappingKernel, ApproximateBaseKernel)
 
     def __init__(
         self,
-        base_kernel: NonStationaryKernelBase,
+        base_kernel: Union[NonStationaryKernelBase, CustomKernel, CustomMappingKernel],
         feature_mapping: Callable[[Any, jnp.ndarray], jnp.ndarray],
         inducing_points: jnp.ndarray,
         diagonal_regularisation: float = 1e-5,
@@ -47,6 +49,24 @@ class CustomMappingApproximateKernel(CustomMappingKernel, ApproximateBaseKernel)
             inducing_points=inducing_points,
             diagonal_regularisation=diagonal_regularisation,
             is_diagonal_regularisation_absolute_scale=is_diagonal_regularisation_absolute_scale,
+        )
+
+    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
+    def generate_parameters(
+        self, parameters: Union[FrozenDict, Dict]
+    ) -> CustomMappingApproximateKernelParameters:
+        """
+        Generates a Pydantic model of the parameters for Neural Network Gaussian Process Kernel.
+
+        Args:
+            parameters: A dictionary of the parameters for Neural Network Gaussian Process Kernel.
+
+        Returns: A Pydantic model of the parameters for Neural Network Gaussian Process Kernel.
+
+        """
+        return CustomMappingApproximateKernel.Parameters(
+            base_kernel=self.base_kernel.generate_parameters(parameters["base_kernel"]),
+            feature_mapping=parameters["feature_mapping"],
         )
 
     def _calculate_gram(

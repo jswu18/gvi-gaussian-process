@@ -151,11 +151,23 @@ class GaussianWassersteinRegularisation(RegularisationBase):
         parameters: GPBaseParameters,
         x: jnp.ndarray,
     ) -> jnp.float64:
-        gaussian_p = self.regulariser.calculate_prediction_gaussian(
+        # gaussian_p = self.regulariser.calculate_prediction_gaussian(
+        #     parameters=self.regulariser_parameters,
+        #     x=x,
+        #     full_covariance=False,
+        # )
+        mean_p, covariance_q = self.regulariser.calculate_prior(
             parameters=self.regulariser_parameters,
             x=x,
             full_covariance=False,
         )
+        from src.distributions import Gaussian
+
+        gaussian_p = Gaussian(
+            mean=mean_p,
+            covariance=covariance_q,
+        )
+
         gaussian_q = self.gp.calculate_prediction_gaussian(
             parameters=parameters,
             x=x,
@@ -174,12 +186,17 @@ class GaussianWassersteinRegularisation(RegularisationBase):
             self.gp.mean.number_output_dimensions, -1
         )
         if self.include_eigendecomposition:
-            gram_batch_train_p = (
-                self.regulariser.calculate_prediction_gaussian_covariance(
-                    parameters=self.regulariser_parameters,
-                    x=x,
-                    full_covariance=True,
-                )
+            # gram_batch_train_p = (
+            #     self.regulariser.calculate_prediction_gaussian_covariance(
+            #         parameters=self.regulariser_parameters,
+            #         x=x,
+            #         full_covariance=True,
+            #     )
+            # )
+            gram_batch_train_p = self.regulariser.calculate_prior_covariance(
+                parameters=self.regulariser_parameters,
+                x=x,
+                full_covariance=True,
             )
             gram_batch_train_q = self.gp.calculate_prediction_gaussian_covariance(
                 parameters=parameters,

@@ -6,12 +6,16 @@ import jax.numpy as jnp
 import pydantic
 from flax.core.frozen_dict import FrozenDict
 
+from src.distributions import Gaussian
 from src.gps.base.base import GPBase, GPBaseParameters
 
 
 class RegularisationBase(ABC):
     def __init__(
-        self, gp: GPBase, regulariser: GPBase, regulariser_parameters: GPBaseParameters
+        self,
+        gp: GPBase,
+        regulariser: GPBase,
+        regulariser_parameters: GPBaseParameters,
     ):
         self._gp = gp
         self._regulariser = regulariser

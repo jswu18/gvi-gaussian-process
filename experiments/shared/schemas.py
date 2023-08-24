@@ -36,6 +36,7 @@ class KernelSchema(str, enum.Enum):
     multi_output = "multi_output"
     custom_approximate = "custom_approximate"
     custom_mapping_approximate = "custom_mapping_approximate"
+    inner_product = "inner_product"
 
 
 class MeanSchema(str, enum.Enum):
