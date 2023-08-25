@@ -5,15 +5,18 @@ import pydantic
 from flax.core.frozen_dict import FrozenDict
 from jax.scipy.linalg import cho_solve
 
-from src.kernels.approximate.svgp.base import SVGPBaseKernel, SVGPBaseKernelParameters
+from src.kernels.approximate.extended_svgp.base import (
+    ExtendedSVGPBaseKernel,
+    ExtendedSVGPBaseKernelParameters,
+)
 from src.kernels.base import KernelBase, KernelBaseParameters
 
 
-class KernelisedSVGPKernelParameters(SVGPBaseKernelParameters):
+class KernelisedSVGPKernelParameters(ExtendedSVGPBaseKernelParameters):
     base_kernel: KernelBaseParameters
 
 
-class KernelisedSVGPKernel(SVGPBaseKernel):
+class KernelisedSVGPKernel(ExtendedSVGPBaseKernel):
     Parameters = KernelisedSVGPKernelParameters
 
     def __init__(

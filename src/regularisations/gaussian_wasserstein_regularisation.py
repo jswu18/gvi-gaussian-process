@@ -5,8 +5,10 @@ import jax
 import jax.numpy as jnp
 import pydantic
 
+from src.distributions import Gaussian
 from src.gps.base.base import GPBase, GPBaseParameters
 from src.regularisations.base import RegularisationBase
+from src.regularisations.schemas import RegularisationMode
 from src.utils.matrix_operations import (
     add_diagonal_regulariser,
     compute_covariance_eigenvalues,
@@ -20,6 +22,7 @@ class GaussianWassersteinRegularisation(RegularisationBase):
         gp: GPBase,
         regulariser: GPBase,
         regulariser_parameters: GPBaseParameters,
+        mode: RegularisationMode = RegularisationMode.prior,
         eigenvalue_regularisation: float = 1e-8,
         is_eigenvalue_regularisation_absolute_scale: bool = False,
         use_symmetric_matrix_eigendecomposition: bool = True,
@@ -37,6 +40,7 @@ class GaussianWassersteinRegularisation(RegularisationBase):
             gp=gp,
             regulariser=regulariser,
             regulariser_parameters=regulariser_parameters,
+            mode=mode,
         )
 
     @staticmethod
@@ -151,23 +155,12 @@ class GaussianWassersteinRegularisation(RegularisationBase):
         parameters: GPBaseParameters,
         x: jnp.ndarray,
     ) -> jnp.float64:
-        # gaussian_p = self.regulariser.calculate_prediction_gaussian(
-        #     parameters=self.regulariser_parameters,
-        #     x=x,
-        #     full_covariance=False,
-        # )
-        mean_p, covariance_q = self.regulariser.calculate_prior(
-            parameters=self.regulariser_parameters,
-            x=x,
-            full_covariance=False,
-        )
-        from src.distributions import Gaussian
-
         gaussian_p = Gaussian(
-            mean=mean_p,
-            covariance=covariance_q,
+            **self._calculate_regulariser_gaussian(
+                x=x,
+                full_covariance=False,
+            ).dict()
         )
-
         gaussian_q = self.gp.calculate_prediction_gaussian(
             parameters=parameters,
             x=x,
@@ -186,15 +179,7 @@ class GaussianWassersteinRegularisation(RegularisationBase):
             self.gp.mean.number_output_dimensions, -1
         )
         if self.include_eigendecomposition:
-            # gram_batch_train_p = (
-            #     self.regulariser.calculate_prediction_gaussian_covariance(
-            #         parameters=self.regulariser_parameters,
-            #         x=x,
-            #         full_covariance=True,
-            #     )
-            # )
-            gram_batch_train_p = self.regulariser.calculate_prior_covariance(
-                parameters=self.regulariser_parameters,
+            gram_batch_train_p = self._calculate_regulariser_covariance(
                 x=x,
                 full_covariance=True,
             )

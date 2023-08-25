@@ -1,9 +1,8 @@
 from abc import ABC
-from typing import Callable, Dict, Union
+from typing import Callable
 
 import jax.numpy as jnp
-from flax.core.frozen_dict import FrozenDict
-from jax.scipy.linalg import cho_factor, cho_solve
+from jax.scipy.linalg import cho_factor
 
 from src.kernels.approximate.base import (
     ApproximateBaseKernel,
@@ -13,16 +12,16 @@ from src.kernels.base import KernelBase, KernelBaseParameters
 from src.utils.matrix_operations import add_diagonal_regulariser
 
 
-class SVGPBaseKernelParameters(ApproximateBaseKernelParameters, ABC):
+class ExtendedSVGPBaseKernelParameters(ApproximateBaseKernelParameters, ABC):
     pass
 
 
-class SVGPBaseKernel(ApproximateBaseKernel, ABC):
+class ExtendedSVGPBaseKernel(ApproximateBaseKernel, ABC):
     """
     Approximate kernels which are defined with respect to a reference kernel
     """
 
-    Parameters = SVGPBaseKernelParameters
+    Parameters = ExtendedSVGPBaseKernelParameters
 
     def __init__(
         self,

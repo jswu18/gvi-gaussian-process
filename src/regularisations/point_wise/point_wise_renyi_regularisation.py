@@ -3,6 +3,7 @@ import pydantic
 
 from src.gps.base.base import GPBase, GPBaseParameters
 from src.regularisations.point_wise.base import PointWiseRegularisationBase
+from src.regularisations.schemas import RegularisationMode
 from src.utils.custom_types import JaxFloatType
 
 
@@ -12,6 +13,7 @@ class PointWiseRenyiRegularisation(PointWiseRegularisationBase):
         gp: GPBase,
         regulariser: GPBase,
         regulariser_parameters: GPBaseParameters,
+        mode: RegularisationMode = RegularisationMode.prior,
         alpha: float = 0.5,
     ):
         self.alpha = alpha
@@ -19,6 +21,7 @@ class PointWiseRenyiRegularisation(PointWiseRegularisationBase):
             gp=gp,
             regulariser=regulariser,
             regulariser_parameters=regulariser_parameters,
+            mode=mode,
         )
 
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))

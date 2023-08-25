@@ -4,6 +4,7 @@ import pydantic
 
 from src.gps.base.base import GPBase, GPBaseParameters
 from src.regularisations.base import RegularisationBase
+from src.regularisations.schemas import RegularisationMode
 
 
 class GaussianSquaredDifferenceRegularisation(RegularisationBase):
@@ -12,6 +13,7 @@ class GaussianSquaredDifferenceRegularisation(RegularisationBase):
         gp: GPBase,
         regulariser: GPBase,
         regulariser_parameters: GPBaseParameters,
+        mode: RegularisationMode = RegularisationMode.prior,
         full_covariance: bool = True,
     ):
         self.full_covariance = full_covariance
@@ -19,6 +21,7 @@ class GaussianSquaredDifferenceRegularisation(RegularisationBase):
             gp=gp,
             regulariser=regulariser,
             regulariser_parameters=regulariser_parameters,
+            mode=mode,
         )
 
     @staticmethod
@@ -36,21 +39,9 @@ class GaussianSquaredDifferenceRegularisation(RegularisationBase):
         parameters: GPBaseParameters,
         x: jnp.ndarray,
     ) -> jnp.float64:
-        # gaussian_p = self.regulariser.calculate_prediction_gaussian(
-        #     parameters=self.regulariser_parameters,
-        #     x=x,
-        #     full_covariance=self.full_covariance,
-        # )
-        mean_p, covariance_q = self.regulariser.calculate_prior(
-            parameters=self.regulariser_parameters,
+        gaussian_p = self._calculate_regulariser_gaussian(
             x=x,
             full_covariance=self.full_covariance,
-        )
-        from src.distributions import Gaussian
-
-        gaussian_p = Gaussian(
-            mean=mean_p,
-            covariance=covariance_q,
         )
         gaussian_q = self.gp.calculate_prediction_gaussian(
             parameters=parameters,

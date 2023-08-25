@@ -1,4 +1,7 @@
 from experiments.shared.resolvers.empirical_risk import empirical_risk_resolver
+from experiments.shared.resolvers.inducing_points_selector import (
+    inducing_points_selector_resolver,
+)
 from experiments.shared.resolvers.kernel import kernel_resolver
 from experiments.shared.resolvers.mean import mean_resolver
 from experiments.shared.resolvers.nn_function import nn_function_resolver
@@ -22,4 +25,5 @@ __all__ = [
     "nngp_layer_resolver",
     "nngp_kernel_function_resolver",
     "trainer_settings_resolver",
+    "inducing_points_selector_resolver",
 ]

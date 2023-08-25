@@ -6,6 +6,7 @@ import pydantic
 
 from src.gps.base.base import GPBase, GPBaseParameters
 from src.regularisations.base import RegularisationBase
+from src.regularisations.schemas import RegularisationMode
 from src.utils.custom_types import JaxFloatType
 
 
@@ -15,11 +16,13 @@ class PointWiseRegularisationBase(RegularisationBase):
         gp: GPBase,
         regulariser: GPBase,
         regulariser_parameters: GPBaseParameters,
+        mode: RegularisationMode,
     ):
         super().__init__(
             gp=gp,
             regulariser=regulariser,
             regulariser_parameters=regulariser_parameters,
+            mode=mode,
         )
 
     @staticmethod
@@ -38,19 +41,13 @@ class PointWiseRegularisationBase(RegularisationBase):
         parameters: GPBaseParameters,
         x: jnp.ndarray,
     ) -> jnp.float64:
-        # gaussian_p = self.regulariser.calculate_prediction_gaussian(
-        #     parameters=self.regulariser_parameters,
-        #     x=x,
-        #     full_covariance=False,
-        # )
-        # mean_p, covariance_p = (
-        #     gaussian_p.mean,
-        #     gaussian_p.covariance,
-        # )
-        mean_p, covariance_p = self.regulariser.calculate_prior(
-            parameters=self.regulariser_parameters,
+        gaussian_p = self._calculate_regulariser_gaussian(
             x=x,
             full_covariance=False,
+        )
+        mean_p, covariance_p = (
+            gaussian_p.mean,
+            gaussian_p.covariance,
         )
         gaussian_q = self.gp.calculate_prediction_gaussian(
             parameters=parameters,

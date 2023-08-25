@@ -5,12 +5,15 @@ import pydantic
 from flax.core.frozen_dict import FrozenDict
 from jax.scipy.linalg import cho_solve
 
-from src.kernels.approximate.svgp.base import SVGPBaseKernel, SVGPBaseKernelParameters
+from src.kernels.approximate.extended_svgp.base import (
+    ExtendedSVGPBaseKernel,
+    ExtendedSVGPBaseKernelParameters,
+)
 from src.kernels.base import KernelBase, KernelBaseParameters
 from src.utils.custom_types import JaxArrayType
 
 
-class SVGPKernelParameters(SVGPBaseKernelParameters):
+class DiagonalSVGPKernelParameters(ExtendedSVGPBaseKernelParameters):
     """
     el_matrix_lower_triangle is a lower triangle of the L matrix
     el_matrix_log_diagonal is the logarithm of the diagonal of the L matrix
@@ -20,16 +23,15 @@ class SVGPKernelParameters(SVGPBaseKernelParameters):
         sigma_matrix = L @ L.T
     """
 
-    el_matrix_lower_triangle: JaxArrayType[Literal["float64"]]
-    el_matrix_log_diagonal: JaxArrayType[Literal["float64"]]
+    log_el_matrix_diagonal: JaxArrayType[Literal["float64"]]
 
 
-class SVGPKernel(SVGPBaseKernel):
+class DiagonalSVGPKernel(ExtendedSVGPBaseKernel):
     """
     The stochastic variational Gaussian process kernel as defined in Titsias (2009).
     """
 
-    Parameters = SVGPKernelParameters
+    Parameters = DiagonalSVGPKernelParameters
 
     def __init__(
         self,
@@ -56,22 +58,16 @@ class SVGPKernel(SVGPBaseKernel):
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def generate_parameters(
         self, parameters: Union[FrozenDict, Dict] = None
-    ) -> SVGPKernelParameters:
+    ) -> DiagonalSVGPKernelParameters:
         if parameters is None:
-            (
-                el_matrix_lower_triangle,
-                el_matrix_log_diagonal,
-            ) = self.initialise_el_matrix_parameters()
-            return SVGPKernelParameters(
-                el_matrix_lower_triangle=el_matrix_lower_triangle,
-                el_matrix_log_diagonal=el_matrix_log_diagonal,
+            return DiagonalSVGPKernelParameters(
+                log_el_matrix_diagonal=self.initialise_diagonal_parameters()
             )
-        return SVGPKernelParameters(
-            el_matrix_lower_triangle=parameters["el_matrix_lower_triangle"],
-            el_matrix_log_diagonal=parameters["el_matrix_log_diagonal"],
+        return DiagonalSVGPKernelParameters(
+            log_el_matrix_diagonal=parameters["log_el_matrix_diagonal"]
         )
 
-    def initialise_el_matrix_parameters(
+    def initialise_diagonal_parameters(
         self,
     ) -> Tuple[jnp.ndarray, jnp.ndarray]:
         """
@@ -92,20 +88,20 @@ class SVGPKernel(SVGPBaseKernel):
             * self.gram_inducing_train
             @ self.gram_inducing_train.T
         )
-        inverse_cholesky_decomposition = jnp.linalg.inv(cholesky_decomposition)
-        el_matrix_lower_triangle = jnp.tril(inverse_cholesky_decomposition, k=-1)
-        el_matrix_log_diagonal = jnp.log(
-            jnp.clip(
-                jnp.diag(inverse_cholesky_decomposition),
-                self.diagonal_regularisation,
-                None,
+        inv_cholesky_decomposition = jnp.linalg.inv(cholesky_decomposition)
+        return jnp.diag(
+            jnp.log(
+                jnp.clip(
+                    inv_cholesky_decomposition @ inv_cholesky_decomposition.T,
+                    self.diagonal_regularisation,
+                    None,
+                )
             )
         )
-        return el_matrix_lower_triangle, el_matrix_log_diagonal
 
     def _calculate_gram(
         self,
-        parameters: Union[Dict, FrozenDict, SVGPKernelParameters],
+        parameters: Union[Dict, FrozenDict, DiagonalSVGPKernelParameters],
         x1: jnp.ndarray,
         x2: jnp.ndarray,
     ) -> jnp.ndarray:
@@ -129,11 +125,8 @@ class SVGPKernel(SVGPBaseKernel):
             x1=x1,
             x2=x2,
         )
-        el_matrix_lower_triangle = jnp.tril(parameters.el_matrix_lower_triangle, k=-1)
-        el_matrix = el_matrix_lower_triangle + jnp.diag(
-            jnp.exp(parameters.el_matrix_log_diagonal),
-        )
-        sigma_matrix = el_matrix.T @ el_matrix
+
+        sigma_diagonal = jnp.exp(parameters.log_el_matrix_diagonal)
         return (
             reference_gram_x1_x2
             - (
@@ -143,5 +136,6 @@ class SVGPKernel(SVGPBaseKernel):
                     b=reference_gram_x2_inducing.T,
                 )
             )
-            + reference_gram_x1_inducing @ sigma_matrix @ reference_gram_x2_inducing.T
+            + reference_gram_x1_inducing
+            @ jnp.multiply(sigma_diagonal[:, None], reference_gram_x2_inducing.T)
         )

@@ -5,7 +5,7 @@ from experiments.shared.resolvers import (
     empirical_risk_resolver,
     regularisation_resolver,
 )
-from experiments.shared.schemas import EmpiricalRiskSchema, RegularisationSchema
+from experiments.shared.schemas import EmpiricalRiskSchema
 from experiments.shared.trainer import Trainer, TrainerSettings
 from src import GeneralisedVariationalInference
 from src.gps.base.approximate_base import ApproximateGPBase
@@ -15,7 +15,7 @@ from src.gps.base.base import GPBase, GPBaseParameters
 def train_approximate_gp(
     data: Data,
     empirical_risk_schema: EmpiricalRiskSchema,
-    regularisation_schema: RegularisationSchema,
+    regularisation_config: Dict,
     trainer_settings: TrainerSettings,
     approximate_gp: ApproximateGPBase,
     approximate_gp_parameters: GPBaseParameters,
@@ -29,7 +29,7 @@ def train_approximate_gp(
         gp=approximate_gp,
     )
     regularisation = regularisation_resolver(
-        regularisation_schema=regularisation_schema,
+        regularisation_config=regularisation_config,
         gp=approximate_gp,
         regulariser=regulariser,
         regulariser_parameters=regulariser_parameters,

@@ -2,15 +2,15 @@ import warnings
 from abc import ABC, abstractmethod
 from typing import Optional, Tuple
 
+import jax
 import jax.numpy as jnp
 import numpy as np
-from jax import random
 
 from src.kernels.base import KernelBase, KernelBaseParameters
 from src.utils.custom_types import PRNGKey
 
 
-class InducingPointsSelector(ABC):
+class InducingPointsSelectorBase(ABC):
     @abstractmethod
     def compute_inducing_points(
         self,
@@ -26,7 +26,25 @@ class InducingPointsSelector(ABC):
         raise NotImplementedError
 
 
-class ConditionalVarianceInducingPointsSelector(InducingPointsSelector):
+class RandomInducingPointsSelector(InducingPointsSelectorBase):
+    @abstractmethod
+    def compute_inducing_points(
+        self,
+        key: PRNGKey,
+        training_inputs: jnp.ndarray,
+        number_of_inducing_points: int,
+        kernel: KernelBase = None,
+        kernel_parameters: KernelBaseParameters = None,
+    ) -> Tuple[jnp.ndarray, jnp.ndarray]:
+        indices = jax.random.choice(
+            key,
+            jnp.arange(training_inputs.shape[0]),
+            shape=(number_of_inducing_points,),
+        )
+        return training_inputs[indices, ...], indices
+
+
+class ConditionalVarianceInducingPointsSelector(InducingPointsSelectorBase):
     """
     Adapted from https://github.com/markvdw/RobustGP/blob/master/robustgp/init_methods/methods.py
     """
@@ -91,8 +109,8 @@ class ConditionalVarianceInducingPointsSelector(InducingPointsSelector):
         """
         assert number_of_inducing_points > 1, "Must have at least 2 inducing points"
         number_of_training_points = training_inputs.shape[0]
-        key, subkey = random.split(key)
-        perm = random.permutation(
+        key, subkey = jax.random.split(key)
+        perm = jax.random.permutation(
             subkey, number_of_training_points
         )  # permute entries so tie-breaking is random
         training_inputs = training_inputs[perm, ...]

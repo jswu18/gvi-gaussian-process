@@ -11,7 +11,7 @@ from experiments.shared.resolvers.nngp_layer import nngp_layer_resolver
 
 def nngp_kernel_function_resolver(
     nngp_kernel_function_kwargs: Union[FrozenDict, Dict],
-) -> Tuple[Callable[[Any, jnp.ndarray], jnp.ndarray], Dict]:
+) -> Tuple[Callable, Dict]:
     assert "layers" in nngp_kernel_function_kwargs, "Layers must be specified."
     nn_layers = []
     is_parameterised_array = [False] * len(nngp_kernel_function_kwargs["layers"])
@@ -51,8 +51,10 @@ def nngp_kernel_function_resolver(
     }
 
     return (
-        lambda parameters, x1, x2: kernel_function(
-            parameters, x1, x2, nn_layers, is_parameterised_array
+        jax.jit(
+            lambda parameters, x1, x2: kernel_function(
+                parameters, x1, x2, nn_layers, is_parameterised_array
+            )
         ),
         init_parameters,
     )

@@ -3,6 +3,7 @@ import pydantic
 
 from src.gps.base.base import GPBase, GPBaseParameters
 from src.regularisations.point_wise.base import PointWiseRegularisationBase
+from src.regularisations.schemas import RegularisationMode
 from src.utils.custom_types import JaxFloatType
 
 
@@ -12,11 +13,13 @@ class PointWiseBhattacharyyaRegularisation(PointWiseRegularisationBase):
         gp: GPBase,
         regulariser: GPBase,
         regulariser_parameters: GPBaseParameters,
+        mode: RegularisationMode = RegularisationMode.prior,
     ):
         super().__init__(
             gp=gp,
             regulariser=regulariser,
             regulariser_parameters=regulariser_parameters,
+            mode=mode,
         )
 
     @staticmethod

@@ -12,7 +12,7 @@ from mockers.kernel import (
     calculate_reference_gram_eye_mock,
 )
 from src.kernels import CustomKernel, MultiOutputKernel
-from src.kernels.approximate import SVGPKernel
+from src.kernels.approximate import DecomposedSVGPKernel
 from src.kernels.standard import ARDKernel
 
 config.update("jax_enable_x64", True)
@@ -332,7 +332,7 @@ def test_svgp_sigma_lower_triangle_matrix(
     x_inducing: jnp.ndarray,
     target_el_matrix_lower_triangle: jnp.ndarray,
 ):
-    svgp_kernel = SVGPKernel(
+    svgp_kernel = DecomposedSVGPKernel(
         reference_kernel_parameters=MockKernelParameters(),
         log_observation_noise=jnp.log(1),
         reference_kernel=MockKernel(calculate_reference_gram_eye_mock),
@@ -374,7 +374,7 @@ def test_svgp_sigma_log_diagonal(
     x_inducing: jnp.ndarray,
     target_el_matrix_log_diagonal: jnp.ndarray,
 ):
-    svgp_kernel = SVGPKernel(
+    svgp_kernel = DecomposedSVGPKernel(
         reference_kernel_parameters=MockKernelParameters(),
         log_observation_noise=jnp.log(1),
         reference_kernel=MockKernel(calculate_reference_gram_eye_mock),
@@ -432,7 +432,7 @@ def test_svgp_kernel_grams(
     x: jnp.ndarray,
     k: jnp.ndarray,
 ):
-    svgp_kernel = SVGPKernel(
+    svgp_kernel = DecomposedSVGPKernel(
         reference_kernel_parameters=MockKernelParameters(),
         log_observation_noise=jnp.log(1),
         reference_kernel=MockKernel(calculate_reference_gram_eye_mock),
@@ -488,7 +488,7 @@ def test_initialise_el_matrix_lower_triangle_svgp_kernel_grams(
     x: jnp.ndarray,
     actual_el_matrix_lower_triangle: jnp.ndarray,
 ):
-    svgp_kernel = SVGPKernel(
+    svgp_kernel = DecomposedSVGPKernel(
         reference_kernel_parameters=MockKernelParameters(),
         log_observation_noise=jnp.log(1),
         reference_kernel=MockKernel(calculate_reference_gram_eye_mock),
@@ -535,7 +535,7 @@ def test_initialise_el_matrix_lower_triangle_svgp_kernel_grams(
     x: jnp.ndarray,
     actual_el_matrix_log_diagonal: jnp.ndarray,
 ):
-    svgp_kernel = SVGPKernel(
+    svgp_kernel = DecomposedSVGPKernel(
         reference_kernel_parameters=MockKernelParameters(),
         log_observation_noise=jnp.log(1),
         reference_kernel=MockKernel(calculate_reference_gram_eye_mock),

@@ -7,6 +7,7 @@ from mockers.mean import MockMean, MockMeanParameters
 from src.gps import ApproximateGPClassification, GPClassification
 from src.kernels import MultiOutputKernel, MultiOutputKernelParameters
 from src.regularisations import MultinomialWassersteinRegularisation
+from src.regularisations.schemas import RegularisationMode
 
 config.update("jax_enable_x64", True)
 
@@ -64,6 +65,7 @@ def test_zero_multinomial_wasserstein_gp_classification(
         gp=gp,
         regulariser=gp,
         regulariser_parameters=gp_parameters,
+        mode=RegularisationMode.posterior,
     )
     assert jnp.isclose(
         multinomial_wasserstein.calculate_regularisation(
@@ -114,6 +116,7 @@ def test_zero_multinomial_wasserstein_approximate_gp_classification(
         regulariser=gp,
         regulariser_parameters=gp_parameters,
         power=power,
+        mode=RegularisationMode.posterior,
     )
 
     assert jnp.isclose(
@@ -182,6 +185,7 @@ def test_multinomial_wasserstein_gp_classification(
         gp=gp,
         regulariser=regulariser,
         regulariser_parameters=parameters,
+        mode=RegularisationMode.posterior,
     )
     assert jnp.isclose(
         multinomial_wasserstein.calculate_regularisation(
@@ -276,6 +280,7 @@ def test_multinomial_wasserstein_gp_classification(
         regulariser=regulariser,
         regulariser_parameters=parameters,
         power=power,
+        mode=RegularisationMode.posterior,
     )
     assert jnp.isclose(
         multinomial_wasserstein.calculate_regularisation(

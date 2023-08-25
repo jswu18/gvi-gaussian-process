@@ -5,21 +5,34 @@ import pydantic
 from flax.core.frozen_dict import FrozenDict
 from jax.scipy.linalg import cho_solve
 
-from src.kernels.approximate.svgp.base import SVGPBaseKernel, SVGPBaseKernelParameters
+from src.kernels.approximate.extended_svgp.base import (
+    ExtendedSVGPBaseKernel,
+    ExtendedSVGPBaseKernelParameters,
+)
 from src.kernels.base import KernelBase, KernelBaseParameters
 from src.utils.custom_types import JaxArrayType
 
 
-class LogSVGPKernelParameters(SVGPBaseKernelParameters):
-    log_el_matrix: JaxArrayType[Literal["float64"]]
+class DecomposedSVGPKernelParameters(ExtendedSVGPBaseKernelParameters):
+    """
+    el_matrix_lower_triangle is a lower triangle of the L matrix
+    el_matrix_log_diagonal is the logarithm of the diagonal of the L matrix
+    combining them such that:
+        L = el_matrix_lower_triangle + diagonalise(exp(el_matrix_log_diagonal))
+    and
+        sigma_matrix = L @ L.T
+    """
+
+    el_matrix_lower_triangle: JaxArrayType[Literal["float64"]]
+    el_matrix_log_diagonal: JaxArrayType[Literal["float64"]]
 
 
-class LogSVGPKernel(SVGPBaseKernel):
+class DecomposedSVGPKernel(ExtendedSVGPBaseKernel):
     """
     The stochastic variational Gaussian process kernel as defined in Titsias (2009).
     """
 
-    Parameters = LogSVGPKernelParameters
+    Parameters = DecomposedSVGPKernelParameters
 
     def __init__(
         self,
@@ -46,16 +59,33 @@ class LogSVGPKernel(SVGPBaseKernel):
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     def generate_parameters(
         self, parameters: Union[FrozenDict, Dict] = None
-    ) -> LogSVGPKernelParameters:
+    ) -> DecomposedSVGPKernelParameters:
         if parameters is None:
-            return LogSVGPKernelParameters(
-                log_el_matrix=self.initialise_el_matrix_parameters()
+            (
+                el_matrix_lower_triangle,
+                el_matrix_log_diagonal,
+            ) = self.initialise_el_matrix_parameters()
+            return DecomposedSVGPKernelParameters(
+                el_matrix_lower_triangle=el_matrix_lower_triangle,
+                el_matrix_log_diagonal=el_matrix_log_diagonal,
             )
-        return LogSVGPKernelParameters(log_el_matrix=parameters["log_el_matrix"])
+        return DecomposedSVGPKernelParameters(
+            el_matrix_lower_triangle=parameters["el_matrix_lower_triangle"],
+            el_matrix_log_diagonal=parameters["el_matrix_log_diagonal"],
+        )
 
     def initialise_el_matrix_parameters(
         self,
-    ) -> jnp.ndarray:
+    ) -> Tuple[jnp.ndarray, jnp.ndarray]:
+        """
+        Initialise the L matrix where:
+            sigma_matrix = L @ L.T
+
+        Returns:
+            el_matrix_lower_triangle
+            el_matrix_log_diagonal
+
+        """
         reference_gaussian_measure_observation_precision = 1 / jnp.exp(
             self.log_observation_noise
         )
@@ -65,17 +95,20 @@ class LogSVGPKernel(SVGPBaseKernel):
             * self.gram_inducing_train
             @ self.gram_inducing_train.T
         )
-        return jnp.log(
+        inverse_cholesky_decomposition = jnp.linalg.inv(cholesky_decomposition)
+        el_matrix_lower_triangle = jnp.tril(inverse_cholesky_decomposition, k=-1)
+        el_matrix_log_diagonal = jnp.log(
             jnp.clip(
-                jnp.linalg.inv(cholesky_decomposition),
+                jnp.diag(inverse_cholesky_decomposition),
                 self.diagonal_regularisation,
                 None,
             )
         )
+        return el_matrix_lower_triangle, el_matrix_log_diagonal
 
     def _calculate_gram(
         self,
-        parameters: Union[Dict, FrozenDict, LogSVGPKernelParameters],
+        parameters: Union[Dict, FrozenDict, DecomposedSVGPKernelParameters],
         x1: jnp.ndarray,
         x2: jnp.ndarray,
     ) -> jnp.ndarray:
@@ -99,8 +132,9 @@ class LogSVGPKernel(SVGPBaseKernel):
             x1=x1,
             x2=x2,
         )
-        el_matrix = (
-            jnp.exp(parameters.log_el_matrix) @ jnp.exp(parameters.log_el_matrix).T
+        el_matrix_lower_triangle = jnp.tril(parameters.el_matrix_lower_triangle, k=-1)
+        el_matrix = el_matrix_lower_triangle + jnp.diag(
+            jnp.exp(parameters.el_matrix_log_diagonal),
         )
         sigma_matrix = el_matrix.T @ el_matrix
         return (

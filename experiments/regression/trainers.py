@@ -11,6 +11,7 @@ from experiments.shared.trainer import Trainer, TrainerSettings
 from experiments.shared.utils import calculate_inducing_points
 from src.distributions import Gaussian
 from src.gps import GPRegression, GPRegressionParameters
+from src.inducing_points_selection import InducingPointsSelectorBase
 from src.kernels.base import KernelBase, KernelBaseParameters
 from src.means import ConstantMean
 
@@ -21,6 +22,7 @@ def train_reference_gp(
     trainer_settings: TrainerSettings,
     kernel: KernelBase,
     kernel_parameters: KernelBaseParameters,
+    inducing_points_selector: InducingPointsSelectorBase,
     number_of_inducing_points: int,
     empirical_risk_break_condition: float,
     save_checkpoint_frequency: int,
@@ -28,6 +30,7 @@ def train_reference_gp(
 ) -> Tuple[GPRegression, GPRegressionParameters, List[Dict[str, float]]]:
     inducing_data = calculate_inducing_points(
         key=jax.random.PRNGKey(trainer_settings.seed),
+        inducing_points_selector=inducing_points_selector,
         data=data,
         number_of_inducing_points=number_of_inducing_points,
         kernel=kernel,
@@ -85,6 +88,7 @@ def meta_train_reference_gp(
     trainer_settings: TrainerSettings,
     kernel: KernelBase,
     kernel_parameters: KernelBaseParameters,
+    inducing_points_selector: InducingPointsSelectorBase,
     number_of_inducing_points: int,
     number_of_iterations: int,
     save_checkpoint_frequency: int,
@@ -100,6 +104,7 @@ def meta_train_reference_gp(
             trainer_settings=trainer_settings,
             kernel=kernel,
             kernel_parameters=kernel_parameters,
+            inducing_points_selector=inducing_points_selector,
             number_of_inducing_points=number_of_inducing_points,
             save_checkpoint_frequency=save_checkpoint_frequency,
             checkpoint_path=os.path.join(checkpoint_path, f"iteration-{i}"),

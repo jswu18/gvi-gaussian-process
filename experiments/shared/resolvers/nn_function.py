@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, Union
+from typing import Any, Callable, Dict, Tuple, Union
 
 import flax.linen as nn
 import jax
@@ -10,7 +10,7 @@ from experiments.shared.resolvers.nn_layer import nn_layer_resolver
 
 def nn_function_resolver(
     nn_function_kwargs: Union[FrozenDict, Dict],
-) -> Union[Callable[[Any, jnp.ndarray], jnp.ndarray], Any]:
+) -> Tuple[Callable, Any]:
     assert "layers" in nn_function_kwargs, "Layers must be specified."
 
     class NeuralNetwork(nn.Module):
@@ -42,6 +42,6 @@ def nn_function_resolver(
         jnp.empty((1, *nn_function_kwargs["input_shape"])),
     )
     return (
-        lambda parameters, x: neural_network.apply(parameters, x),
+        jax.jit(lambda parameters, x: neural_network.apply(parameters, x)),
         neural_network_parameters,
     )

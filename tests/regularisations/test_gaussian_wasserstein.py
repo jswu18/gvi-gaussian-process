@@ -12,6 +12,7 @@ from src.gps import (
 )
 from src.kernels import MultiOutputKernel, MultiOutputKernelParameters
 from src.regularisations import GaussianWassersteinRegularisation
+from src.regularisations.schemas import RegularisationMode
 
 config.update("jax_enable_x64", True)
 
@@ -62,6 +63,7 @@ def test_zero_gaussian_wasserstein_gp_regression(
         regulariser_parameters=gp_parameters,
         eigenvalue_regularisation=0,
         include_eigendecomposition=True,
+        mode=RegularisationMode.posterior,
     )
     assert jnp.isclose(
         gaussian_wasserstein.calculate_regularisation(
@@ -107,6 +109,7 @@ def test_zero_gaussian_wasserstein_approximate_gp_regression(
         regulariser_parameters=gp_parameters,
         eigenvalue_regularisation=0,
         include_eigendecomposition=True,
+        mode=RegularisationMode.posterior,
     )
 
     assert jnp.isclose(
@@ -167,6 +170,7 @@ def test_gaussian_wasserstein_gp_regression(
         regulariser=regulariser,
         regulariser_parameters=parameters,
         include_eigendecomposition=True,
+        mode=RegularisationMode.posterior,
     )
     assert jnp.isclose(
         gaussian_wasserstein.calculate_regularisation(
@@ -232,6 +236,7 @@ def test_zero_gaussian_wasserstein_gp_classification(
         regulariser_parameters=gp_parameters,
         eigenvalue_regularisation=0,
         include_eigendecomposition=True,
+        mode=RegularisationMode.posterior,
     )
     assert jnp.isclose(
         gaussian_wasserstein.calculate_regularisation(
@@ -281,6 +286,7 @@ def test_zero_gaussian_wasserstein_approximate_gp_classification(
         regulariser_parameters=gp_parameters,
         eigenvalue_regularisation=0,
         include_eigendecomposition=True,
+        mode=RegularisationMode.posterior,
     )
 
     assert jnp.isclose(
@@ -350,6 +356,7 @@ def test_gaussian_wasserstein_gp_classification(
         regulariser=regulariser,
         regulariser_parameters=parameters,
         include_eigendecomposition=True,
+        mode=RegularisationMode.posterior,
     )
     assert jnp.isclose(
         gaussian_wasserstein.calculate_regularisation(

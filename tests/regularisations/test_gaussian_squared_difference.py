@@ -12,6 +12,7 @@ from src.gps import (
 )
 from src.kernels import MultiOutputKernel, MultiOutputKernelParameters
 from src.regularisations import GaussianSquaredDifferenceRegularisation
+from src.regularisations.schemas import RegularisationMode
 
 config.update("jax_enable_x64", True)
 
@@ -60,6 +61,7 @@ def test_zero_gaussian_squared_difference_gp_regression(
         gp=gp,
         regulariser=gp,
         regulariser_parameters=gp_parameters,
+        mode=RegularisationMode.posterior,
     )
     assert jnp.isclose(
         gaussian_squared_difference.calculate_regularisation(
@@ -103,6 +105,7 @@ def test_zero_gaussian_squared_difference_approximate_gp_regression(
         gp=gp,
         regulariser=gp,
         regulariser_parameters=gp_parameters,
+        mode=RegularisationMode.posterior,
     )
 
     assert jnp.isclose(
@@ -162,6 +165,7 @@ def test_gaussian_squared_difference_gp_regression(
         gp=gp,
         regulariser=regulariser,
         regulariser_parameters=parameters,
+        mode=RegularisationMode.posterior,
     )
     assert jnp.isclose(
         gaussian_squared_difference.calculate_regularisation(
@@ -225,6 +229,7 @@ def test_zero_gaussian_squared_difference_gp_classification(
         gp=gp,
         regulariser=gp,
         regulariser_parameters=gp_parameters,
+        mode=RegularisationMode.posterior,
     )
     assert jnp.isclose(
         gaussian_squared_difference.calculate_regularisation(
@@ -272,6 +277,7 @@ def test_zero_gaussian_squared_difference_approximate_gp_classification(
         gp=gp,
         regulariser=gp,
         regulariser_parameters=gp_parameters,
+        mode=RegularisationMode.posterior,
     )
 
     assert jnp.isclose(
@@ -340,6 +346,7 @@ def test_gaussian_squared_difference_gp_classification(
         gp=gp,
         regulariser=regulariser,
         regulariser_parameters=parameters,
+        mode=RegularisationMode.posterior,
     )
     assert jnp.isclose(
         gaussian_squared_difference.calculate_regularisation(

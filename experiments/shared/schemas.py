@@ -26,16 +26,16 @@ class RegularisationSchema(str, enum.Enum):
 class KernelSchema(str, enum.Enum):
     polynomial = "polynomial"
     ard = "ard"
-    custom = "custom"
+    nngp = "nngp"
     custom_mapping = "custom_mapping"
     neural_network = "neural_network"
     diagonal_svgp = "diagonal_svgp"
     kernelised_svgp = "kernelised_svgp"
     log_svgp = "log_svgp"
-    svgp = "svgp"
+    decomposed_svgp = "decomposed_svgp"
     multi_output = "multi_output"
-    custom_approximate = "custom_approximate"
-    custom_mapping_approximate = "custom_mapping_approximate"
+    sparse_posterior = "sparse_posterior"
+    fixed_sparse_posterior = "fixed_sparse_posterior"
     inner_product = "inner_product"
 
 
@@ -62,3 +62,15 @@ class NeuralNetworkGaussianProcessLayerSchema(str, enum.Enum):
     relu = "relu"
     tanh = "tanh"
     flatten = "flatten"
+
+
+class InducingPointsSelectorSchema(str, enum.Enum):
+    random = "random"
+    conditional_variance = "conditional_variance"
+
+
+class Actions(str, enum.Enum):
+    build_data = "build_data"
+    train_reference = "train_reference"
+    train_approximate = "train_approximate"
+    temper_approximate = "temper_approximate"

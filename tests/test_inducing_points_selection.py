@@ -24,7 +24,7 @@ config.update("jax_enable_x64", True)
             jnp.array(
                 [
                     [4.5, 2.5, 3.5],
-                    [1.6, 2.5, 3.5],
+                    [1.5, 2.5, 3.5],
                 ]
             ),
         ],
@@ -60,7 +60,7 @@ def test_inducing_points_selection(
                     [1.6, 2.5, 3.5],
                 ]
             ),
-            jnp.array([2, 3]),
+            jnp.array([2, 1]),
         ],
         [
             jnp.stack(
@@ -70,7 +70,7 @@ def test_inducing_points_selection(
                     5 * jnp.ones((28, 28, 1)),
                 ]
             ),
-            jnp.array([2, 0]),
+            jnp.array([2, 1]),
         ],
     ],
 )

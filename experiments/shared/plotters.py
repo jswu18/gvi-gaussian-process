@@ -13,8 +13,9 @@ def plot_losses(
     fig, ax = plt.subplots(figsize=(13, 6.5))
     fig.tight_layout()
     if isinstance(losses[0], list):
-        for loss, label in zip(losses, labels):
-            ax.plot(loss, label=label)
+        for i, (loss, label) in enumerate(zip(losses, labels)):
+            shade = ((len(losses) - i) / len(losses)) * 0.8
+            ax.plot(loss, label=label, color=[shade, shade, shade])
     else:
         ax.plot(losses, label=labels)
     ax.set_xlabel("epoch")

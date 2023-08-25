@@ -1,36 +1,39 @@
-from src.kernels.approximate.custom_approximate_kernel import (
-    CustomApproximateKernel,
-    CustomApproximateKernelParameters,
+from src.kernels.approximate.extended_svgp.decomposed_svgp_kernel import (
+    DecomposedSVGPKernel,
+    DecomposedSVGPKernelParameters,
 )
-from src.kernels.approximate.custom_mapping_approximate_kernel import (
-    CustomMappingApproximateKernel,
-    CustomMappingApproximateKernelParameters,
-)
-from src.kernels.approximate.svgp.diagonal_svgp_kernel import (
+from src.kernels.approximate.extended_svgp.diagonal_svgp_kernel import (
     DiagonalSVGPKernel,
     DiagonalSVGPKernelParameters,
 )
-from src.kernels.approximate.svgp.kernelised_svgp_kernel import (
+from src.kernels.approximate.extended_svgp.kernelised_svgp_kernel import (
     KernelisedSVGPKernel,
     KernelisedSVGPKernelParameters,
 )
-from src.kernels.approximate.svgp.log_svgp_kernel import (
+from src.kernels.approximate.extended_svgp.log_svgp_kernel import (
     LogSVGPKernel,
     LogSVGPKernelParameters,
 )
-from src.kernels.approximate.svgp.svgp_kernel import SVGPKernel, SVGPKernelParameters
+from src.kernels.approximate.fixed_sparse_posterior_kernel import (
+    FixedSparsePosteriorKernel,
+    FixedSparsePosteriorKernelParameters,
+)
+from src.kernels.approximate.sparse_posterior_kernel import (
+    SparsePosteriorKernel,
+    SparsePosteriorKernelParameters,
+)
 
 __all__ = [
-    "SVGPKernel",
-    "SVGPKernelParameters",
+    "DecomposedSVGPKernel",
+    "DecomposedSVGPKernelParameters",
     "DiagonalSVGPKernel",
     "DiagonalSVGPKernelParameters",
     "KernelisedSVGPKernel",
     "KernelisedSVGPKernelParameters",
     "LogSVGPKernel",
     "LogSVGPKernelParameters",
-    "CustomApproximateKernel",
-    "CustomApproximateKernelParameters",
-    "CustomMappingApproximateKernel",
-    "CustomMappingApproximateKernelParameters",
+    "SparsePosteriorKernel",
+    "SparsePosteriorKernelParameters",
+    "FixedSparsePosteriorKernel",
+    "FixedSparsePosteriorKernelParameters",
 ]

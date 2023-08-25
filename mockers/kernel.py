@@ -4,7 +4,10 @@ import jax.numpy as jnp
 import pydantic
 from flax.core.frozen_dict import FrozenDict
 
-from src.kernels.approximate.svgp.base import SVGPBaseKernel, SVGPBaseKernelParameters
+from src.kernels.approximate.extended_svgp.base import (
+    ExtendedSVGPBaseKernel,
+    ExtendedSVGPBaseKernelParameters,
+)
 from src.kernels.base import KernelBase, KernelBaseParameters
 
 
@@ -51,11 +54,11 @@ class MockKernel(KernelBase):
         return gram if full_cov else jnp.diagonal(gram)
 
 
-class MockApproximateKernelParameters(SVGPBaseKernelParameters):
+class MockApproximateKernelParameters(ExtendedSVGPBaseKernelParameters):
     pass
 
 
-class MockApproximateKernel(SVGPBaseKernel):
+class MockApproximateKernel(ExtendedSVGPBaseKernel):
     sigma_matrix = jnp.ones((5, 5))
 
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))

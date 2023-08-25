@@ -3,6 +3,7 @@ import jax.numpy as jnp
 from mockers.gp import MockGP, MockGPParameters
 from src.gps.base.base import GPBase, GPBaseParameters
 from src.regularisations.base import RegularisationBase
+from src.regularisations.schemas import RegularisationMode
 
 
 class MockRegularisation(RegularisationBase):
@@ -20,7 +21,12 @@ class MockRegularisation(RegularisationBase):
         if regulariser_parameters is None:
             regulariser_parameters = MockGPParameters()
 
-        super().__init__(gp, regulariser, regulariser_parameters)
+        super().__init__(
+            gp=gp,
+            regulariser=regulariser,
+            regulariser_parameters=regulariser_parameters,
+            mode=RegularisationMode.posterior,
+        )
         self.mock_regularisation = mock_regularisation
 
     def _calculate_regularisation(

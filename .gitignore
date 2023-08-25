@@ -12,6 +12,25 @@ __pycache__
 *.yaml
 /**/*.yaml
 /**/**/*.yaml
+/**/**/**/*.yaml
+/**/**/**/**/*.yaml
+/**/**/**/**/**/*.yaml
+
+# Shell scripts
+*.sh
+/**/*.sh
+/**/**/*.sh
+/**/**/**/*.sh
+/**/**/**/**/*.sh
+/**/**/**/**/**/*.sh
+
+# csv files
+*.csv
+/**/*.csv
+/**/**/*.csv
+/**/**/**/*.csv
+/**/**/**/**/*.csv
+/**/**/**/**/**/*.csv
 
 # Model checkpoints
 *.ckpt
