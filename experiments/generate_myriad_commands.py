@@ -59,14 +59,14 @@ def generate_myriad_commands(
     num_cores: int,
     mem: str,
 ):
-    if os.path.exists(os.path.join(save_path, action)):
-        shutil.rmtree(os.path.join(save_path, action))
-    if not os.path.exists(os.path.join(save_path, action)):
-        os.makedirs(os.path.join(save_path, action))
+    if os.path.exists(os.path.join(save_path, action.name)):
+        shutil.rmtree(os.path.join(save_path, action.name))
+    if not os.path.exists(os.path.join(save_path, action.name)):
+        os.makedirs(os.path.join(save_path, action.name))
     shell_command_paths = [
         f
-        for f in os.listdir(os.path.join(command_path, action))
-        if os.path.isfile(os.path.join(command_path, action, f))
+        for f in os.listdir(os.path.join(command_path, action.name))
+        if os.path.isfile(os.path.join(command_path, action.name, f))
     ]
     number_of_commands = len(shell_command_paths)
     myriad_command_paths = []
@@ -79,13 +79,15 @@ def generate_myriad_commands(
             mem=mem,
             repository_path=repository_path,
         )
-        with open(os.path.join(command_path, action, shell_command_path), "r") as file:
+        with open(
+            os.path.join(command_path, action.name, shell_command_path), "r"
+        ) as file:
             shell_command = file.read()
-        myriad_command_path = os.path.join(save_path, action, f"{i}.sh")
+        myriad_command_path = os.path.join(save_path, action.name, f"{i}.sh")
         with open(myriad_command_path, "w") as file:
             file.write("\n".join(base_commands + [shell_command]))
         myriad_command_paths.append(myriad_command_path)
-    with open(f"{problem.name}-{action.name}.sh", "w") as file:
+    with open(f"{action.name}-{problem.name}.sh", "w") as file:
         file.write(
             "\n".join(
                 [

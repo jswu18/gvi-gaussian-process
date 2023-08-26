@@ -7,7 +7,7 @@ from typing import Dict, Optional
 import pandas as pd
 import yaml
 
-from experiments.shared.schemas import ProblemSchema
+from experiments.shared.schemas import ActionSchema, ProblemSchema
 
 parser = argparse.ArgumentParser(
     description="Main script for experiment config generation."
@@ -105,29 +105,40 @@ def generate_configs(
 
 if __name__ == "__main__":
     args = parser.parse_args()
-
     base_config_path = f"experiments/{args.problem}/base_configs"
     output_config_path = f"experiments/{args.problem}/configs"
     generate_configs(
-        config_path=os.path.join(base_config_path, "build_data"),
-        output_path=os.path.join(output_config_path, "build_data"),
+        config_path=os.path.join(base_config_path, ActionSchema.build_data.name),
+        output_path=os.path.join(output_config_path, ActionSchema.build_data.name),
     )
     generate_configs(
-        config_path=os.path.join(base_config_path, "train_reference"),
-        output_path=os.path.join(output_config_path, "train_reference"),
-        reference_configs={"data_name": os.path.join(output_config_path, "build_data")},
-    )
-    generate_configs(
-        config_path=os.path.join(base_config_path, "train_approximate"),
-        output_path=os.path.join(output_config_path, "train_approximate"),
+        config_path=os.path.join(base_config_path, ActionSchema.train_reference.name),
+        output_path=os.path.join(output_config_path, ActionSchema.train_reference.name),
         reference_configs={
-            "reference_name": os.path.join(output_config_path, "train_reference")
+            "data_name": os.path.join(output_config_path, ActionSchema.build_data.name)
         },
     )
     generate_configs(
-        config_path=os.path.join(base_config_path, "temper_approximate"),
-        output_path=os.path.join(output_config_path, "temper_approximate"),
+        config_path=os.path.join(base_config_path, ActionSchema.train_approximate.name),
+        output_path=os.path.join(
+            output_config_path, ActionSchema.train_approximate.name
+        ),
         reference_configs={
-            "approximate_name": os.path.join(output_config_path, "train_approximate")
+            "reference_name": os.path.join(
+                output_config_path, ActionSchema.train_reference.name
+            )
+        },
+    )
+    generate_configs(
+        config_path=os.path.join(
+            base_config_path, ActionSchema.temper_approximate.name
+        ),
+        output_path=os.path.join(
+            output_config_path, ActionSchema.temper_approximate.name
+        ),
+        reference_configs={
+            "approximate_name": os.path.join(
+                output_config_path, ActionSchema.train_approximate.name
+            )
         },
     )
