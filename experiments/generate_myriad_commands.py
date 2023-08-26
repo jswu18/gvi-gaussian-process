@@ -8,7 +8,121 @@ parser = argparse.ArgumentParser(
     description="Main script for experiment config generation."
 )
 parser.add_argument(
-    "--problem", choices=[ProblemSchema[a].value for a in ProblemSchema]
+    "--problem",
+    choices=[ProblemSchema[a].value for a in ProblemSchema],
+    required=True,
+)
+parser.add_argument(
+    "--build_data_max_runtime",
+    type=str,
+    required=False,
+    default="01:00:00",
+    help="Max runtime of build data jobs.",
+)
+parser.add_argument(
+    "--train_reference_max_runtime",
+    type=str,
+    required=False,
+    default="04:00:00",
+    help="Max runtime of train reference jobs.",
+)
+parser.add_argument(
+    "--train_approximate_max_runtime",
+    type=str,
+    required=False,
+    default="04:00:00",
+    help="Max runtime of train approximate jobs.",
+)
+parser.add_argument(
+    "--temper_approximate_max_runtime",
+    type=str,
+    required=False,
+    default="01:00:00",
+    help="Max runtime of temper approximate jobs.",
+)
+parser.add_argument(
+    "--build_data_num_gpus",
+    type=int,
+    required=False,
+    default=0,
+    help="Number of GPUs for build data jobs.",
+)
+parser.add_argument(
+    "--train_reference_num_gpus",
+    type=int,
+    required=False,
+    default=1,
+    help="Number of GPUs for train reference jobs.",
+)
+parser.add_argument(
+    "--train_approximate_num_gpus",
+    type=int,
+    required=False,
+    default=1,
+    help="Number of GPUs for train approximate jobs.",
+)
+parser.add_argument(
+    "--temper_approximate_num_gpus",
+    type=int,
+    required=False,
+    default=0,
+    help="Number of GPUs for temper approximate jobs.",
+)
+parser.add_argument(
+    "--build_data_num_cores",
+    type=int,
+    required=False,
+    default=4,
+    help="Number of cores for build data jobs.",
+)
+parser.add_argument(
+    "--train_reference_num_cores",
+    type=int,
+    required=False,
+    default=4,
+    help="Number of cores for train reference jobs.",
+)
+parser.add_argument(
+    "--train_approximate_num_cores",
+    type=int,
+    required=False,
+    default=4,
+    help="Number of cores for train approximate jobs.",
+)
+parser.add_argument(
+    "--temper_approximate_num_cores",
+    type=int,
+    required=False,
+    default=4,
+    help="Number of cores for temper approximate jobs.",
+)
+parser.add_argument(
+    "--build_data_mem",
+    type=str,
+    required=False,
+    default="5G",
+    help="Amount of RAM for build data jobs per core.",
+)
+parser.add_argument(
+    "--train_reference_mem",
+    type=str,
+    required=False,
+    default="5G",
+    help="Amount of RAM for train reference jobs per core.",
+)
+parser.add_argument(
+    "--train_approximate_mem",
+    type=str,
+    required=False,
+    default="5G",
+    help="Amount of RAM for train approximate jobs per core.",
+)
+parser.add_argument(
+    "--temper_approximate_mem",
+    type=str,
+    required=False,
+    default="5G",
+    help="Amount of RAM for temper approximate jobs per core.",
 )
 
 
@@ -108,10 +222,10 @@ if __name__ == "__main__":
         action=ActionSchema.build_data,
         command_path=precomputed_shell_command_path,
         save_path=myriad_shell_command_path,
-        max_runtime="01:00:00",
-        num_gpus=0,
-        num_cores=4,
-        mem="5G",
+        max_runtime=args.build_data_max_runtime,
+        num_gpus=args.build_data_num_gpus,
+        num_cores=args.build_data_num_cores,
+        mem=args.build_data_mem,
         repository_path=os.getcwd(),
     )
     generate_myriad_commands(
@@ -119,10 +233,10 @@ if __name__ == "__main__":
         action=ActionSchema.train_reference,
         command_path=precomputed_shell_command_path,
         save_path=myriad_shell_command_path,
-        max_runtime="04:00:00",
-        num_gpus=1,
-        num_cores=4,
-        mem="5G",
+        max_runtime=args.train_reference_max_runtime,
+        num_gpus=args.train_reference_num_gpus,
+        num_cores=args.train_reference_num_cores,
+        mem=args.train_reference_mem,
         repository_path=os.getcwd(),
     )
     generate_myriad_commands(
@@ -130,10 +244,10 @@ if __name__ == "__main__":
         action=ActionSchema.train_approximate,
         command_path=precomputed_shell_command_path,
         save_path=myriad_shell_command_path,
-        max_runtime="04:00:00",
-        num_gpus=1,
-        num_cores=4,
-        mem="5G",
+        max_runtime=args.train_approximate_max_runtime,
+        num_gpus=args.train_approximate_num_gpus,
+        num_cores=args.train_approximate_num_cores,
+        mem=args.train_approximate_mem,
         repository_path=os.getcwd(),
     )
     generate_myriad_commands(
@@ -141,9 +255,9 @@ if __name__ == "__main__":
         action=ActionSchema.temper_approximate,
         command_path=precomputed_shell_command_path,
         save_path=myriad_shell_command_path,
-        max_runtime="01:00:00",
-        num_gpus=0,
-        num_cores=4,
-        mem="5G",
+        max_runtime=args.temper_approximate_max_runtime,
+        num_gpus=args.temper_approximate_num_gpus,
+        num_cores=args.temper_approximate_num_cores,
+        mem=args.temper_approximate_mem,
         repository_path=os.getcwd(),
     )

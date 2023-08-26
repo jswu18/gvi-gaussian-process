@@ -11,30 +11,34 @@ parser = argparse.ArgumentParser(
     description="Main script for experiment config generation."
 )
 parser.add_argument(
-    "--problem", choices=[ProblemSchema[a].value for a in ProblemSchema]
+    "--problem", choices=[ProblemSchema[a].value for a in ProblemSchema], required=True
 )
 parser.add_argument(
     "--train_reference_chunk_size",
     type=int,
     default=50,
+    required=False,
     help="Number of configs per train reference shell file.",
 )
 parser.add_argument(
     "--train_approximate_chunk_size",
     type=int,
     default=50,
+    required=False,
     help="Number of configs per train reference shell file.",
 )
 parser.add_argument(
     "--temper_approximate_chunk_size",
     type=int,
     default=100,
+    required=False,
     help="Number of configs per temper shell file.",
 )
 parser.add_argument(
     "--build_data_chunk_size",
     type=int,
     default=100,
+    required=False,
     help="Number of configs per build data shell file.",
 )
 
