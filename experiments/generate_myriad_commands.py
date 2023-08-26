@@ -72,7 +72,7 @@ def generate_myriad_commands(
     myriad_command_paths = []
     for i, shell_command_path in enumerate(shell_command_paths):
         base_commands = build_base_commands(
-            job_name=f"{str(problem.name)}-{str(action.name)}-{i+1}-of-{number_of_commands}",
+            job_name=f"{problem.name}-{action.name}-{i+1}-of-{number_of_commands}",
             max_runtime=max_runtime,
             num_gpus=num_gpus,
             num_cores=num_cores,
@@ -85,7 +85,7 @@ def generate_myriad_commands(
         with open(myriad_command_path, "w") as file:
             file.write("\n".join(base_commands + [shell_command]))
         myriad_command_paths.append(myriad_command_path)
-    with open(f"{str(problem.name)}-{str(action.name)}.sh", "w") as file:
+    with open(f"{problem.name}-{action.name}.sh", "w") as file:
         file.write(
             "\n".join(
                 [

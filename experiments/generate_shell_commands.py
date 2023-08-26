@@ -47,18 +47,18 @@ def generate_shell_commands(
     save_path: str,
     chunk_size: int,
 ):
-    config_path = os.path.join(config_path, action)
+    config_path = os.path.join(config_path, action.name)
     df = pd.read_csv(f"{config_path}.csv")
     commands = [
-        f"python {main_path} --action {action} --config_path {os.path.join(config_path, uuid_identifier)}.yaml"
+        f"python {main_path} --action {action.name} --config_path {os.path.join(config_path, uuid_identifier)}.yaml"
         for uuid_identifier in df.uuid
     ]
-    if os.path.exists(os.path.join(save_path, action)):
-        shutil.rmtree(os.path.join(save_path, action))
-    if not os.path.exists(os.path.join(save_path, action)):
-        os.makedirs(os.path.join(save_path, action))
+    if os.path.exists(os.path.join(save_path, action.name)):
+        shutil.rmtree(os.path.join(save_path, action.name))
+    if not os.path.exists(os.path.join(save_path, action.name)):
+        os.makedirs(os.path.join(save_path, action.name))
     for i in range(0, int(jnp.ceil(len(commands) / chunk_size))):
-        with open(os.path.join(save_path, action, f"{i}.sh"), "w") as file:
+        with open(os.path.join(save_path, action.name, f"{i}.sh"), "w") as file:
             file.write(
                 "\n".join(
                     [f"cd {repository_path}", "export PYTHONPATH=$PWD"]
