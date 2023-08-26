@@ -13,6 +13,30 @@ parser = argparse.ArgumentParser(
 parser.add_argument(
     "--problem", choices=[ProblemSchema[a].value for a in ProblemSchema]
 )
+parser.add_argument(
+    "--train_reference_chunk_size",
+    type=int,
+    default=50,
+    help="Number of configs per train reference shell file.",
+)
+parser.add_argument(
+    "--train_approximate_chunk_size",
+    type=int,
+    default=50,
+    help="Number of configs per train reference shell file.",
+)
+parser.add_argument(
+    "--temper_approximate_chunk_size",
+    type=int,
+    default=100,
+    help="Number of configs per temper shell file.",
+)
+parser.add_argument(
+    "--build_data_chunk_size",
+    type=int,
+    default=100,
+    help="Number of configs per build data shell file.",
+)
 
 
 def generate_shell_commands(
@@ -55,7 +79,7 @@ if __name__ == "__main__":
         main_path=main_path,
         config_path=config_path,
         save_path=save_path,
-        chunk_size=100,
+        chunk_size=args.build_data_chunk_size,
     )
     generate_shell_commands(
         action=ActionSchema.train_reference,
@@ -63,7 +87,7 @@ if __name__ == "__main__":
         main_path=main_path,
         config_path=config_path,
         save_path=save_path,
-        chunk_size=50,
+        chunk_size=args.train_reference_chunk_size,
     )
     generate_shell_commands(
         action=ActionSchema.train_approximate,
@@ -71,7 +95,7 @@ if __name__ == "__main__":
         main_path=main_path,
         config_path=config_path,
         save_path=save_path,
-        chunk_size=50,
+        chunk_size=args.train_approximate_chunk_size,
     )
     generate_shell_commands(
         action=ActionSchema.temper_approximate,
@@ -79,5 +103,5 @@ if __name__ == "__main__":
         main_path=main_path,
         config_path=config_path,
         save_path=save_path,
-        chunk_size=500,
+        chunk_size=args.temper_approximate_chunk_size,
     )

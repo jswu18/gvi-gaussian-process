@@ -25,6 +25,7 @@ __pycache__
 /**/**/**/**/*.sh
 /**/**/**/**/**/*.sh
 /**/**/shell_commands
+/**/**/myriad_shell_commands
 
 # csv files
 *.csv
