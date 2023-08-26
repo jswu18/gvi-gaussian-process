@@ -69,8 +69,13 @@ class InducingPointsSelectorSchema(str, enum.Enum):
     conditional_variance = "conditional_variance"
 
 
-class Actions(str, enum.Enum):
+class ActionSchema(str, enum.Enum):
     build_data = "build_data"
     train_reference = "train_reference"
     train_approximate = "train_approximate"
     temper_approximate = "temper_approximate"
+
+
+class ProblemSchema(str, enum.Enum):
+    regression = "regression"
+    toy_curves = "toy_curves"

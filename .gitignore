@@ -15,6 +15,7 @@ __pycache__
 /**/**/**/*.yaml
 /**/**/**/**/*.yaml
 /**/**/**/**/**/*.yaml
+/**/**/configs
 
 # Shell scripts
 *.sh
@@ -23,6 +24,7 @@ __pycache__
 /**/**/**/*.sh
 /**/**/**/**/*.sh
 /**/**/**/**/**/*.sh
+/**/**/shell_commands
 
 # csv files
 *.csv
@@ -31,6 +33,7 @@ __pycache__
 /**/**/**/*.csv
 /**/**/**/**/*.csv
 /**/**/**/**/**/*.csv
+/**/datasets
 
 # Model checkpoints
 *.ckpt

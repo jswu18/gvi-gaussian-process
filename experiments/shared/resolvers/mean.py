@@ -9,7 +9,8 @@ from src.means.base import MeanBase, MeanBaseParameters
 
 
 def mean_resolver(
-    mean_config: Union[FrozenDict, Dict]
+    mean_config: Union[FrozenDict, Dict],
+    data_dimension: int,
 ) -> Tuple[MeanBase, MeanBaseParameters]:
     assert "mean_schema" in mean_config, "Mean schema must be specified."
     assert "mean_kwargs" in mean_config, "Mean kwargs must be specified."
@@ -36,20 +37,31 @@ def mean_resolver(
         ), "Custom mean function kwargs must be specified."
         mean_function, mean_function_parameters = nn_function_resolver(
             nn_function_kwargs=mean_kwargs["nn_function_kwargs"],
+            data_dimension=data_dimension,
         )
-        assert (
-            "input_shape" in mean_kwargs["nn_function_kwargs"]
-        ), "Input shape must be specified."
         assert (
             "number_output_dimensions" in mean_kwargs
         ), "Number of output dimensions must be specified."
+        if "input_shape" in mean_kwargs["nn_function_kwargs"]:
+
+            def preprocess_function(x):
+                return x.reshape(
+                    -1,
+                    *mean_kwargs["nn_function_kwargs"]["input_shape"],
+                )
+
+        else:
+
+            def preprocess_function(x):
+                return x.reshape(
+                    -1,
+                    data_dimension,
+                )
+
         mean = CustomMean(
             mean_function=mean_function,
             number_output_dimensions=mean_kwargs["number_output_dimensions"],
-            preprocess_function=lambda x: x.reshape(
-                -1,
-                *mean_kwargs["nn_function_kwargs"]["input_shape"],
-            ),
+            preprocess_function=preprocess_function,
         )
         mean_parameters = mean.generate_parameters(
             {

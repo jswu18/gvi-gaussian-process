@@ -56,10 +56,11 @@ class Trainer:
         for epoch in tqdm(
             range(trainer_settings.number_of_epochs), disable=disable_tqdm
         ):
-            if epoch % self.save_checkpoint_frequency == 0:
-                parameters.save(
-                    path=os.path.join(self.checkpoint_path, f"epoch-{epoch}.ckpt"),
-                )
+            if self.save_checkpoint_frequency:
+                if epoch % self.save_checkpoint_frequency == 0:
+                    parameters.save(
+                        path=os.path.join(self.checkpoint_path, f"epoch-{epoch}.ckpt"),
+                    )
             key, subkey = jax.random.split(key)
             batch_generator = generate_batch(
                 key=subkey,

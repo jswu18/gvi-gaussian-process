@@ -1,14 +1,22 @@
+import argparse
 import os
 import shutil
 
 import jax.numpy as jnp
 import pandas as pd
 
-from experiments.shared.schemas import Actions
+from experiments.shared.schemas import ActionSchema, ProblemSchema
+
+parser = argparse.ArgumentParser(
+    description="Main script for experiment config generation."
+)
+parser.add_argument(
+    "--problem", choices=[ProblemSchema[a].value for a in ProblemSchema]
+)
 
 
 def generate_shell_commands(
-    action: Actions,
+    action: ActionSchema,
     repository_path: str,
     main_path: str,
     config_path: str,
@@ -36,40 +44,40 @@ def generate_shell_commands(
 
 
 if __name__ == "__main__":
-    problem_type = "regression"
-    dataset_name = "boston"
-    main_path = f"experiments/{problem_type}/{dataset_name}/main.py"
-    config_path = f"experiments/{problem_type}/{dataset_name}/configs"
-    save_path = f"experiments/{problem_type}/{dataset_name}/shell_commands"
+    args = parser.parse_args()
+
+    main_path = f"experiments/{args.problem}/main.py"
+    config_path = f"experiments/{args.problem}/configs"
+    save_path = f"experiments/{args.problem}/shell_commands"
     generate_shell_commands(
-        action=Actions.build_data,
+        action=ActionSchema.build_data,
         repository_path=os.getcwd(),
         main_path=main_path,
         config_path=config_path,
         save_path=save_path,
-        chunk_size=1000,
+        chunk_size=100,
     )
     generate_shell_commands(
-        action=Actions.train_reference,
+        action=ActionSchema.train_reference,
         repository_path=os.getcwd(),
         main_path=main_path,
         config_path=config_path,
         save_path=save_path,
-        chunk_size=1000,
+        chunk_size=50,
     )
     generate_shell_commands(
-        action=Actions.train_approximate,
+        action=ActionSchema.train_approximate,
         repository_path=os.getcwd(),
         main_path=main_path,
         config_path=config_path,
         save_path=save_path,
-        chunk_size=1000,
+        chunk_size=50,
     )
     generate_shell_commands(
-        action=Actions.temper_approximate,
+        action=ActionSchema.temper_approximate,
         repository_path=os.getcwd(),
         main_path=main_path,
         config_path=config_path,
         save_path=save_path,
-        chunk_size=1000,
+        chunk_size=500,
     )

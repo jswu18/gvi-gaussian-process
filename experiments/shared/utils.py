@@ -3,7 +3,7 @@ import os
 from jax import numpy as jnp
 
 from experiments.shared.data import Data
-from experiments.shared.schemas import Actions
+from experiments.shared.schemas import ActionSchema
 from src.inducing_points_selection import InducingPointsSelectorBase
 from src.kernels.base import KernelBase, KernelBaseParameters
 from src.utils.custom_types import PRNGKey
@@ -31,7 +31,7 @@ def calculate_inducing_points(
     )
 
 
-def construct_path(output_path: str, experiment_name: str, action: Actions) -> str:
+def construct_path(output_path: str, experiment_name: str, action: ActionSchema) -> str:
     return os.path.join(
         output_path,
         action,

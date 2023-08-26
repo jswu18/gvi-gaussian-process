@@ -57,11 +57,14 @@ from src.kernels.standard import ARDKernel, ARDKernelParameters
 def resolve_existing_kernel(
     config_path: str,
     parameter_path: str,
+    data_dimension: int,
 ) -> Tuple[KernelBase, KernelBaseParameters]:
     with open(config_path, "r") as file:
         loaded_kernel_config = yaml.safe_load(file)
 
-    kernel, _ = kernel_resolver(loaded_kernel_config["kernel"])
+    kernel, _ = kernel_resolver(
+        kernel_config=loaded_kernel_config["kernel"], data_dimension=data_dimension
+    )
     orbax_checkpointer = orbax.checkpoint.PyTreeCheckpointer()
     ckpt = orbax_checkpointer.restore(parameter_path)
     kernel_parameters = kernel.Parameters.construct(**ckpt["kernel"])
@@ -104,14 +107,10 @@ def _resolve_polynomial_kernel(
 
 
 def _resolve_ard_kernel(
-    kernel_kwargs_config: Union[FrozenDict, Dict],
-    kernel_parameters_config: Union[FrozenDict, Dict],
+    kernel_parameters_config: Union[FrozenDict, Dict], data_dimension: int
 ) -> Tuple[ARDKernel, ARDKernelParameters]:
-    assert (
-        "number_of_dimensions" in kernel_kwargs_config
-    ), "Number of dimensions for input must be specified."
     kernel = ARDKernel(
-        number_of_dimensions=kernel_kwargs_config["number_of_dimensions"],
+        number_of_dimensions=data_dimension,
     )
 
     assert "scaling" in kernel_parameters_config, "Scaling must be specified."
@@ -120,6 +119,21 @@ def _resolve_ard_kernel(
         kernel_parameters_config["lengthscales"] = jnp.array(
             kernel_parameters_config["lengthscales"]
         )
+        # default to using first lengthscale for all dimensions
+        if len(jnp.array(kernel_parameters_config["lengthscales"])) != data_dimension:
+            kernel_parameters_config["lengthscales"] = (
+                jnp.ones(data_dimension) * kernel_parameters_config["lengthscales"][0]
+            )
+
+    # default to setting all lengthscales to the same value
+    if (
+        isinstance(kernel_parameters_config["lengthscales"], float)
+        and data_dimension > 1
+    ):
+        kernel_parameters_config["lengthscales"] = (
+            jnp.ones(data_dimension) * kernel_parameters_config["lengthscales"]
+        )
+
     kernel_parameters = kernel.generate_parameters(
         {
             "log_scaling": jnp.log(kernel_parameters_config["scaling"]),
@@ -131,17 +145,31 @@ def _resolve_ard_kernel(
 
 def _resolve_nngp_kernel(
     kernel_kwargs_config: Union[FrozenDict, Dict],
+    data_dimension: int,
 ) -> Tuple[CustomKernel, CustomKernelParameters]:
     kernel_function, kernel_function_parameters = nngp_kernel_function_resolver(
         nngp_kernel_function_kwargs=kernel_kwargs_config,
     )
-    assert "input_shape" in kernel_kwargs_config, "Input shape must be specified."
+    # assert "input_shape" in kernel_kwargs_config, "Input shape must be specified."
+    if "input_shape" in kernel_kwargs_config:
+
+        def preprocess_function(x):
+            return x.reshape(
+                -1,
+                *kernel_kwargs_config["input_shape"],
+            )
+
+    else:
+
+        def preprocess_function(x):
+            return x.reshape(
+                -1,
+                data_dimension,
+            )
+
     kernel = CustomKernel(
         kernel_function=kernel_function,
-        preprocess_function=lambda x: x.reshape(
-            -1,
-            *kernel_kwargs_config["input_shape"],
-        ),
+        preprocess_function=preprocess_function,
     )
     kernel_parameters = kernel.generate_parameters(
         {"custom": kernel_function_parameters}
@@ -151,6 +179,7 @@ def _resolve_nngp_kernel(
 
 def _resolve_custom_mapping_kernel(
     kernel_kwargs_config: Union[FrozenDict, Dict],
+    data_dimension: int,
 ) -> Tuple[CustomMappingKernel, CustomMappingKernelParameters]:
     assert "base_kernel" in kernel_kwargs_config, "Base kernel must be specified."
     assert (
@@ -159,12 +188,14 @@ def _resolve_custom_mapping_kernel(
 
     base_kernel, base_kernel_parameters = kernel_resolver(
         kernel_config=kernel_kwargs_config["base_kernel"],
+        data_dimension=data_dimension,
     )
     assert isinstance(
         base_kernel, NonStationaryKernelBase
     ), "Base kernel must be non-stationary."
     feature_mapping, feature_mapping_parameters = nn_function_resolver(
         nn_function_kwargs=kernel_kwargs_config["nn_function_kwargs"],
+        data_dimension=data_dimension,
     )
     kernel = CustomMappingKernel(
         base_kernel=base_kernel,
@@ -181,6 +212,7 @@ def _resolve_custom_mapping_kernel(
 
 def _resolve_sparse_posterior_kernel(
     kernel_kwargs_config: Union[FrozenDict, Dict],
+    data_dimension: int,
     reference_kernel: Optional[KernelBase] = None,
     reference_kernel_parameters: Optional[KernelBaseParameters] = None,
 ) -> Tuple[SparsePosteriorKernel, SparsePosteriorKernelParameters]:
@@ -197,6 +229,7 @@ def _resolve_sparse_posterior_kernel(
         assert "base_kernel" in kernel_kwargs_config, "Base kernel must be specified."
         base_kernel, base_kernel_parameters = kernel_resolver(
             kernel_config=kernel_kwargs_config["base_kernel"],
+            data_dimension=data_dimension,
         )
     else:
         base_kernel = reference_kernel
@@ -217,6 +250,7 @@ def _resolve_sparse_posterior_kernel(
 
 def _resolve_fixed_sparse_posterior_kernel(
     kernel_kwargs_config: Union[FrozenDict, Dict],
+    data_dimension: int,
     reference_kernel: Optional[KernelBase] = None,
     reference_kernel_parameters: Optional[KernelBaseParameters] = None,
 ) -> Tuple[FixedSparsePosteriorKernel, FixedSparsePosteriorKernelParameters]:
@@ -235,6 +269,7 @@ def _resolve_fixed_sparse_posterior_kernel(
         ), "Reference kernel must be specified."
         reference_kernel, reference_kernel_parameters = kernel_resolver(
             kernel_config=kernel_kwargs_config["base_kernel"],
+            data_dimension=data_dimension,
         )
     if "base_kernel" not in kernel_kwargs_config:
         base_kernel = reference_kernel
@@ -243,6 +278,7 @@ def _resolve_fixed_sparse_posterior_kernel(
         assert "base_kernel" in kernel_kwargs_config, "Base kernel must be specified."
         base_kernel, base_kernel_parameters = kernel_resolver(
             kernel_config=kernel_kwargs_config["base_kernel"],
+            data_dimension=data_dimension,
         )
 
     kernel = FixedSparsePosteriorKernel(
@@ -306,10 +342,10 @@ def _resolve_diagonal_svgp_kernel(
             "is_diagonal_regularisation_absolute_scale"
         ],
     )
-    el_matrix_log_diagonal = kernel.initialise_diagonal_parameters()
+    log_el_matrix_diagonal = kernel.initialise_diagonal_parameters()
     kernel_parameters = kernel.generate_parameters(
         {
-            "el_matrix_log_diagonal": el_matrix_log_diagonal,
+            "log_el_matrix_diagonal": log_el_matrix_diagonal,
         }
     )
     return kernel, kernel_parameters
@@ -344,6 +380,7 @@ def _resolve_kernelised_svgp_kernel(
     kernel_kwargs_config: Union[FrozenDict, Dict],
     reference_kernel: KernelBase,
     reference_kernel_parameters: KernelBaseParameters,
+    data_dimension: int,
 ) -> Tuple[KernelisedSVGPKernel, KernelisedSVGPKernelParameters]:
     if "base_kernel" not in kernel_kwargs_config:
         base_kernel = reference_kernel
@@ -351,6 +388,7 @@ def _resolve_kernelised_svgp_kernel(
     else:
         base_kernel, base_kernel_parameters = kernel_resolver(
             kernel_config=kernel_kwargs_config["base_kernel"],
+            data_dimension=data_dimension,
         )
     kernel = KernelisedSVGPKernel(
         base_kernel=base_kernel,
@@ -375,6 +413,7 @@ def _resolve_kernelised_svgp_kernel(
 def _resolve_extended_svgp_kernel(
     kernel_schema: KernelSchema,
     kernel_kwargs_config: Union[FrozenDict, Dict],
+    data_dimension: int,
     reference_kernel: Optional[KernelBase],
     reference_kernel_parameters: Optional[KernelBaseParameters],
 ) -> Tuple[ExtendedSVGPBaseKernel, ExtendedSVGPBaseKernelParameters]:
@@ -384,6 +423,7 @@ def _resolve_extended_svgp_kernel(
         ), "Reference kernel must be specified."
         reference_kernel, reference_kernel_parameters = kernel_resolver(
             kernel_config=kernel_kwargs_config["reference_kernel"],
+            data_dimension=data_dimension,
         )
     assert (
         "observation_noise" in kernel_kwargs_config
@@ -423,6 +463,7 @@ def _resolve_extended_svgp_kernel(
             kernel_kwargs_config=kernel_kwargs_config,
             reference_kernel=reference_kernel,
             reference_kernel_parameters=reference_kernel_parameters,
+            data_dimension=data_dimension,
         )
     else:
         raise NotImplementedError(f"Kernel schema {kernel_schema} is not implemented.")
@@ -430,6 +471,7 @@ def _resolve_extended_svgp_kernel(
 
 def kernel_resolver(
     kernel_config: Union[FrozenDict, Dict],
+    data_dimension: int,
     reference_kernel: Optional[KernelBase] = None,
     reference_kernel_parameters: Optional[KernelBaseParameters] = None,
 ) -> Tuple[KernelBase, KernelBaseParameters]:
@@ -452,28 +494,32 @@ def kernel_resolver(
         )
     elif kernel_schema == KernelSchema.ard:
         return _resolve_ard_kernel(
-            kernel_kwargs_config=kernel_kwargs_config,
             kernel_parameters_config=kernel_parameters_config,
+            data_dimension=data_dimension,
         )
     elif kernel_schema == KernelSchema.nngp:
         return _resolve_nngp_kernel(
             kernel_kwargs_config=kernel_kwargs_config,
+            data_dimension=data_dimension,
         )
     elif kernel_schema == KernelSchema.custom_mapping:
         return _resolve_custom_mapping_kernel(
             kernel_kwargs_config=kernel_kwargs_config,
+            data_dimension=data_dimension,
         )
     elif kernel_schema == KernelSchema.sparse_posterior:
         return _resolve_sparse_posterior_kernel(
             kernel_kwargs_config=kernel_kwargs_config,
             reference_kernel=reference_kernel,
             reference_kernel_parameters=reference_kernel_parameters,
+            data_dimension=data_dimension,
         )
     elif kernel_schema == KernelSchema.fixed_sparse_posterior:
         return _resolve_fixed_sparse_posterior_kernel(
             kernel_kwargs_config=kernel_kwargs_config,
             reference_kernel=reference_kernel,
             reference_kernel_parameters=reference_kernel_parameters,
+            data_dimension=data_dimension,
         )
     elif kernel_schema in [
         KernelSchema.decomposed_svgp,
@@ -486,6 +532,7 @@ def kernel_resolver(
             kernel_kwargs_config=kernel_kwargs_config,
             reference_kernel=reference_kernel,
             reference_kernel_parameters=reference_kernel_parameters,
+            data_dimension=data_dimension,
         )
     else:
         raise NotImplementedError(f"Kernel schema {kernel_schema} not implemented.")

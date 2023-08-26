@@ -1,3 +1,4 @@
+import argparse
 import os
 import shutil
 import uuid
@@ -5,6 +6,15 @@ from typing import Dict, Optional
 
 import pandas as pd
 import yaml
+
+from experiments.shared.schemas import ProblemSchema
+
+parser = argparse.ArgumentParser(
+    description="Main script for experiment config generation."
+)
+parser.add_argument(
+    "--problem", choices=[ProblemSchema[a].value for a in ProblemSchema]
+)
 
 
 def merge_dictionaries(dict1: Dict, dict2: Dict) -> Dict:
@@ -94,10 +104,10 @@ def generate_configs(
 
 
 if __name__ == "__main__":
-    problem_type = "regression"
-    dataset_name = "boston"
-    base_config_path = f"experiments/{problem_type}/{dataset_name}/base_configs"
-    output_config_path = f"experiments/{problem_type}/{dataset_name}/configs"
+    args = parser.parse_args()
+
+    base_config_path = f"experiments/{args.problem}/base_configs"
+    output_config_path = f"experiments/{args.problem}/configs"
     generate_configs(
         config_path=os.path.join(base_config_path, "build_data"),
         output_path=os.path.join(output_config_path, "build_data"),

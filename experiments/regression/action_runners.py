@@ -1,27 +1,26 @@
 import os
-from typing import Dict, List, Tuple
+from typing import Dict, Tuple
 
 import jax
 import pandas as pd
 import yaml
 from jax import numpy as jnp
-from jax import scipy as jsp
 
+from experiments.regression.dataset_constants import DATASET_SCHEMA_TO_DATASET
+from experiments.regression.metrics import calculate_metrics
 from experiments.regression.trainers import meta_train_reference_gp
 from experiments.shared.data import Data, ExperimentData, set_up_experiment
 from experiments.shared.plotters import plot_losses, plot_two_losses
 from experiments.shared.resolvers import (
-    empirical_risk_resolver,
     inducing_points_selector_resolver,
     kernel_resolver,
     mean_resolver,
     trainer_settings_resolver,
 )
 from experiments.shared.resolvers.kernel import resolve_existing_kernel
-from experiments.shared.schemas import Actions, EmpiricalRiskSchema
+from experiments.shared.schemas import ActionSchema, EmpiricalRiskSchema
 from experiments.shared.trainers import train_approximate_gp, train_tempered_gp
 from experiments.shared.utils import construct_path
-from src.distributions import Gaussian
 from src.gps import (
     ApproximateGPRegression,
     ApproximateGPRegressionParameters,
@@ -32,15 +31,28 @@ from src.kernels.base import KernelBase, KernelBaseParameters
 from src.means import ConstantMean
 
 
+def _load_config_and_config_path(
+    config_directory_parent_path: str, action: ActionSchema, name: str
+) -> Tuple[Dict, str]:
+    config_path = os.path.join(
+        config_directory_parent_path,
+        "configs",
+        action,
+        f"{name}.yaml",
+    )
+    with open(config_path, "r") as reference_config_file:
+        config = yaml.safe_load(reference_config_file)
+    return config, config_path
+
+
 def build_data_set(
     config: Dict,
-    data_csv_path: str,
     output_path: str,
     experiment_name: str,
-    dataset_name: str,
     rescale_y: bool,
 ) -> None:
     assert "seed" in config, "Seed must be specified for data set generation"
+    assert "dataset" in config, "Dataset must be specified for data set generation"
     assert (
         "train_data_percentage" in config
     ), "Train data percentage must be specified for data set generation"
@@ -51,19 +63,22 @@ def build_data_set(
         "validation_data_percentage" in config
     ), "Validation data percentage must be specified for data set generation"
 
+    data_csv_path = f"experiments/regression/datasets/{config['dataset']}.csv"
     df = pd.read_csv(data_csv_path)
+    df.columns = [c.lower() for c in df.columns]
+    df.columns = [c.replace(" ", "") for c in df.columns]
 
-    # assume last column is regression target
-    x = jnp.array(df[df.columns[:-1]].to_numpy())
-    y = jnp.array(df[df.columns[-1]].to_numpy())
+    dataset_metadata = DATASET_SCHEMA_TO_DATASET[config["dataset"]]
+    x = jnp.array(df[dataset_metadata.input_column_names].to_numpy())
+    y = jnp.array(df[dataset_metadata.output_column_name].to_numpy())
 
     data_path = construct_path(
         output_path=output_path,
         experiment_name=experiment_name,
-        action=Actions.build_data,
+        action=ActionSchema.build_data,
     )
     experiment_data = set_up_experiment(
-        name=dataset_name,
+        name=config["dataset"],
         key=jax.random.PRNGKey(config["seed"]),
         x=x,
         y=y,
@@ -76,7 +91,10 @@ def build_data_set(
 
 
 def train_reference(
-    config: Dict, output_path: str, experiment_name: str, dataset_name: str
+    config: Dict,
+    output_path: str,
+    experiment_name: str,
+    config_directory_parent_path: str,
 ) -> None:
     assert "data_name" in config, "Data name must be specified for reference training"
     assert (
@@ -108,22 +126,27 @@ def train_reference(
         "save_checkpoint_frequency" in config
     ), "Save checkpoint frequency must be specified for reference training"
     assert "kernel" in config, "Kernel must be specified for reference training"
+    build_data_config, _ = _load_config_and_config_path(
+        config_directory_parent_path=config_directory_parent_path,
+        action=ActionSchema.build_data,
+        name=config["data_name"],
+    )
     save_path = construct_path(
         output_path=output_path,
         experiment_name=experiment_name,
-        action=Actions.train_reference,
+        action=ActionSchema.train_reference,
     )
     data_path = construct_path(
         output_path=output_path,
         experiment_name=config["data_name"],
-        action=Actions.build_data,
+        action=ActionSchema.build_data,
     )
     trainer_settings = trainer_settings_resolver(
         trainer_settings_config=config["trainer_settings"],
     )
     experiment_data = ExperimentData.load(
         path=data_path,
-        name=dataset_name,
+        name=build_data_config["dataset"],
     )
     number_of_inducing_points = int(
         config["inducing_points"]["inducing_points_factor"]
@@ -138,7 +161,7 @@ def train_reference(
         ],
     )
     kernel, kernel_parameters = kernel_resolver(
-        kernel_config=config["kernel"],
+        kernel_config=config["kernel"], data_dimension=experiment_data.train.x.shape[1]
     )
     (
         reference_gp,
@@ -175,6 +198,23 @@ def train_reference(
             experiment_data.name,
         ),
     )
+    df_metrics = calculate_metrics(
+        experiment_data=experiment_data,
+        gp=reference_gp,
+        gp_parameters=reference_gp_parameters,
+        action=ActionSchema.train_reference,
+        experiment_name=experiment_name,
+        dataset_name=build_data_config["dataset"],
+    )
+    if not os.path.exists(os.path.join(save_path, experiment_data.name)):
+        os.makedirs(os.path.join(save_path, experiment_data.name))
+    df_metrics.to_csv(
+        os.path.join(
+            save_path,
+            experiment_data.name,
+            "metrics.csv",
+        )
+    )
     plot_losses(
         losses=[
             [x["empirical-risk"] for x in reference_post_epoch_history]
@@ -182,7 +222,7 @@ def train_reference(
         ],
         labels=[f"iteration-{i}" for i in range(len(reference_post_epoch_histories))],
         loss_name=config["empirical_risk_schema"],
-        title=f"Reference GP Empirical Risk: {dataset_name}",
+        title=f"Reference GP Empirical Risk: {build_data_config['dataset']}",
         save_path=os.path.join(
             save_path,
             experiment_data.name,
@@ -195,7 +235,6 @@ def train_approximate(
     config: Dict,
     output_path: str,
     experiment_name: str,
-    dataset_name: str,
     config_directory_parent_path: str,
 ) -> None:
     assert (
@@ -221,32 +260,34 @@ def train_approximate(
     reference_path = construct_path(
         output_path=output_path,
         experiment_name=config["reference_name"],
-        action=Actions.train_reference,
+        action=ActionSchema.train_reference,
     )
     save_path = construct_path(
         output_path=output_path,
         experiment_name=experiment_name,
-        action=Actions.train_approximate,
+        action=ActionSchema.train_approximate,
     )
     trainer_settings = trainer_settings_resolver(
         trainer_settings_config=config["trainer_settings"],
     )
-    reference_config_path = os.path.join(
-        config_directory_parent_path,
-        "configs",
-        Actions.train_reference,
-        f"{config['reference_name']}.yaml",
+    reference_config, reference_config_path = _load_config_and_config_path(
+        config_directory_parent_path=config_directory_parent_path,
+        action=ActionSchema.train_reference,
+        name=config["reference_name"],
     )
-    with open(reference_config_path, "r") as reference_config_file:
-        reference_config = yaml.safe_load(reference_config_file)
+    build_data_config, _ = _load_config_and_config_path(
+        config_directory_parent_path=config_directory_parent_path,
+        action=ActionSchema.build_data,
+        name=reference_config["data_name"],
+    )
     data_path = construct_path(
         output_path=output_path,
         experiment_name=reference_config["data_name"],
-        action=Actions.build_data,
+        action=ActionSchema.build_data,
     )
     experiment_data = ExperimentData.load(
         path=data_path,
-        name=dataset_name,
+        name=build_data_config["dataset"],
     )
     inducing_data = Data.load(
         path=os.path.join(
@@ -261,11 +302,12 @@ def train_approximate(
             construct_path(
                 output_path=output_path,
                 experiment_name=config["reference_name"],
-                action=Actions.train_reference,
+                action=ActionSchema.train_reference,
             ),
             experiment_data.name,
             "parameters.ckpt",
         ),
+        data_dimension=experiment_data.train.x.shape[1],
     )
     approximate_gp, initial_approximate_gp_parameters = build_approximate_gp(
         config=config,
@@ -291,7 +333,7 @@ def train_approximate(
             ),
         ).dict()
     )
-    (approximate_gp_parameters, approximate_post_epoch_history,) = train_approximate_gp(
+    approximate_gp_parameters, approximate_post_epoch_history = train_approximate_gp(
         data=experiment_data.train,
         empirical_risk_schema=config["empirical_risk_schema"],
         regularisation_config=config["regularisation"],
@@ -314,6 +356,23 @@ def train_approximate(
             "parameters.ckpt",
         ),
     )
+    df_metrics = calculate_metrics(
+        experiment_data=experiment_data,
+        gp=approximate_gp,
+        gp_parameters=approximate_gp_parameters,
+        action=ActionSchema.train_approximate,
+        experiment_name=experiment_name,
+        dataset_name=build_data_config["dataset"],
+    )
+    if not os.path.exists(os.path.join(save_path, experiment_data.name)):
+        os.makedirs(os.path.join(save_path, experiment_data.name))
+    df_metrics.to_csv(
+        os.path.join(
+            save_path,
+            experiment_data.name,
+            "metrics.csv",
+        )
+    )
     gvi_loss_configuration = "+".join(
         [
             config["empirical_risk_schema"],
@@ -327,7 +386,7 @@ def train_approximate(
         title=" ".join(
             [
                 f"Approximate GP Objective ({gvi_loss_configuration}):",
-                f"{dataset_name}",
+                f"{build_data_config['dataset']}",
             ]
         ),
         save_path=os.path.join(
@@ -344,7 +403,7 @@ def train_approximate(
         title=" ".join(
             [
                 f"Approximate GP Objective Breakdown ({gvi_loss_configuration}):",
-                f"{dataset_name}",
+                f"{build_data_config['dataset']}",
             ]
         ),
         save_path=os.path.join(
@@ -367,11 +426,13 @@ def build_approximate_gp(
 
     mean, mean_parameters = mean_resolver(
         mean_config=config["mean"],
+        data_dimension=training_points.shape[1],
     )
     kernel, kernel_parameters = kernel_resolver(
         kernel_config=config["kernel"],
         reference_kernel=reference_kernel,
         reference_kernel_parameters=reference_kernel_parameters,
+        data_dimension=training_points.shape[1],
     )
     gp = ApproximateGPRegression(
         mean=mean,
@@ -390,7 +451,6 @@ def temper_approximate(
     config: Dict,
     output_path: str,
     experiment_name: str,
-    dataset_name: str,
     config_directory_parent_path: str,
 ) -> None:
     assert "approximate_name" in config, "Approximate name must be specified"
@@ -403,7 +463,7 @@ def temper_approximate(
     save_path = construct_path(
         output_path=output_path,
         experiment_name=experiment_name,
-        action=Actions.temper_approximate,
+        action=ActionSchema.temper_approximate,
     )
     trainer_settings = trainer_settings_resolver(
         trainer_settings_config=config["trainer_settings"],
@@ -411,48 +471,36 @@ def temper_approximate(
     approximate_path = construct_path(
         output_path=output_path,
         experiment_name=config["approximate_name"],
-        action=Actions.train_approximate,
+        action=ActionSchema.train_approximate,
     )
-    approximate_config_path = os.path.join(
-        config_directory_parent_path,
-        "configs",
-        Actions.train_approximate,
-        f"{config['approximate_name']}.yaml",
+    approximate_config, approximate_config_path = _load_config_and_config_path(
+        config_directory_parent_path=config_directory_parent_path,
+        action=ActionSchema.train_approximate,
+        name=config["approximate_name"],
     )
-    with open(approximate_config_path, "r") as approximate_config_file:
-        approximate_config = yaml.safe_load(approximate_config_file)
-    reference_config_path = os.path.join(
-        config_directory_parent_path,
-        "configs",
-        Actions.train_reference,
-        f"{approximate_config['reference_name']}.yaml",
+    reference_config, reference_config_path = _load_config_and_config_path(
+        config_directory_parent_path=config_directory_parent_path,
+        action=ActionSchema.train_reference,
+        name=approximate_config["reference_name"],
     )
-    with open(reference_config_path, "r") as reference_config_file:
-        reference_config = yaml.safe_load(reference_config_file)
+    build_data_config, _ = _load_config_and_config_path(
+        config_directory_parent_path=config_directory_parent_path,
+        action=ActionSchema.build_data,
+        name=reference_config["data_name"],
+    )
     data_path = construct_path(
         output_path=output_path,
         experiment_name=reference_config["data_name"],
-        action=Actions.build_data,
+        action=ActionSchema.build_data,
     )
     experiment_data = ExperimentData.load(
         path=data_path,
-        name=dataset_name,
+        name=build_data_config["dataset"],
     )
-    approximate_config_path = os.path.join(
-        os.path.join(
-            config_directory_parent_path,
-            "configs",
-            Actions.train_approximate,
-            f"{config['approximate_name']}.yaml",
-        )
-    )
-
-    with open(approximate_config_path, "r") as approximate_config_file:
-        approximate_config = yaml.safe_load(approximate_config_file)
     reference_path = construct_path(
         output_path=output_path,
         experiment_name=approximate_config["reference_name"],
-        action=Actions.train_reference,
+        action=ActionSchema.train_reference,
     )
     inducing_data = Data.load(
         path=os.path.join(
@@ -467,11 +515,12 @@ def temper_approximate(
             construct_path(
                 output_path=output_path,
                 experiment_name=approximate_config["reference_name"],
-                action=Actions.train_reference,
+                action=ActionSchema.train_reference,
             ),
             experiment_data.name,
             "parameters.ckpt",
         ),
+        data_dimension=experiment_data.train.x.shape[1],
     )
     approximate_gp, _ = build_approximate_gp(
         config=approximate_config,
@@ -516,6 +565,23 @@ def temper_approximate(
             "checkpoints",
         ),
     )
+    df_metrics = calculate_metrics(
+        experiment_data=experiment_data,
+        gp=tempered_gp,
+        gp_parameters=tempered_gp_parameters,
+        action=ActionSchema.temper_approximate,
+        experiment_name=experiment_name,
+        dataset_name=build_data_config["dataset"],
+    )
+    if not os.path.exists(os.path.join(save_path, experiment_data.name)):
+        os.makedirs(os.path.join(save_path, experiment_data.name))
+    df_metrics.to_csv(
+        os.path.join(
+            save_path,
+            experiment_data.name,
+            "metrics.csv",
+        )
+    )
     approximate_gp_gvi_loss_configuration = "+".join(
         [
             approximate_config["empirical_risk_schema"],
@@ -529,7 +595,7 @@ def temper_approximate(
         title=" ".join(
             [
                 f"Tempered Approximate GP Empirical Risk ({approximate_gp_gvi_loss_configuration}):",
-                f"{dataset_name}",
+                f"{build_data_config['dataset']}",
             ]
         ),
         save_path=os.path.join(
@@ -538,20 +604,3 @@ def temper_approximate(
             "loss.png",
         ),
     )
-    gaussian = Gaussian(
-        **tempered_gp.predict_probability(
-            tempered_gp_parameters, x=experiment_data.test.x
-        ).dict()
-    )
-    out = []
-    for loc, variance, y in zip(
-        gaussian.mean, gaussian.covariance, experiment_data.test.y
-    ):
-        out.append(
-            -jsp.stats.norm.logpdf(
-                y,
-                loc=float(loc),
-                scale=float(jnp.sqrt(variance)),
-            )
-        )
-    print(jnp.mean(jnp.array(out)) + jnp.log(experiment_data.y_std))

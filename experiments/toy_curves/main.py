@@ -6,11 +6,10 @@ import jax
 import jax.numpy as jnp
 import yaml
 
+from experiments.regression.action_runners import build_approximate_gp
 from experiments.regression.data import split_train_test_validation_data
 from experiments.regression.plotters import plot_data, plot_prediction
-from experiments.regression.toy_curves.curves import CURVE_FUNCTIONS
 from experiments.regression.trainers import meta_train_reference_gp
-from experiments.regression.utils import build_approximate_gp
 from experiments.shared.data import Data, ExperimentData
 from experiments.shared.plotters import plot_losses, plot_two_losses
 from experiments.shared.resolvers import (
@@ -19,15 +18,16 @@ from experiments.shared.resolvers import (
     trainer_settings_resolver,
 )
 from experiments.shared.resolvers.kernel import resolve_existing_kernel
-from experiments.shared.schemas import Actions, EmpiricalRiskSchema
+from experiments.shared.schemas import ActionSchema, EmpiricalRiskSchema
 from experiments.shared.trainers import train_approximate_gp, train_tempered_gp
 from experiments.shared.utils import construct_path
+from experiments.toy_curves.curves import CURVE_FUNCTIONS
 from src.gps import GPRegression
 from src.kernels import TemperedKernel
 from src.means import ConstantMean
 
 parser = argparse.ArgumentParser(description="Main script for toy curves experiments.")
-parser.add_argument("--action", choices=[Actions[a].value for a in Actions])
+parser.add_argument("--action", choices=[ActionSchema[a].value for a in ActionSchema])
 parser.add_argument("--config_path", type=str)
 
 
@@ -47,7 +47,7 @@ def build_data_set(config: Dict, output_path: str, experiment_name: str) -> None
     data_path = construct_path(
         output_path=output_path,
         experiment_name=experiment_name,
-        action=Actions.build_data,
+        action=ActionSchema.build_data,
     )
     for curve_function in CURVE_FUNCTIONS:
         y = curve_function(
@@ -127,12 +127,12 @@ def train_reference(config: Dict, output_path: str, experiment_name: str) -> Non
     save_path = construct_path(
         output_path=output_path,
         experiment_name=experiment_name,
-        action=Actions.train_reference,
+        action=ActionSchema.train_reference,
     )
     data_path = construct_path(
         output_path=output_path,
         experiment_name=config["data_name"],
-        action=Actions.build_data,
+        action=ActionSchema.build_data,
     )
     trainer_settings = trainer_settings_resolver(
         trainer_settings_config=config["trainer_settings"],
@@ -156,6 +156,7 @@ def train_reference(config: Dict, output_path: str, experiment_name: str) -> Non
         )
         kernel, kernel_parameters = kernel_resolver(
             kernel_config=config["kernel"],
+            data_dimension=experiment_data.train.x.shape[1],
         )
         (
             reference_gp,
@@ -249,12 +250,12 @@ def train_approximate(config: Dict, output_path: str, experiment_name: str) -> N
     reference_path = construct_path(
         output_path=output_path,
         experiment_name=config["reference_name"],
-        action=Actions.train_reference,
+        action=ActionSchema.train_reference,
     )
     save_path = construct_path(
         output_path=output_path,
         experiment_name=experiment_name,
-        action=Actions.train_approximate,
+        action=ActionSchema.train_approximate,
     )
     trainer_settings = trainer_settings_resolver(
         trainer_settings_config=config["trainer_settings"],
@@ -263,7 +264,7 @@ def train_approximate(config: Dict, output_path: str, experiment_name: str) -> N
     reference_config_path = os.path.join(
         config_directory_parent_path,
         "configs",
-        Actions.train_reference,
+        ActionSchema.train_reference,
         f"{config['reference_name']}.yaml",
     )
     with open(reference_config_path, "r") as reference_config_file:
@@ -271,7 +272,7 @@ def train_approximate(config: Dict, output_path: str, experiment_name: str) -> N
     data_path = construct_path(
         output_path=output_path,
         experiment_name=reference_config["data_name"],
-        action=Actions.build_data,
+        action=ActionSchema.build_data,
     )
     for curve_function in CURVE_FUNCTIONS:
         experiment_data = ExperimentData.load(
@@ -291,7 +292,7 @@ def train_approximate(config: Dict, output_path: str, experiment_name: str) -> N
                 construct_path(
                     output_path=output_path,
                     experiment_name=config["reference_name"],
-                    action=Actions.train_reference,
+                    action=ActionSchema.train_reference,
                 ),
                 experiment_data.name,
                 "parameters.ckpt",
@@ -416,7 +417,7 @@ def temper_approximate(config: Dict, output_path: str, experiment_name: str) -> 
     save_path = construct_path(
         output_path=output_path,
         experiment_name=experiment_name,
-        action=Actions.temper_approximate,
+        action=ActionSchema.temper_approximate,
     )
     trainer_settings = trainer_settings_resolver(
         trainer_settings_config=config["trainer_settings"],
@@ -425,12 +426,12 @@ def temper_approximate(config: Dict, output_path: str, experiment_name: str) -> 
     approximate_path = construct_path(
         output_path=output_path,
         experiment_name=config["approximate_name"],
-        action=Actions.train_approximate,
+        action=ActionSchema.train_approximate,
     )
     approximate_config_path = os.path.join(
         config_directory_parent_path,
         "configs",
-        Actions.train_approximate,
+        ActionSchema.train_approximate,
         f"{config['approximate_name']}.yaml",
     )
     with open(approximate_config_path, "r") as approximate_config_file:
@@ -438,7 +439,7 @@ def temper_approximate(config: Dict, output_path: str, experiment_name: str) -> 
     reference_config_path = os.path.join(
         config_directory_parent_path,
         "configs",
-        Actions.train_reference,
+        ActionSchema.train_reference,
         f"{approximate_config['reference_name']}.yaml",
     )
     with open(reference_config_path, "r") as reference_config_file:
@@ -446,7 +447,7 @@ def temper_approximate(config: Dict, output_path: str, experiment_name: str) -> 
     data_path = construct_path(
         output_path=output_path,
         experiment_name=reference_config["data_name"],
-        action=Actions.build_data,
+        action=ActionSchema.build_data,
     )
     for curve_function in CURVE_FUNCTIONS:
         experiment_data = ExperimentData.load(
@@ -457,7 +458,7 @@ def temper_approximate(config: Dict, output_path: str, experiment_name: str) -> 
             os.path.join(
                 os.path.dirname(os.path.abspath(__file__)),
                 "configs",
-                Actions.train_approximate,
+                ActionSchema.train_approximate,
                 f"{config['approximate_name']}.yaml",
             )
         )
@@ -467,7 +468,7 @@ def temper_approximate(config: Dict, output_path: str, experiment_name: str) -> 
         reference_path = construct_path(
             output_path=output_path,
             experiment_name=approximate_config["reference_name"],
-            action=Actions.train_reference,
+            action=ActionSchema.train_reference,
         )
         inducing_data = Data.load(
             path=os.path.join(
@@ -482,7 +483,7 @@ def temper_approximate(config: Dict, output_path: str, experiment_name: str) -> 
                 construct_path(
                     output_path=output_path,
                     experiment_name=approximate_config["reference_name"],
-                    action=Actions.train_reference,
+                    action=ActionSchema.train_reference,
                 ),
                 experiment_data.name,
                 "parameters.ckpt",
@@ -588,19 +589,19 @@ if __name__ == "__main__":
     with open(args.config_path, "r") as file:
         loaded_config = yaml.safe_load(file)
 
-    if args.action == Actions.build_data.value:
+    if args.action == ActionSchema.build_data.value:
         build_data_set(
             config=loaded_config, output_path=OUTPUT_PATH, experiment_name=file_name
         )
-    elif args.action == Actions.train_reference.value:
+    elif args.action == ActionSchema.train_reference.value:
         train_reference(
             config=loaded_config, output_path=OUTPUT_PATH, experiment_name=file_name
         )
-    elif args.action == Actions.train_approximate.value:
+    elif args.action == ActionSchema.train_approximate.value:
         train_approximate(
             config=loaded_config, output_path=OUTPUT_PATH, experiment_name=file_name
         )
-    elif args.action == Actions.temper_approximate.value:
+    elif args.action == ActionSchema.temper_approximate.value:
         temper_approximate(
             config=loaded_config, output_path=OUTPUT_PATH, experiment_name=file_name
         )

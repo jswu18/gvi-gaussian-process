@@ -4,16 +4,16 @@ import os
 import jax
 import yaml
 
-from experiments.regression.utils import (
+from experiments.regression.action_runners import (
     build_data_set,
     temper_approximate,
     train_approximate,
     train_reference,
 )
-from experiments.shared.schemas import Actions
+from experiments.shared.schemas import ActionSchema
 
-parser = argparse.ArgumentParser(description="Main script for toy curves experiments.")
-parser.add_argument("--action", choices=[Actions[a].value for a in Actions])
+parser = argparse.ArgumentParser(description="Main script for regression experiments.")
+parser.add_argument("--action", choices=[ActionSchema[a].value for a in ActionSchema])
 parser.add_argument("--config_path", type=str)
 
 if __name__ == "__main__":
@@ -25,43 +25,37 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
     plt.subplots(figsize=(13, 6.5))
-    data_csv_path = "experiments/regression/boston/data/data.csv"
-    dataset_name = "boston"
     print(args.config_path)
     with open(args.config_path, "r") as file:
         loaded_config = yaml.safe_load(file)
 
-    if args.action == Actions.build_data.value:
+    if args.action == ActionSchema.build_data.value:
         build_data_set(
             config=loaded_config,
-            data_csv_path=data_csv_path,
             output_path=OUTPUT_PATH,
             experiment_name=file_name,
-            dataset_name=dataset_name,
             rescale_y=True,
         )
-    elif args.action == Actions.train_reference.value:
+    elif args.action == ActionSchema.train_reference.value:
         train_reference(
             config=loaded_config,
             output_path=OUTPUT_PATH,
             experiment_name=file_name,
-            dataset_name=dataset_name,
+            config_directory_parent_path=os.path.dirname(os.path.abspath(__file__)),
         )
-    elif args.action == Actions.train_approximate.value:
+    elif args.action == ActionSchema.train_approximate.value:
         train_approximate(
             config=loaded_config,
             output_path=OUTPUT_PATH,
             experiment_name=file_name,
-            dataset_name=dataset_name,
             config_directory_parent_path=os.path.dirname(os.path.abspath(__file__)),
         )
-    elif args.action == Actions.temper_approximate.value:
+    elif args.action == ActionSchema.temper_approximate.value:
         temper_approximate(
             config=loaded_config,
             output_path=OUTPUT_PATH,
             experiment_name=file_name,
             config_directory_parent_path=os.path.dirname(os.path.abspath(__file__)),
-            dataset_name=dataset_name,
         )
     else:
         raise ValueError(f"Invalid action {args.action}")
