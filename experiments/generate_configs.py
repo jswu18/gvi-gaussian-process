@@ -100,8 +100,8 @@ def generate_configs(
             yaml.dump(config, file)
         df_configs[i]["uuid"] = uuid_identifier
     df = pd.DataFrame(df_configs)
+    df.sort_values("uuid", inplace=True)
     df.set_index("uuid", inplace=True)
-    df.sort_values(list(df.columns), inplace=True)
     df.to_csv(f"{output_path}.csv")
 
 
