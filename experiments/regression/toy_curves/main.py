@@ -1,6 +1,6 @@
 import argparse
 import os
-from typing import Dict, Tuple
+from typing import Dict
 
 import jax
 import jax.numpy as jnp
@@ -10,37 +10,25 @@ from experiments.regression.data import split_train_test_validation_data
 from experiments.regression.plotters import plot_data, plot_prediction
 from experiments.regression.toy_curves.curves import CURVE_FUNCTIONS
 from experiments.regression.trainers import meta_train_reference_gp
+from experiments.regression.utils import build_approximate_gp
 from experiments.shared.data import Data, ExperimentData
 from experiments.shared.plotters import plot_losses, plot_two_losses
 from experiments.shared.resolvers import (
     inducing_points_selector_resolver,
     kernel_resolver,
-    mean_resolver,
     trainer_settings_resolver,
 )
 from experiments.shared.resolvers.kernel import resolve_existing_kernel
 from experiments.shared.schemas import Actions, EmpiricalRiskSchema
 from experiments.shared.trainers import train_approximate_gp, train_tempered_gp
-from src.gps import (
-    ApproximateGPRegression,
-    ApproximateGPRegressionParameters,
-    GPRegression,
-)
+from experiments.shared.utils import construct_path
+from src.gps import GPRegression
 from src.kernels import TemperedKernel
-from src.kernels.base import KernelBase, KernelBaseParameters
 from src.means import ConstantMean
 
 parser = argparse.ArgumentParser(description="Main script for toy curves experiments.")
 parser.add_argument("--action", choices=[Actions[a].value for a in Actions])
 parser.add_argument("--config_path", type=str)
-
-
-def construct_path(output_path: str, experiment_name: str, action: Actions) -> str:
-    return os.path.join(
-        output_path,
-        action,
-        experiment_name,
-    )
 
 
 def build_data_set(config: Dict, output_path: str, experiment_name: str) -> None:
@@ -237,37 +225,6 @@ def train_reference(config: Dict, output_path: str, experiment_name: str) -> Non
         )
 
 
-def _build_approximate_gp(
-    config: Dict,
-    inducing_points: jnp.ndarray,
-    training_points: jnp.ndarray,
-    reference_kernel: KernelBase,
-    reference_kernel_parameters: KernelBaseParameters,
-) -> Tuple[ApproximateGPRegression, ApproximateGPRegressionParameters]:
-    config["kernel"]["kernel_kwargs"]["inducing_points"] = inducing_points
-    config["kernel"]["kernel_kwargs"]["training_points"] = training_points
-
-    mean, mean_parameters = mean_resolver(
-        mean_config=config["mean"],
-    )
-    kernel, kernel_parameters = kernel_resolver(
-        kernel_config=config["kernel"],
-        reference_kernel=reference_kernel,
-        reference_kernel_parameters=reference_kernel_parameters,
-    )
-    gp = ApproximateGPRegression(
-        mean=mean,
-        kernel=kernel,
-    )
-    gp_parameters = gp.generate_parameters(
-        {
-            "mean": mean_parameters,
-            "kernel": kernel_parameters,
-        }
-    )
-    return gp, gp_parameters
-
-
 def train_approximate(config: Dict, output_path: str, experiment_name: str) -> None:
     assert (
         "reference_name" in config
@@ -305,7 +262,7 @@ def train_approximate(config: Dict, output_path: str, experiment_name: str) -> N
     config_directory_parent_path = os.path.dirname(os.path.abspath(__file__))
     reference_config_path = os.path.join(
         config_directory_parent_path,
-        "backup_configs",
+        "configs",
         Actions.train_reference,
         f"{config['reference_name']}.yaml",
     )
@@ -340,7 +297,7 @@ def train_approximate(config: Dict, output_path: str, experiment_name: str) -> N
                 "parameters.ckpt",
             ),
         )
-        approximate_gp, initial_approximate_gp_parameters = _build_approximate_gp(
+        approximate_gp, initial_approximate_gp_parameters = build_approximate_gp(
             config=config,
             inducing_points=inducing_data.x,
             training_points=experiment_data.train.x,
@@ -472,7 +429,7 @@ def temper_approximate(config: Dict, output_path: str, experiment_name: str) -> 
     )
     approximate_config_path = os.path.join(
         config_directory_parent_path,
-        "backup_configs",
+        "configs",
         Actions.train_approximate,
         f"{config['approximate_name']}.yaml",
     )
@@ -480,7 +437,7 @@ def temper_approximate(config: Dict, output_path: str, experiment_name: str) -> 
         approximate_config = yaml.safe_load(approximate_config_file)
     reference_config_path = os.path.join(
         config_directory_parent_path,
-        "backup_configs",
+        "configs",
         Actions.train_reference,
         f"{approximate_config['reference_name']}.yaml",
     )
@@ -499,7 +456,7 @@ def temper_approximate(config: Dict, output_path: str, experiment_name: str) -> 
         approximate_config_path = os.path.join(
             os.path.join(
                 os.path.dirname(os.path.abspath(__file__)),
-                "backup_configs",
+                "configs",
                 Actions.train_approximate,
                 f"{config['approximate_name']}.yaml",
             )
@@ -531,7 +488,7 @@ def temper_approximate(config: Dict, output_path: str, experiment_name: str) -> 
                 "parameters.ckpt",
             ),
         )
-        approximate_gp, _ = _build_approximate_gp(
+        approximate_gp, _ = build_approximate_gp(
             config=approximate_config,
             inducing_points=inducing_data.x,
             training_points=experiment_data.train.x,

@@ -42,6 +42,8 @@ class ExperimentData:
     train: Optional[Data] = None
     test: Optional[Data] = None
     validation: Optional[Data] = None
+    y_mean: float = 0.0
+    y_std: float = 1.0
 
     @staticmethod
     def _add_with_none(a: Optional[Data], b: Optional[Data]) -> Optional[Data]:
@@ -55,12 +57,16 @@ class ExperimentData:
             return a + b
 
     def __add__(self, other):
+        assert self.y_mean == other.y_mean
+        assert self.y_std == other.y_std
         return ExperimentData(
             name=self.name + other.name,
             full=self._add_with_none(self.full, other.full),
             train=self._add_with_none(self.train, other.train),
             test=self._add_with_none(self.test, other.test),
             validation=self._add_with_none(self.validation, other.validation),
+            y_mean=self.y_mean,
+            y_std=self.y_std,
         )
 
     def save(self, path: str):
@@ -68,6 +74,8 @@ class ExperimentData:
         os.makedirs(save_path, exist_ok=True)
         self.full.name = "full"
         self.full.save(save_path)
+        jnp.savez(os.path.join(save_path, "y_mean.npz"), y_mean=self.y_mean)
+        jnp.savez(os.path.join(save_path, "y_std.npz"), y_std=self.y_std)
         if self.train is not None:
             self.train.name = "train"
             self.train.save(save_path)
@@ -87,6 +95,8 @@ class ExperimentData:
             train=Data.load(path=data_dir, name="train"),
             test=Data.load(path=data_dir, name="test"),
             validation=Data.load(path=data_dir, name="validation"),
+            y_mean=float(jnp.load(os.path.join(data_dir, "y_mean.npz"))["y_mean"]),
+            y_std=float(jnp.load(os.path.join(data_dir, "y_std.npz"))["y_std"]),
         )
 
 
@@ -98,6 +108,7 @@ def set_up_experiment(
     train_data_percentage: float,
     test_data_percentage: float,
     validation_data_percentage: float,
+    rescale_y: bool = True,
 ) -> ExperimentData:
     # adapted from https://datascience.stackexchange.com/questions/15135/train-test-validation-set-splitting-in-sklearn
     key, subkey = jax.random.split(key)
@@ -119,13 +130,26 @@ def set_up_experiment(
         y_test_and_validation,
         test_size=test_data_percentage
         / (test_data_percentage + validation_data_percentage),
-        random_state=int(jnp.sum(subkey)) % (2**32 - 1),
+        random_state=int(jnp.sum(subkey))
+        % (2**32 - 1),  # convert to valid random state for sklearn
     )
+    if rescale_y:
+        y_mean = jnp.mean(y_train)
+        y_std = jnp.std(y_train)
+        y = (y - y_mean) / y_std
+        y_train = (y_train - y_mean) / y_std
+        y_test = (y_test - y_mean) / y_std
+        y_validation = (y_validation - y_mean) / y_std
+    else:
+        y_mean = 0.0
+        y_std = 1.0
     experiment_data = ExperimentData(
         name=name,
         full=Data(x=x, y=y),
         train=Data(x=x_train, y=y_train),
         test=Data(x=x_test, y=y_test),
         validation=Data(x=x_validation, y=y_validation),
+        y_mean=y_mean,
+        y_std=y_std,
     )
     return experiment_data

@@ -51,6 +51,7 @@ from src.kernels.non_stationary import (
     PolynomialKernelParameters,
 )
 from src.kernels.non_stationary.base import NonStationaryKernelBase
+from src.kernels.standard import ARDKernel, ARDKernelParameters
 
 
 def resolve_existing_kernel(
@@ -97,6 +98,32 @@ def _resolve_polynomial_kernel(
         {
             "log_constant": jnp.log(kernel_parameters_config["constant"]),
             "log_scaling": jnp.log(kernel_parameters_config["scaling"]),
+        }
+    )
+    return kernel, kernel_parameters
+
+
+def _resolve_ard_kernel(
+    kernel_kwargs_config: Union[FrozenDict, Dict],
+    kernel_parameters_config: Union[FrozenDict, Dict],
+) -> Tuple[ARDKernel, ARDKernelParameters]:
+    assert (
+        "number_of_dimensions" in kernel_kwargs_config
+    ), "Number of dimensions for input must be specified."
+    kernel = ARDKernel(
+        number_of_dimensions=kernel_kwargs_config["number_of_dimensions"],
+    )
+
+    assert "scaling" in kernel_parameters_config, "Scaling must be specified."
+    assert "lengthscales" in kernel_parameters_config, "Length scale must be specified."
+    if isinstance(kernel_parameters_config["lengthscales"], list):
+        kernel_parameters_config["lengthscales"] = jnp.array(
+            kernel_parameters_config["lengthscales"]
+        )
+    kernel_parameters = kernel.generate_parameters(
+        {
+            "log_scaling": jnp.log(kernel_parameters_config["scaling"]),
+            "log_lengthscales": jnp.log(kernel_parameters_config["lengthscales"]),
         }
     )
     return kernel, kernel_parameters
@@ -420,6 +447,11 @@ def kernel_resolver(
         )
     elif kernel_schema == KernelSchema.polynomial:
         return _resolve_polynomial_kernel(
+            kernel_kwargs_config=kernel_kwargs_config,
+            kernel_parameters_config=kernel_parameters_config,
+        )
+    elif kernel_schema == KernelSchema.ard:
+        return _resolve_ard_kernel(
             kernel_kwargs_config=kernel_kwargs_config,
             kernel_parameters_config=kernel_parameters_config,
         )

@@ -112,27 +112,32 @@ def meta_train_reference_gp(
         )
         kernel_parameters = gp_parameters.kernel
         post_epoch_histories.append(post_epoch_history)
-        prediction_x = jnp.linspace(data.x.min(), data.x.max(), num=1000, endpoint=True)
-        gp_prediction = Gaussian(
-            **gp.predict_probability(
-                parameters=gp_parameters,
-                x=prediction_x,
-            ).dict()
-        )
-        plotters.plot_data(
-            train_data=data,
-            inducing_data=Data(
-                x=gp.x,
-                y=gp.y,
-            ),
-            prediction_x=prediction_x,
-            mean=gp_prediction.mean,
-            covariance=gp_prediction.covariance,
-            title=f"Reference GP Iteration {i}",
-            save_path=os.path.join(
-                checkpoint_path,
-                f"iteration-{i}",
-                f"reference-gp.png",
-            ),
-        )
+
+        # if data is 1D, plot the GP
+        if data.x.shape[1] == 1:
+            prediction_x = jnp.linspace(
+                data.x.min(), data.x.max(), num=1000, endpoint=True
+            )
+            gp_prediction = Gaussian(
+                **gp.predict_probability(
+                    parameters=gp_parameters,
+                    x=prediction_x,
+                ).dict()
+            )
+            plotters.plot_data(
+                train_data=data,
+                inducing_data=Data(
+                    x=gp.x,
+                    y=gp.y,
+                ),
+                prediction_x=prediction_x,
+                mean=gp_prediction.mean,
+                covariance=gp_prediction.covariance,
+                title=f"Reference GP Iteration {i}",
+                save_path=os.path.join(
+                    checkpoint_path,
+                    f"iteration-{i}",
+                    f"prediction.png",
+                ),
+            )
     return gp, gp_parameters, post_epoch_histories

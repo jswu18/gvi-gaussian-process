@@ -94,28 +94,30 @@ def generate_configs(
 
 
 if __name__ == "__main__":
+    problem_type = "regression"
+    dataset_name = "boston"
+    base_config_path = f"experiments/{problem_type}/{dataset_name}/base_configs"
+    output_config_path = f"experiments/{problem_type}/{dataset_name}/configs"
     generate_configs(
-        config_path="experiments/regression/toy_curves/base_configs/build_data",
-        output_path="experiments/regression/toy_curves/configs/build_data",
+        config_path=os.path.join(base_config_path, "build_data"),
+        output_path=os.path.join(output_config_path, "build_data"),
     )
     generate_configs(
-        config_path="experiments/regression/toy_curves/base_configs/train_reference",
-        output_path="experiments/regression/toy_curves/configs/train_reference",
+        config_path=os.path.join(base_config_path, "train_reference"),
+        output_path=os.path.join(output_config_path, "train_reference"),
+        reference_configs={"data_name": os.path.join(output_config_path, "build_data")},
+    )
+    generate_configs(
+        config_path=os.path.join(base_config_path, "train_approximate"),
+        output_path=os.path.join(output_config_path, "train_approximate"),
         reference_configs={
-            "data_name": "experiments/regression/toy_curves/configs/build_data"
+            "reference_name": os.path.join(output_config_path, "train_reference")
         },
     )
     generate_configs(
-        config_path="experiments/regression/toy_curves/base_configs/train_approximate",
-        output_path="experiments/regression/toy_curves/configs/train_approximate",
+        config_path=os.path.join(base_config_path, "temper_approximate"),
+        output_path=os.path.join(output_config_path, "temper_approximate"),
         reference_configs={
-            "reference_name": "experiments/regression/toy_curves/configs/train_reference"
-        },
-    )
-    generate_configs(
-        config_path="experiments/regression/toy_curves/base_configs/temper_approximate",
-        output_path="experiments/regression/toy_curves/configs/temper_approximate",
-        reference_configs={
-            "approximate_name": "experiments/regression/toy_curves/configs/train_approximate"
+            "approximate_name": os.path.join(output_config_path, "train_approximate")
         },
     )

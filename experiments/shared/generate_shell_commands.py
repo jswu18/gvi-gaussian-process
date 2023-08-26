@@ -29,23 +29,25 @@ def generate_shell_commands(
         with open(os.path.join(save_path, action, f"{i}.sh"), "w") as file:
             file.write(
                 "\n".join(
-                    [f"cd {repository_path}"]
+                    [f"cd {repository_path}", "export PYTHONPATH=$PWD"]
                     + commands[i * chunk_size : (i + 1) * chunk_size]
                 )
             )
 
 
 if __name__ == "__main__":
-    main_path = "experiments/regression/toy_curves/main.py"
-    config_path = "experiments/regression/toy_curves/configs"
-    save_path = "experiments/regression/toy_curves/shell_commands"
+    problem_type = "regression"
+    dataset_name = "boston"
+    main_path = f"experiments/{problem_type}/{dataset_name}/main.py"
+    config_path = f"experiments/{problem_type}/{dataset_name}/configs"
+    save_path = f"experiments/{problem_type}/{dataset_name}/shell_commands"
     generate_shell_commands(
         action=Actions.build_data,
         repository_path=os.getcwd(),
         main_path=main_path,
         config_path=config_path,
         save_path=save_path,
-        chunk_size=100,
+        chunk_size=1000,
     )
     generate_shell_commands(
         action=Actions.train_reference,
@@ -53,7 +55,7 @@ if __name__ == "__main__":
         main_path=main_path,
         config_path=config_path,
         save_path=save_path,
-        chunk_size=20,
+        chunk_size=1000,
     )
     generate_shell_commands(
         action=Actions.train_approximate,
@@ -61,7 +63,7 @@ if __name__ == "__main__":
         main_path=main_path,
         config_path=config_path,
         save_path=save_path,
-        chunk_size=10,
+        chunk_size=1000,
     )
     generate_shell_commands(
         action=Actions.temper_approximate,
