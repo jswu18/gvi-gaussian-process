@@ -57,6 +57,8 @@ def generate_configs(
         temp = []
         df_temp = []
         for f in file_paths:
+            if not f.endswith(".yaml"):
+                continue
             with open(os.path.join(config_path, folder, f), "r") as file:
                 config = yaml.safe_load(file)
             temp.extend([dict(merge_dictionaries(x, config)) for x in configs])

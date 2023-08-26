@@ -185,6 +185,8 @@ def generate_myriad_commands(
     number_of_commands = len(shell_command_paths)
     myriad_command_paths = []
     for i, shell_command_path in enumerate(shell_command_paths):
+        if not shell_command_path.endswith(".sh"):
+            continue
         base_commands = build_base_commands(
             job_name=f"{action.name}-{problem.name}-{i+1}-of-{number_of_commands}",
             max_runtime=max_runtime,
