@@ -136,14 +136,14 @@ class Curve9(Curve):
 
 
 CURVE_FUNCTIONS = [
-    Curve0(),
-    Curve1(),
-    Curve2(),
-    Curve3(),
-    Curve4(),
-    Curve5(),
+    # Curve0(),
+    # Curve1(),
+    # Curve2(),
+    # Curve3(),
+    # Curve4(),
+    # Curve5(),
     Curve6(),
-    Curve7(),
-    Curve8(),
-    Curve9(),
+    # Curve7(),
+    # Curve8(),
+    # Curve9(),
 ]

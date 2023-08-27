@@ -69,8 +69,13 @@ def build_data_set(
     df.columns = [c.replace(" ", "") for c in df.columns]
 
     dataset_metadata = DATASET_SCHEMA_TO_DATASET[config["dataset"]]
-    x = jnp.array(df[dataset_metadata.input_column_names].to_numpy())
-    y = jnp.array(df[dataset_metadata.output_column_name].to_numpy())
+    input_column_names = [c.lower() for c in dataset_metadata.input_column_names]
+    input_column_names = [c.replace(" ", "") for c in input_column_names]
+
+    x = jnp.array(df[input_column_names].to_numpy())
+    y = jnp.array(
+        df[dataset_metadata.output_column_name.lower().replace(" ", "")].to_numpy()
+    )
 
     data_path = construct_path(
         output_path=output_path,

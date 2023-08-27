@@ -6,8 +6,12 @@ import jax
 import jax.numpy as jnp
 import yaml
 
-from experiments.regression.action_runners import build_approximate_gp
+from experiments.regression.action_runners import (
+    _load_config_and_config_path,
+    build_approximate_gp,
+)
 from experiments.regression.data import split_train_test_validation_data
+from experiments.regression.metrics import calculate_metrics
 from experiments.regression.plotters import plot_data, plot_prediction
 from experiments.regression.trainers import meta_train_reference_gp
 from experiments.shared.data import Data, ExperimentData
@@ -186,6 +190,23 @@ def train_reference(config: Dict, output_path: str, experiment_name: str) -> Non
                 "parameters.ckpt",
             ),
         )
+        df_metrics = calculate_metrics(
+            experiment_data=experiment_data,
+            gp=reference_gp,
+            gp_parameters=reference_gp_parameters,
+            action=ActionSchema.train_reference,
+            experiment_name=experiment_name,
+            dataset_name=type(curve_function).__name__.lower(),
+        )
+        if not os.path.exists(os.path.join(save_path, experiment_data.name)):
+            os.makedirs(os.path.join(save_path, experiment_data.name))
+        df_metrics.to_csv(
+            os.path.join(
+                save_path,
+                experiment_data.name,
+                "metrics.csv",
+            )
+        )
         inducing_data = Data(x=reference_gp.x, y=reference_gp.y, name="inducing")
         inducing_data.save(
             path=os.path.join(
@@ -297,6 +318,7 @@ def train_approximate(config: Dict, output_path: str, experiment_name: str) -> N
                 experiment_data.name,
                 "parameters.ckpt",
             ),
+            data_dimension=experiment_data.train.x.shape[1],
         )
         approximate_gp, initial_approximate_gp_parameters = build_approximate_gp(
             config=config,
@@ -347,6 +369,23 @@ def train_approximate(config: Dict, output_path: str, experiment_name: str) -> N
                 experiment_data.name,
                 "parameters.ckpt",
             ),
+        )
+        df_metrics = calculate_metrics(
+            experiment_data=experiment_data,
+            gp=approximate_gp,
+            gp_parameters=approximate_gp_parameters,
+            action=ActionSchema.train_approximate,
+            experiment_name=experiment_name,
+            dataset_name=type(curve_function).__name__.lower(),
+        )
+        if not os.path.exists(os.path.join(save_path, experiment_data.name)):
+            os.makedirs(os.path.join(save_path, experiment_data.name))
+        df_metrics.to_csv(
+            os.path.join(
+                save_path,
+                experiment_data.name,
+                "metrics.csv",
+            )
         )
         gvi_loss_configuration = "+".join(
             [
@@ -488,6 +527,7 @@ def temper_approximate(config: Dict, output_path: str, experiment_name: str) -> 
                 experiment_data.name,
                 "parameters.ckpt",
             ),
+            data_dimension=experiment_data.train.x.shape[1],
         )
         approximate_gp, _ = build_approximate_gp(
             config=approximate_config,
@@ -533,6 +573,23 @@ def temper_approximate(config: Dict, output_path: str, experiment_name: str) -> 
                 experiment_data.name,
                 "checkpoints",
             ),
+        )
+        df_metrics = calculate_metrics(
+            experiment_data=experiment_data,
+            gp=tempered_gp,
+            gp_parameters=tempered_gp_parameters,
+            action=ActionSchema.temper_approximate,
+            experiment_name=experiment_name,
+            dataset_name=type(curve_function).__name__.lower(),
+        )
+        if not os.path.exists(os.path.join(save_path, experiment_data.name)):
+            os.makedirs(os.path.join(save_path, experiment_data.name))
+        df_metrics.to_csv(
+            os.path.join(
+                save_path,
+                experiment_data.name,
+                "metrics.csv",
+            )
         )
         approximate_gp_gvi_loss_configuration = "+".join(
             [

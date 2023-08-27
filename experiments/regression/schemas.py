@@ -2,12 +2,14 @@ import enum
 
 
 class DatasetSchema(str, enum.Enum):
-    concrete = "concrete"
-    energy = "energy"
-    power = "power"
-    wine = "wine"
-    yacht = "yacht"
     boston = "boston"
-    naval = "naval"
+    concrete = "concrete"
+    energy_cooling = "energy_cooling"
+    energy_heating = "energy_heating"
     kin8nm = "kin8nm"
+    naval_compressor = "naval_compressor"
+    naval_turbine = "naval_turbine"
+    power = "power"
     protein = "protein"
+    red_wine = "red_wine"
+    yacht = "yacht"
