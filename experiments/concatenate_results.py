@@ -43,32 +43,47 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     base_outputs_path = f"experiments/{args.problem}/outputs"
-    df_train_metrics = concatenate_results(
-        outputs_path=os.path.join(
-            base_outputs_path, str(ActionSchema.train_reference.value)
-        ),
-    )
-    df_train_metrics.to_csv(
-        os.path.join(base_outputs_path, f"{ActionSchema.train_reference.value}.csv"),
-        index=False,
-    )
+    try:
+        df_train_metrics = concatenate_results(
+            outputs_path=os.path.join(
+                base_outputs_path, str(ActionSchema.train_reference.value)
+            ),
+        )
+        df_train_metrics.to_csv(
+            os.path.join(
+                base_outputs_path, f"{ActionSchema.train_reference.value}.csv"
+            ),
+            index=False,
+        )
+    except FileNotFoundError:
+        pass
 
-    df_train_metrics = concatenate_results(
-        outputs_path=os.path.join(
-            base_outputs_path, str(ActionSchema.train_approximate.value)
-        ),
-    )
-    df_train_metrics.to_csv(
-        os.path.join(base_outputs_path, f"{ActionSchema.train_approximate.value}.csv"),
-        index=False,
-    )
+    try:
+        df_train_metrics = concatenate_results(
+            outputs_path=os.path.join(
+                base_outputs_path, str(ActionSchema.train_approximate.value)
+            ),
+        )
+        df_train_metrics.to_csv(
+            os.path.join(
+                base_outputs_path, f"{ActionSchema.train_approximate.value}.csv"
+            ),
+            index=False,
+        )
+    except FileNotFoundError:
+        pass
 
-    df_train_metrics = concatenate_results(
-        outputs_path=os.path.join(
-            base_outputs_path, str(ActionSchema.temper_approximate.value)
-        ),
-    )
-    df_train_metrics.to_csv(
-        os.path.join(base_outputs_path, f"{ActionSchema.temper_approximate.value}.csv"),
-        index=False,
-    )
+    try:
+        df_train_metrics = concatenate_results(
+            outputs_path=os.path.join(
+                base_outputs_path, str(ActionSchema.temper_approximate.value)
+            ),
+        )
+        df_train_metrics.to_csv(
+            os.path.join(
+                base_outputs_path, f"{ActionSchema.temper_approximate.value}.csv"
+            ),
+            index=False,
+        )
+    except FileNotFoundError:
+        pass
