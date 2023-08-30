@@ -205,28 +205,18 @@ with $m_Q$ and $r$ defined as blabla. you dont need to index variational paramet
 Gaussian processes (GPs) are powerful universal function approximators that can be used for both regression and classification tasks. We will introduce the GP following \cite{rasmussen2003gaussian}, \cite{matthews2017scalable}, and \cite{wild2022generalized}.
 
 \subsection{The Gaussian Process}\label{section:the-gp}
-A Gaussian process (GP) is a stochastic process such that for any $N$ points $\mathbf{X} = \left\{ x_n\right\}_{n=1}^N$ where $x_n \in \mathcal{X}$, the corresponding random response vector $Y \in \mathbb{R}^N$ has the Gaussian distribution:
+A Gaussian process (GP) is a stochastic process such that for any $N$ points $\mathbf{X} = \left\{ x_n\right\}_{n=1}^N$ where $x_n \in \mathcal{X}$, the corresponding random response vector $Y \in \mathbb{R}^N$ has the Gaussian distribution
 \begin{align}
     \label{gp-vector}
     Y \sim \mathcal{N}\left(\mathbf{m}, \mathbf{K}\right)
 \end{align}
 where $\mathbf{m} \in \mathbb{R}^N$ and $\mathbf{K} \in  \mathbb{R}^{N \times N}_{\succcurlyeq 0}$.
-The mean vector $\mathbf{m}$ is constructed through the selection of a mean function mapping:
-\begin{align}
-    \label{gp-mean-mapping}
-    m: \mathcal{X} \rightarrow \mathbb{R}
-\end{align}
-such that
+The mean vector $\mathbf{m}$ is constructed through the selection of a mean function mapping $m: \mathcal{X} \rightarrow \mathbb{R}$ such that
 \begin{align}
     \label{gp-mean-vector}
-    \mathbf{m} \coloneqq \left[ m(x_1) \cdots m(x_N)\right]^T
-\end{align} 
-Constructing $\mathbf{K}$ involves choosing a kernel function mapping:
-\begin{align}
-    \label{gp-kernel-mapping}
-    k: \mathcal{X} \times \mathcal{X} \rightarrow \mathbb{R}
+    \mathbf{m} \coloneqq \left[ m(x_1) \cdots m(x_N)\right]^T.
 \end{align}
-such that each element of the matrix is the evaluation:
+Constructing $\mathbf{K}$ involves choosing a kernel function mapping $k: \mathcal{X} \times \mathcal{X} \rightarrow \mathbb{R}$ such that each element of the matrix is the evaluation
 \begin{align}
     \label{gp-kernel-matrix}
     \left[\mathbf{K}\right]_{n, n'} \coloneqq k(x_n, x_{n'})
@@ -234,7 +224,7 @@ such that each element of the matrix is the evaluation:
 for $n, n'=1,\dots, N$. This is also known as the gram matrix. Appendix (\ref{appendix:positive-definite-kernel}) shows that choosing kernel functions that are defined as inner products of a feature space will ensure that $\mathbf{K}$ is positive semi-definite, ensuring a valid covariance matrix.
 
 
-The distribution in (\ref{gp-vector}) is a finite-dimensional instance of the general random function mapping:
+The distribution in (\ref{gp-vector}) is a finite-dimensional instance of the general random function mapping
 \begin{align}
     F \sim \GP(m, k)
     \label{gp}
@@ -252,43 +242,43 @@ This control and visibility into the model's behaviour is a strong advantage of 
 The following sections will review GPs for regression and classification tasks.
 
 \subsection{Gaussian Process Regression}
-Consider the regression task where we have $N$ observation pairs $(\mathbf{X}, \mathbf{Y}) = \left\{(x_n, y_n)\right\}_{n=1}^{N}$ with inputs $x_n \in \mathcal{X}$ and responses $y_n \in \mathbb{R}$. GP regression models the data generating process:
+Consider the regression task where we have $N$ observation pairs $(\mathbf{X}, \mathbf{Y}) = \left\{(x_n, y_n)\right\}_{n=1}^{N}$ with inputs $x_n \in \mathcal{X}$ and responses $y_n \in \mathbb{R}$. GP regression models the data generating process
 \begin{align}
     y \sim F(x) + \epsilon
     \label{regression-data-uncertainties}
 \end{align}
-where the GP random function mapping $F$ accounts for the epistemic (model) uncertainty and the random scalar $\epsilon$ accounts for the aleatoric (measurement) uncertainty. In this formulation, we assume that the aleatoric uncertainty is homoscedastic of the form:
+where the GP random function mapping $F$ accounts for the epistemic (model) uncertainty and the random scalar $\epsilon$ accounts for the aleatoric (measurement) uncertainty. In this formulation, we assume that the aleatoric uncertainty is homoscedastic of the form
 \begin{align}
-    \epsilon \sim \mathcal{N} \left(0, \sigma^2\right)
+    \epsilon \sim \mathcal{N} \left(0, \sigma^2\right).
     \label{aleotric-uncertainty}
 \end{align}
 
 In GP regression, the Bayesian posterior for a test point $x^* \in \mathcal{X}$ conditioned on the known `training' data acts as a `prediction' for the epistemic uncertainty of the test data responses. With all terms being Gaussian, this posterior has a closed-form conditional Gaussian expression.
-Having also chosen the aleoteric data uncertainty to be modelled as Gaussian in (\ref{aleotric-uncertainty}), GP regression models the test data response $y^* \in \mathbb{R}$ as:
+Having also chosen the aleoteric data uncertainty to be modelled as Gaussian in (\ref{aleotric-uncertainty}), GP regression models the test data response $y \in \mathbb{R}$ as
 \begin{align}
-    y^* \vert \mathbf{Y}, \sigma^2 
-    \sim \mathcal{N}\left(\bar{m}(x^*), \bar{k}(x^*, x^*)\right)
+    y \vert \mathbf{Y}, \sigma^2 
+    \sim \mathcal{N}\left(\bar{m}(x), \bar{k}(x, x)\right)
     \label{gp-posterior-normal}
 \end{align}
-with:
+with
 \begin{align}
     \label{gp-posterior-mean}
-    \bar{m}(x^*) = m(x^*) + \mathbf{K}_{x^*, \mathbf{X}} \left(\mathbf{K}_{\mathbf{X}, \mathbf{X}} + \sigma^2 \mathbf{I}\right)^{-1} \left( \mathbf{Y} - \mathbf{m}_{\mathbf{X}}\right)
+    \bar{m}(x) = m(x) + \mathbf{K}_{x, \mathbf{X}} \left(\mathbf{K}_{\mathbf{X}, \mathbf{X}} + \sigma^2 \mathbf{I}\right)^{-1} \left( \mathbf{Y} - \mathbf{m}_{\mathbf{X}}\right)
 \end{align}
 and
 \begin{align}
     \label{gp-posterior-covariance}
-    \bar{k}(x^*, x^*) = k(x^*, x^*) - \mathbf{K}_{x^*, \mathbf{X}} \left(\mathbf{K}_{\mathbf{X}, \mathbf{X}} + \sigma^2 \mathbf{I}\right)^{-1} \mathbf{K}_{\mathbf{X}, x^*}
+    \bar{k}(x, x) = k(x, x) - \mathbf{K}_{x, \mathbf{X}} \left(\mathbf{K}_{\mathbf{X}, \mathbf{X}} + \sigma^2 \mathbf{I}\right)^{-1} \mathbf{K}_{\mathbf{X}, x}
 \end{align}
 where $\mathbf{m}_{\mathbf{X}}$ is more verbose notation for (\ref{gp-mean-vector}), $\mathbf{K}_{\mathbf{X}, \mathbf{X}}$ is verbose for (\ref{gp-kernel-matrix}), $\mathbf{K}_{x^*, \mathbf{X}} \in \mathbb{R}^{1 \times N}$, $\mathbf{K}_{\mathbf{X}, x^*} \in \mathbb{R}^{N \times 1}$ are gram matrices constructed with $\mathbf{X}$ and $x^*$ following (\ref{gp-kernel-matrix}), and $\mathbf{I} \in \mathbb{R}^{N \times N}$ is the identity matrix.
 
 \subsection{Gaussian Process Classification}
-Consider the classification task where we have $N$ observation pairs $(\mathbf{X}, \mathbf{Y}) = \left\{(x_n, y_n)\right\}_{n=1}^{N}$ with inputs $x_n \in \mathcal{X}$ and responses $y_n \in \{1, \dots, J\}$. In other words, we wish to map each input $x_n$ to one of $J$ labels. Following the approach from \cite{matthews2017scalable}, GPs are modelled for classification through:
+Consider the classification task where we have $N$ observation pairs $(\mathbf{X}, \mathbf{Y}) = \left\{(x_n, y_n)\right\}_{n=1}^{N}$ with inputs $x_n \in \mathcal{X}$ and responses $y_n \in \{1, \dots, J\}$. In other words, we wish to map each input $x_n$ to one of $J$ labels. Following the approach from \cite{matthews2017scalable}, GPs are modelled for classification through
 \begin{align}
     Y \sim \mathcal{C}\left(s(F_1(x), \dots, F_J(x))\right)
     \label{gp-classifier}
 \end{align}
-where we construct GPs:
+where we construct GPs
 \begin{align}
     F_j \sim \GP\left(m_j, k_j\right)
     \label{gp-classifier-regressors}
@@ -297,14 +287,14 @@ for each label $j=1, \dots J$, such that $F_1, \dots, F_J$ are stochastically in
 \begin{align}
     s: \mathbb{R}^J \rightarrow \Delta(J)
 \end{align}
-is a mapping to a $J$ dimensional probability simplex parameterising a categorical distribution $\mathcal{C}$ (a generalisation of the Bernoulli distribution to $J$ labels). In other words, the probability of the $j^{th}$ label is:
+is a mapping to a $J$ dimensional probability simplex parameterising a categorical distribution $\mathcal{C}$ (a generalisation of the Bernoulli distribution to $J$ labels). In other words, the probability of the $j^{th}$ label is
 \begin{align}
     \mathbb{P}(Y=j) = s_j(F_1(x), \dots, F_J(x))
 \end{align}
 the $j^{th}$ element of the probability simplex $s(\cdot)$.
 
 \subsubsection{The Robust Max Function}\label{section:robust-max=function}
-\cite{matthews2017scalable} provides a few different choices for defining $s$ in (\ref{gp-classifier}). We follow \cite{wild2022generalized}, using the robust max function to define the $j^{th}$ element of the probability simplex:
+\cite{matthews2017scalable} provides a few different choices for defining $s$ in (\ref{gp-classifier}). We follow \cite{wild2022generalized}, using the robust max function to define the $j^{th}$ element of the probability simplex
 \begin{align}
 s_{j}\left(f_1, \dots, f_J\right) = \begin{cases}
       1-\delta, &  \text{if } j = \argmax_{j=1\dots J}\left(f_j\right) \\
@@ -314,7 +304,7 @@ s_{j}\left(f_1, \dots, f_J\right) = \begin{cases}
 \end{align}
 where $\delta \in [0, 1]$. Typically, $\delta$ is chosen as a very small value (i.e. $1e^{-2}$). Constructing the $\Delta(J)$ vector with (\ref{robust-max-function}), we have the probability value of $1-\delta$ for the label of maximum value and $\frac{\delta}{J-1}$ otherwise. This formulation provides robustness to outliers, as it only considers the ranking of the GP models for each label.
 
-A benefit of the robust max function is that the expected log-likelihood under the categorical distribution in (\ref{gp-classifier}), becomes analytically tractable. \cite{wild2022generalized} shows that with $N$ input and response pairs:
+A benefit of the robust max function is that the expected log-likelihood under the categorical distribution in (\ref{gp-classifier}), becomes analytically tractable. \cite{wild2022generalized} shows that with $N$ input and response pairs
 \begin{align}
     \mathbb{E} \left[\log p\left(y \vert x\right)\right] \approx \sum_{n=1}^N \log(1-\epsilon) S(x_n, y_n) + \log\left(\frac{\epsilon}{J-1}\right) \left(1-S(x_n, y_n)\right)
     \label{robust-max-function-expected-log-likelihood}
@@ -338,12 +328,12 @@ We will also discuss the challenges of working within this learning framework.
 Although GPs are objects constructed in an infinite dimensional setting this section will review VI in a finite dimensional setting as a preliminary step. 
 
 A Bayesian approach to modelling begins with assuming a data generating process for an observation $y \in \mathbb{R}$ as conditionally dependent on $M$ unobserved latent random variables $Z \in \mathbb{R}^M$ through a likelihood $p(Y=y\vert Z)$ and a prior on the latent variables $p(Z)$. 
-These are used for the Bayesian posterior: \vw{here you need to use the pdfs i.e. $p(Z|Y=y)$ and $p(z)$. The formula looks different if you write it for measures.}\jw{done, thanks.}
+These are used for the Bayesian posterior \vw{here you need to use the pdfs i.e. $p(Z|Y=y)$ and $p(z)$. The formula looks different if you write it for measures.}\jw{done, thanks.}
 \begin{align}
     p(Z \vert Y=y) \propto p(Y=y\vert Z)p(Z)
     \label{bayesian-posterior}
 \end{align}
-which is often computationally and/or analytically intractable. This has motivated the need for variational methods like VI to approximate (\ref{bayesian-posterior}). VI is based on the observation that the Kullback-Leibler (KL) divergence between an arbitrary probability measure $Q \coloneqq \mathbb{Q}(Z)$ and $\mathbb{P}(Z\vert Y)$ can be rewritten:
+which is often computationally and/or analytically intractable. This has motivated the need for variational methods like VI to approximate (\ref{bayesian-posterior}). VI is based on the observation that the Kullback-Leibler (KL) divergence between an arbitrary probability measure $Q \coloneqq \mathbb{Q}(Z)$ and $\mathbb{P}(Z\vert Y)$ can be rewritten as
 \begin{align}
     \KLD\left[Q, \mathbb{P}(Z \vert Y)\right] = L(Q) - \log p(y)
     \label{finite-dimensional-vi-kld}
@@ -354,16 +344,16 @@ where
     \label{finite-dimensional-vi-loss}
 \end{align}
 with $P \coloneqq \mathbb{P}(Z)$, $p(y) = \int p(y\vert z)p(z) dz$ the marginal log-likelihood, $\mathbb{E}_{Q}\left[\wc \right]$ denoting the expectation with respect to $Q$, and $\KLD\left[\wc, \wc\right]$ denoting the KL divergence.
-It follows that approximating the posterior by minimising (\ref{finite-dimensional-vi-kld}) is equivalent to minimising (\ref{finite-dimensional-vi-loss}):
+It follows that
 \begin{align}
     \argmin_{Q \in \boldsymbol{Q}} \KLD\left[Q, \mathbb{P}(Z\vert Y)\right] = \argmin_{Q \in \boldsymbol{Q}} L(Q)
     \label{optimal-approximation-vi}
 \end{align}
-where $\boldsymbol{Q}$ is a set of candidate probability measures. Typically, $\boldsymbol{Q}$ is constructed with respect to a parameter set $\boldsymbol{\Gamma}$:
+where $\boldsymbol{Q}$ is a set of candidate probability measures. In other words, approximating the posterior by minimising (\ref{finite-dimensional-vi-kld}) is equivalent to minimising (\ref{finite-dimensional-vi-loss}). Typically, $\boldsymbol{Q}$ is constructed with respect to a parameter set $\boldsymbol{\Gamma}$ such that 
 \begin{align}
     \boldsymbol{Q} \coloneqq \left\{Q_{\gamma}: \gamma \in \boldsymbol{\Gamma} \right\}
 \end{align}
-where $\boldsymbol{\Gamma}$ is a euclidean parameter space such that solving:
+where $\boldsymbol{\Gamma}$ is a euclidean parameter space such that solving
 \begin{align}
     \gamma^* \in \argmin_{\gamma \in \boldsymbol{\Gamma}} L(Q_{\gamma})
 \end{align}
@@ -376,48 +366,50 @@ obtains $Q_{\gamma^*}$ the VI approximation of the Bayesian posterior minimising
 These three assumptions are in tension with each other. For example, a larger approximation space $\boldsymbol{Q}$ can cause $L(Q)$ to be intractable or cause a more difficult optimisation space.
 However in practice, VI can be quite succesful if employed by well-specialised practioners.
 \\\jw{what do you mean by a "well-specified practitoner"? Like a domain expert or something who knows what theyre doing when using VI.}
+\vw{yes pretty much. I just meant VI can be successful if the person knows what he is doing. }
 
 \subsection{Sparse Variatonal Gaussian Processes}
 \jw{is it sparse or stochastic variational GP? lol}
-To overcome the computationally intractable GP, we review \cite{titsias2009variational} which proposed the variational approximation for the Bayesian predictive posterior in (\ref{gp-posterior-normal}):
+To overcome the computationally intractable GP, we review \cite{titsias2009variational} which proposed the variational approximation for the Bayesian predictive posterior in (\ref{gp-posterior-normal}) as
 \begin{align}
     \mathbb{Q}(F) \coloneqq \GP(m_Q, r)
 \end{align}
-where the mean function is given as
+where the mean function is
 \begin{align}
     \label{svgp-mean} 
     m_Q(x) = m(x) + \mathbf{K}_{x, \mathbf{Z}}\left(\mathbf{K}_{\mathbf{Z}, \mathbf{Z}}\right)^{-1} \boldsymbol{\mu}
 \end{align}
-and the kernel function :
+and the kernel function is
 \begin{align}
 r(x, x) = k(x, x) - \mathbf{K}_{x, \mathbf{Z}}\left(\mathbf{K}_{\mathbf{Z}, \mathbf{Z}}\right)^{-1} \mathbf{K}_{\mathbf{Z}, x} + \mathbf{K}_{x, \mathbf{Z}}\left(\mathbf{K}_{\mathbf{Z}, \mathbf{Z}}\right)^{-1}\mathbf{\Sigma}\left(\mathbf{K}_{\mathbf{Z}, \mathbf{Z}}\right)^{-1} \mathbf{K}_{\mathbf{Z}, x}
 \label{svgp-covariance}
 \end{align}
-defining a parameter space:
+defining a parameter space 
 \begin{align}
     \mathbf{\Gamma} = \left\{\boldsymbol{\mu} \in \mathbb{R}^{M}, \mathbf{\Sigma} \in \mathbb{R}^{M\times M}_{\succcurlyeq 0}, \mathbf{Z} \in \mathcal{X}^M \right\}
     \label{svgp-parameter-space}
 \end{align}
 where $\mathbf{Z}$ is $M$ inducing points, typically chosen as some subset of $\mathbf{X}$. 
-Following (\ref{finite-dimensional-vi-loss}), the variational loss for a candidate $Q \coloneqq \mathbb{Q}(F)$ becomes:
+Following (\ref{finite-dimensional-vi-loss}), the variational loss for a candidate $Q \coloneqq \mathbb{Q}(F)$ becomes
 \begin{align}
 L(Q) = -\sum_{n-1}^N \mathbb{E}_Q \left[\log p(y_n \vert F(x_n)\right] + \KLD\left[\mathbb{Q}^F, \mathbb{P}^F\right]
 \label{svgp-vi-loss}
 \end{align}
 where the expectation in (\ref{svgp-vi-loss}) is tractable since $F(x_n)$ is Gaussian under $Q$. 
 However it is unclear if the KL divergence between two GPS in the second term, is even well-defined and from a practical viewpoint, computable. 
-\cite{matthews2016sparse} points out that the choice of $m_Q$ and $r$ by \cite{titsias2009variational} ensures that:
+\cite{matthews2016sparse} points out that the choice of $m_Q$ and $r$ by \cite{titsias2009variational} ensures that
 \begin{align}
-    \KL\left[\GP\left(m_Q, r\right), \GP\left(m_P, k\right)\right] = \KL\left[\mathcal{N}\left(\boldsymbol{\mu}, \mathbf{\Sigma}\right), \mathcal{N}\left(\mathbf{m}_{\mathbf{Z}}, \mathbf{K}_{\mathbf{Z}, \mathbf{Z}}\right)\right]
+    \KLD\left[\GP\left(m_Q, r\right), \GP\left(m_P, k\right)\right] = \KLD\left[\mathcal{N}\left(\boldsymbol{\mu}, \mathbf{\Sigma}\right), \mathcal{N}\left(\mathbf{m}_{\mathbf{Z}}, \mathbf{K}_{\mathbf{Z}, \mathbf{Z}}\right)\right]
 \end{align}
-reducing the KL divergence between two stochastic processes to the KL divergence between two finite dimensional Gaussian distributions on $\mathbb{R}^M$ with the closed form:
+reducing the KL divergence between two stochastic processes to 
 \begin{align}
         \KLD\left[\mathbb{Q}^F, \mathbb{P}^F\right]
     = \frac{1}{2}\left( \tr\left(\left(\mathbf{K}_{\mathbf{Z}, \mathbf{Z}}\right)^{-1} \boldsymbol{\Sigma}\right) - M +
     \left(\mathbf{m}_{\mathbf{Z}} - \boldsymbol{\mu}\right)^T \mathbf{K}_{\mathbf{Z}, \mathbf{Z}}^{-1} \left(\mathbf{m}_{\mathbf{Z}} - \boldsymbol{\mu}\right)+ \log\left(\frac{\det\mathbf{K}_{\mathbf{Z}, \mathbf{Z}}}{\det\boldsymbol{\Sigma}}\right) \right)
     \label{kld-closed-form}
 \end{align}
-\cite{titsias2009variational} shows that for a given set of inducing points $\mathbf{Z}$, the optimal choices $\boldsymbol{\mu}^*$ and $\mathbf{\Sigma}^*$ to minimising (\ref{svgp-vi-loss}) have the closed forms:
+the KL divergence between two finite dimensional Gaussian distributions on $\mathbb{R}^M$.
+\cite{titsias2009variational} shows that for a given set of inducing points $\mathbf{Z}$, the optimal choices $\boldsymbol{\mu}^*$ and $\mathbf{\Sigma}^*$ to minimising (\ref{svgp-vi-loss}) have the closed forms
 \begin{align}
     \label{svgp-optimal-mean}
     \boldsymbol{\mu}^* = \sigma^{-2}\mathbf{K}_{\mathbf{Z}, \mathbf{Z}} \mathbf{\Psi}^{-1}\mathbf{K}_{\mathbf{Z}, \mathbf{X}}  \left(\mathbf{Y} - \mathbf{m}_\mathbf{X}\right)
@@ -433,7 +425,7 @@ where
     \label{svgp-optimal-sigma-m}
 \end{align}
 conveniently eliminating the need for gradient-based optimisations. 
-This parameterises the approximate GP with:
+This parameterises the approximate GP with
 \begin{align}
     \gamma = \left(\boldsymbol{\mu}^*, \mathbf{\Sigma}^*,  \mathbf{Z}\right)
     \label{titsias-svgp-parameters}
@@ -443,11 +435,11 @@ This formulation ensures the matrix inversion of $\mathbb{R}^{M \times M}$ matri
 Thus, the computational complexity of this approach is $\mathcal{O}\left(NM^2\right)$ with space complexity $\mathcal{O}\left(NM\right)$. 
 This significantly improves the scalability of GP approaches from the traditional GP in Section \ref{section:gaussian-processes}. $M$ is typically chosen as $\mathcal{O}(N^{1/2})$ such that the svGP has $\mathcal{O}(N^{2})$ and $\mathcal{O}(N^{3/2})$ time and space complexity respectively.
 
-This svGP formulation provides a solution to the scaling issues of the GP but illustrates how the three assumptions of VI discussed in Section \ref{section:vi-in-finite-dimensions} can break down. In particular, the variational set $\mathbf{Q}$ defined by the parameter set $\boldsymbol{\Gamma}$ may not be expressive enough to contain a reasonable approximation of the true Bayesian posterior. For example, the mean function of the true posterior of a zero mean GP can be expressed as a linear combination:
+This svGP formulation provides a solution to the scaling issues of the GP but illustrates how the three assumptions of VI discussed in Section \ref{section:vi-in-finite-dimensions} can break down. In particular, the variational set $\mathbf{Q}$ defined by the parameter set $\boldsymbol{\Gamma}$ may not be expressive enough to contain a reasonable approximation of the true Bayesian posterior. For example, the mean function of the true posterior of a zero mean GP can be expressed as a linear combination
 \begin{align}
     \hat{m}(x) = \sum_{n=1}^{N} \alpha_n k(x, x_n) \in \text{span} \left(\left\{k(\cdot, x_1), \dots, k(\cdot, x_N)\right\}\right)
 \end{align}
-with $\boldsymbol{\alpha} \coloneqq \left[\alpha_1, \dots \alpha_N\right]^T = \mathbf{K}_{\mathbf{X}, \mathbf{X}}^{-1}\mathbf{Y}$. On the other hand, the corresponding variational mean $m_Q$ in (\ref{svgp-mean}) is only a linear combination within the inducing point space:
+with $\boldsymbol{\alpha} \coloneqq \left[\alpha_1, \dots \alpha_N\right]^T = \mathbf{K}_{\mathbf{X}, \mathbf{X}}^{-1}\mathbf{Y}$. On the other hand, the corresponding variational mean $m_Q$ in (\ref{svgp-mean}) is only a linear combination within the inducing point space
 \begin{align}
     m_Q(x) = \sum_{m=1}^{M} \beta_m k(x, z_m) \in \text{span}\left(\left\{k(\cdot, z_1), \dots, k(\cdot, z_M))\right\}\right)
 \end{align}
@@ -456,11 +448,11 @@ Choosing $M$ as $\mathcal{O}(N^{1/2})$, it is likely that the inducing point spa
 \cite{wild2022generalized} explains that the KL divergence between two GPs is not generally tractable or even finite. Thus within the Bayesian context of VI, we are forced to restrict the variational set $\boldsymbol{Q}$ to obtain a tractable loss $L$.
 
 \subsection{Inducing Point Selection}
-Within the context of VI, we wish to find an optimal set of inducing points such that:
+Within the context of VI, we wish to find an optimal set of inducing points such that
 \begin{align}
     \text{span} \left(\left\{k(\cdot, x_1), \dots, k(\cdot, x_N)\right\}\right) \approx \text{span}\left(\left\{k(\cdot, z_1), \dots, k(\cdot, z_M))\right\}\right)
 \end{align}
-In other words, we wish to find inducing points such that we can cover the majority of the input space. Several methods have been explored to achieve this \jw{citation needed}. We will review \cite{burt2020convergence}, which proposes an iterative selection procedure that greedily chooses the next inducing point based on the highest marginal variance in the prior when conditioned on the currently selected set of inducing points:
+where the inducing points can approximate the majority of the input space. Several methods have been explored to achieve this \jw{citation needed}. We will review \cite{burt2020convergence}, which proposes an iterative selection procedure that greedily chooses the next inducing point based on the highest marginal variance in the prior when conditioned on the currently selected set of inducing points
 \begin{align}
     \label{greedy-varaince-selection}
     \text{index}_{m+1} = \argmax \left(\diag \left(\mathbf{K}_{\mathbf{X}, \mathbf{X}} - \mathbf{K}_{\mathbf{X}, \mathbf{z}} \left(\mathbf{K}_{\mathbf{z}, \mathbf{z}}\right)^{-1}\mathbf{K}_{\mathbf{z}, \mathbf{X}}\right)\right)
