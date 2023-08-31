@@ -221,7 +221,7 @@ Constructing $\mathbf{K}$ involves choosing a kernel function mapping $k: \mathc
     \label{gp-kernel-matrix}
     \left[\mathbf{K}\right]_{n, n'} \coloneqq k(x_n, x_{n'})
 \end{align}
-for $n, n'=1,\dots, N$. This is also known as the gram matrix. Appendix (\ref{appendix:positive-definite-kernel}) shows that choosing kernel functions that are defined as inner products of a feature space will ensure that $\mathbf{K}$ is positive semi-definite, ensuring a valid covariance matrix.
+for $n, n'=1,\dots, N$. This is also known as the gram matrix. Appendix (\ref{appendix:positive-definite-kernel}) shows that choosing kernel functions that are defined as inner products of a feature space mapping will ensure that $\mathbf{K}$ is positive semi-definite for a valid covariance matrix.
 
 
 The distribution in (\ref{gp-vector}) is a finite-dimensional instance of the general random function mapping
@@ -253,7 +253,7 @@ where the GP random function mapping $F$ accounts for the epistemic (model) unce
     \label{aleotric-uncertainty}
 \end{align}
 
-In GP regression, the Bayesian posterior for a test point $x^* \in \mathcal{X}$ conditioned on the known `training' data acts as a `prediction' for the epistemic uncertainty of the test data responses. With all terms being Gaussian, this posterior has a closed-form conditional Gaussian expression.
+In GP regression, the Bayesian posterior for a test point $x^* \in \mathcal{X}$ conditioned on the given training data acts as a `prediction' for the epistemic uncertainty of the test data responses. With all terms being Gaussian, this posterior has a closed-form conditional Gaussian expression.
 Having also chosen the aleoteric data uncertainty to be modelled as Gaussian in (\ref{aleotric-uncertainty}), GP regression models the test data response $y \in \mathbb{R}$ as
 \begin{align}
     y \vert \mathbf{Y}, \sigma^2 
@@ -278,16 +278,7 @@ Consider the classification task where we have $N$ observation pairs $(\mathbf{X
     Y \sim \mathcal{C}\left(s(F_1(x), \dots, F_J(x))\right)
     \label{gp-classifier}
 \end{align}
-where we construct GPs
-\begin{align}
-    F_j \sim \GP\left(m_j, k_j\right)
-    \label{gp-classifier-regressors}
-\end{align}
-for each label $j=1, \dots J$, such that $F_1, \dots, F_J$ are stochastically independent GPs and 
-\begin{align}
-    s: \mathbb{R}^J \rightarrow \Delta(J)
-\end{align}
-is a mapping to a $J$ dimensional probability simplex parameterising a categorical distribution $\mathcal{C}$ (a generalisation of the Bernoulli distribution to $J$ labels). In other words, the probability of the $j^{th}$ label is
+where we construct GPs $F_j \sim \GP\left(m_j, k_j\right)$ for each label $j=1, \dots J$, such that $F_1, \dots, F_J$ are stochastically independent GPs and $s: \mathbb{R}^J \rightarrow \Delta(J)$ is a mapping to a $J$ dimensional probability simplex parameterising a categorical distribution $\mathcal{C}$ (a generalisation of the Bernoulli distribution to $J$ labels). In other words, the probability of the $j^{th}$ label is
 \begin{align}
     \mathbb{P}(Y=j) = s_j(F_1(x), \dots, F_J(x))
 \end{align}
@@ -304,7 +295,7 @@ s_{j}\left(f_1, \dots, f_J\right) = \begin{cases}
 \end{align}
 where $\delta \in [0, 1]$. Typically, $\delta$ is chosen as a very small value (i.e. $1e^{-2}$). Constructing the $\Delta(J)$ vector with (\ref{robust-max-function}), we have the probability value of $1-\delta$ for the label of maximum value and $\frac{\delta}{J-1}$ otherwise. This formulation provides robustness to outliers, as it only considers the ranking of the GP models for each label.
 
-A benefit of the robust max function is that the expected log-likelihood under the categorical distribution in (\ref{gp-classifier}), becomes analytically tractable. \cite{wild2022generalized} shows that with $N$ input and response pairs
+A benefit of the robust max function is that the expected log-likelihood under the categorical distribution in (\ref{gp-classifier}) becomes analytically tractable. \cite{wild2022generalized} shows that with $N$ input and response pairs
 \begin{align}
     \mathbb{E} \left[\log p\left(y \vert x\right)\right] \approx \sum_{n=1}^N \log(1-\epsilon) S(x_n, y_n) + \log\left(\frac{\epsilon}{J-1}\right) \left(1-S(x_n, y_n)\right)
     \label{robust-max-function-expected-log-likelihood}
@@ -321,7 +312,7 @@ A major drawback of GPs has been their inability to scale with respect to $N$, t
 Both classification and regression predictive posteriors rely on evaluating the inversion of an $\mathbb{R}^{N \times N}$ matrix in (\ref{gp-posterior-mean}) and (\ref{gp-posterior-covariance}). 
 This operation has computational complexity $\mathcal{O}(N^3)$ and space complexity $\mathcal{O}(N^2)$, both of which quickly become problematic when scaling to larger-sized training sets. 
 Despite their impressive performance and theoretically-driven approach, the computational intractability of GPs has been a serious limitation, restricting their use to problem domains having smaller sized data sets. 
-In this section, we will review Variational Inference (VI) for GPs to obtain cheaper approximations of the true predictive posterior. 
+In this section, we will review Variational Inference (VI) for GPs to obtain computationally cheaper approximations of the true predictive posterior. 
 We will also discuss the challenges of working within this learning framework.
 
 \subsection{Variational Inference in Finite Dimensions}\label{section:vi-in-finite-dimensions}
@@ -333,7 +324,9 @@ These are used for the Bayesian posterior \vw{here you need to use the pdfs i.e.
     p(Z \vert Y=y) \propto p(Y=y\vert Z)p(Z)
     \label{bayesian-posterior}
 \end{align}
-which is often computationally and/or analytically intractable. This has motivated the need for variational methods like VI to approximate (\ref{bayesian-posterior}). VI is based on the observation that the Kullback-Leibler (KL) divergence between an arbitrary probability measure $Q \coloneqq \mathbb{Q}(Z)$ and $\mathbb{P}(Z\vert Y)$ can be rewritten as
+which is often computationally and/or analytically intractable. 
+This has motivated the need for variational methods like VI to approximate (\ref{bayesian-posterior}). 
+VI is based on the observation that the Kullback-Leibler (KL) divergence between an arbitrary probability measure $Q \coloneqq \mathbb{Q}(Z)$ and $\mathbb{P}(Z\vert Y)$ can be rewritten as
 \begin{align}
     \KLD\left[Q, \mathbb{P}(Z \vert Y)\right] = L(Q) - \log p(y)
     \label{finite-dimensional-vi-kld}
@@ -349,7 +342,8 @@ It follows that
     \argmin_{Q \in \boldsymbol{Q}} \KLD\left[Q, \mathbb{P}(Z\vert Y)\right] = \argmin_{Q \in \boldsymbol{Q}} L(Q)
     \label{optimal-approximation-vi}
 \end{align}
-where $\boldsymbol{Q}$ is a set of candidate probability measures. In other words, approximating the posterior by minimising (\ref{finite-dimensional-vi-kld}) is equivalent to minimising (\ref{finite-dimensional-vi-loss}). Typically, $\boldsymbol{Q}$ is constructed with respect to a parameter set $\boldsymbol{\Gamma}$ such that 
+where $\boldsymbol{Q}$ is a set of candidate probability measures. 
+In other words, approximating the posterior by minimising (\ref{finite-dimensional-vi-kld}) is equivalent to minimising (\ref{finite-dimensional-vi-loss}). Typically, $\boldsymbol{Q}$ is constructed with respect to a parameter set $\boldsymbol{\Gamma}$ such that 
 \begin{align}
     \boldsymbol{Q} \coloneqq \left\{Q_{\gamma}: \gamma \in \boldsymbol{\Gamma} \right\}
 \end{align}
@@ -361,14 +355,15 @@ obtains $Q_{\gamma^*}$ the VI approximation of the Bayesian posterior minimising
 \begin{enumerate}
     \item The parameterised set of measures $\boldsymbol{Q}$ is large enough to contain a reasonable approximation of the true Bayesian posterior
     \item The parameterisation of $Q$ ensures that $L(Q)$ is tractable or easy to approximate 
-    \item There exists an optimisation procedure that can find a reasonable minimiser $\gamma^*$
+    \item There exists an optimisation procedure that can find a reasonable minimiser $\gamma^*$.
 \end{enumerate}
-These three assumptions are in tension with each other. For example, a larger approximation space $\boldsymbol{Q}$ can cause $L(Q)$ to be intractable or cause a more difficult optimisation space.
+These three assumptions are in tension with each other. 
+For example, a larger approximation space $\boldsymbol{Q}$ can cause $L(Q)$ to be intractable or cause a more difficult optimisation space.
 However in practice, VI can be quite succesful if employed by well-specialised practioners.
 \\\jw{what do you mean by a "well-specified practitoner"? Like a domain expert or something who knows what theyre doing when using VI.}
 \vw{yes pretty much. I just meant VI can be successful if the person knows what he is doing. }
 
-\subsection{Sparse Variatonal Gaussian Processes}
+\subsection{Sparse Variatonal Gaussian Processes}\label{section:svgp}
 \jw{is it sparse or stochastic variational GP? lol}
 To overcome the computationally intractable GP, we review \cite{titsias2009variational} which proposed the variational approximation for the Bayesian predictive posterior in (\ref{gp-posterior-normal}) as
 \begin{align}
@@ -377,7 +372,7 @@ To overcome the computationally intractable GP, we review \cite{titsias2009varia
 where the mean function is
 \begin{align}
     \label{svgp-mean} 
-    m_Q(x) = m(x) + \mathbf{K}_{x, \mathbf{Z}}\left(\mathbf{K}_{\mathbf{Z}, \mathbf{Z}}\right)^{-1} \boldsymbol{\mu}
+    m_Q(x) = m_P(x) + \mathbf{K}_{x, \mathbf{Z}}\left(\mathbf{K}_{\mathbf{Z}, \mathbf{Z}}\right)^{-1} \boldsymbol{\mu}
 \end{align}
 and the kernel function is
 \begin{align}
@@ -389,14 +384,14 @@ defining a parameter space
     \mathbf{\Gamma} = \left\{\boldsymbol{\mu} \in \mathbb{R}^{M}, \mathbf{\Sigma} \in \mathbb{R}^{M\times M}_{\succcurlyeq 0}, \mathbf{Z} \in \mathcal{X}^M \right\}
     \label{svgp-parameter-space}
 \end{align}
-where $\mathbf{Z}$ is $M$ inducing points, typically chosen as some subset of $\mathbf{X}$. 
+where $m_P$ and $k$ are the mean and kernel functions of the target GP that we want to approximate. $\mathbf{Z}$ is $M$ inducing points, typically chosen as some subset of $\mathbf{X}$. 
 Following (\ref{finite-dimensional-vi-loss}), the variational loss for a candidate $Q \coloneqq \mathbb{Q}(F)$ becomes
 \begin{align}
 L(Q) = -\sum_{n-1}^N \mathbb{E}_Q \left[\log p(y_n \vert F(x_n)\right] + \KLD\left[\mathbb{Q}^F, \mathbb{P}^F\right]
 \label{svgp-vi-loss}
 \end{align}
 where the expectation in (\ref{svgp-vi-loss}) is tractable since $F(x_n)$ is Gaussian under $Q$. 
-However it is unclear if the KL divergence between two GPS in the second term, is even well-defined and from a practical viewpoint, computable. 
+However it is unclear if the KL divergence between two GPs in the second term, is even well-defined and from a practical viewpoint, computable. 
 \cite{matthews2016sparse} points out that the choice of $m_Q$ and $r$ by \cite{titsias2009variational} ensures that
 \begin{align}
     \KLD\left[\GP\left(m_Q, r\right), \GP\left(m_P, k\right)\right] = \KLD\left[\mathcal{N}\left(\boldsymbol{\mu}, \mathbf{\Sigma}\right), \mathcal{N}\left(\mathbf{m}_{\mathbf{Z}}, \mathbf{K}_{\mathbf{Z}, \mathbf{Z}}\right)\right]
@@ -435,31 +430,41 @@ This formulation ensures the matrix inversion of $\mathbb{R}^{M \times M}$ matri
 Thus, the computational complexity of this approach is $\mathcal{O}\left(NM^2\right)$ with space complexity $\mathcal{O}\left(NM\right)$. 
 This significantly improves the scalability of GP approaches from the traditional GP in Section \ref{section:gaussian-processes}. $M$ is typically chosen as $\mathcal{O}(N^{1/2})$ such that the svGP has $\mathcal{O}(N^{2})$ and $\mathcal{O}(N^{3/2})$ time and space complexity respectively.
 
-This svGP formulation provides a solution to the scaling issues of the GP but illustrates how the three assumptions of VI discussed in Section \ref{section:vi-in-finite-dimensions} can break down. In particular, the variational set $\mathbf{Q}$ defined by the parameter set $\boldsymbol{\Gamma}$ may not be expressive enough to contain a reasonable approximation of the true Bayesian posterior. For example, the mean function of the true posterior of a zero mean GP can be expressed as a linear combination
+This svGP formulation provides a solution to the scaling issues of the GP but illustrates how the three assumptions of VI discussed in Section \ref{section:vi-in-finite-dimensions} can break down. 
+In particular, the variational set $\mathbf{Q}$ defined by the parameter set $\boldsymbol{\Gamma}$ may not be expressive enough to contain a reasonable approximation of the true Bayesian posterior. 
+For example, the mean function of the true posterior of a zero mean GP can be expressed as a linear combination
 \begin{align}
     \hat{m}(x) = \sum_{n=1}^{N} \alpha_n k(x, x_n) \in \text{span} \left(\left\{k(\cdot, x_1), \dots, k(\cdot, x_N)\right\}\right)
 \end{align}
-with $\boldsymbol{\alpha} \coloneqq \left[\alpha_1, \dots \alpha_N\right]^T = \mathbf{K}_{\mathbf{X}, \mathbf{X}}^{-1}\mathbf{Y}$. On the other hand, the corresponding variational mean $m_Q$ in (\ref{svgp-mean}) is only a linear combination within the inducing point space
+with $\boldsymbol{\alpha} \coloneqq \left[\alpha_1, \dots \alpha_N\right]^T = \mathbf{K}_{\mathbf{X}, \mathbf{X}}^{-1}\mathbf{Y}$.
+On the other hand, the corresponding variational mean $m_Q$ in (\ref{svgp-mean}) is only a linear combination within the inducing point space
 \begin{align}
     m_Q(x) = \sum_{m=1}^{M} \beta_m k(x, z_m) \in \text{span}\left(\left\{k(\cdot, z_1), \dots, k(\cdot, z_M))\right\}\right)
 \end{align}
 with $\boldsymbol{\beta} \coloneqq \left[\beta_1, \dots \beta_M\right]^T = \mathbf{K}_{\mathbf{Z}, \mathbf{Z}}^{-1}\boldsymbol{\mu}$.
-Choosing $M$ as $\mathcal{O}(N^{1/2})$, it is likely that the inducing point space will be too small to contain $\hat{m}$. A similar argument can be made for the posterior kernel. 
-\cite{wild2022generalized} explains that the KL divergence between two GPs is not generally tractable or even finite. Thus within the Bayesian context of VI, we are forced to restrict the variational set $\boldsymbol{Q}$ to obtain a tractable loss $L$.
+Choosing $M$ as $\mathcal{O}(N^{1/2})$, it is likely that the inducing point space will be too small to contain $\hat{m}$. 
+A similar argument can be made for the posterior kernel. 
+\cite{wild2022generalized} explains that the KL divergence between two GPs is not generally tractable or even finite. 
+Thus within the Bayesian context of VI, we are forced to restrict the variational set $\boldsymbol{Q}$ to obtain a tractable loss $L$.
 
 \subsection{Inducing Point Selection}
 Within the context of VI, we wish to find an optimal set of inducing points such that
 \begin{align}
     \text{span} \left(\left\{k(\cdot, x_1), \dots, k(\cdot, x_N)\right\}\right) \approx \text{span}\left(\left\{k(\cdot, z_1), \dots, k(\cdot, z_M))\right\}\right)
 \end{align}
-where the inducing points can approximate the majority of the input space. Several methods have been explored to achieve this \jw{citation needed}. We will review \cite{burt2020convergence}, which proposes an iterative selection procedure that greedily chooses the next inducing point based on the highest marginal variance in the prior when conditioned on the currently selected set of inducing points
+where the inducing points can approximate the majority of the input space. Several methods have been explored to achieve this \jw{citation needed}. 
+We will review \cite{burt2020convergence}, which proposes an iterative selection procedure that greedily chooses the next inducing point based on the highest marginal variance in the prior when conditioned on the currently selected set of inducing points
 \begin{align}
     \label{greedy-varaince-selection}
     \text{index}_{m+1} = \argmax \left(\diag \left(\mathbf{K}_{\mathbf{X}, \mathbf{X}} - \mathbf{K}_{\mathbf{X}, \mathbf{z}} \left(\mathbf{K}_{\mathbf{z}, \mathbf{z}}\right)^{-1}\mathbf{K}_{\mathbf{z}, \mathbf{X}}\right)\right)
 \end{align}
 where $m < M$, $\mathbf{z} \in \mathcal{X}^m$ are the $m$ inducing points already chosen, and $\text{index}_{m+1}$ is the index of the next inducing point.
 
-Each element in the diagonal has computational complexity $\mathcal{O}(M^2)$ from matrix multiplication so looping over all $N$ candidate points along the diagonal is $\mathcal{O}(NM^2)$. The matrix inversion is $\mathcal{O}(M^3)$ but remains a constant when computing each element of the diagonal. Thus the complexity of selecting each inducing point is $\mathcal{O}(NM^2)$, assuming $M << N$. Repeating to select $M$ inducing points, this algorithm has $\mathcal{O}(NM^3)$ computational complexity. Choosing $M$ as $\mathcal{O}(N^{1/2})$ we have $\mathcal{O}(N^{5/2})$ computational complexity and $\mathcal{O}(N + M^2)$ space each iteration with overall $\mathcal{O}(N)$ space. 
+Each element in the diagonal has computational complexity $\mathcal{O}(M^2)$ from matrix multiplication so looping over all $N$ candidate points along the diagonal is $\mathcal{O}(NM^2)$. 
+The matrix inversion is $\mathcal{O}(M^3)$ but remains a constant when computing each element of the diagonal. 
+Thus the complexity of selecting each inducing point is $\mathcal{O}(NM^2)$, assuming $M << N$. 
+Repeating to select $M$ inducing points, this algorithm has $\mathcal{O}(NM^3)$ computational complexity. 
+Choosing $M$ as $\mathcal{O}(N^{1/2})$ we have $\mathcal{O}(N^{5/2})$ computational complexity and $\mathcal{O}(N + M^2)$ space each iteration with overall $\mathcal{O}(N)$ space. 
 \\\jw{Add other results from \cite{burt2020convergence}. Maybe any guarantees from this method?}
 \\\jw{Maybe show a picture of the inducing points selected for a toy curve}
 
@@ -467,6 +472,79 @@ Each element in the diagonal has computational complexity $\mathcal{O}(M^2)$ fro
 \vw{I am not so sure if you want this. This is quite technical, but if you want to we can have this section. Here you would basically give a brief summary of \cite{wynne2022variational}. I am not sure you need this but this would have all the stuff about GPs being probability measures on certain function spaces etc and why you would rather want to use GREs in the context of VI in infinite dimensions. You wrote some of that stuff. Also Kolmogorov extension theorem, if you want to have it, you could write it in the first chapter. Here, not so much.}
 \jw{I'll leave this empty for now so I can focus on writing other parts of the report, but if there's time I want to add this section mainly as an exercise for my own understanding.}
 
+
+\newpage 
+\section{Generalised Variational Inference for Gaussian Processes}
+The objective in (\ref{svgp-vi-loss}) is the root cause of the restrictive svGP variational set, as learning in a VI framework necessitates an often ill-defined KL divergence between GPs. 
+This section will review generalised variational inference (GVI) in finite dimensions from \cite{knoblauch2022optimization}, a learning framework that does not depend on the KL divergence. 
+This will be followed by a review of \cite{wild2022generalized} showing that extending GVI to an infinite dimensional setting for GPs constructs a learning framework that can accommodate richer GP approximation spaces by avoiding the KL divergence from standard VI.
+
+\subsection{Generalised Variational Inference in Finite Dimensions}
+Extending the Bayesian posterior from (\ref{bayesian-posterior}) to $N$ observations we have
+\begin{align}
+    \label{bayesian-posterior-gvi}
+    q_B(Z) \coloneqq p(Z\vert Y=y) \propto p(Z) \prod_{n=1}^N p(Y=y_n \vert Z)
+\end{align}
+where $p(Z)$ is the prior for the latent variables and $p(Y=y \vert Z)$ is the likelihood of an observation $y \in \mathbb{R}$. 
+The Bayesian posterior $q_B(Z)$ is traditionally viewed as an updated belief for the latent variables by incorporating the likelihood evaluation of new observations.
+This interpretation is commonly cited in the context of statistical modelling where practitioners are focused on correct model specification, to characterise an underlying data generation process. The validity of the belief update relies on three assumptions:
+\begin{enumerate}
+    \item A well-specified prior
+    \item A well-specified likelihood
+    \item An analytically and/or computationally tractable posterior, or the existence of a tractable and reasonable VI approximation
+\end{enumerate}
+which are often violated in settings of larger-scaled modelling like Bayesian Neural Networks (BNNs). For example in BNNs, Gaussian priors are generally chosen for computational convenience and are most likely mis-specified in the Bayesian context. Over-parameterised BNNs are also most definitely mis-specified. It is unreasonable to interpret their evaluation as any meaningful insight into the data likelihood. Finally, the posterior of BNNs are often approximated either through samplers or variational approximations. To achieve sampling convergence, larger-scaled models can often require much more computational resources and time than is practically available. On the other hand, achieving a reasonable variational approximation is not always guaranteed, as discussed in Section \ref{section:vi-in-finite-dimensions}.
+
+\cite{knoblauch2022optimization} introduces a new interpretation of the Bayesian posterior, showing that it is also the solution of the optimisation problem
+\begin{align}
+    q_B(Z) = \argmin_{Q \in \boldsymbol{Q}} \left\{\mathbb{E}_{Q}\left[\sum_{n=1}^N \ell \left(Z, y_n\right)\right] + \mathbb{D}\left[Q, P\right]\right\}
+    \label{gvi-posterior}
+\end{align}
+when choosing $\boldsymbol{Q}$ as the space of all probability measures on $Z$, the negative log-likelihood $\ell(Z, y) =-\log p\left(y \vert Z\right)$,  and KL divergence $\mathbb{D}\left[Q, P\right] = \KLD\left[Q, P\right]$ where $P$ is the prior. 
+More generally, $\ell$ is called the loss function and $\mathbb{D}$ is the divergence. With this interpretation, the Bayesian posterior is the solution of a regularised empirical risk minimisation problem.
+
+Framed through optimisation, the Bayesian posterior will always be a valid solution of (\ref{gvi-posterior}), regardless of the three  assumptions required to ensure a valid belief update.
+This is more in-tune with practitioners of larger-scaled models who focus on predictive performance rather than model specification. 
+\cite{knoblauch2022optimization} also shows that by generalising the Bayesian posterior within the learning framework of (\ref{gvi-posterior}), any choice of prior $P$ for $Z$, valid divergence $\mathbb{D}$, loss $\ell$, and approximation set $\boldsymbol{Q}$ will result in a generalised posterior solution that maintains interpretations as a belief update, within this generalised Bayesian framework. 
+This flexible inference approach will motivate the replacement of the KL divergence that was problematic in standard VI as reviewed in Section \ref{section:vi-gp}.
+
+\subsection{Generalised Variational Inference on Function Spaces}
+This section will review \cite{wild2022generalized}, which extends GVI to infinite dimensional settings for quantifying uncertainties on function spaces and provides a framework for learning variational GPs.
+
+\cite{wild2022generalized} shows that GVI in function spaces involves solving 
+\begin{align}
+    Q^* = \argmin_{Q \in \boldsymbol{Q}} \left\{\mathbb{E}_{Q}\left[\sum_{n=1}^{N}\ell(F, y_n)\right] + \mathbb{D}\left[Q, \mathbb{P}(F)\right]\right\}
+    \label{gvi-posterior-in-fs}
+\end{align}
+where $Q \in \boldsymbol{Q}$ is a variational family of probability measures on a function space $\mathcal{F}$ and $\mathbb{P}(F)$ is a prior on $\mathcal{F}$.
+
+\cite{wild2022generalized} explains that the Kolomogorov Extension Theorem ensures for a given GP, there exists a corresponding Gaussian measure (GM) on the trivial function space $\mathcal{F} = \left\{f: \mathcal{X} \rightarrow \mathbb{R}\right\}$. 
+However, this space is highly prone to support mis-match for the KL-divergence and ensuring a tractable KL on $\mathcal{F}$ requires heavy restrictions on the variational family $\boldsymbol{Q}$, as discussed in section \ref{section:svgp}. 
+Instead, \cite{wild2022generalized} identifies the existence of GPs with corresponding GMs on the Hilbert space of square integrable functions $\mathcal{L}^2\left(\mathcal{X}, \rho, \mathbb{R}\right)$ when the mean function satisfies 
+\begin{align}
+    m \in \mathcal{L}^2\left(\mathcal{X}, \rho, \mathbb{R}\right)
+    \label{l2-mean}
+\end{align} 
+and the kernel satisfies
+\begin{align}
+    \int k(x, x) d\rho(x) < \infty
+    \label{l2-kernel}
+\end{align}
+also known as a trace-class kernel.
+These conditions guarantee sample functions from the GP to have square-integrable paths, such that there exists $\mathbb{P} \coloneqq \mathcal{N}(m, C)$, a GM on $\mathcal{L}^2\left(\mathcal{X}, \rho, \mathbb{R}\right)$ with the same mean $m$ and a covariance operator
+\begin{align}
+    C(f) \coloneqq \int_{\mathcal{X}} k(\cdot, x) f(x) d\rho(x)
+\end{align}
+for any function $f \in \mathcal{L}^2\left(\mathcal{X}, \rho, \mathbb{R}\right)$.
+With the GVI objective in (\ref{gvi-posterior-in-fs}), \cite{wild2022generalized} proposes Gaussian Wasserstein Inference (GWI), replacing the KL divergence with the 2-Wasserstein distance between GMs on Hilbert spaces where
+\begin{align}
+    \mathbb{W}\left[Q, P\right]^2 = \left\|m_P - m_Q\right\|_2^2 + \tr\left(C_P\right) + \tr\left(C_P\right) - 2 \tr \left[\left(\left(C_P\right)^{1/2} C_Q \left(C_P\right)^{1/2} \right)^{1/2}\right]
+\end{align}
+which is always well-defined and does not have the support mis-match problem of the KL divergence. 
+The subscripts denotes the respective GM of the object, $\tr$ is the trace of an operator, and $(C)^{1/2}$ denotes the square root of the positive self-adjoint operator $C$.
+Most mean functions satisfy (\ref{l2-mean}) and (\ref{l2-kernel}), ensuring the existence of P and Q on $\mathcal{L}^2\left(\mathcal{X}, \rho, \mathbb{R}\right)$.
+This provides significantly more freedom for the variational set $\boldsymbol{Q}$ than the svGP approach from \cite{titsias2009variational}.
+With GWI, \cite{wild2022generalized} trains GWI-net, construcing the variational set by parameterising the mean with a neural network, replacing the svGP mean in (\ref{svgp-mean}), showing the potential of this approach.
 
 
 \newpage
@@ -668,7 +746,7 @@ I am not so sure if you want this. This is quite technical, but if you want to w
 
 
 
-\section{Sparse Variational Gaussian Processes: Scaleable but \textit{not Expressive}}\label{section:the-svgp}
+\section{Sparse Variational Gaussian Processes: Scaleable but \textit{not Expressive}}
 
 
 
@@ -702,24 +780,20 @@ where:
 \end{align}
 \cite{titsias2009variational} proposes an approximate predictive posterior mean function parameterised by a vector $\boldsymbol{\mu} \in \mathbb{R}^M$:
 \begin{align}
-    \label{svgp-mean} 
     \bar{\mathbf{m}}_{\mathbf{X}_{N*}}^{q} = \mathbf{m}^p_{\mathbf{X}_{N*}} + \mathbf{K}^p_{\mathbf{X}_{N*}, \mathbf{X}_M}\left(\mathbf{K}^p_{\mathbf{X}_M,\mathbf{X}_M}\right)^{-1} \boldsymbol{\mu}
 \end{align}
 and a kernel function parameterised by a positive definite matrix $\mathbf{\Sigma} \in \mathbb{R}^{M\times M}_{\succ 0}$:
 \begin{align}
 \bar{\mathbf{K}}_{\mathbf{X}_{N*}, \mathbf{X}_{N*}}^{q} & = \mathbf{K}^p_{\mathbf{X}_{N*}, \mathbf{X}_{N*}} - \mathbf{K}^p_{\mathbf{X}_{N*}, \mathbf{X}_M} \left(\mathbf{K}^p_{\mathbf{X}_M, \mathbf{X}_M}\right)^{-1}\mathbf{K}^p_{\mathbf{X}_M, \mathbf{X}_{N*}} \nonumber \\
 &\qquad + \mathbf{K}^p_{\mathbf{X}_{N*}, \mathbf{X}_M}  \left(\mathbf{K}^p_{\mathbf{X}_M, \mathbf{X}_M}\right)  ^{-1} \mathbf{\Sigma} \left(\mathbf{K}^p_{\mathbf{X}_M, \mathbf{X}_M}\right)^{-1}\mathbf{K}^p_{\mathbf{X}_M, \mathbf{X}_{N*}}
-\label{svgp-covariance}
 \end{align}
 All together, these define the parameter space:
 \begin{align}
     \mathbf{\Gamma} = \left\{\boldsymbol{\mu} \in \mathbb{R}^{M}, \mathbf{\Sigma} \in \mathbb{R}^{M\times M}_{\succ 0}, \mathbf{X}_M = \left\{x_m\right\}_{m=1}^{M} \subset \{x_n\}_{n=1}^{N}\right\}
-    \label{svgp-parameter-space}
 \end{align}
 We wish to find $\gamma^* \in \mathbf{\Gamma}$ such that for any test points $\mathbf{X}_{N*}$ the svGP approximates the exact posterior distribution from ($\ref{gp-posterior-normal}$):
 \begin{align}
     P_{\GP}\left(Y_{N*} \vert \mathbf{X}_{N*}, \mathbf{Y}_N, \mathbf{X}_N, \sigma^2 \right) \approx Q_{\GP}^{(\gamma^*)}\left(Y_{N*} \vert \mathbf{X}_{N*}\right)
-    \label{svgp-desired-approximation}
 \end{align}
 To approximate the exact predictive posterior, \cite{titsias2009variational} targets matching $L_{\ell \ell}$, the log-likelihood of $P_{\GP}$, with respect to the approximation parameter $\gamma \in \boldsymbol{\Gamma}$:
 \begin{align}
