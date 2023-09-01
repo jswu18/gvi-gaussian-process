@@ -232,17 +232,16 @@ The distribution in (\ref{gp-vector}) is a finite-dimensional instance of the ge
  where $F \coloneqq \left\{F(x): x \in \mathcal{X}\right\}$ such that a sample path from $F$ has the mapping $f: \mathcal{X} \rightarrow \mathbb{R}$.
 In other words, choosing a mean and kernel to construct (\ref{gp}) ensures that \textit{any} finite set of inputs will have a consistent joint Gaussian distribution adhering to (\ref{gp-vector}).
 
+GPs are a powerful modelling approach. 
+Minimal restrictions for choosing the mean function and kernel function provide endless possibilities for constructing expressive GP model spaces. 
+This control and visibility into the model's behaviour is a strong advantage of GPs compared to other modelling approaches. 
+
 \cite{novak2019neural} explains that the GP is an important construction for understanding the theoretical properties of many neural network architectures at initilisation. 
 Showing that the infinite width limit of many such architectures can be expressed as a GP has provided a theoretical framework for analysing neural networks typically viewed as black box approaches. 
 This provides further motivation for the potential and importance of GPs.
 
-GPs are a powerful modelling approach. 
-Minimal restrictions for choosing the mean function and kernel function provide endless possibilities for constructing expressive GP model spaces. 
-This control and visibility into the model's behaviour is a strong advantage of GPs compared to other modelling approaches. 
-The following sections will review GPs for regression and classification tasks.
-
 \subsection{Gaussian Process Regression}
-Consider the regression task where we have $N$ observation pairs $(\mathbf{X}, \mathbf{Y}) = \left\{(x_n, y_n)\right\}_{n=1}^{N}$ with inputs $x_n \in \mathcal{X}$ and responses $y_n \in \mathbb{R}$. GP regression models the data generating process
+Consider the regression task where we have $N$ observation pairs $(\mathbf{X}, \mathbf{Y}) = \left\{(x_n, y_n)\right\}_{n=1}^{N}$ with inputs $x_n \in \mathcal{X}$ and responses $y_n \in \mathbb{R}$. GP regression models the data generating process as
 \begin{align}
     y \sim F(x) + \epsilon
     \label{regression-data-uncertainties}
@@ -253,10 +252,10 @@ where the GP random function mapping $F$ accounts for the epistemic (model) unce
     \label{aleotric-uncertainty}
 \end{align}
 
-In GP regression, the Bayesian posterior for a test point $x^* \in \mathcal{X}$ conditioned on the given training data acts as a `prediction' for the epistemic uncertainty of the test data responses. With all terms being Gaussian, this posterior has a closed-form conditional Gaussian expression.
+In GP regression, the Bayesian posterior for a test point $x \in \mathcal{X}$ conditioned on the given training data acts as a `prediction' for the epistemic uncertainty of the test data responses. With all terms being Gaussian, this posterior has a closed-form conditional Gaussian expression.
 Having also chosen the aleoteric data uncertainty to be modelled as Gaussian in (\ref{aleotric-uncertainty}), GP regression models the test data response $y \in \mathbb{R}$ as
 \begin{align}
-    y \vert \mathbf{Y}, \sigma^2 
+    y \vert \mathbf{X}, \mathbf{Y}, \sigma^2 
     \sim \mathcal{N}\left(\bar{m}(x), \bar{k}(x, x)\right)
     \label{gp-posterior-normal}
 \end{align}
@@ -270,10 +269,10 @@ and
     \label{gp-posterior-covariance}
     \bar{k}(x, x) = k(x, x) - \mathbf{K}_{x, \mathbf{X}} \left(\mathbf{K}_{\mathbf{X}, \mathbf{X}} + \sigma^2 \mathbf{I}\right)^{-1} \mathbf{K}_{\mathbf{X}, x}
 \end{align}
-where $\mathbf{m}_{\mathbf{X}}$ is more verbose notation for (\ref{gp-mean-vector}), $\mathbf{K}_{\mathbf{X}, \mathbf{X}}$ is verbose for (\ref{gp-kernel-matrix}), $\mathbf{K}_{x^*, \mathbf{X}} \in \mathbb{R}^{1 \times N}$, $\mathbf{K}_{\mathbf{X}, x^*} \in \mathbb{R}^{N \times 1}$ are gram matrices constructed with $\mathbf{X}$ and $x^*$ following (\ref{gp-kernel-matrix}), and $\mathbf{I} \in \mathbb{R}^{N \times N}$ is the identity matrix.
+where $\mathbf{m}_{\mathbf{X}}$ is more verbose notation for (\ref{gp-mean-vector}), $\mathbf{K}_{\mathbf{X}, \mathbf{X}}$ is verbose for (\ref{gp-kernel-matrix}), $\mathbf{K}_{x, \mathbf{X}} \in \mathbb{R}^{1 \times N}$, $\mathbf{K}_{\mathbf{X}, x} \in \mathbb{R}^{N \times 1}$ are gram matrices constructed with $\mathbf{X}$ and $x$ following (\ref{gp-kernel-matrix}), and $\mathbf{I} \in \mathbb{R}^{N \times N}$ is the identity matrix.
 
 \subsection{Gaussian Process Classification}
-Consider the classification task where we have $N$ observation pairs $(\mathbf{X}, \mathbf{Y}) = \left\{(x_n, y_n)\right\}_{n=1}^{N}$ with inputs $x_n \in \mathcal{X}$ and responses $y_n \in \{1, \dots, J\}$. In other words, we wish to map each input $x_n$ to one of $J$ labels. Following the approach from \cite{matthews2017scalable}, GPs are modelled for classification through
+Consider the classification task where we have $N$ observation pairs $(\mathbf{X}, \mathbf{Y}) = \left\{(x_n, y_n)\right\}_{n=1}^{N}$ with inputs $x_n \in \mathcal{X}$ and label responses $y_n \in \{1, \dots, J\}$. In other words, we wish to map each input $x_n$ to one of $J$ labels. Following the approach from \cite{matthews2017scalable}, GPs can be used for classification through the model
 \begin{align}
     Y \sim \mathcal{C}\left(s(F_1(x), \dots, F_J(x))\right)
     \label{gp-classifier}
@@ -316,9 +315,9 @@ In this section, we will review Variational Inference (VI) for GPs to obtain com
 We will also discuss the challenges of working within this learning framework.
 
 \subsection{Variational Inference in Finite Dimensions}\label{section:vi-in-finite-dimensions}
-Although GPs are objects constructed in an infinite dimensional setting this section will review VI in a finite dimensional setting as a preliminary step. 
+Although GPs are objects constructed in an infinite dimensional setting this section will first review VI in a finite dimensional setting as a preliminary step. 
 
-A Bayesian approach to modelling begins with assuming a data generating process for an observation $y \in \mathbb{R}$ as conditionally dependent on $M$ unobserved latent random variables $Z \in \mathbb{R}^M$ through a likelihood $p(Y=y\vert Z)$ and a prior on the latent variables $p(Z)$. 
+A Bayesian approach to modelling begins with assuming a data generating process for an observation $y$ as conditionally dependent on $M$ unobserved latent random variables $Z$ through a likelihood $p(Y=y\vert Z)$ and a prior on the latent variables $p(Z)$. 
 These are used for the Bayesian posterior \vw{here you need to use the pdfs i.e. $p(Z|Y=y)$ and $p(z)$. The formula looks different if you write it for measures.}\jw{done, thanks.}
 \begin{align}
     p(Z \vert Y=y) \propto p(Y=y\vert Z)p(Z)
@@ -358,7 +357,7 @@ obtains $Q_{\gamma^*}$ the VI approximation of the Bayesian posterior minimising
     \item There exists an optimisation procedure that can find a reasonable minimiser $\gamma^*$.
 \end{enumerate}
 These three assumptions are in tension with each other. 
-For example, a larger approximation space $\boldsymbol{Q}$ can cause $L(Q)$ to be intractable or cause a more difficult optimisation space.
+For example, a larger approximation space $\boldsymbol{Q}$ can cause $L(Q)$ to be intractable or create a more difficult optimisation setup.
 However in practice, VI can be quite succesful if employed by well-specialised practioners.
 \\\jw{what do you mean by a "well-specified practitoner"? Like a domain expert or something who knows what theyre doing when using VI.}
 \vw{yes pretty much. I just meant VI can be successful if the person knows what he is doing. }
@@ -404,7 +403,7 @@ reducing the KL divergence between two stochastic processes to
     \label{kld-closed-form}
 \end{align}
 the KL divergence between two finite dimensional Gaussian distributions on $\mathbb{R}^M$.
-\cite{titsias2009variational} shows that for a given set of inducing points $\mathbf{Z}$, the optimal choices $\boldsymbol{\mu}^*$ and $\mathbf{\Sigma}^*$ to minimising (\ref{svgp-vi-loss}) have the closed forms
+\cite{titsias2009variational} shows that for a given set of inducing points $\mathbf{Z}$, the optimal choices $\boldsymbol{\mu}^*$ and $\mathbf{\Sigma}^*$ to minimise (\ref{svgp-vi-loss}) have the closed forms
 \begin{align}
     \label{svgp-optimal-mean}
     \boldsymbol{\mu}^* = \sigma^{-2}\mathbf{K}_{\mathbf{Z}, \mathbf{Z}} \mathbf{\Psi}^{-1}\mathbf{K}_{\mathbf{Z}, \mathbf{X}}  \left(\mathbf{Y} - \mathbf{m}_\mathbf{X}\right)
@@ -432,7 +431,7 @@ This significantly improves the scalability of GP approaches from the traditiona
 
 This svGP formulation provides a solution to the scaling issues of the GP but illustrates how the three assumptions of VI discussed in Section \ref{section:vi-in-finite-dimensions} can break down. 
 In particular, the variational set $\mathbf{Q}$ defined by the parameter set $\boldsymbol{\Gamma}$ may not be expressive enough to contain a reasonable approximation of the true Bayesian posterior. 
-For example, the mean function of the true posterior of a zero mean GP can be expressed as a linear combination
+For example, the mean function of the true posterior with a zero mean GP can be expressed as the linear combination
 \begin{align}
     \hat{m}(x) = \sum_{n=1}^{N} \alpha_n k(x, x_n) \in \text{span} \left(\left\{k(\cdot, x_1), \dots, k(\cdot, x_N)\right\}\right)
 \end{align}
@@ -453,7 +452,7 @@ Within the context of VI, we wish to find an optimal set of inducing points such
     \text{span} \left(\left\{k(\cdot, x_1), \dots, k(\cdot, x_N)\right\}\right) \approx \text{span}\left(\left\{k(\cdot, z_1), \dots, k(\cdot, z_M))\right\}\right)
 \end{align}
 where the inducing points can approximate the majority of the input space. Several methods have been explored to achieve this \jw{citation needed}. 
-We will review \cite{burt2020convergence}, which proposes an iterative selection procedure that greedily chooses the next inducing point based on the highest marginal variance in the prior when conditioned on the currently selected set of inducing points
+We review \cite{burt2020convergence}, which proposes an iterative selection procedure that greedily chooses the next inducing point based on the highest marginal variance in the prior when conditioned on the currently selected set of inducing points
 \begin{align}
     \label{greedy-varaince-selection}
     \text{index}_{m+1} = \argmax \left(\diag \left(\mathbf{K}_{\mathbf{X}, \mathbf{X}} - \mathbf{K}_{\mathbf{X}, \mathbf{z}} \left(\mathbf{K}_{\mathbf{z}, \mathbf{z}}\right)^{-1}\mathbf{K}_{\mathbf{z}, \mathbf{X}}\right)\right)
@@ -477,7 +476,7 @@ Choosing $M$ as $\mathcal{O}(N^{1/2})$ we have $\mathcal{O}(N^{5/2})$ computatio
 \section{Generalised Variational Inference for Gaussian Processes}
 The objective in (\ref{svgp-vi-loss}) is the root cause of the restrictive svGP variational set, as learning in a VI framework necessitates an often ill-defined KL divergence between GPs. 
 This section will review generalised variational inference (GVI) in finite dimensions from \cite{knoblauch2022optimization}, a learning framework that does not depend on the KL divergence. 
-This will be followed by a review of \cite{wild2022generalized} showing that extending GVI to an infinite dimensional setting for GPs constructs a learning framework that can accommodate richer GP approximation spaces by avoiding the KL divergence from standard VI.
+This will be followed by a review of \cite{wild2022generalized} which extends GVI to an infinite dimensional setting to construct a GP learning framework that also avoids the KL divergence, providing richer approximation spaces.
 
 \subsection{Generalised Variational Inference in Finite Dimensions}
 Extending the Bayesian posterior from (\ref{bayesian-posterior}) to $N$ observations we have
@@ -493,7 +492,13 @@ This interpretation is commonly cited in the context of statistical modelling wh
     \item A well-specified likelihood
     \item An analytically and/or computationally tractable posterior, or the existence of a tractable and reasonable VI approximation
 \end{enumerate}
-which are often violated in settings of larger-scaled modelling like Bayesian Neural Networks (BNNs). For example in BNNs, Gaussian priors are generally chosen for computational convenience and are most likely mis-specified in the Bayesian context. Over-parameterised BNNs are also most definitely mis-specified. It is unreasonable to interpret their evaluation as any meaningful insight into the data likelihood. Finally, the posterior of BNNs are often approximated either through samplers or variational approximations. To achieve sampling convergence, larger-scaled models can often require much more computational resources and time than is practically available. On the other hand, achieving a reasonable variational approximation is not always guaranteed, as discussed in Section \ref{section:vi-in-finite-dimensions}.
+which are often violated in settings of larger-scaled models like Bayesian Neural Networks (BNNs). 
+For example in BNNs, Gaussian priors are generally chosen for computational convenience and are most likely mis-specified in the Bayesian context. 
+BNN likelihood models are also most definitely mis-specified. 
+It is unreasonable to interpret the evaluation these over-parameterised models as any meaningful insight into the data likelihood. 
+Finally, the posterior of BNNs are often approximated either through samplers or variational approximations. 
+To achieve sampling convergence, larger-scaled models can require much more computational resources and time than is practically available. 
+On the other hand, achieving a reasonable variational approximation is not always guaranteed, as discussed in Section \ref{section:vi-in-finite-dimensions}.
 
 \cite{knoblauch2022optimization} introduces a new interpretation of the Bayesian posterior, showing that it is also the solution of the optimisation problem
 \begin{align}
@@ -505,8 +510,8 @@ More generally, $\ell$ is called the loss function and $\mathbb{D}$ is the diver
 
 Framed through optimisation, the Bayesian posterior will always be a valid solution of (\ref{gvi-posterior}), regardless of the three  assumptions required to ensure a valid belief update.
 This is more in-tune with practitioners of larger-scaled models who focus on predictive performance rather than model specification. 
-\cite{knoblauch2022optimization} also shows that by generalising the Bayesian posterior within the learning framework of (\ref{gvi-posterior}), any choice of prior $P$ for $Z$, valid divergence $\mathbb{D}$, loss $\ell$, and approximation set $\boldsymbol{Q}$ will result in a generalised posterior solution that maintains interpretations as a belief update, within this generalised Bayesian framework. 
-This flexible inference approach will motivate the replacement of the KL divergence that was problematic in standard VI as reviewed in Section \ref{section:vi-gp}.
+\cite{knoblauch2022optimization} also shows that by generalising the Bayesian posterior within the learning framework of (\ref{gvi-posterior}), any choice of prior $P$ for $Z$, valid divergence $\mathbb{D}$, loss $\ell$, and approximation set $\boldsymbol{Q}$ will result in a generalised posterior that maintains interpretations as a belief update.
+This flexible inference approach will motivate the replacement of the KL divergence that was problematic in standard VI reviewed in Section \ref{section:vi-gp}.
 
 \subsection{Generalised Variational Inference on Function Spaces}
 This section will review \cite{wild2022generalized}, which extends GVI to infinite dimensional settings for quantifying uncertainties on function spaces and provides a framework for learning variational GPs.
@@ -517,10 +522,9 @@ This section will review \cite{wild2022generalized}, which extends GVI to infini
     \label{gvi-posterior-in-fs}
 \end{align}
 where $Q \in \boldsymbol{Q}$ is a variational family of probability measures on a function space $\mathcal{F}$ and $\mathbb{P}(F)$ is a prior on $\mathcal{F}$.
-
-\cite{wild2022generalized} explains that the Kolomogorov Extension Theorem ensures for a given GP, there exists a corresponding Gaussian measure (GM) on the trivial function space $\mathcal{F} = \left\{f: \mathcal{X} \rightarrow \mathbb{R}\right\}$. 
-However, this space is highly prone to support mis-match for the KL-divergence and ensuring a tractable KL on $\mathcal{F}$ requires heavy restrictions on the variational family $\boldsymbol{Q}$, as discussed in section \ref{section:svgp}. 
-Instead, \cite{wild2022generalized} identifies the existence of GPs with corresponding GMs on the Hilbert space of square integrable functions $\mathcal{L}^2\left(\mathcal{X}, \rho, \mathbb{R}\right)$ when the mean function satisfies 
+\cite{wild2022generalized} explains that the Kolomogorov Extension Theorem ensures that for a given GP, there exists a corresponding Gaussian measure (GM) on the trivial function space $\mathcal{F} = \left\{f: \mathcal{X} \rightarrow \mathbb{R}\right\}$. 
+However, this space is highly prone to support mis-match and ensuring a tractable KL on $\mathcal{F}$ requires heavy restrictions on the variational family $\boldsymbol{Q}$, as shown in Section \ref{section:svgp}. 
+Instead, \cite{wild2022generalized} identifies the existence of GPs with corresponding GMs on the Hilbert space of square integrable functions $\mathcal{L}^2\left(\mathcal{X}, \rho, \mathbb{R}\right)$ when the mean satisfies 
 \begin{align}
     m \in \mathcal{L}^2\left(\mathcal{X}, \rho, \mathbb{R}\right)
     \label{l2-mean}
@@ -530,21 +534,21 @@ and the kernel satisfies
     \int k(x, x) d\rho(x) < \infty
     \label{l2-kernel}
 \end{align}
-also known as a trace-class kernel.
-These conditions guarantee sample functions from the GP to have square-integrable paths, such that there exists $\mathbb{P} \coloneqq \mathcal{N}(m, C)$, a GM on $\mathcal{L}^2\left(\mathcal{X}, \rho, \mathbb{R}\right)$ with the same mean $m$ and a covariance operator
+also known as a the trace-class kernel condition.
+These conditions guarantee sample functions from the GP to have square-integrable paths, such that there exists $\mathbb{P} \coloneqq \mathcal{N}(m, C)$, a GM on $\mathcal{L}^2$ with the same mean $m$ and a covariance operator
 \begin{align}
     C(f) \coloneqq \int_{\mathcal{X}} k(\cdot, x) f(x) d\rho(x)
 \end{align}
-for any function $f \in \mathcal{L}^2\left(\mathcal{X}, \rho, \mathbb{R}\right)$.
+for any function $f \in \mathcal{L}^2$.
 With the GVI objective in (\ref{gvi-posterior-in-fs}), \cite{wild2022generalized} proposes Gaussian Wasserstein Inference (GWI), replacing the KL divergence with the 2-Wasserstein distance between GMs on Hilbert spaces where
 \begin{align}
-    \mathbb{W}\left[Q, P\right]^2 = \left\|m_P - m_Q\right\|_2^2 + \tr\left(C_P\right) + \tr\left(C_P\right) - 2 \tr \left[\left(\left(C_P\right)^{1/2} C_Q \left(C_P\right)^{1/2} \right)^{1/2}\right]
+    \mathbb{W}\left[Q, P\right]^2 = \left\|m_P - m_Q\right\|_2^2 + \tr\left(C_P\right) + \tr\left(C_Q\right) - 2 \tr \left[\left(\left(C_P\right)^{1/2} C_Q \left(C_P\right)^{1/2} \right)^{1/2}\right]
 \end{align}
 which is always well-defined and does not have the support mis-match problem of the KL divergence. 
-The subscripts denotes the respective GM of the object, $\tr$ is the trace of an operator, and $(C)^{1/2}$ denotes the square root of the positive self-adjoint operator $C$.
-Most mean functions satisfy (\ref{l2-mean}) and (\ref{l2-kernel}), ensuring the existence of P and Q on $\mathcal{L}^2\left(\mathcal{X}, \rho, \mathbb{R}\right)$.
+The subscripts denotes the respective GM of the object, $\tr(\cdot)$ is the trace of an operator, and $(C)^{1/2}$ denotes the square root of the positive self-adjoint operator $C$.
+Most mean functions satisfy (\ref{l2-mean}) and (\ref{l2-kernel}), ensuring the existence of P and Q on $\mathcal{L}^2$.
 This provides significantly more freedom for the variational set $\boldsymbol{Q}$ than the svGP approach from \cite{titsias2009variational}.
-With GWI, \cite{wild2022generalized} trains GWI-net, construcing the variational set by parameterising the mean with a neural network, replacing the svGP mean in (\ref{svgp-mean}), showing the potential of this approach.
+With GWI, \cite{wild2022generalized} proposes GWI-net, a variational GP parameterised with a neural network mean to replace the svGP mean in (\ref{svgp-mean}). The experimental results of this approach show promising potential in both regression and classification tasks.
 
 
 \newpage
