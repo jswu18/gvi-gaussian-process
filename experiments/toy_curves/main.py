@@ -7,7 +7,6 @@ import jax.numpy as jnp
 import yaml
 
 from experiments.regression.action_runners import (
-    _load_config_and_config_path,
     build_approximate_gp,
 )
 from experiments.regression.data import split_train_test_validation_data
