@@ -6,16 +6,93 @@ import pytest
 from jax.config import config
 from mock import Mock
 
-from mockers.kernel import (
-    MockKernel,
-    MockKernelParameters,
-    calculate_reference_gram_eye_mock,
-)
+from mockers.kernel import MockKernel, MockKernelParameters
 from src.kernels import CustomKernel, MultiOutputKernel
-from src.kernels.approximate import DecomposedSVGPKernel
+from src.kernels.non_stationary import InnerProductKernel, PolynomialKernel
 from src.kernels.standard import ARDKernel
 
 config.update("jax_enable_x64", True)
+
+
+@pytest.mark.parametrize(
+    "log_scaling,x1,x2,k",
+    [
+        [
+            jnp.log(2.4),
+            jnp.array([1.0, 2.0, 3.0]),
+            jnp.array([1.5, 2.5, 3.5]),
+            40.8,
+        ],
+        [
+            jnp.log(2.2),
+            jnp.array(6.0),
+            jnp.array(6.0),
+            79.2,
+        ],
+        [
+            jnp.log(2.0),
+            jnp.array(6.0),
+            jnp.array(6.0),
+            72,
+        ],
+    ],
+)
+def test_inner_product_kernels(
+    log_scaling: float,
+    x1: jnp.ndarray,
+    x2: jnp.ndarray,
+    k: float,
+):
+    kernel = InnerProductKernel()
+    parameters = InnerProductKernel.Parameters(log_scaling=log_scaling)
+    assert jnp.isclose(kernel.calculate_kernel(parameters, x1=x1, x2=x2), k)
+
+
+@pytest.mark.parametrize(
+    "kernel,parameters,x1,x2,k",
+    [
+        [
+            PolynomialKernel(polynomial_degree=3),
+            {
+                "log_constant": 0.5,
+                "log_scaling": 3.2,
+            },
+            jnp.array([1.0, 2.0, 3.0]),
+            jnp.array([1.5, 2.5, 3.5]),
+            73403079.4946829,
+        ],
+        [
+            PolynomialKernel(polynomial_degree=1),
+            {
+                "log_constant": 0.5,
+                "log_scaling": 3.2,
+            },
+            jnp.array(6.0),
+            jnp.array(6.0),
+            884.81980837,
+        ],
+        [
+            PolynomialKernel(polynomial_degree=1.5),
+            {
+                "log_constant": 0.5,
+                "log_scaling": 3.2,
+            },
+            jnp.array(6.0),
+            jnp.array(6.0),
+            26319.78000332,
+        ],
+    ],
+)
+def test_polynomial_kernels(
+    kernel: PolynomialKernel,
+    parameters: Dict,
+    x1: jnp.ndarray,
+    x2: jnp.ndarray,
+    k: float,
+):
+    assert jnp.isclose(
+        kernel.calculate_kernel(kernel.generate_parameters(parameters), x1=x1, x2=x2), k
+    )
 
 
 @pytest.mark.parametrize(
@@ -298,252 +375,4 @@ def test_multi_output_kernel_diagonal_grams(
             full_covariance=False,
         ),
         k,
-    )
-
-
-@pytest.mark.parametrize(
-    "x_train,x_inducing,target_el_matrix_lower_triangle",
-    [
-        [
-            jnp.array(
-                [
-                    [1.0, 2.0, 3.0],
-                    [5.0, 1.0, 9.0],
-                    [1.5, 2.5, 3.5],
-                ]
-            ),
-            jnp.array(
-                [
-                    [5.0, 1.0, 9.0],
-                    [1.5, 2.5, 3.5],
-                ]
-            ),
-            jnp.array(
-                [
-                    [0, 0],
-                    [0, 0],
-                ]
-            ),
-        ],
-    ],
-)
-def test_svgp_sigma_lower_triangle_matrix(
-    x_train: jnp.ndarray,
-    x_inducing: jnp.ndarray,
-    target_el_matrix_lower_triangle: jnp.ndarray,
-):
-    svgp_kernel = DecomposedSVGPKernel(
-        reference_kernel_parameters=MockKernelParameters(),
-        log_observation_noise=jnp.log(1),
-        reference_kernel=MockKernel(calculate_reference_gram_eye_mock),
-        inducing_points=x_inducing,
-        training_points=x_train,
-    )
-    el_matrix_lower_triangle, _ = svgp_kernel.initialise_el_matrix_parameters()
-    assert jnp.array_equal(
-        el_matrix_lower_triangle,
-        target_el_matrix_lower_triangle,
-    )
-
-
-@pytest.mark.parametrize(
-    "x_train,x_inducing,target_el_matrix_log_diagonal",
-    [
-        [
-            jnp.array(
-                [
-                    [1.0, 2.0, 3.0],
-                    [5.0, 1.0, 9.0],
-                    [1.5, 2.5, 3.5],
-                ]
-            ),
-            jnp.array(
-                [
-                    [5.0, 1.0, 9.0],
-                    [1.5, 2.5, 3.5],
-                ]
-            ),
-            jnp.array(
-                [-0.34657359027997275, -0.34657359027997275],
-            ),
-        ],
-    ],
-)
-def test_svgp_sigma_log_diagonal(
-    x_train: jnp.ndarray,
-    x_inducing: jnp.ndarray,
-    target_el_matrix_log_diagonal: jnp.ndarray,
-):
-    svgp_kernel = DecomposedSVGPKernel(
-        reference_kernel_parameters=MockKernelParameters(),
-        log_observation_noise=jnp.log(1),
-        reference_kernel=MockKernel(calculate_reference_gram_eye_mock),
-        inducing_points=x_inducing,
-        training_points=x_train,
-    )
-    _, el_matrix_log_diagonal = svgp_kernel.initialise_el_matrix_parameters()
-    assert jnp.array_equal(
-        el_matrix_log_diagonal,
-        target_el_matrix_log_diagonal,
-    )
-
-
-@pytest.mark.parametrize(
-    "el_matrix_lower_triangle,el_matrix_log_diagonal,x_train,x_inducing,x,k",
-    [
-        [
-            jnp.array(
-                [[0.0, 0.0], [0.0, 0.0]],
-            ),
-            jnp.array([-0.34657359, -0.34657359]),
-            jnp.array(
-                [
-                    [1.0, 2.0, 3.0],
-                    [5.0, 1.0, 9.0],
-                    [1.5, 2.5, 3.5],
-                ]
-            ),
-            jnp.array(
-                [
-                    [5.0, 1.0, 9.0],
-                    [1.5, 2.5, 3.5],
-                ]
-            ),
-            jnp.array(
-                [
-                    [5.3, 5.0, 6.0],
-                    [2.5, 4.5, 2.5],
-                ]
-            ),
-            jnp.array(
-                [
-                    [0.5000099999000007, 0],
-                    [0, 0.5000099999000007],
-                ]
-            ),
-        ],
-    ],
-)
-def test_svgp_kernel_grams(
-    el_matrix_lower_triangle: jnp.ndarray,
-    el_matrix_log_diagonal: jnp.ndarray,
-    x_train: jnp.ndarray,
-    x_inducing: jnp.ndarray,
-    x: jnp.ndarray,
-    k: jnp.ndarray,
-):
-    svgp_kernel = DecomposedSVGPKernel(
-        reference_kernel_parameters=MockKernelParameters(),
-        log_observation_noise=jnp.log(1),
-        reference_kernel=MockKernel(calculate_reference_gram_eye_mock),
-        inducing_points=x_inducing,
-        training_points=x_train,
-    )
-    parameters = svgp_kernel.generate_parameters(
-        {
-            "el_matrix_lower_triangle": el_matrix_lower_triangle,
-            "el_matrix_log_diagonal": el_matrix_log_diagonal,
-        }
-    )
-    assert jnp.allclose(
-        svgp_kernel.calculate_gram(
-            parameters=parameters, x1=x, x2=x, full_covariance=True
-        ),
-        k,
-    )
-
-
-@pytest.mark.parametrize(
-    "x_train,x_inducing,x,actual_el_matrix_lower_triangle",
-    [
-        [
-            jnp.array(
-                [
-                    [1.0, 2.0, 3.0],
-                    [5.0, 1.0, 9.0],
-                    [1.5, 2.5, 3.5],
-                ]
-            ),
-            jnp.array(
-                [
-                    [5.0, 1.0, 9.0],
-                    [1.5, 2.5, 3.5],
-                ]
-            ),
-            jnp.array(
-                [
-                    [5.3, 5.0, 6.0],
-                    [2.5, 4.5, 2.5],
-                ]
-            ),
-            jnp.array(
-                [[0.0, 0.0], [0.0, 0.0]],
-            ),
-        ],
-    ],
-)
-def test_initialise_el_matrix_lower_triangle_svgp_kernel_grams(
-    x_train: jnp.ndarray,
-    x_inducing: jnp.ndarray,
-    x: jnp.ndarray,
-    actual_el_matrix_lower_triangle: jnp.ndarray,
-):
-    svgp_kernel = DecomposedSVGPKernel(
-        reference_kernel_parameters=MockKernelParameters(),
-        log_observation_noise=jnp.log(1),
-        reference_kernel=MockKernel(calculate_reference_gram_eye_mock),
-        inducing_points=x_inducing,
-        training_points=x_train,
-    )
-    el_matrix_lower_triangle, _ = svgp_kernel.initialise_el_matrix_parameters()
-    assert jnp.allclose(
-        el_matrix_lower_triangle,
-        actual_el_matrix_lower_triangle,
-    )
-
-
-@pytest.mark.parametrize(
-    "x_train,x_inducing,x,actual_el_matrix_log_diagonal",
-    [
-        [
-            jnp.array(
-                [
-                    [1.0, 2.0, 3.0],
-                    [5.0, 1.0, 9.0],
-                    [1.5, 2.5, 3.5],
-                ]
-            ),
-            jnp.array(
-                [
-                    [5.0, 1.0, 9.0],
-                    [1.5, 2.5, 3.5],
-                ]
-            ),
-            jnp.array(
-                [
-                    [5.3, 5.0, 6.0],
-                    [2.5, 4.5, 2.5],
-                ]
-            ),
-            jnp.array([-0.34657359, -0.34657359]),
-        ],
-    ],
-)
-def test_initialise_el_matrix_lower_triangle_svgp_kernel_grams(
-    x_train: jnp.ndarray,
-    x_inducing: jnp.ndarray,
-    x: jnp.ndarray,
-    actual_el_matrix_log_diagonal: jnp.ndarray,
-):
-    svgp_kernel = DecomposedSVGPKernel(
-        reference_kernel_parameters=MockKernelParameters(),
-        log_observation_noise=jnp.log(1),
-        reference_kernel=MockKernel(calculate_reference_gram_eye_mock),
-        inducing_points=x_inducing,
-        training_points=x_train,
-    )
-    _, el_matrix_log_diagonal = svgp_kernel.initialise_el_matrix_parameters()
-    assert jnp.allclose(
-        el_matrix_log_diagonal,
-        actual_el_matrix_log_diagonal,
     )

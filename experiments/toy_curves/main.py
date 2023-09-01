@@ -6,9 +6,7 @@ import jax
 import jax.numpy as jnp
 import yaml
 
-from experiments.regression.action_runners import (
-    build_approximate_gp,
-)
+from experiments.regression.action_runners import build_approximate_gp
 from experiments.regression.data import split_train_test_validation_data
 from experiments.regression.metrics import calculate_metrics
 from experiments.regression.plotters import plot_data, plot_prediction

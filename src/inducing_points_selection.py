@@ -27,7 +27,6 @@ class InducingPointsSelectorBase(ABC):
 
 
 class RandomInducingPointsSelector(InducingPointsSelectorBase):
-    @abstractmethod
     def compute_inducing_points(
         self,
         key: PRNGKey,
@@ -51,7 +50,7 @@ class ConditionalVarianceInducingPointsSelector(InducingPointsSelectorBase):
 
     def __init__(
         self,
-        threshold: Optional[int] = 0.0,
+        threshold: Optional[float] = 0.0,
     ):
         """
 
@@ -128,11 +127,6 @@ class ConditionalVarianceInducingPointsSelector(InducingPointsSelectorBase):
             + jitter
         )
         indices[0] = jnp.argmax(di)  # select first point, add to index 0
-        if number_of_inducing_points == 1:
-            indices = indices.astype(int)
-            inducing_points = training_inputs[indices]
-            indices = perm[indices]
-            return inducing_points, indices
         ci = np.zeros(
             (number_of_inducing_points - 1, number_of_training_points)
         )  # [number_of_inducing_points,number_of_training_points]

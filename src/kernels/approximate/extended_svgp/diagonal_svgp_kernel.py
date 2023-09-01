@@ -69,7 +69,7 @@ class DiagonalSVGPKernel(ExtendedSVGPBaseKernel):
 
     def initialise_diagonal_parameters(
         self,
-    ) -> Tuple[jnp.ndarray, jnp.ndarray]:
+    ) -> jnp.ndarray:
         """
         Initialise the L matrix where:
             sigma_matrix = L @ L.T

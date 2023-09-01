@@ -29,18 +29,17 @@ class FixedSparsePosteriorKernel(ApproximateBaseKernel):
     ):
         self.reference_kernel = reference_kernel
         self.reference_kernel_parameters = reference_kernel_parameters
-        self.reference_gram_inducing_cholesky = jnp.linalg.inv(
-            jnp.linalg.cholesky(
-                self.reference_kernel.calculate_gram(
-                    parameters=reference_kernel_parameters,
-                    x1=inducing_points,
-                    x2=inducing_points,
-                )
-            )
+        self.reference_gram_inducing = self.reference_kernel.calculate_gram(
+            parameters=reference_kernel_parameters,
+            x1=inducing_points,
+            x2=inducing_points,
         )
-        self.reference_gram_inducing_inverse = jnp.dot(
-            self.reference_gram_inducing_cholesky,
-            self.reference_gram_inducing_cholesky.T,
+        self.reference_gram_inducing_cholesky_decomposition_and_lower = cho_factor(
+            add_diagonal_regulariser(
+                matrix=self.reference_gram_inducing,
+                diagonal_regularisation=diagonal_regularisation,
+                is_diagonal_regularisation_absolute_scale=is_diagonal_regularisation_absolute_scale,
+            )
         )
         self.base_kernel = base_kernel
         super().__init__(
