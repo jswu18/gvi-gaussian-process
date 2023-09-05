@@ -813,7 +813,7 @@ taking the squared difference of the means and covariances.
 
 \newpage
 \section{Experimentation Framework}
-This section explains the experimentation framework that we constructed for learning GWI-GPs and pGVI-GPs. 
+This section presents the experimentation framework that we constructed for learning GWI-GPs and pGVI-GPs. 
 We begin by describing our implementation architecture followed by our setup for scaling experimentation. 
 Finally we will present results for some toy regression curve experiments, to show our experimentation framework in action.
 Our most up-to-date\footnote{We include the most up-to-date version of the implementation for future reference. For grading purposes, please refer to \href{https://github.com/jswu18/generalised-variational-inference-for-gaussian-processes/tree/7b81dd607ef2ace4b66f9440becb2722be0eb9e6}{this commit} as the last version prior to the submission date: \href{https://github.com/jswu18/generalised-variational-inference-for-gaussian-processes/tree/7b81dd607ef2ace4b66f9440becb2722be0eb9e6}{https://github.com/jswu18/generalised-variational-inference-for-gaussian-processes/tree/7b81dd607ef2ace4b66f9440becb2722be0eb9e6}} Python implementation is openly available on \href{https://github.com/jswu18/generalised-variational-inference-for-gaussian-processes}{GitHub}\footnote{\href{https://github.com/jswu18/generalised-variational-inference-for-gaussian-processes}{https://github.com/jswu18/generalised-variational-inference-for-gaussian-processes}}. 
@@ -1095,7 +1095,7 @@ Pydantic models enforce typing hints during run-time that would otherwise be con
 Our implementation also includes a rigorous testing environment that currently has 95\% test coverage over the implementations found in the \code{src/} directory, much higher than needed in most software development projects.
 This also includes mockers for isolated testing of different components (i.e. mockers for means and kernels to isolate testing of GP implementations). Finally, we use Poetry developed by \cite{Eustace} to strictly control package requirements, ensuring the version compatibility of dependencies.
 
-\subsection{Scaling Experimentation}
+\subsection{Scaling Experiments}
 In addition to our implementation architecture, we developed a scaleable solution for performing large numbers of experiments. 
 Implemented in the \code{experiments/} directory, we constructed schemas and resolvers for each abstraction in Section \ref{implementation-architecture}. 
 This allows us to define and construct experiments through \code{.yaml} configuration files. 
