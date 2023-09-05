@@ -87,7 +87,7 @@ class Curve5(Curve):
 
 
 class Curve6(Curve):
-    __name__ = "$y==4\sin(\pi x) + 2\sin(3 \pi x) -2x$"
+    __name__ = "$y=4\sin(\pi x) + 2\sin(3 \pi x) -2x$"
     seed: int = 6
 
     def __call__(self, key: PRNGKey, x: jnp.ndarray, sigma_true: float) -> jnp.ndarray:

@@ -5,7 +5,7 @@ from jax.config import config
 from mockers.kernel import (
     MockKernel,
     MockKernelParameters,
-    calculate_reference_gram_eye_mock,
+    calculate_regulariser_gram_eye_mock,
 )
 from mockers.mean import MockMean, MockMeanParameters
 from src.distributions import Multinomial
@@ -175,7 +175,7 @@ def test_tempered_exact_gp_classification_prediction(
         y=y,
         mean=MockMean(number_output_dimensions=number_of_classes),
         kernel=MultiOutputKernel(
-            kernels=[MockKernel(kernel_func=calculate_reference_gram_eye_mock)]
+            kernels=[MockKernel(kernel_func=calculate_regulariser_gram_eye_mock)]
             * number_of_classes
         ),
     )

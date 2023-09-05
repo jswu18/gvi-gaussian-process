@@ -11,12 +11,12 @@ from src.regularisations import (
     MultinomialWassersteinRegularisation,
 )
 from src.regularisations.base import RegularisationBase
-from src.regularisations.point_wise import (
-    PointWiseBhattacharyyaRegularisation,
-    PointWiseGaussianWassersteinRegularisation,
-    PointWiseHellingerRegularisation,
-    PointWiseKLRegularisation,
-    PointWiseRenyiRegularisation,
+from src.regularisations.projected import (
+    ProjectedBhattacharyyaRegularisation,
+    ProjectedGaussianWassersteinRegularisation,
+    ProjectedHellingerRegularisation,
+    ProjectedKLRegularisation,
+    ProjectedRenyiRegularisation,
 )
 
 
@@ -53,37 +53,37 @@ def regularisation_resolver(
         )
     elif (
         regularisation_schema
-        == schemas.RegularisationSchema.point_wise_gaussian_wasserstein
+        == schemas.RegularisationSchema.projected_gaussian_wasserstein
     ):
-        return PointWiseGaussianWassersteinRegularisation(
+        return ProjectedGaussianWassersteinRegularisation(
             gp=gp,
             regulariser=regulariser,
             regulariser_parameters=regulariser_parameters,
             **regularisation_kwargs,
         )
-    elif regularisation_schema == schemas.RegularisationSchema.point_wise_kl:
-        return PointWiseKLRegularisation(
+    elif regularisation_schema == schemas.RegularisationSchema.projected_kl:
+        return ProjectedKLRegularisation(
             gp=gp,
             regulariser=regulariser,
             regulariser_parameters=regulariser_parameters,
             **regularisation_kwargs,
         )
-    elif regularisation_schema == schemas.RegularisationSchema.point_wise_bhattacharyya:
-        return PointWiseBhattacharyyaRegularisation(
+    elif regularisation_schema == schemas.RegularisationSchema.projected_bhattacharyya:
+        return ProjectedBhattacharyyaRegularisation(
             gp=gp,
             regulariser=regulariser,
             regulariser_parameters=regulariser_parameters,
             **regularisation_kwargs,
         )
-    elif regularisation_schema == schemas.RegularisationSchema.point_wise_hellinger:
-        return PointWiseHellingerRegularisation(
+    elif regularisation_schema == schemas.RegularisationSchema.projected_hellinger:
+        return ProjectedHellingerRegularisation(
             gp=gp,
             regulariser=regulariser,
             regulariser_parameters=regulariser_parameters,
             **regularisation_kwargs,
         )
-    elif regularisation_schema == schemas.RegularisationSchema.point_wise_renyi:
-        return PointWiseRenyiRegularisation(
+    elif regularisation_schema == schemas.RegularisationSchema.projected_renyi:
+        return ProjectedRenyiRegularisation(
             gp=gp,
             regulariser=regulariser,
             regulariser_parameters=regulariser_parameters,

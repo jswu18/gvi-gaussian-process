@@ -1,0 +1,2 @@
+trainer_settings:
+  number_of_epochs: 50000

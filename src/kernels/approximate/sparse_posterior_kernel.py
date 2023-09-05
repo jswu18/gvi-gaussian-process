@@ -16,7 +16,7 @@ class SparsePosteriorKernelParameters(KernelBaseParameters):
 
 class SparsePosteriorKernel(ApproximateBaseKernel):
     """
-    Approximate kernels which are defined with respect to a reference kernel
+    Approximate kernels which are defined with respect to a regulariser kernel
     """
 
     Parameters = SparsePosteriorKernelParameters

@@ -19,24 +19,24 @@ class FixedSparsePosteriorKernel(ApproximateBaseKernel):
 
     def __init__(
         self,
-        reference_kernel: KernelBase,
-        reference_kernel_parameters: KernelBaseParameters,
+        regulariser_kernel: KernelBase,
+        regulariser_kernel_parameters: KernelBaseParameters,
         base_kernel: KernelBase,
         inducing_points: jnp.ndarray,
         diagonal_regularisation: float = 1e-5,
         is_diagonal_regularisation_absolute_scale: bool = False,
         preprocess_function: Callable = None,
     ):
-        self.reference_kernel = reference_kernel
-        self.reference_kernel_parameters = reference_kernel_parameters
-        self.reference_gram_inducing = self.reference_kernel.calculate_gram(
-            parameters=reference_kernel_parameters,
+        self.regulariser_kernel = regulariser_kernel
+        self.regulariser_kernel_parameters = regulariser_kernel_parameters
+        self.regulariser_gram_inducing = self.regulariser_kernel.calculate_gram(
+            parameters=regulariser_kernel_parameters,
             x1=inducing_points,
             x2=inducing_points,
         )
-        self.reference_gram_inducing_cholesky_decomposition_and_lower = cho_factor(
+        self.regulariser_gram_inducing_cholesky_decomposition_and_lower = cho_factor(
             add_diagonal_regulariser(
-                matrix=self.reference_gram_inducing,
+                matrix=self.regulariser_gram_inducing,
                 diagonal_regularisation=diagonal_regularisation,
                 is_diagonal_regularisation_absolute_scale=is_diagonal_regularisation_absolute_scale,
             )
@@ -84,7 +84,7 @@ class FixedSparsePosteriorKernel(ApproximateBaseKernel):
         return gram_x1_x2 - (
             gram_x1_inducing
             @ cho_solve(
-                c_and_lower=self.reference_gram_inducing_cholesky_decomposition_and_lower,
+                c_and_lower=self.regulariser_gram_inducing_cholesky_decomposition_and_lower,
                 b=gram_x2_inducing.T,
             )
         )

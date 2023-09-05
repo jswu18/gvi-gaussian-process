@@ -8,7 +8,7 @@ from jax import numpy as jnp
 
 from experiments.regression.dataset_constants import DATASET_SCHEMA_TO_DATASET
 from experiments.regression.metrics import calculate_metrics
-from experiments.regression.trainers import meta_train_reference_gp
+from experiments.regression.trainers import meta_train_regulariser_gp
 from experiments.shared.data import Data, ExperimentData, set_up_experiment
 from experiments.shared.plotters import plot_losses, plot_two_losses
 from experiments.shared.resolvers import (
@@ -40,8 +40,8 @@ def _load_config_and_config_path(
         action,
         f"{name}.yaml",
     )
-    with open(config_path, "r") as reference_config_file:
-        config = yaml.safe_load(reference_config_file)
+    with open(config_path, "r") as regulariser_config_file:
+        config = yaml.safe_load(regulariser_config_file)
     return config, config_path
 
 
@@ -95,42 +95,44 @@ def build_data_set(
     experiment_data.save(data_path)
 
 
-def train_reference(
+def train_regulariser(
     config: Dict,
     output_path: str,
     experiment_name: str,
     config_directory_parent_path: str,
 ) -> None:
-    assert "data_name" in config, "Data name must be specified for reference training"
+    assert "data_name" in config, "Data name must be specified for regulariser training"
     assert (
         "trainer_settings" in config
-    ), "Trainer settings must be specified for reference training"
-    assert "kernel" in config, "Kernel config must be specified for reference training"
+    ), "Trainer settings must be specified for regulariser training"
+    assert (
+        "kernel" in config
+    ), "Kernel config must be specified for regulariser training"
     assert (
         "inducing_points" in config
-    ), "Inducing points must be specified for reference training"
+    ), "Inducing points must be specified for regulariser training"
     assert (
         "inducing_points_factor" in config["inducing_points"]
-    ), "Inducing points factor must be specified for reference training"
+    ), "Inducing points factor must be specified for regulariser training"
     assert (
         "inducing_points_power" in config["inducing_points"]
-    ), "Inducing points power must be specified for reference training"
+    ), "Inducing points power must be specified for regulariser training"
     assert (
         "inducing_points_selector_schema" in config["inducing_points"]
-    ), "Inducing points schema must be specified for reference training"
+    ), "Inducing points schema must be specified for regulariser training"
     assert (
         "number_of_iterations" in config
-    ), "Number of iterations must be specified for reference training"
+    ), "Number of iterations must be specified for regulariser training"
     assert (
         "empirical_risk_schema" in config
-    ), "Empirical risk schema must be specified for reference training"
+    ), "Empirical risk schema must be specified for regulariser training"
     assert (
         "empirical_risk_break_condition" in config
-    ), "Empirical risk break condition must be specified for reference training"
+    ), "Empirical risk break condition must be specified for regulariser training"
     assert (
         "save_checkpoint_frequency" in config
-    ), "Save checkpoint frequency must be specified for reference training"
-    assert "kernel" in config, "Kernel must be specified for reference training"
+    ), "Save checkpoint frequency must be specified for regulariser training"
+    assert "kernel" in config, "Kernel must be specified for regulariser training"
     build_data_config, _ = _load_config_and_config_path(
         config_directory_parent_path=config_directory_parent_path,
         action=ActionSchema.build_data,
@@ -139,7 +141,7 @@ def train_reference(
     save_path = construct_path(
         output_path=output_path,
         experiment_name=experiment_name,
-        action=ActionSchema.train_reference,
+        action=ActionSchema.train_regulariser,
     )
     data_path = construct_path(
         output_path=output_path,
@@ -169,10 +171,10 @@ def train_reference(
         kernel_config=config["kernel"], data_dimension=experiment_data.train.x.shape[1]
     )
     (
-        reference_gp,
-        reference_gp_parameters,
-        reference_post_epoch_histories,
-    ) = meta_train_reference_gp(
+        regulariser_gp,
+        regulariser_gp_parameters,
+        regulariser_post_epoch_histories,
+    ) = meta_train_regulariser_gp(
         data=experiment_data.train,
         empirical_risk_schema=config["empirical_risk_schema"],
         trainer_settings=trainer_settings,
@@ -189,14 +191,14 @@ def train_reference(
             "checkpoints",
         ),
     )
-    reference_gp_parameters.save(
+    regulariser_gp_parameters.save(
         path=os.path.join(
             save_path,
             experiment_data.name,
             "parameters.ckpt",
         ),
     )
-    inducing_data = Data(x=reference_gp.x, y=reference_gp.y, name="inducing")
+    inducing_data = Data(x=regulariser_gp.x, y=regulariser_gp.y, name="inducing")
     inducing_data.save(
         path=os.path.join(
             save_path,
@@ -205,9 +207,9 @@ def train_reference(
     )
     df_metrics = calculate_metrics(
         experiment_data=experiment_data,
-        gp=reference_gp,
-        gp_parameters=reference_gp_parameters,
-        action=ActionSchema.train_reference,
+        gp=regulariser_gp,
+        gp_parameters=regulariser_gp_parameters,
+        action=ActionSchema.train_regulariser,
         experiment_name=experiment_name,
         dataset_name=build_data_config["dataset"],
     )
@@ -222,12 +224,12 @@ def train_reference(
     )
     plot_losses(
         losses=[
-            [x["empirical-risk"] for x in reference_post_epoch_history]
-            for reference_post_epoch_history in reference_post_epoch_histories
+            [x["empirical-risk"] for x in regulariser_post_epoch_history]
+            for regulariser_post_epoch_history in regulariser_post_epoch_histories
         ],
-        labels=[f"iteration-{i}" for i in range(len(reference_post_epoch_histories))],
+        labels=[f"iteration-{i}" for i in range(len(regulariser_post_epoch_histories))],
         loss_name=config["empirical_risk_schema"],
-        title=f"Reference GP Empirical Risk: {build_data_config['dataset']}",
+        title=f"Regulariser GP Empirical Risk: {build_data_config['dataset']}",
         save_path=os.path.join(
             save_path,
             experiment_data.name,
@@ -243,8 +245,8 @@ def train_approximate(
     config_directory_parent_path: str,
 ) -> None:
     assert (
-        "reference_name" in config
-    ), "Reference name must be specified for approximate training"
+        "regulariser_name" in config
+    ), "Regulariser name must be specified for approximate training"
     assert (
         "trainer_settings" in config
     ), "Trainer settings must be specified for approximate training"
@@ -260,12 +262,12 @@ def train_approximate(
     assert (
         "save_checkpoint_frequency" in config
     ), "Save checkpoint frequency must be specified for approximate training"
-    assert "mean" in config, "Mean must be specified for reference training"
-    assert "kernel" in config, "Kernel must be specified for reference training"
-    reference_path = construct_path(
+    assert "mean" in config, "Mean must be specified for regulariser training"
+    assert "kernel" in config, "Kernel must be specified for regulariser training"
+    regulariser_path = construct_path(
         output_path=output_path,
-        experiment_name=config["reference_name"],
-        action=ActionSchema.train_reference,
+        experiment_name=config["regulariser_name"],
+        action=ActionSchema.train_regulariser,
     )
     save_path = construct_path(
         output_path=output_path,
@@ -275,19 +277,19 @@ def train_approximate(
     trainer_settings = trainer_settings_resolver(
         trainer_settings_config=config["trainer_settings"],
     )
-    reference_config, reference_config_path = _load_config_and_config_path(
+    regulariser_config, regulariser_config_path = _load_config_and_config_path(
         config_directory_parent_path=config_directory_parent_path,
-        action=ActionSchema.train_reference,
-        name=config["reference_name"],
+        action=ActionSchema.train_regulariser,
+        name=config["regulariser_name"],
     )
     build_data_config, _ = _load_config_and_config_path(
         config_directory_parent_path=config_directory_parent_path,
         action=ActionSchema.build_data,
-        name=reference_config["data_name"],
+        name=regulariser_config["data_name"],
     )
     data_path = construct_path(
         output_path=output_path,
-        experiment_name=reference_config["data_name"],
+        experiment_name=regulariser_config["data_name"],
         action=ActionSchema.build_data,
     )
     experiment_data = ExperimentData.load(
@@ -296,18 +298,18 @@ def train_approximate(
     )
     inducing_data = Data.load(
         path=os.path.join(
-            reference_path,
+            regulariser_path,
             experiment_data.name,
         ),
         name="inducing",
     )
-    reference_kernel, reference_kernel_parameters = resolve_existing_kernel(
-        config_path=reference_config_path,
+    regulariser_kernel, regulariser_kernel_parameters = resolve_existing_kernel(
+        config_path=regulariser_config_path,
         parameter_path=os.path.join(
             construct_path(
                 output_path=output_path,
-                experiment_name=config["reference_name"],
-                action=ActionSchema.train_reference,
+                experiment_name=config["regulariser_name"],
+                action=ActionSchema.train_regulariser,
             ),
             experiment_data.name,
             "parameters.ckpt",
@@ -318,10 +320,10 @@ def train_approximate(
         config=config,
         inducing_points=inducing_data.x,
         training_points=experiment_data.train.x,
-        reference_kernel=reference_kernel,
-        reference_kernel_parameters=reference_kernel_parameters,
+        regulariser_kernel=regulariser_kernel,
+        regulariser_kernel_parameters=regulariser_kernel_parameters,
     )
-    regulariser_kernel = reference_kernel
+    regulariser_kernel = regulariser_kernel
     regulariser = GPRegression(
         x=inducing_data.x,
         y=inducing_data.y,
@@ -332,7 +334,7 @@ def train_approximate(
         regulariser.Parameters.load(
             regulariser.Parameters,
             path=os.path.join(
-                reference_path,
+                regulariser_path,
                 experiment_data.name,
                 "parameters.ckpt",
             ),
@@ -423,8 +425,8 @@ def build_approximate_gp(
     config: Dict,
     inducing_points: jnp.ndarray,
     training_points: jnp.ndarray,
-    reference_kernel: KernelBase,
-    reference_kernel_parameters: KernelBaseParameters,
+    regulariser_kernel: KernelBase,
+    regulariser_kernel_parameters: KernelBaseParameters,
 ) -> Tuple[ApproximateGPRegression, ApproximateGPRegressionParameters]:
     config["kernel"]["kernel_kwargs"]["inducing_points"] = inducing_points
     config["kernel"]["kernel_kwargs"]["training_points"] = training_points
@@ -435,8 +437,8 @@ def build_approximate_gp(
     )
     kernel, kernel_parameters = kernel_resolver(
         kernel_config=config["kernel"],
-        reference_kernel=reference_kernel,
-        reference_kernel_parameters=reference_kernel_parameters,
+        regulariser_kernel=regulariser_kernel,
+        regulariser_kernel_parameters=regulariser_kernel_parameters,
         data_dimension=training_points.shape[1],
     )
     gp = ApproximateGPRegression(
@@ -483,44 +485,44 @@ def temper_approximate(
         action=ActionSchema.train_approximate,
         name=config["approximate_name"],
     )
-    reference_config, reference_config_path = _load_config_and_config_path(
+    regulariser_config, regulariser_config_path = _load_config_and_config_path(
         config_directory_parent_path=config_directory_parent_path,
-        action=ActionSchema.train_reference,
-        name=approximate_config["reference_name"],
+        action=ActionSchema.train_regulariser,
+        name=approximate_config["regulariser_name"],
     )
     build_data_config, _ = _load_config_and_config_path(
         config_directory_parent_path=config_directory_parent_path,
         action=ActionSchema.build_data,
-        name=reference_config["data_name"],
+        name=regulariser_config["data_name"],
     )
     data_path = construct_path(
         output_path=output_path,
-        experiment_name=reference_config["data_name"],
+        experiment_name=regulariser_config["data_name"],
         action=ActionSchema.build_data,
     )
     experiment_data = ExperimentData.load(
         path=data_path,
         name=build_data_config["dataset"],
     )
-    reference_path = construct_path(
+    regulariser_path = construct_path(
         output_path=output_path,
-        experiment_name=approximate_config["reference_name"],
-        action=ActionSchema.train_reference,
+        experiment_name=approximate_config["regulariser_name"],
+        action=ActionSchema.train_regulariser,
     )
     inducing_data = Data.load(
         path=os.path.join(
-            reference_path,
+            regulariser_path,
             experiment_data.name,
         ),
         name="inducing",
     )
-    reference_kernel, reference_kernel_parameters = resolve_existing_kernel(
-        config_path=reference_config_path,
+    regulariser_kernel, regulariser_kernel_parameters = resolve_existing_kernel(
+        config_path=regulariser_config_path,
         parameter_path=os.path.join(
             construct_path(
                 output_path=output_path,
-                experiment_name=approximate_config["reference_name"],
-                action=ActionSchema.train_reference,
+                experiment_name=approximate_config["regulariser_name"],
+                action=ActionSchema.train_regulariser,
             ),
             experiment_data.name,
             "parameters.ckpt",
@@ -531,8 +533,8 @@ def temper_approximate(
         config=approximate_config,
         inducing_points=inducing_data.x,
         training_points=experiment_data.train.x,
-        reference_kernel=reference_kernel,
-        reference_kernel_parameters=reference_kernel_parameters,
+        regulariser_kernel=regulariser_kernel,
+        regulariser_kernel_parameters=regulariser_kernel_parameters,
     )
     approximate_gp_parameters = approximate_gp.generate_parameters(
         approximate_gp.Parameters.load(

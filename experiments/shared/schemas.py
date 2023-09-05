@@ -13,11 +13,11 @@ class EmpiricalRiskSchema(str, enum.Enum):
 
 
 class RegularisationSchema(str, enum.Enum):
-    point_wise_gaussian_wasserstein = "point_wise_gaussian_wasserstein"
-    point_wise_kl = "point_wise_kl"
-    point_wise_bhattacharyya = "point_wise_bhattacharyya"
-    point_wise_hellinger = "point_wise_hellinger"
-    point_wise_renyi = "point_wise_renyi"
+    projected_gaussian_wasserstein = "projected_gaussian_wasserstein"
+    projected_kl = "projected_kl"
+    projected_bhattacharyya = "projected_bhattacharyya"
+    projected_hellinger = "projected_hellinger"
+    projected_renyi = "projected_renyi"
     gaussian_squared_difference = "gaussian_squared_difference"
     gaussian_wasserstein = "gaussian_wasserstein"
     multinomial_wasserstein = "multinomial_wasserstein"
@@ -32,7 +32,7 @@ class KernelSchema(str, enum.Enum):
     diagonal_svgp = "diagonal_svgp"
     kernelised_svgp = "kernelised_svgp"
     log_svgp = "log_svgp"
-    decomposed_svgp = "decomposed_svgp"
+    cholesky_svgp = "cholesky_svgp"
     multi_output = "multi_output"
     sparse_posterior = "sparse_posterior"
     fixed_sparse_posterior = "fixed_sparse_posterior"
@@ -71,7 +71,7 @@ class InducingPointsSelectorSchema(str, enum.Enum):
 
 class ActionSchema(str, enum.Enum):
     build_data = "build_data"
-    train_reference = "train_reference"
+    train_regulariser = "train_regulariser"
     train_approximate = "train_approximate"
     temper_approximate = "temper_approximate"
 

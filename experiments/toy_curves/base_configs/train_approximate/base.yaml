@@ -1,0 +1,7 @@
+trainer_settings:
+  seed: 0
+  batch_size: 1000
+  batch_shuffle: True
+  batch_drop_last: False
+empirical_risk_schema: "negative_log_likelihood"
+save_checkpoint_frequency: False

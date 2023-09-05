@@ -14,18 +14,18 @@ parser.add_argument(
     "--problem", choices=[ProblemSchema[a].value for a in ProblemSchema], required=True
 )
 parser.add_argument(
-    "--train_reference_chunk_size",
+    "--train_regulariser_chunk_size",
     type=int,
     default=50,
     required=False,
-    help="Number of configs per train reference shell file.",
+    help="Number of configs per train regulariser shell file.",
 )
 parser.add_argument(
     "--train_approximate_chunk_size",
     type=int,
     default=50,
     required=False,
-    help="Number of configs per train reference shell file.",
+    help="Number of configs per train regulariser shell file.",
 )
 parser.add_argument(
     "--temper_approximate_chunk_size",
@@ -86,12 +86,12 @@ if __name__ == "__main__":
         chunk_size=args.build_data_chunk_size,
     )
     generate_shell_commands(
-        action=ActionSchema.train_reference,
+        action=ActionSchema.train_regulariser,
         repository_path=os.getcwd(),
         main_path=main_path,
         config_path=config_path,
         save_path=save_path,
-        chunk_size=args.train_reference_chunk_size,
+        chunk_size=args.train_regulariser_chunk_size,
     )
     generate_shell_commands(
         action=ActionSchema.train_approximate,

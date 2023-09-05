@@ -1,0 +1,4 @@
+number_of_data_points: 1000
+total_number_of_intervals: 20
+train_data_percentage: 0.8
+sigma_true: 0.5

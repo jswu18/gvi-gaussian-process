@@ -1,0 +1,4 @@
+regularisation:
+  regularisation_schema: "gaussian_wasserstein"
+  regularisation_kwargs:
+    include_eigendecomposition: False

@@ -8,7 +8,7 @@ from experiments.regression.action_runners import (
     build_data_set,
     temper_approximate,
     train_approximate,
-    train_reference,
+    train_regulariser,
 )
 from experiments.shared.schemas import ActionSchema
 
@@ -36,8 +36,8 @@ if __name__ == "__main__":
             experiment_name=file_name,
             rescale_y=True,
         )
-    elif args.action == ActionSchema.train_reference.value:
-        train_reference(
+    elif args.action == ActionSchema.train_regulariser.value:
+        train_regulariser(
             config=loaded_config,
             output_path=OUTPUT_PATH,
             experiment_name=file_name,

@@ -53,12 +53,12 @@ class ApproximateGPClassification(ApproximateGPBase, GPClassificationBase):
         self, parameters: Union[FrozenDict, Dict]
     ) -> ApproximateGPClassificationParameters:
         """
-        Generates a Pydantic model of the parameters for Reference Gaussian Measures.
+        Generates a Pydantic model of the parameters for Regulariser Gaussian Measures.
 
         Args:
-            parameters: A dictionary of the parameters for Reference Gaussian Measures.
+            parameters: A dictionary of the parameters for Regulariser Gaussian Measures.
 
-        Returns: A Pydantic model of the parameters for Reference Gaussian Measures.
+        Returns: A Pydantic model of the parameters for Regulariser Gaussian Measures.
 
         """
         return ApproximateGPClassification.Parameters(

@@ -18,7 +18,7 @@ from src.kernels import (
     MultiOutputKernel,
 )
 from src.kernels.approximate import (
-    DecomposedSVGPKernel,
+    CholeskySVGPKernel,
     DiagonalSVGPKernel,
     FixedSparsePosteriorKernel,
     FixedSparsePosteriorKernelParameters,
@@ -27,22 +27,20 @@ from src.kernels.approximate import (
     SparsePosteriorKernel,
     SparsePosteriorKernelParameters,
 )
-from src.kernels.approximate.extended_svgp.base import (
+from src.kernels.approximate.svgp.base import (
     ExtendedSVGPBaseKernel,
     ExtendedSVGPBaseKernelParameters,
 )
-from src.kernels.approximate.extended_svgp.decomposed_svgp_kernel import (
-    DecomposedSVGPKernelParameters,
+from src.kernels.approximate.svgp.cholesky_svgp_kernel import (
+    CholeskySVGPKernelParameters,
 )
-from src.kernels.approximate.extended_svgp.diagonal_svgp_kernel import (
+from src.kernels.approximate.svgp.diagonal_svgp_kernel import (
     DiagonalSVGPKernelParameters,
 )
-from src.kernels.approximate.extended_svgp.kernelised_svgp_kernel import (
+from src.kernels.approximate.svgp.kernelised_svgp_kernel import (
     KernelisedSVGPKernelParameters,
 )
-from src.kernels.approximate.extended_svgp.log_svgp_kernel import (
-    LogSVGPKernelParameters,
-)
+from src.kernels.approximate.svgp.log_svgp_kernel import LogSVGPKernelParameters
 from src.kernels.base import KernelBase, KernelBaseParameters
 from src.kernels.non_stationary import (
     InnerProductKernel,
@@ -213,8 +211,8 @@ def _resolve_custom_mapping_kernel(
 def _resolve_sparse_posterior_kernel(
     kernel_kwargs_config: Union[FrozenDict, Dict],
     data_dimension: int,
-    reference_kernel: Optional[KernelBase] = None,
-    reference_kernel_parameters: Optional[KernelBaseParameters] = None,
+    regulariser_kernel: Optional[KernelBase] = None,
+    regulariser_kernel_parameters: Optional[KernelBaseParameters] = None,
 ) -> Tuple[SparsePosteriorKernel, SparsePosteriorKernelParameters]:
     assert (
         "inducing_points" in kernel_kwargs_config
@@ -225,15 +223,15 @@ def _resolve_sparse_posterior_kernel(
     assert (
         "is_diagonal_regularisation_absolute_scale" in kernel_kwargs_config
     ), "Is diagonal regularisation absolute scale must be specified."
-    if not reference_kernel and not reference_kernel_parameters:
+    if not regulariser_kernel and not regulariser_kernel_parameters:
         assert "base_kernel" in kernel_kwargs_config, "Base kernel must be specified."
         base_kernel, base_kernel_parameters = kernel_resolver(
             kernel_config=kernel_kwargs_config["base_kernel"],
             data_dimension=data_dimension,
         )
     else:
-        base_kernel = reference_kernel
-        base_kernel_parameters = reference_kernel_parameters
+        base_kernel = regulariser_kernel
+        base_kernel_parameters = regulariser_kernel_parameters
     kernel = SparsePosteriorKernel(
         base_kernel=base_kernel,
         inducing_points=kernel_kwargs_config["inducing_points"],
@@ -251,8 +249,8 @@ def _resolve_sparse_posterior_kernel(
 def _resolve_fixed_sparse_posterior_kernel(
     kernel_kwargs_config: Union[FrozenDict, Dict],
     data_dimension: int,
-    reference_kernel: Optional[KernelBase] = None,
-    reference_kernel_parameters: Optional[KernelBaseParameters] = None,
+    regulariser_kernel: Optional[KernelBase] = None,
+    regulariser_kernel_parameters: Optional[KernelBaseParameters] = None,
 ) -> Tuple[FixedSparsePosteriorKernel, FixedSparsePosteriorKernelParameters]:
     assert (
         "inducing_points" in kernel_kwargs_config
@@ -263,17 +261,17 @@ def _resolve_fixed_sparse_posterior_kernel(
     assert (
         "is_diagonal_regularisation_absolute_scale" in kernel_kwargs_config
     ), "Is diagonal regularisation absolute scale must be specified."
-    if not reference_kernel and not reference_kernel_parameters:
+    if not regulariser_kernel and not regulariser_kernel_parameters:
         assert (
-            "reference_kernel" in kernel_kwargs_config
-        ), "Reference kernel must be specified."
-        reference_kernel, reference_kernel_parameters = kernel_resolver(
+            "regulariser_kernel" in kernel_kwargs_config
+        ), "Regulariser kernel must be specified."
+        regulariser_kernel, regulariser_kernel_parameters = kernel_resolver(
             kernel_config=kernel_kwargs_config["base_kernel"],
             data_dimension=data_dimension,
         )
     if "base_kernel" not in kernel_kwargs_config:
-        base_kernel = reference_kernel
-        base_kernel_parameters = reference_kernel_parameters
+        base_kernel = regulariser_kernel
+        base_kernel_parameters = regulariser_kernel_parameters
     else:
         assert "base_kernel" in kernel_kwargs_config, "Base kernel must be specified."
         base_kernel, base_kernel_parameters = kernel_resolver(
@@ -283,8 +281,8 @@ def _resolve_fixed_sparse_posterior_kernel(
 
     kernel = FixedSparsePosteriorKernel(
         base_kernel=base_kernel,
-        reference_kernel=reference_kernel,
-        reference_kernel_parameters=reference_kernel_parameters,
+        regulariser_kernel=regulariser_kernel,
+        regulariser_kernel_parameters=regulariser_kernel_parameters,
         inducing_points=kernel_kwargs_config["inducing_points"],
         diagonal_regularisation=kernel_kwargs_config["diagonal_regularisation"],
         is_diagonal_regularisation_absolute_scale=kernel_kwargs_config[
@@ -297,14 +295,14 @@ def _resolve_fixed_sparse_posterior_kernel(
     return kernel, kernel_parameters
 
 
-def _resolve_decomposed_svgp_kernel(
+def _resolve_cholesky_svgp_kernel(
     kernel_kwargs_config: Union[FrozenDict, Dict],
-    reference_kernel: KernelBase,
-    reference_kernel_parameters: KernelBaseParameters,
-) -> Tuple[DecomposedSVGPKernel, DecomposedSVGPKernelParameters]:
-    kernel = DecomposedSVGPKernel(
-        reference_kernel=reference_kernel,
-        reference_kernel_parameters=reference_kernel_parameters,
+    regulariser_kernel: KernelBase,
+    regulariser_kernel_parameters: KernelBaseParameters,
+) -> Tuple[CholeskySVGPKernel, CholeskySVGPKernelParameters]:
+    kernel = CholeskySVGPKernel(
+        regulariser_kernel=regulariser_kernel,
+        regulariser_kernel_parameters=regulariser_kernel_parameters,
         log_observation_noise=jnp.log(kernel_kwargs_config["observation_noise"]),
         inducing_points=kernel_kwargs_config["inducing_points"],
         training_points=kernel_kwargs_config["training_points"],
@@ -328,12 +326,12 @@ def _resolve_decomposed_svgp_kernel(
 
 def _resolve_diagonal_svgp_kernel(
     kernel_kwargs_config: Union[FrozenDict, Dict],
-    reference_kernel: KernelBase,
-    reference_kernel_parameters: KernelBaseParameters,
+    regulariser_kernel: KernelBase,
+    regulariser_kernel_parameters: KernelBaseParameters,
 ) -> Tuple[DiagonalSVGPKernel, DiagonalSVGPKernelParameters]:
     kernel = DiagonalSVGPKernel(
-        reference_kernel=reference_kernel,
-        reference_kernel_parameters=reference_kernel_parameters,
+        regulariser_kernel=regulariser_kernel,
+        regulariser_kernel_parameters=regulariser_kernel_parameters,
         log_observation_noise=jnp.log(kernel_kwargs_config["observation_noise"]),
         inducing_points=kernel_kwargs_config["inducing_points"],
         training_points=kernel_kwargs_config["training_points"],
@@ -353,12 +351,12 @@ def _resolve_diagonal_svgp_kernel(
 
 def _resolve_log_svgp_kernel(
     kernel_kwargs_config: Union[FrozenDict, Dict],
-    reference_kernel: KernelBase,
-    reference_kernel_parameters: KernelBaseParameters,
+    regulariser_kernel: KernelBase,
+    regulariser_kernel_parameters: KernelBaseParameters,
 ) -> Tuple[LogSVGPKernel, LogSVGPKernelParameters]:
     kernel = LogSVGPKernel(
-        reference_kernel=reference_kernel,
-        reference_kernel_parameters=reference_kernel_parameters,
+        regulariser_kernel=regulariser_kernel,
+        regulariser_kernel_parameters=regulariser_kernel_parameters,
         log_observation_noise=jnp.log(kernel_kwargs_config["observation_noise"]),
         inducing_points=kernel_kwargs_config["inducing_points"],
         training_points=kernel_kwargs_config["training_points"],
@@ -378,13 +376,13 @@ def _resolve_log_svgp_kernel(
 
 def _resolve_kernelised_svgp_kernel(
     kernel_kwargs_config: Union[FrozenDict, Dict],
-    reference_kernel: KernelBase,
-    reference_kernel_parameters: KernelBaseParameters,
+    regulariser_kernel: KernelBase,
+    regulariser_kernel_parameters: KernelBaseParameters,
     data_dimension: int,
 ) -> Tuple[KernelisedSVGPKernel, KernelisedSVGPKernelParameters]:
     if "base_kernel" not in kernel_kwargs_config:
-        base_kernel = reference_kernel
-        base_kernel_parameters = reference_kernel_parameters
+        base_kernel = regulariser_kernel
+        base_kernel_parameters = regulariser_kernel_parameters
     else:
         base_kernel, base_kernel_parameters = kernel_resolver(
             kernel_config=kernel_kwargs_config["base_kernel"],
@@ -392,8 +390,8 @@ def _resolve_kernelised_svgp_kernel(
         )
     kernel = KernelisedSVGPKernel(
         base_kernel=base_kernel,
-        reference_kernel=reference_kernel,
-        reference_kernel_parameters=reference_kernel_parameters,
+        regulariser_kernel=regulariser_kernel,
+        regulariser_kernel_parameters=regulariser_kernel_parameters,
         log_observation_noise=jnp.log(kernel_kwargs_config["observation_noise"]),
         inducing_points=kernel_kwargs_config["inducing_points"],
         training_points=kernel_kwargs_config["training_points"],
@@ -414,15 +412,15 @@ def _resolve_extended_svgp_kernel(
     kernel_schema: KernelSchema,
     kernel_kwargs_config: Union[FrozenDict, Dict],
     data_dimension: int,
-    reference_kernel: Optional[KernelBase],
-    reference_kernel_parameters: Optional[KernelBaseParameters],
+    regulariser_kernel: Optional[KernelBase],
+    regulariser_kernel_parameters: Optional[KernelBaseParameters],
 ) -> Tuple[ExtendedSVGPBaseKernel, ExtendedSVGPBaseKernelParameters]:
-    if not reference_kernel and not reference_kernel_parameters:
+    if not regulariser_kernel and not regulariser_kernel_parameters:
         assert (
-            "reference_kernel" in kernel_kwargs_config
-        ), "Reference kernel must be specified."
-        reference_kernel, reference_kernel_parameters = kernel_resolver(
-            kernel_config=kernel_kwargs_config["reference_kernel"],
+            "regulariser_kernel" in kernel_kwargs_config
+        ), "Regulariser kernel must be specified."
+        regulariser_kernel, regulariser_kernel_parameters = kernel_resolver(
+            kernel_config=kernel_kwargs_config["regulariser_kernel"],
             data_dimension=data_dimension,
         )
     assert (
@@ -440,29 +438,29 @@ def _resolve_extended_svgp_kernel(
     assert (
         "is_diagonal_regularisation_absolute_scale" in kernel_kwargs_config
     ), "Is diagonal regularisation absolute scale must be specified."
-    if kernel_schema == KernelSchema.decomposed_svgp:
-        return _resolve_decomposed_svgp_kernel(
+    if kernel_schema == KernelSchema.cholesky_svgp:
+        return _resolve_cholesky_svgp_kernel(
             kernel_kwargs_config=kernel_kwargs_config,
-            reference_kernel=reference_kernel,
-            reference_kernel_parameters=reference_kernel_parameters,
+            regulariser_kernel=regulariser_kernel,
+            regulariser_kernel_parameters=regulariser_kernel_parameters,
         )
     elif kernel_schema == KernelSchema.diagonal_svgp:
         return _resolve_diagonal_svgp_kernel(
             kernel_kwargs_config=kernel_kwargs_config,
-            reference_kernel=reference_kernel,
-            reference_kernel_parameters=reference_kernel_parameters,
+            regulariser_kernel=regulariser_kernel,
+            regulariser_kernel_parameters=regulariser_kernel_parameters,
         )
     elif kernel_schema == KernelSchema.log_svgp:
         return _resolve_log_svgp_kernel(
             kernel_kwargs_config=kernel_kwargs_config,
-            reference_kernel=reference_kernel,
-            reference_kernel_parameters=reference_kernel_parameters,
+            regulariser_kernel=regulariser_kernel,
+            regulariser_kernel_parameters=regulariser_kernel_parameters,
         )
     elif kernel_schema == KernelSchema.kernelised_svgp:
         return _resolve_kernelised_svgp_kernel(
             kernel_kwargs_config=kernel_kwargs_config,
-            reference_kernel=reference_kernel,
-            reference_kernel_parameters=reference_kernel_parameters,
+            regulariser_kernel=regulariser_kernel,
+            regulariser_kernel_parameters=regulariser_kernel_parameters,
             data_dimension=data_dimension,
         )
     else:
@@ -472,8 +470,8 @@ def _resolve_extended_svgp_kernel(
 def kernel_resolver(
     kernel_config: Union[FrozenDict, Dict],
     data_dimension: int,
-    reference_kernel: Optional[KernelBase] = None,
-    reference_kernel_parameters: Optional[KernelBaseParameters] = None,
+    regulariser_kernel: Optional[KernelBase] = None,
+    regulariser_kernel_parameters: Optional[KernelBaseParameters] = None,
 ) -> Tuple[KernelBase, KernelBaseParameters]:
     assert "kernel_schema" in kernel_config, "Kernel schema must be specified."
     assert "kernel_kwargs" in kernel_config, "Kernel kwargs must be specified."
@@ -510,19 +508,19 @@ def kernel_resolver(
     elif kernel_schema == KernelSchema.sparse_posterior:
         return _resolve_sparse_posterior_kernel(
             kernel_kwargs_config=kernel_kwargs_config,
-            reference_kernel=reference_kernel,
-            reference_kernel_parameters=reference_kernel_parameters,
+            regulariser_kernel=regulariser_kernel,
+            regulariser_kernel_parameters=regulariser_kernel_parameters,
             data_dimension=data_dimension,
         )
     elif kernel_schema == KernelSchema.fixed_sparse_posterior:
         return _resolve_fixed_sparse_posterior_kernel(
             kernel_kwargs_config=kernel_kwargs_config,
-            reference_kernel=reference_kernel,
-            reference_kernel_parameters=reference_kernel_parameters,
+            regulariser_kernel=regulariser_kernel,
+            regulariser_kernel_parameters=regulariser_kernel_parameters,
             data_dimension=data_dimension,
         )
     elif kernel_schema in [
-        KernelSchema.decomposed_svgp,
+        KernelSchema.cholesky_svgp,
         KernelSchema.diagonal_svgp,
         KernelSchema.log_svgp,
         KernelSchema.kernelised_svgp,
@@ -530,8 +528,8 @@ def kernel_resolver(
         return _resolve_extended_svgp_kernel(
             kernel_schema=kernel_schema,
             kernel_kwargs_config=kernel_kwargs_config,
-            reference_kernel=reference_kernel,
-            reference_kernel_parameters=reference_kernel_parameters,
+            regulariser_kernel=regulariser_kernel,
+            regulariser_kernel_parameters=regulariser_kernel_parameters,
             data_dimension=data_dimension,
         )
     else:

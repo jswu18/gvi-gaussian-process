@@ -5,7 +5,7 @@ from jax.config import config
 from mockers.kernel import (
     MockKernel,
     MockKernelParameters,
-    calculate_reference_gram_eye_mock,
+    calculate_regulariser_gram_eye_mock,
 )
 from src.kernels.approximate import FixedSparsePosteriorKernel, SparsePosteriorKernel
 
@@ -46,7 +46,7 @@ def test_sparse_posterior_kernel_grams(
     k: jnp.ndarray,
 ):
     kernel = SparsePosteriorKernel(
-        base_kernel=MockKernel(calculate_reference_gram_eye_mock),
+        base_kernel=MockKernel(calculate_regulariser_gram_eye_mock),
         inducing_points=x_inducing,
         diagonal_regularisation=1e-5,
         is_diagonal_regularisation_absolute_scale=False,
@@ -96,9 +96,9 @@ def test_fixed_sparse_posterior_kernel_grams(
     k: jnp.ndarray,
 ):
     kernel = FixedSparsePosteriorKernel(
-        base_kernel=MockKernel(calculate_reference_gram_eye_mock),
-        reference_kernel=MockKernel(calculate_reference_gram_eye_mock),
-        reference_kernel_parameters=MockKernelParameters(),
+        base_kernel=MockKernel(calculate_regulariser_gram_eye_mock),
+        regulariser_kernel=MockKernel(calculate_regulariser_gram_eye_mock),
+        regulariser_kernel_parameters=MockKernelParameters(),
         inducing_points=x_inducing,
         diagonal_regularisation=1e-5,
         is_diagonal_regularisation_absolute_scale=False,

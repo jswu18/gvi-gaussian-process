@@ -72,6 +72,14 @@ class Trainer:
             data_batch = next(batch_generator, None)
             while data_batch is not None:
                 x_batch, y_batch = data_batch
+                if jnp.isnan(
+                    loss_function(
+                        FrozenDict(parameters.dict()),
+                        x_batch,
+                        y_batch,
+                    )
+                ):
+                    return parameters, post_epoch_history
                 gradients = jax.grad(
                     lambda parameters_dict: loss_function(
                         parameters_dict,
