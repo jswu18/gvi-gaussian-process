@@ -590,6 +590,12 @@ We propose using GWI with kernels that are formulated to learn better in more st
 We propose choosing NNGP kernels for the prior GP that will be the corresponding infinite width limit of the neural network mean function $m_Q$.
 We also explore settings when $k$ is a NNGP kernel being the infinite width limit of an architecture unrelated to $m_Q$.
 The learnable hyper-parameters of NNGP kernels are the variances of the weights and biases for each infinite-width limit layer of the neural network architecture.
+We show some preliminary results in Figure X where we compare inducing point selection with different kernels on the MNIST data. 
+Using Algorithm \ref{alg:inducing-point-selection}, we selected 10 images from 1000 of the digit seven.
+We include random inducing point selection as a control for visual comparison.
+We can see that with the NNGP kernels, Algorithm \ref{alg:inducing-point-selection} is significantly better at selecting very different instances of the same digit, providing better coverage of data variation.
+On the other hand, the ARD kernel is comprable to random selection.
+
 
 We also explore neural network kernels of the form
 \begin{align}
@@ -670,23 +676,27 @@ This presents a chicken and egg problem.
 We propose a numerical approach in Algorithm \ref{alg:inducing-points-prior-gp}, iteratively learning the kernel hyper-parameters and selecting the inducing points with Algorithm \ref{alg:inducing-point-selection} until convergence.
 We do not provide any convergence guarantees for this method, but we have observed reasonable results in our experiments with this procedure.
 
-An observation of Algorithm \ref{alg:inducing-points-prior-gp} is the incorporation of response data $\mathbf{Y}$ into the inducing point selection process, which did not exist in Algorithm \ref{alg:inducing-point-selection}. Learning the kernel with the response data can give more appropriate covariances when comparing candidate points $\mathbf{X}$ during the inducing points selection of Algorithm \ref{alg:inducing-point-selection}. Figure \ref{inducing-points-and-kernel} visualises the inducing points selected for four iterations of Algorithm \ref{alg:inducing-points-prior-gp}.
+An observation of Algorithm \ref{alg:inducing-points-prior-gp} is the incorporation of response data $\mathbf{Y}$ into the inducing point selection process, which did not exist in Algorithm \ref{alg:inducing-point-selection}. 
+Learning the kernel with the response data can give more appropriate covariances when comparing candidate points $\mathbf{X}$ during the inducing points selection of Algorithm \ref{alg:inducing-point-selection}. F
+igure \ref{inducing-points-and-kernel} visualises the inducing points selected for the first four iterations of Algorithm \ref{alg:inducing-points-prior-gp} overlayed with the Bayesian posterior of a GP parameterised with the learned kernel, conditioned on those inducing points. 
+This motivates the intuition that the kernel learning and inducing point selection generally minimise large uncertainty bounds around areas where training points exist.
+This ensures that the selected inducing points will optimally cover the training data under the learning capabilities of the chosen kernel function.
 
 
 \begin{figure}[h!]
 \centering
-\begin{minipage}{.49\textwidth}
+\begin{minipage}{.5\textwidth}
   \centering
-  \includegraphics[width=\linewidth]{thesis-report/figures/toy_curves/data/curve0/data.png}
-  \includegraphics[width=\linewidth]{thesis-report/figures/toy_curves/data/curve3/data.png}
+  \includegraphics[width=\linewidth]{thesis-report/figures/inducing_points_kernel/iteration-0/prediction.png}
+  \includegraphics[width=\linewidth]{thesis-report/figures/inducing_points_kernel/iteration-2/prediction.png}
 \end{minipage}%
-\begin{minipage}{.49\textwidth}
+\begin{minipage}{.5\textwidth}
   \centering
-  \includegraphics[width=\linewidth]{thesis-report/figures/toy_curves/data/curve1/data.png}
-  \includegraphics[width=\linewidth]{thesis-report/figures/toy_curves/data/curve4/data.png}
+  \includegraphics[width=\linewidth]{thesis-report/figures/inducing_points_kernel/iteration-1/prediction.png}
+  \includegraphics[width=\linewidth]{thesis-report/figures/inducing_points_kernel/iteration-3/prediction.png}
 \end{minipage}%
 \label{inducing-points-and-kernel}
-\caption{GPs learned with GWI or pGVI}
+\caption{Inducing Point Selection for Four Iterations of Algorithm \ref{alg:inducing-points-prior-gp}}
 \end{figure}
 
 
@@ -727,7 +737,6 @@ where $N_B < N$ and $N_S < N$ are two independent batches from the full data and
 
 
 In our experiments, we use the same data sample for $\mathbf{X}_{N_B}$ and $\mathbf{X}_{N_S}$, to ensure symmetric square matrices for $r\left(\mathbf{X}_{N_S}, \mathbf{X}_{N_B}\right)$ and $k\left(\mathbf{X}_{N_B}, \mathbf{X}_{N_S}\right)$ in the eigen-decomposition term of (\ref{wasserstein-distance-approximation}). This allows us to take advantage of eigenvalue properties of symmetric matrices, further explained in Appendix \ref{appendix:eigenvalue-symmetric-matrix}. We use symmetric matrices to leverage the eigendecomposition implementation in version 0.4 of Python JAX which is only available on GPUs for symmetric matrices. Our experiments show that using the same batch for $\mathbf{X}_{N_S}$ and $\mathbf{X}_{N_B}$ don't seem to make any significant difference on the resulting GWI-GP.
-\jw{Include plots comparing GWI-GPs learned with the symmetric and non-symmetric}
 
 The eigendecomposition in the last term of (\ref{wasserstein-distance-approximation}) is computationally expensive with $\mathcal{O}(N^3)$ complexity, which in our case is the sample size $N_S$.
 In our experiments we found that we can often drop this last term during GWI with minor effect on the learned GWI-GP.
