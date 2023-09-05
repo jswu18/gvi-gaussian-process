@@ -712,51 +712,45 @@ The GVI framework from \cite{knoblauch2022optimization} assumes
 in other words, that the regulariser $\mathbb{D}$ is definite.
 We explore dropping this assumption and choosing regularisers of the form
 \begin{align}
-    \mathbb{D}\left[Q, P\right] = \sum_{{b}=1}^{B} \mathbb{D}_0 \left[\mathbb{Q}\left(F(\mathbf{x}_{b})\right), \mathbb{P}\left(F(\mathbf{x}_{b})\right)\right],
+    \mathbb{D}\left[Q, P\right] = \sum_{{n}=1}^{N} \mathbb{D}_0 \left[\mathbb{Q}\left(F(x_n)\right), \mathbb{P}\left(F(x_n)\right)\right],
     \label{projected-regulariser}
 \end{align}
-where $\mathbb{D}_0$ is a (base) regulariser between two probability measures on $\mathbb{R}^D$ and $\mathbf{x}_{b} \in \mathcal{X}^D$.
-Specifically, since both the variational and prior are GPs, we have that $\mathbb{Q}\left(F(\mathbf{x}_{b})\right) = \mathcal{N}\left(m_Q(\mathbf{x}_{b}), r(\mathbf{x}_{b}, \mathbf{x}_{b})\right)$ and $\mathbb{P}\left(F(\mathbf{x}_{b})\right) = \mathcal{N}\left(m_P(\mathbf{x}_{b}), k(\mathbf{x}_{b}, \mathbf{x}_{b})\right)$.
-Therefore any base regulariser $\mathbb{D}_0$ that can be computed between two Gaussian random variables \vw{I think you mean random vectors, right? your $x_b$ is a batch and so you in the most general case you have multivariate gaussians, right? If not, then $x_b \in \calX$ and not $\calX^D$ or you have confusing notation.}will lead to a tractable regulariser computation and therefore a tractable variational loss. We call regularisation schemes following (\ref{projected-regulariser}), projected regularisation.
+where $\mathbb{D}_0$ is a (base) regulariser between two probability measures on $\mathbb{R}$ and $x_n \in \mathcal{X}$.
+Specifically, since both the variational and prior are GPs, we have that $\mathbb{Q}\left(F(x_n)\right) = \mathcal{N}\left(m_Q(x_n), r(x_n, x_n)\right)$ and $\mathbb{P}\left(F(x_n)\right) = \mathcal{N}\left(m_P(x_n), k(x_n, x_n)\right)$.
+Therefore any base regulariser $\mathbb{D}_0$ that can be computed between two Gaussian random variables will lead to a tractable regulariser computation and therefore a tractable variational loss. We call regularisation schemes following (\ref{projected-regulariser}), projected regularisation.
 
 We acknowledge that by only regularising against the marginal function values, we will be unconstrained with respect to correlations.
 However our experiments suggest that this can act as a  sufficient regulariser to reap most of the benefits of GVI in terms of uncertainty quantification, while having significantly cheaper computational costs than GWI-GP learning or any other previous approach to function space VI such as \jw{[CITATIONS]}.
 
 Projected regularisations are very cheap to compute.
-The base regularisers that we will propose generally involve at most a matrix inverse having $\mathcal{O}(D^3)$ computational complexity evaluated for $B$ batches.
-In the 1-dimensional case with $N$ batches, we have $\mathcal{O}(N)$ complexity, significantly cheaper than the Wasserstein distance in (\ref{wasserstein-distance-approximation}), which is $\mathcal{O}(N^3)$. \vw{I am getting a bit confused here with what is what. $N$ is number of data points. $N_B$ is batch size maybe? Then you should have $N_B^3$ for 4.12 not $N^3$. Also in your approach if you only compute marginals you should not have a matrix inversion at all. It should just be a division. I think this is the same point as before. I donnt know if $x_b$ is a batch or a singal point. If it is a batch then you have essentially the same complexity that I had in my algorithm. }
+The base regularisers that we propose are between scalar random variables having $\mathcal{O}(1)$ computational complexity for each training input $x_n$.
+With $N$ points, we have $\mathcal{O}(N)$ complexity, significantly cheaper than the Wasserstein distance in (\ref{wasserstein-distance-approximation}), which is $\mathcal{O}(N_b^3)$ where $N_b$ was a batch size generally greater than one. 
 
-We will now review the base regularisers $\mathbb{D}_0$ used in our experiments. The Bhattacharyya distance is given as
+We will now review the base regularisers $\mathbb{D}_0$ used in our experiments. The Bhattacharyya distance is
 \begin{align}
-    \mathbb{B} \left[Q_{\mathbf{X}}, P_{\mathbf{X}}\right] &= \frac{1}{8} e(\mathbf{X})^T \tilde{\textbf{K}}^{-1}e(\mathbf{X}) + \frac{1}{2} \log\left(\frac{\det\tilde{\textbf{K}}}{\sqrt{\det k(\mathbf{X}, \mathbf{X})\det r(\mathbf{X}, \mathbf{X})}}\right),
+    \mathbb{B} \left[Q_{x}, P_{x}\right] &= \frac{1}{4} \frac{\left(\mu_p - \mu_q\right)^2}{\sigma_p^2 + \sigma_q^2} + \frac{1}{2} \log\left(\frac{\sigma_p^2 + \sigma_q^2}{2\sigma_p\sigma_q^}\right),
 \end{align}
-where
+where $Q_{x} \coloneqq \mathbb{Q}\left(F(x)\right)$, $P_{x} \coloneqq \mathbb{P}\left(F(x)\right)$, $\mu_p \coloneqq m_P(x)$, $\mu_q \coloneqq m_Q(x)$, $\sigma_p^2 \coloneqq k(x, x)$, and $\sigma_q^2 \coloneqq r(x, x)$.
+The squared 2-Wasserstein distance for Gaussians on $\mathbb{R}$ is
 \begin{align}
-    e(\mathbf{X}) \coloneqq m_P(\mathbf{X}) - m_Q(\mathbf{X}), \\
-    \tilde{\textbf{K}} \coloneqq \frac{ k(\mathbf{X}, \mathbf{X}) +  r(\mathbf{X}, \mathbf{X})}{2},
+    \mathbb{W} \left[Q_{x}, P_{x}\right]^2 &= \left(\mu_p - \mu_q\right)^2 + \sigma_p^2 + \sigma_q^2 - 2 \sigma_p\sigma_q.
 \end{align}
-$Q_{\mathbf{X}} \coloneqq \mathbb{Q}\left(F(\mathbf{X})\right)$, and $P_{\mathbf{X}} \coloneqq \mathbb{P}\left(F(\mathbf{X})\right)$.
-The squared 2-Wasserstein distance for measures on $\mathbb{R}^D$ is given as
+The Hellinger distance is
 \begin{align}
-    \mathbb{W} \left[Q_{\mathbf{X}}, P_{\mathbf{X}}\right]^2 &= \| e(\mathbf{X})\|_2^2 + \tr \left(k(\mathbf{X}, \mathbf{X})\right) + \tr \left(r(\mathbf{X}, \mathbf{X})\right) - 2 \tr\left(k(\mathbf{X}, \mathbf{X})^{1/2}r(\mathbf{X}, \mathbf{X})k(\mathbf{X}, \mathbf{X})^{1/2}\right),
+    \mathbb{H} \left[Q_{x}, P_{x}\right] = 1 - \sqrt{\frac{2\sigma_p\sigma_q}{\sigma_p^2 + \sigma_q^2}} \exp\left(\frac{1}{4} \frac{ \left(\mu_p - \mu_q\right)^2}{\sigma_p^2 + \sigma_q^2}\right).
 \end{align}
-where $k(\mathbf{X}, \mathbf{X})^{1/2}$ is the principal square root.
-The Hellinger distance is given as
+The KL divergence for measures on $\mathbb{R}$ is
 \begin{align}
-    \mathbb{H} \left[Q_{\mathbf{X}}, P_{\mathbf{X}}\right] = 1 - \frac{\left(\det k(\mathbf{X}, \mathbf{X})\right)^{1/4}\left(\det r(\mathbf{X}, \mathbf{X})\right)^{1/4}}{\left(\det\tilde{\textbf{K}}\right)^{1/2}}\exp\left(-\frac{1}{8} e(\mathbf{X})^T \tilde{\textbf{K}}^{-1} e(\mathbf{X})\right).
+    \mathbb{KL} \left[Q_{x}, P_{x}\right] &= \log\frac{\sigma_q^2}{\sigma_p^2} + \frac{\sigma_p^2 + \left(\mu_p - \mu_q\right)^2}{2 \sigma_q^2} - \frac{1}{2}.
 \end{align}
-The KL divergence for measures on $\mathbb{R}^D$ is given as
+The $\alpha$-Renyi divergence is
 \begin{align}
-    \mathbb{KL} \left[Q_{\mathbf{X}}, P_{\mathbf{X}}\right] &= \frac{1}{2}\left(\tr\left(r(\mathbf{X}, \mathbf{X}) k(\mathbf{X}, \mathbf{X})^{-1}\right) -D +e(\mathbf{X})^T k(\mathbf{X}, \mathbf{X})^{-1} e(\mathbf{X})  + \log\left(\frac{\det k(\mathbf{X}, \mathbf{X})}{\det r(\mathbf{X}, \mathbf{X})}\right)\right).
+    \mathbb{R}_\alpha \left[Q_{x}, P_{x}\right] &= \log\frac{\sigma_p}{\sigma_q} + \frac{1}{2(\alpha-1)}\log\left(\frac{\sigma_p^2}{\alpha \sigma_p^2 + (1-\alpha) \sigma_q^2}\right)  + \frac{1}{2}\frac{\alpha \left(\mu_p - \mu_q\right)^2}{\alpha \sigma_p^2 + (1-\alpha) \sigma_q^2},
 \end{align}
-The $\alpha$-Renyi divergence is given as
-\begin{align}
-    \mathbb{R}_\alpha \left[Q_{\mathbf{X}}, P_{\mathbf{X}}\right] &= \frac{\alpha}{2} e(\mathbf{X})^T \tilde{\textbf{K}}_{\alpha}^{-1} e(\mathbf{X})  - \frac{1}{2(\alpha -1)} \log\left(\frac{\det \tilde{\textbf{K}}_{\alpha}}{\left(\det \tilde{\textbf{K}}_{\alpha} \right)^{1-\alpha}\left(\det \tilde{\textbf{K}}_{\alpha}\right)^{\alpha}}\right),
-\end{align}
-with $\tilde{\textbf{K}}_{\alpha} \coloneqq \alpha \, k(\mathbf{X}, \mathbf{X}) + (1-\alpha)  r(\mathbf{X}, \mathbf{X})$, $0 < \alpha < \infty$, and $\alpha \neq 1$.
+with $\alpha \sigma_p^2 + (1-\alpha) \sigma_q^2 > 0$.
 Finally, we also experimented with a naive divergence
 \begin{align}
-    \mathbb{N} \left[Q_{\mathbf{X}}, P_{\mathbf{X}}\right] = \| e(\mathbf{X})\|_2^2 + \|r(\mathbf{X}, \mathbf{X})-k(\mathbf{X}, \mathbf{X})\|_2^2,
+    \mathbb{N} \left[Q_{x}, P_{x}\right] = \left(\mu_p - \mu_q\right)^2 + \left(\sigma_q^2-\sigma_p^2\right)^2,
 \end{align}
 taking the squared difference of the means and covariances.
 
