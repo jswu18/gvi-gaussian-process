@@ -123,13 +123,13 @@ $\Box$ \end{quotation}}
 \end{flushright}
 \end{figure}
     {}
-	\vspace{2cm}
+	\vspace{3cm}
 
 	{\Huge\bfseries Generalised Variational Inference \\ for Gaussian Processes\par}
 	% \vfill
 
 	\vspace{1cm}
-	{\Large\itshape James (Jian Shu) Wu\par}
+	{\Large James (\textit{Jian Shu}) Wu\par}
 	\vspace{0.5cm}
 	supervised by\par
     Veit D. \textsc{Wild} \& Jeremias \textsc{Knoblauch}\\
@@ -137,7 +137,7 @@ $\Box$ \end{quotation}}
 	{\large September 2023\par}
  \textsc{MSc Computational Statistics and Machine Learning}\\
 	\vspace{1cm}
- \textit{\tiny{This report is submitted as part requirement for the MSc Computational Statistics and Machine Learning at University College London. It is substantially the result of my own work except where explicitly indicated in the text. \\ The report may be freely copied and distributed provided the source is explicitly acknowledged.}}
+ \textit{\scriptsize{This report is submitted as part requirement for the MSc Computational Statistics and Machine Learning at University College London. It is substantially the result of my own work except where explicitly indicated in the text. \\ The report may be freely copied and distributed provided the source is explicitly acknowledged.}}
 
 	% \vfill
 
@@ -576,7 +576,7 @@ The GWI framework is parameterised in terms of the infinite-dimensional paramete
     \item $m_Q \in \mathcal{L}^2$, a variational mean function, and
     \item $r: \mathcal{X} \times \mathcal{X} \rightarrow \mathbb{R}$, a variational (trace-class) kernel,
 \end{itemize}
-to construct the objective in (\ref{gvi-posterior-in-fs}). \cite{wild2022generalized} constructed GWI-net with $m_P$ as the zero mean function, $k$ as the squared-exponential kernel, $m_Q$ as a neural network, and $r$ as the svGP kernel
+to construct the objective in (\ref{gvi-posterior-in-fs}). \cite{wild2022generalized} constructed GWI-net with $m_P$ as the zero mean function, $k$ as the ARD kernel, $m_Q$ as a neural network, and $r$ as the svGP kernel
 \begin{align}
     r(x, x') = k(x, x') - \mathbf{K}_{x, \mathbf{Z}} \mathbf{K}_{\mathbf{Z}, \mathbf{Z}} \mathbf{K}_{\mathbf{Z}, x'} + \mathbf{K}_{x, \mathbf{Z}} \mathbf{\Sigma} \mathbf{K}_{\mathbf{Z}, x'},
     \label{gwi-svgp-kernel}
@@ -584,7 +584,7 @@ to construct the objective in (\ref{gvi-posterior-in-fs}). \cite{wild2022general
 where $\mathbf{\Sigma} \in \mathbb{R}^{M \times M}_{\succcurlyeq 0}$ parameterises $r$.
 
 \subsubsection{The Prior Kernel}
-The GWI-net construction from \cite{wild2022generalized} uses a squared exponential kernel for the prior
+The GWI-net construction from \cite{wild2022generalized} uses a ARD kernel for the prior
 \begin{align}
     k(x, x') = \sigma^2_f \exp\left(-\frac{1}{2} \sum_{d=1}^D \frac{1}{\alpha_d^2}(x_d-x_d')^2\right),
 \end{align}
@@ -1026,7 +1026,7 @@ Algorithms \ref{alg:inducing-point-selection}, \ref{alg:gwi-gp}, and \ref{alg:in
 \inherit{Kernel}
 \end{class}
 
-\begin{class}[text width=5cm]{SquaredExponential}{-2, -4}
+\begin{class}[text width=5cm]{ARD}{-2, -4}
 \inherit{Kernel}
 \end{class}
 
