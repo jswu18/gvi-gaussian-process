@@ -123,20 +123,22 @@ $\Box$ \end{quotation}}
 \end{flushright}
 \end{figure}
     {}
-	\vspace{4.5cm}
+	\vspace{2cm}
 
 	{\Huge\bfseries Generalised Variational Inference \\ for Gaussian Processes\par}
 	% \vfill
 
 	\vspace{1cm}
-	{\Large\itshape James Wu\par}
+	{\Large\itshape James (Jian Shu) Wu\par}
 	\vspace{0.5cm}
 	supervised by\par
-	\vspace{0.25cm}
-    Veit D. \textsc{Wild} \& Jeremias \textsc{Knoblauch}
+    Veit D. \textsc{Wild} \& Jeremias \textsc{Knoblauch}\\
 	\vfill
 	{\large September 2023\par}
-	\vspace{2cm}
+ \textsc{MSc Computational Statistics and Machine Learning}\\
+	\vspace{1cm}
+ \textit{\tiny{This report is submitted as part requirement for the MSc Computational Statistics and Machine Learning at University College London. It is substantially the result of my own work except where explicitly indicated in the text. \\ The report may be freely copied and distributed provided the source is explicitly acknowledged.}}
+
 	% \vfill
 
 % Bottom of the page
@@ -146,23 +148,24 @@ $\Box$ \end{quotation}}
 \setcounter{page}{1}
 \pagenumbering{roman}
 
-This report is submitted as part requirement for the Master's in Computational Statistics \& Machine Learning Degree at University College London (UCL). It is substantially the result of my own work except where explicitly indicated in the text.
+% This report is submitted as part requirement for the Master's in Computational Statistics \& Machine Learning Degree at University College London (UCL). It is substantially the result of my own work except where explicitly indicated in the text.
 
-\begin{flushright}
-    \textit{James (Jian Shu) Wu}
+% \begin{flushright}
+%     \textit{James (Jian Shu) Wu}
 
-    September 2023
-\end{flushright}
-\newpage
-
-
-\section*{Acknowledgements}
-Thanks mom!
-\newpage
+%     September 2023
+% \end{flushright}
+% \newpage
 
 \begin{abstract}
 Summarise your report concisely.
 \end{abstract}
+
+\newpage
+\section*{Acknowledgements}
+Thanks mom!
+
+
 \newpage
 \tableofcontents
 \newpage
@@ -201,6 +204,9 @@ For any random element $F$ taking values in some space $\boldsymbol{\boldsymbol{
         when there exists a density $p$ with respect to some other measure, most commonly the Lebesgue measure. When conditioned on $Y$, we denote $p(f\vert Y)$.
 \end{enumerate}
 Sample, measure, and probability density notation will be used interchangeably whenever appropriate. We will also define new notation such as $P \coloneqq \mathbb{P}(F)$ and $Q \coloneqq \mathbb{Q}(F)$ whenever convenient. $\mathbb{E}_{P}[\wc]$ denotes expectation with respect to $P$ and $\mathbb{D}[Q, P]$ denotes a divergence between the measures $Q$ and $P$. Other divergences will follow similar notation and will be defined whenever needed.
+
+\newpage
+\section{Introduction}
 
 \newpage
 \section{Gaussian Processes}\label{section:gaussian-processes}
@@ -590,12 +596,22 @@ We propose using GWI with kernels that are formulated to learn better in more st
 We propose choosing NNGP kernels for the prior GP that will be the corresponding infinite width limit of the neural network mean function $m_Q$.
 We also explore settings when $k$ is a NNGP kernel being the infinite width limit of an architecture unrelated to $m_Q$.
 The learnable hyper-parameters of NNGP kernels are the variances of the weights and biases for each infinite-width limit layer of the neural network architecture.
-We show some preliminary results in Figure X where we compare inducing point selection with different kernels on the MNIST data. 
+\begin{figure}[h!]
+
+\centering
+  \includegraphics[width=\linewidth]{thesis-report/figures/mnist_inducing_point/random_mnist_inducing_point_selection.png}
+  \includegraphics[width=\linewidth]{thesis-report/figures/mnist_inducing_point/greedy_mnist_ard_inducing_point_selection.png}
+  \includegraphics[width=\linewidth]{thesis-report/figures/mnist_inducing_point/greedy_mnist_cnn_nngp_inducing_point_selection.png}
+\caption{Inducing Point Selection of MNIST with Different Kernels}\label{mnist-inducing-points}
+\end{figure}
+
+We show some preliminary results in Figure \ref{mnist-inducing-points}, where we compare inducing point selection with different kernels on the MNIST data. 
 Using Algorithm \ref{alg:inducing-point-selection}, we selected 10 images from 1000 of the digit seven.
 We include random inducing point selection as a control for visual comparison.
-We can see that with the NNGP kernels, Algorithm \ref{alg:inducing-point-selection} is significantly better at selecting very different instances of the same digit, providing better coverage of data variation.
-On the other hand, the ARD kernel is comprable to random selection.
-
+We can see that with the NNGP kernel, Algorithm \ref{alg:inducing-point-selection} is significantly better at selecting different instances of the same digit, providing better coverage of data variation.
+On the other hand, images selected with the ARD kernel is comprable to random selection. 
+It should be noted that this is a preliminary result, solely for the purposes of showing the potential of NNGP kernels. 
+These experiments were performed without any training on the kernel hyper-parameters.
 
 We also explore neural network kernels of the form
 \begin{align}
@@ -725,7 +741,7 @@ where $\alpha_T$ is learned through negative log-likelihood optimisation on $\GP
 \end{align}
 Tempering is also applied to classificaiton by constructing $\boldsymbol{\alpha} \coloneqq \left[\alpha_T^1 \dots \alpha_T^J\right]^T \in [0, \infty)^J$, a seperate tempering factor for each GP, and optimising the classification log-likelihood in (\ref{robust-max-function-expected-log-likelihood}).
 
-\subsection{The Wasserstein Distance}
+\subsection{Wasserstein Distance Approximations}
 \cite{wild2022generalized} provides the batched approximation of the Wasserstein distance from (\ref{wasserstein-distance}) for $N$ data points as
 \begin{align}
     \mathbb{W}\left[Q, P\right]^2  &\approx \frac{1}{N_B}\sum_{n_b=1}^{N_B} \left(m_P(x_{n_b}) - m_Q(x_{n_b})\right)^2 \nonumber \\
@@ -741,14 +757,13 @@ In our experiments, we use the same data sample for $\mathbf{X}_{N_B}$ and $\mat
 The eigendecomposition in the last term of (\ref{wasserstein-distance-approximation}) is computationally expensive with $\mathcal{O}(N^3)$ complexity, which in our case is the sample size $N_S$.
 In our experiments we found that we can often drop this last term during GWI with minor effect on the learned GWI-GP.
 This trade-off of having a slightly imprecise Wasserstein distance significantly improves the speed of gradient computations during GWI.
-\jw{Include plots comparing GWI-GPs learned with the full Wasserstein distance vs partial Wasserstein distance}
 
 \newpage
 \section{Projected Generalised Variational Inference for Gaussian Processes}
 This section proposes a new learning framework called projected GVI (pGVI) for GPs to learn variational GPs we call pGVI-GPs.
 pGVI uses the same GWI procedure in Algorithm \ref{alg:gwi-gp}, except it replaces the Wasserstein regularisation with a new form of regularisation we call projected regularisation.
 Projected regularisations are significantly cheaper computationally, making pGVI an extremely attractive option in practice.
-This section presents projected regularisations, followed by some visualisations of pGVI-GPs as qualitative motivation for the potential of this approach.
+We will present projected regularisations, followed by different formulations for the projected GVI objective.
 
 \subsection{Projected Regularisation}
 The GVI framework from \cite{knoblauch2022optimization} assumes
@@ -772,7 +787,10 @@ Projected regularisations are very cheap to compute.
 The base regularisers that we propose are between scalar random variables having $\mathcal{O}(1)$ computational complexity for each training input $x_n$.
 With $N$ points, we have $\mathcal{O}(N)$ complexity, significantly cheaper than the Wasserstein distance in (\ref{wasserstein-distance-approximation}), which is $\mathcal{O}(N^3)$. 
 
-We will now review the base regularisers $\mathbb{D}_0$ used in our experiments. The Bhattacharyya distance is
+\subsection{Base Regularisers}
+We will now review the base regularisers $\mathbb{D}_0$ used in our experiments. 
+These provide different formulations for the pGVI objective.
+The Bhattacharyya distance is
 \begin{align}
     \mathbb{B} \left[Q_{x}, P_{x}\right] &= \frac{1}{4} \frac{\left(\mu_p - \mu_q\right)^2}{\sigma_p^2 + \sigma_q^2} + \frac{1}{2} \log\left(\frac{\sigma_p^2 + \sigma_q^2}{2\sigma_p\sigma_q^}\right),
 \end{align}
@@ -799,9 +817,6 @@ Finally, we also experimented with a naive divergence
     \mathbb{N} \left[Q_{x}, P_{x}\right] = \left(\mu_p - \mu_q\right)^2 + \left(\sigma_q^2-\sigma_p^2\right)^2,
 \end{align}
 taking the squared difference of the means and covariances.
-
-\subsection{Regression Visualisations}
-\jw{Some visualistions of pGVI-GPs}
 
 \newpage
 \section{Experimentation Framework}
@@ -924,25 +939,26 @@ Algorithms \ref{alg:inducing-point-selection}, \ref{alg:gwi-gp}, and \ref{alg:in
 \attribute{dist. : Dist. = Gaussian}
 \end{abstractclass}
 
-\begin{class}[text width=5cm]{ExactGPRegression}{-9, -2.5}
+\begin{class}[text width=5cm]{ExactGPRegression}{-9, -3}
 \inherit{ExactGP}
 \inherit{GPRegression}
 \end{class}
 
-\begin{class}[text width=5cm]{ApproxGPRegression}{-3, -2.5}
+\begin{class}[text width=5cm]{ApproxGPClassification}{-3, -3}
 \inherit{ApproxGP}
-\inherit{GPRegression}
+\inherit{GPClassification}
 \end{class}
 
-\begin{class}[text width=5cm]{ExactGPClassification}{3, -2.5}
+\begin{class}[text width=5cm]{ExactGPClassification}{3, -3}
 \inherit{ExactGP}
 \inherit{GPClassification}
 \end{class}
 
-\begin{class}[text width=5cm]{ApproxGPClassification}{9, -2.5}
+\begin{class}[text width=5cm]{ApproxGPRegression}{9, -3}
 \inherit{ApproxGP}
-\inherit{GPClassification}
+\inherit{GPRegression}
 \end{class}
+
 
 \begin{abstractclass}[text width=5cm]{Mean}{-9, 3.85}
 \operation{predict ( $\theta_{m}$ , $\mathbf{X}$ ) : Array}
@@ -1096,9 +1112,9 @@ Each curve has randomly selected segments removed from the training data to visu
 With our framework, we constructed 1513 experiments for each curve, each defined through \code{.yaml} configuration files. 
 Each experiment is a unique construction of a regulariser GP, an approximate GP, and a GVI objective (among other settings). 
 After performing all experiments, we select the configuration with the best performance. 
-Given the setup of these regression curve problems, we selected based on the highest negative-log-likelihood with respect to the training data. 
+Given the setup of these regression curve problems, we chose the best performing experiment as the GP having the highest negative-log-likelihood with respect to the training data. 
 In other problem regimes, it maybe more suitable to select based on test set performance. 
-We visualise four GPs in Figure \ref{toy-curves-gps}, the best performing GWI-GP or pGVI-GPs for their respective curve problem. 
+We visualise four GPs in Figure \ref{toy-curves-gps}, the best performing GWI-GP or pGVI-GPs for their respective curve problem.
 The rest of the curves are visualised in Appendix \ref{appendix:toy-curves}.
 
 \begin{figure}[h!]
@@ -1131,7 +1147,7 @@ It also demonstrates the flexibility of the learning frameworks to accommodate d
 \jw{i.e. choosing inducing points from the feature representation of the data points from a NN feature extractor}
 
 
-\subsection{Applications to Different Problem Domains}
+\subsection{Experiments in Different Data Domains}
 
 \jw{Regression}
 
@@ -1153,7 +1169,10 @@ It also demonstrates the flexibility of the learning frameworks to accommodate d
 
 \newpage
 \appendix
+\counterwithin{figure}{subsection}
+
 \section{Appendix}
+
 \subsection{Positive Semi-Definite Kernels} \label{appendix:positive-definite-kernel}
 For a kernel function $k: \mathcal{X} \times \mathcal{X} \rightarrow \mathbb{R}$ defined as an inner product of features in some feature space $\mathcal{H}$:
 \begin{align}
@@ -1180,7 +1199,7 @@ For square symmetric matrices $\mathbf{A}, \mathbf{B} \in \mathbb{R}^{N \times N
 where $\lambda_{n}(\cdot)$ computes the $n^{th}$ eigenvalue.
 
 \newpage
-\subsection{Example Regulariser GP YAML}\label{appendix:regulariser-yaml}
+\subsection{Example Regulariser Gaussian Process Training Configuration}\label{appendix:regulariser-yaml}
 \begin{lstlisting}[style=yaml]
 data_name: 604913dc3af2417fb1d5a21ea26e4afd
 empirical_risk_break_condition: -10
@@ -1216,7 +1235,7 @@ trainer_settings:
 \end{lstlisting}
 
 \newpage
-\subsection{Example Approximate GP YAML}\label{appendix:approximate-yaml}
+\subsection{Example Approximate Gaussian Process Training Configuration}\label{appendix:approximate-yaml}
 
 \begin{lstlisting}[style=yaml]
 empirical_risk_schema: negative_log_likelihood
