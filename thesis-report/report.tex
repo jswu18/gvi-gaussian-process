@@ -169,54 +169,6 @@ Summarise your report concisely.
 \counterwithin{figure}{section}
 \setcounter{section}{-1}
 \section{Notation}
-Some general remarks on notation. Let's say you have any random element, call it $G$ which takes values in some space $\mathcal{G}$. Let's say it is Gaussian or sth on this set. Then you have the following three option for notation
-\begin{itemize}
-    \item Sample notation: You write $G \sim \mathcal{N}(...)$.
-    \item Meausre notation: EVERY random objects has an associated probability measure with it. Generically people now write $\mathbb{P}^G$ for this object. It is the probability measure associated to the random variable $G$. This allows you to write
-    \begin{align}
-        \mathbb{P}^G = \mathcal{N}(...)
-    \end{align}
-    or alternatively you write $\mathbb{P}(G) = \mathcal{N}(...)$.
-    \item probability density notation: Some proability measures have a density with respect to some other measure. The most common one is the lesbegue-measure. People then write for the density
-    \begin{align}
-        p(g) = \mathcal{N}(g \, | \, \mu, \sigma).
-    \end{align}
-    Note that this is a bit weird. This may be the notation you are most familiar with though. In principle it would be better to index, i.e. $p_G$ is the probabiltiy density with respect to $G$. But people get to lazy and kind of write $p(g)$ so you can read off from the input that it is the density that belongs to $G$.
-\end{itemize}
-In action, this looks more or less like this below.
-You have data $\{X_n, Y_n\} \subset \mathcal{X} \times \bbR$ and use a Bayesian model to describe it. And you have a Gaussian process $ F:= \{ F(x) : x \in \mathcal{X}\}$. You can now write the following which is random element notation.
-\begin{align}
-    F \sim GP(m, k)
-\end{align}
-Alternativately, you can define that you mean by $\bbP^F$ the probability measure associated with $F$. In this case you can write
-\begin{align}
-    \mathbb{P}^F = GP(m,k).
-\end{align}
-Similiary for other random variables and conditioning. For example $Y:=(y_1, \hdots, y_N)^T$. For a new test point $x^* \in \mathcal{X}$ you can write
-\begin{align}
-    F(x^*) | Y \sim \mathcal{N}(....)
-\end{align}
-with the appropriate posterior predictive mean and variance. Or alternatively, in measure notation
-\begin{align}
-    \mathbb{P}^F( \cdot| Y) = \mathcal{N}(...).
-\end{align}
-If the random variable has a Lesbegue-density such as $F(x^*)$. You can also write for the Lesbegue-density
-\begin{align}
-    p( f(x^*) ) = \mathcal{N} \big( f(x^*) \, | \, ....)
-\end{align}
-where you fill mean and variance into the dots.
-
-The same now holds for the variational notation. But here you use typically a $\mathbb{Q},Q$ and $q$. Note in particular that $\mathbb{Q}(F)$ is an approximation to the true posterior $F | Y$. This means that you implicitly have conditioned on $Y$ and don't write it out explicitly. You can also write
-\begin{align}
-    F \overset{\mathbb{Q}}{\sim} GP(...),
-\end{align}
-which means that in the variational approximation we assume that $F$ is distributed according to a GP with certain mean function and covariance kernel. For associated lesbegue-densities at fixed input points you can write again $q(f(x))$. Note again that this is an approxmation to $p(f(x)|y_1, \hdots, y_N)$ so it implicitly entails a conditioning on $y=(y_1, \hdots, y_N)$.
-
-In general you index a lot of things all the time that you dont have to make explicit. Not every dependency needs always to be mentioned. I personally would only mention paramter dependencies when I write out an ELBO or sth. For example in the SVGP model we assume
-\begin{align}
-    \mathbb{Q}(F) = GP( m_Q, r)
-\end{align}
-with $m_Q$ and $r$ defined as blabla. you dont need to index variational parameters everywhere. However, you can then write. Note that $m_Q$ and $r$ depend on the variational parameters blabla. We learn the unknown parameters $\phi$ by minimising $L(\phi) := ...$. As a general rule of thumb you never want more then one subscript and not a super and subscript combined. Sometimes in cant be avoided but often it can. You can also define new quantites to drop subscripts. You could for example say that you define $Q := \mathbb{Q}(F)$ and then you can say $Q$ depends on variationa paramters $\phi$ through $m_Q$ and $r$ and so we write $Q = Q_\phi$.
 
 
 \newpage
@@ -1146,6 +1098,58 @@ The construction of configuration files can be easily automated, scaling experim
 
 \newpage
 \section{Conclusions}
+
+\newpage
+\section{Notation}
+Some general remarks on notation. Let's say you have any random element, call it $G$ which takes values in some space $\mathcal{G}$. Let's say it is Gaussian or sth on this set. Then you have the following three option for notation
+\begin{itemize}
+    \item Sample notation: You write $G \sim \mathcal{N}(...)$.
+    \item Meausre notation: EVERY random objects has an associated probability measure with it. Generically people now write $\mathbb{P}^G$ for this object. It is the probability measure associated to the random variable $G$. This allows you to write
+    \begin{align}
+        \mathbb{P}^G = \mathcal{N}(...)
+    \end{align}
+    or alternatively you write $\mathbb{P}(G) = \mathcal{N}(...)$.
+    \item probability density notation: Some proability measures have a density with respect to some other measure. The most common one is the lesbegue-measure. People then write for the density
+    \begin{align}
+        p(g) = \mathcal{N}(g \, | \, \mu, \sigma).
+    \end{align}
+    Note that this is a bit weird. This may be the notation you are most familiar with though. In principle it would be better to index, i.e. $p_G$ is the probabiltiy density with respect to $G$. But people get to lazy and kind of write $p(g)$ so you can read off from the input that it is the density that belongs to $G$.
+\end{itemize}
+In action, this looks more or less like this below.
+You have data $\{X_n, Y_n\} \subset \mathcal{X} \times \bbR$ and use a Bayesian model to describe it. And you have a Gaussian process $ F:= \{ F(x) : x \in \mathcal{X}\}$. You can now write the following which is random element notation.
+\begin{align}
+    F \sim GP(m, k)
+\end{align}
+Alternativately, you can define that you mean by $\bbP^F$ the probability measure associated with $F$. In this case you can write
+\begin{align}
+    \mathbb{P}^F = GP(m,k).
+\end{align}
+Similiary for other random variables and conditioning. For example $Y:=(y_1, \hdots, y_N)^T$. For a new test point $x^* \in \mathcal{X}$ you can write
+\begin{align}
+    F(x^*) | Y \sim \mathcal{N}(....)
+\end{align}
+with the appropriate posterior predictive mean and variance. Or alternatively, in measure notation
+\begin{align}
+    \mathbb{P}^F( \cdot| Y) = \mathcal{N}(...).
+\end{align}
+If the random variable has a Lesbegue-density such as $F(x^*)$. You can also write for the Lesbegue-density
+\begin{align}
+    p( f(x^*) ) = \mathcal{N} \big( f(x^*) \, | \, ....)
+\end{align}
+where you fill mean and variance into the dots.
+
+The same now holds for the variational notation. But here you use typically a $\mathbb{Q},Q$ and $q$. Note in particular that $\mathbb{Q}(F)$ is an approximation to the true posterior $F | Y$. This means that you implicitly have conditioned on $Y$ and don't write it out explicitly. You can also write
+\begin{align}
+    F \overset{\mathbb{Q}}{\sim} GP(...),
+\end{align}
+which means that in the variational approximation we assume that $F$ is distributed according to a GP with certain mean function and covariance kernel. For associated lesbegue-densities at fixed input points you can write again $q(f(x))$. Note again that this is an approxmation to $p(f(x)|y_1, \hdots, y_N)$ so it implicitly entails a conditioning on $y=(y_1, \hdots, y_N)$.
+
+In general you index a lot of things all the time that you dont have to make explicit. Not every dependency needs always to be mentioned. I personally would only mention paramter dependencies when I write out an ELBO or sth. For example in the SVGP model we assume
+\begin{align}
+    \mathbb{Q}(F) = GP( m_Q, r)
+\end{align}
+with $m_Q$ and $r$ defined as blabla. you dont need to index variational parameters everywhere. However, you can then write. Note that $m_Q$ and $r$ depend on the variational parameters blabla. We learn the unknown parameters $\phi$ by minimising $L(\phi) := ...$. As a general rule of thumb you never want more then one subscript and not a super and subscript combined. Sometimes in cant be avoided but often it can. You can also define new quantites to drop subscripts. You could for example say that you define $Q := \mathbb{Q}(F)$ and then you can say $Q$ depends on variationa paramters $\phi$ through $m_Q$ and $r$ and so we write $Q = Q_\phi$.
+
 
 
 \newpage
