@@ -1,5 +1,5 @@
 from abc import ABC
-from typing import Any, Tuple
+from typing import Tuple
 
 import jax.numpy as jnp
 
@@ -9,6 +9,10 @@ from src.means.base import MeanBase
 
 
 class ExactGPBase(GPBase, ABC):
+    """
+    A base class for all exact GP models. All exact GP model classes will inheret this ABC.
+    """
+
     def __init__(
         self, mean: MeanBase, kernel: KernelBase, x: jnp.ndarray, y: jnp.ndarray
     ):

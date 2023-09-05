@@ -1,9 +1,4 @@
-import warnings
-from typing import Optional
-
-import jax
 import jax.numpy as jnp
-import pydantic
 
 from src.distributions import Multinomial
 from src.gps.base.base import GPBaseParameters
@@ -13,6 +8,11 @@ from src.regularisations.schemas import RegularisationMode
 
 
 class MultinomialWassersteinRegularisation(RegularisationBase):
+    """
+    A regulariser which is the Wasserstein distance between the discrete probabilities
+    of two Multinomial distributions.
+    """
+
     def __init__(
         self,
         gp: GPClassificationBase,

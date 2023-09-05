@@ -7,14 +7,23 @@ from jax.scipy.linalg import cho_factor, cho_solve
 
 from src.kernels.approximate.base import ApproximateBaseKernel
 from src.kernels.base import KernelBase, KernelBaseParameters
+from src.module import PYDANTIC_VALIDATION_CONFIG
 from src.utils.matrix_operations import add_diagonal_regulariser
 
 
 class FixedSparsePosteriorKernelParameters(KernelBaseParameters):
+    """
+    The parameters of the sparse posterior kernel, which are the parameters of the base kernel.
+    """
+
     base_kernel: KernelBaseParameters
 
 
 class FixedSparsePosteriorKernel(ApproximateBaseKernel):
+    """
+    A fixed version of the sparse posterior kernel.
+    """
+
     Parameters = FixedSparsePosteriorKernelParameters
 
     def __init__(
@@ -49,7 +58,7 @@ class FixedSparsePosteriorKernel(ApproximateBaseKernel):
             preprocess_function=preprocess_function,
         )
 
-    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @pydantic.validate_arguments(config=PYDANTIC_VALIDATION_CONFIG)
     def generate_parameters(
         self, parameters: Union[FrozenDict, Dict]
     ) -> FixedSparsePosteriorKernelParameters:

@@ -21,6 +21,9 @@ class GPClassificationBaseParameters(GPBaseParameters):
 
 
 class GPClassificationBase(GPBase, ABC):
+    """
+    A base class for all classification models. All classification model classes will inheret this ABC.
+    """
 
     Parameters = GPClassificationBaseParameters
 

@@ -1,11 +1,11 @@
-from typing import Any, Dict, List, Union
+from typing import Dict, List, Union
 
 import jax.numpy as jnp
 import pydantic
 from flax.core.frozen_dict import FrozenDict
 
 from src.means.base import MeanBase, MeanBaseParameters
-from src.utils.custom_types import PRNGKey
+from src.module import PYDANTIC_VALIDATION_CONFIG
 
 
 class MultiOutputMeanParameters(MeanBaseParameters):
@@ -13,6 +13,10 @@ class MultiOutputMeanParameters(MeanBaseParameters):
 
 
 class MultiOutputMean(MeanBase):
+    """
+    A multi-output mean function which is defined by a list of mean functions.
+    """
+
     Parameters = MultiOutputMeanParameters
 
     def __init__(self, means: List[MeanBase]):
@@ -23,7 +27,7 @@ class MultiOutputMean(MeanBase):
             preprocess_function=None,
         )
 
-    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @pydantic.validate_arguments(config=PYDANTIC_VALIDATION_CONFIG)
     def generate_parameters(
         self, parameters: Union[FrozenDict, Dict]
     ) -> MultiOutputMeanParameters:

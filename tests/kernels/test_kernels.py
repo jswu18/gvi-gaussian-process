@@ -231,8 +231,11 @@ def test_missing_ard_kernel_parameter(
     x1: jnp.ndarray,
     x2: jnp.ndarray,
 ):
-    with pytest.raises(pydantic.ValidationError):
-        kernel.calculate_kernel(kernel.generate_parameters(parameters), x1=x1, x2=x2)
+    inner_product_kernel = InnerProductKernel()
+    with pytest.raises(AssertionError):
+        kernel.calculate_kernel(
+            inner_product_kernel.generate_parameters(parameters), x1=x1, x2=x2
+        )
 
 
 @pytest.mark.parametrize(

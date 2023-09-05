@@ -1,6 +1,5 @@
 from typing import Dict, Union
 
-import jax
 import jax.numpy as jnp
 import pydantic
 from flax.core import FrozenDict
@@ -14,14 +13,23 @@ from src.kernels.multi_output_kernel import (
     MultiOutputKernelParameters,
 )
 from src.means.base import MeanBase
-from src.utils.custom_types import PRNGKey
+from src.module import PYDANTIC_VALIDATION_CONFIG
 
 
 class GPClassificationParameters(GPBaseParameters):
+    """
+    The parameters of an exact Gaussian process classification model.
+    The parameters are the mean function, the kernel, and the observation noise.
+    The kernel is either a multi-output kernel or a tempered kernel (for multi-class classification).
+    """
+
     kernel: Union[MultiOutputKernelParameters, TemperedKernelParameters]
 
 
 class GPClassification(ExactGPBase, GPClassificationBase):
+    """
+    A Gaussian process classification model.
+    """
 
     Parameters = GPClassificationParameters
 
@@ -60,17 +68,17 @@ class GPClassification(ExactGPBase, GPClassificationBase):
         self.mean = mean
         self.kernel = kernel
 
-    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @pydantic.validate_arguments(config=PYDANTIC_VALIDATION_CONFIG)
     def generate_parameters(
         self, parameters: Union[FrozenDict, Dict]
     ) -> GPClassificationParameters:
         """
-        Generates a Pydantic model of the parameters for Regulariser Gaussian Measures.
+        Generates a Pydantic model of the parameters for exact Gaussian process classification.
 
         Args:
-            parameters: A dictionary of the parameters for Regulariser Gaussian Measures.
+            parameters: A dictionary of the parameters for exact Gaussian process classification.
 
-        Returns: A Pydantic model of the parameters for Regulariser Gaussian Measures.
+        Returns: A Pydantic model of the parameters for exact Gaussian process classification.
 
         """
         return GPClassification.Parameters(

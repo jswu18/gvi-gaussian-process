@@ -5,15 +5,22 @@ import pydantic
 from flax.core.frozen_dict import FrozenDict
 from jax import numpy as jnp
 
-from src.module import Module, ModuleParameters
-from src.utils.custom_types import PRNGKey
+from src.module import PYDANTIC_VALIDATION_CONFIG, Module, ModuleParameters
 
 
 class MeanBaseParameters(ModuleParameters, ABC):
+    """
+    A base class for the parameters of mean functions.
+    """
+
     pass
 
 
 class MeanBase(Module, ABC):
+    """
+    Base class for mean functions.
+    """
+
     Parameters = MeanBaseParameters
 
     def __init__(
@@ -24,7 +31,7 @@ class MeanBase(Module, ABC):
         self.number_output_dimensions = number_output_dimensions
         super().__init__(preprocess_function=preprocess_function)
 
-    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @pydantic.validate_arguments(config=PYDANTIC_VALIDATION_CONFIG)
     @abstractmethod
     def generate_parameters(
         self, parameters: Union[Dict, FrozenDict]
@@ -68,7 +75,7 @@ class MeanBase(Module, ABC):
         """
         return jnp.atleast_2d(self.preprocess_function(x))
 
-    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @pydantic.validate_arguments(config=PYDANTIC_VALIDATION_CONFIG)
     def predict(self, parameters: MeanBaseParameters, x: jnp.ndarray) -> jnp.ndarray:
         """
         Computes the mean function at the given points.

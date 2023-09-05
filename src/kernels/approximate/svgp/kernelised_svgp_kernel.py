@@ -5,18 +5,24 @@ import pydantic
 from flax.core.frozen_dict import FrozenDict
 from jax.scipy.linalg import cho_solve
 
-from src.kernels.approximate.svgp.base import (
-    ExtendedSVGPBaseKernel,
-    ExtendedSVGPBaseKernelParameters,
-)
+from src.kernels.approximate.svgp.base import SVGPBaseKernel, SVGPBaseKernelParameters
 from src.kernels.base import KernelBase, KernelBaseParameters
+from src.module import PYDANTIC_VALIDATION_CONFIG
 
 
-class KernelisedSVGPKernelParameters(ExtendedSVGPBaseKernelParameters):
+class KernelisedSVGPKernelParameters(SVGPBaseKernelParameters):
+    """
+    The parameters of the base kernel used to parameterise the SVGP kernel.
+    """
+
     base_kernel: KernelBaseParameters
 
 
-class KernelisedSVGPKernel(ExtendedSVGPBaseKernel):
+class KernelisedSVGPKernel(SVGPBaseKernel):
+    """
+    Parameterises the SVGP kernel using a base kernel.
+    """
+
     Parameters = KernelisedSVGPKernelParameters
 
     def __init__(
@@ -43,19 +49,10 @@ class KernelisedSVGPKernel(ExtendedSVGPBaseKernel):
             is_diagonal_regularisation_absolute_scale=is_diagonal_regularisation_absolute_scale,
         )
 
-    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @pydantic.validate_arguments(config=PYDANTIC_VALIDATION_CONFIG)
     def generate_parameters(
         self, parameters: Union[FrozenDict, Dict]
     ) -> KernelisedSVGPKernelParameters:
-        """
-        Generates a Pydantic model of the parameters for Neural Network Gaussian Process Kernel.
-
-        Args:
-            parameters: A dictionary of the parameters for Neural Network Gaussian Process Kernel.
-
-        Returns: A Pydantic model of the parameters for Neural Network Gaussian Process Kernel.
-
-        """
         return KernelisedSVGPKernel.Parameters(
             base_kernel=self.base_kernel.generate_parameters(parameters["base_kernel"]),
         )

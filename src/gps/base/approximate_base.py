@@ -8,6 +8,7 @@ from flax.core import FrozenDict
 from src.gps.base.base import GPBase, GPBaseParameters
 from src.kernels.base import KernelBase
 from src.means.base import MeanBase
+from src.module import PYDANTIC_VALIDATION_CONFIG
 from src.utils.custom_types import JaxFloatType
 
 
@@ -16,6 +17,10 @@ class ApproximateGPBaseParameters(GPBaseParameters):
 
 
 class ApproximateGPBase(GPBase, ABC):
+    """
+    A base class for all approximate GP models. All approximate GP model classes will inheret this ABC.
+    """
+
     def __init__(
         self,
         mean: MeanBase,
@@ -43,7 +48,7 @@ class ApproximateGPBase(GPBase, ABC):
             parameters=parameters, x=x, full_covariance=full_covariance
         )
 
-    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @pydantic.validate_arguments(config=PYDANTIC_VALIDATION_CONFIG)
     def generate_parameters(
         self, parameters: Union[FrozenDict, Dict]
     ) -> ApproximateGPBaseParameters:

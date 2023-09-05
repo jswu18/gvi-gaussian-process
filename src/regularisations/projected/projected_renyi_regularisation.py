@@ -2,6 +2,7 @@ import jax.numpy as jnp
 import pydantic
 
 from src.gps.base.base import GPBase, GPBaseParameters
+from src.module import PYDANTIC_VALIDATION_CONFIG
 from src.regularisations.projected.base import ProjectedRegularisationBase
 from src.regularisations.schemas import RegularisationMode
 from src.utils.custom_types import JaxFloatType
@@ -24,7 +25,7 @@ class ProjectedRenyiRegularisation(ProjectedRegularisationBase):
             mode=mode,
         )
 
-    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @pydantic.validate_arguments(config=PYDANTIC_VALIDATION_CONFIG)
     def calculate_projected_distance(
         self,
         m_p: JaxFloatType,

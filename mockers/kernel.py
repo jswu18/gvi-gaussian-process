@@ -4,11 +4,9 @@ import jax.numpy as jnp
 import pydantic
 from flax.core.frozen_dict import FrozenDict
 
-from src.kernels.approximate.svgp.base import (
-    ExtendedSVGPBaseKernel,
-    ExtendedSVGPBaseKernelParameters,
-)
+from src.kernels.approximate.svgp.base import SVGPBaseKernel, SVGPBaseKernelParameters
 from src.kernels.base import KernelBase, KernelBaseParameters
+from src.module import PYDANTIC_VALIDATION_CONFIG
 
 
 def calculate_regulariser_gram_mock(
@@ -37,7 +35,7 @@ class MockKernel(KernelBase):
         self.kernel_func = kernel_func
         super().__init__()
 
-    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @pydantic.validate_arguments(config=PYDANTIC_VALIDATION_CONFIG)
     def generate_parameters(
         self, parameters: Union[Dict, FrozenDict]
     ) -> MockKernelParameters:
@@ -54,14 +52,14 @@ class MockKernel(KernelBase):
         return gram if full_cov else jnp.diagonal(gram)
 
 
-class MockApproximateKernelParameters(ExtendedSVGPBaseKernelParameters):
+class MockApproximateKernelParameters(SVGPBaseKernelParameters):
     pass
 
 
-class MockApproximateKernel(ExtendedSVGPBaseKernel):
+class MockApproximateKernel(SVGPBaseKernel):
     sigma_matrix = jnp.ones((5, 5))
 
-    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @pydantic.validate_arguments(config=PYDANTIC_VALIDATION_CONFIG)
     def generate_parameters(
         self, parameters: Union[Dict, FrozenDict]
     ) -> MockApproximateKernelParameters:

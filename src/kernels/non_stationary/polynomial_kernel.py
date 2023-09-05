@@ -8,15 +8,24 @@ from src.kernels.non_stationary.base import (
     NonStationaryKernelBase,
     NonStationaryKernelBaseParameters,
 )
+from src.module import PYDANTIC_VALIDATION_CONFIG
 from src.utils.custom_types import JaxFloatType, PRNGKey
 
 
 class PolynomialKernelParameters(NonStationaryKernelBaseParameters):
+    """
+    The parameters of a polynomial kernel.
+    """
+
     log_constant: JaxFloatType
     log_scaling: JaxFloatType
 
 
 class PolynomialKernel(NonStationaryKernelBase):
+    """
+    A polynomial kernel of the form (scaling * x1^T x2 + constant)^degree.
+    """
+
     Parameters = PolynomialKernelParameters
 
     def __init__(
@@ -41,7 +50,7 @@ class PolynomialKernel(NonStationaryKernelBase):
             self.polynomial_degree,
         )
 
-    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @pydantic.validate_arguments(config=PYDANTIC_VALIDATION_CONFIG)
     def generate_parameters(
         self, parameters: Union[FrozenDict, Dict]
     ) -> PolynomialKernelParameters:

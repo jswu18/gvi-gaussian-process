@@ -8,6 +8,7 @@ from mockers.kernel import MockKernel, MockKernelParameters
 from mockers.mean import MockMean, MockMeanParameters
 from src.distributions import Distribution
 from src.gps.base.base import GPBase, GPBaseParameters
+from src.module import PYDANTIC_VALIDATION_CONFIG
 from src.utils.custom_types import JaxFloatType, PRNGKey
 
 
@@ -74,7 +75,7 @@ class MockGP(GPBase):
             full_covariance=False,
         )
 
-    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @pydantic.validate_arguments(config=PYDANTIC_VALIDATION_CONFIG)
     def generate_parameters(
         self, parameters: Union[FrozenDict, Dict]
     ) -> MockGPParameters:

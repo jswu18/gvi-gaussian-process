@@ -7,14 +7,22 @@ from src.gps.base.approximate_base import ApproximateGPBase, ApproximateGPBasePa
 from src.gps.base.regression_base import GPRegressionBase
 from src.kernels.base import KernelBase
 from src.means.base import MeanBase
-from src.utils.custom_types import PRNGKey
+from src.module import PYDANTIC_VALIDATION_CONFIG
 
 
 class ApproximateGPRegressionParameters(ApproximateGPBaseParameters):
+    """
+    A Pydantic model of the parameters for an approximate Gaussian process regressor.
+    This will contain the parameters for the mean function, and the kernel of the Gaussian process.
+    """
+
     pass
 
 
 class ApproximateGPRegression(ApproximateGPBase, GPRegressionBase):
+    """
+    An approximate Gaussian process regressor.
+    """
 
     Parameters = ApproximateGPRegressionParameters
 
@@ -41,17 +49,17 @@ class ApproximateGPRegression(ApproximateGPBase, GPRegressionBase):
             kernel=kernel,
         )
 
-    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @pydantic.validate_arguments(config=PYDANTIC_VALIDATION_CONFIG)
     def generate_parameters(
         self, parameters: Union[FrozenDict, Dict]
     ) -> ApproximateGPRegressionParameters:
         """
-        Generates a Pydantic model of the parameters for Regulariser Gaussian Measures.
+        Generates a Pydantic model of the parameters for an approximate Gaussian process regressor.
 
         Args:
-            parameters: A dictionary of the parameters for Regulariser Gaussian Measures.
+            parameters: A dictionary of the parameters for an approximate Gaussian process regressor.
 
-        Returns: A Pydantic model of the parameters for Regulariser Gaussian Measures.
+        Returns: A Pydantic model of the parameters for an approximate Gaussian process regressor.
 
         """
         return ApproximateGPRegression.Parameters(

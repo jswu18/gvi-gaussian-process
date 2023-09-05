@@ -27,10 +27,7 @@ from src.kernels.approximate import (
     SparsePosteriorKernel,
     SparsePosteriorKernelParameters,
 )
-from src.kernels.approximate.svgp.base import (
-    ExtendedSVGPBaseKernel,
-    ExtendedSVGPBaseKernelParameters,
-)
+from src.kernels.approximate.svgp.base import SVGPBaseKernel, SVGPBaseKernelParameters
 from src.kernels.approximate.svgp.cholesky_svgp_kernel import (
     CholeskySVGPKernelParameters,
 )
@@ -49,7 +46,10 @@ from src.kernels.non_stationary import (
     PolynomialKernelParameters,
 )
 from src.kernels.non_stationary.base import NonStationaryKernelBase
-from src.kernels.standard import ARDKernel, ARDKernelParameters
+from src.kernels.standard import (
+    ARDKernel,
+    ARDKernelParameters,
+)
 
 
 def resolve_existing_kernel(
@@ -414,7 +414,7 @@ def _resolve_extended_svgp_kernel(
     data_dimension: int,
     regulariser_kernel: Optional[KernelBase],
     regulariser_kernel_parameters: Optional[KernelBaseParameters],
-) -> Tuple[ExtendedSVGPBaseKernel, ExtendedSVGPBaseKernelParameters]:
+) -> Tuple[SVGPBaseKernel, SVGPBaseKernelParameters]:
     if not regulariser_kernel and not regulariser_kernel_parameters:
         assert (
             "regulariser_kernel" in kernel_kwargs_config

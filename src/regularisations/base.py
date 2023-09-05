@@ -8,10 +8,15 @@ from flax.core.frozen_dict import FrozenDict
 
 from src.distributions import Gaussian
 from src.gps.base.base import GPBase, GPBaseParameters
+from src.module import PYDANTIC_VALIDATION_CONFIG
 from src.regularisations.schemas import RegularisationMode
 
 
 class RegularisationBase(ABC):
+    """
+    A base class for all regularisers.
+    """
+
     def __init__(
         self,
         gp: GPBase,
@@ -36,6 +41,13 @@ class RegularisationBase(ABC):
 
     @gp.setter
     def gp(self, gp: GPBase) -> None:
+        """
+        Sets the GP to regularise.
+        This also recompiles the jitted function.
+        Args:
+            gp: the GP to regularise
+
+        """
         self._gp = gp
         self._jit_compiled_calculate_regularisation = jax.jit(
             lambda parameters, x: self._calculate_regularisation(
@@ -50,6 +62,13 @@ class RegularisationBase(ABC):
 
     @regulariser.setter
     def regulariser(self, regulariser: GPBase) -> None:
+        """
+        Sets the regulariser GP.
+        This also recompiles the jitted function.
+        Args:
+            regulariser: the regulariser GP
+
+        """
         self._regulariser = regulariser
         self._jit_compiled_calculate_regularisation = jax.jit(
             lambda parameters, x: self._calculate_regularisation(
@@ -64,6 +83,13 @@ class RegularisationBase(ABC):
 
     @regulariser_parameters.setter
     def regulariser_parameters(self, regulariser_parameters: GPBaseParameters) -> None:
+        """
+        Sets the parameters of the regulariser GP.
+        This also recompiles the jitted function.
+        Args:
+            regulariser_parameters: the parameters of the regulariser GP
+
+        """
         self._regulariser_parameters = regulariser_parameters
         self._jit_compiled_calculate_regularisation = jax.jit(
             lambda parameters, x: self._calculate_regularisation(
@@ -85,6 +111,16 @@ class RegularisationBase(ABC):
         x: jnp.ndarray,
         full_covariance: bool,
     ) -> Gaussian:
+        """
+        Calculates the regulariser Gaussian. This is either the prior or the Bayesian posterior of the regulariser GP
+        conditioned on the inducing points.
+        Args:
+            x: the input data to calculate the regulariser Gaussian at
+            full_covariance: whether to calculate the full covariance matrix or just the diagonal
+
+        Returns: the regulariser Gaussian evaluated at the input data
+
+        """
         if self._mode == RegularisationMode.prior:
             mean_p, covariance_q = self.regulariser.calculate_prior(
                 parameters=self.regulariser_parameters,
@@ -107,6 +143,16 @@ class RegularisationBase(ABC):
         x: jnp.ndarray,
         full_covariance: bool,
     ) -> jnp.ndarray:
+        """
+        Calculates the regulariser covariance matrix. This is either the prior or the Bayesian posterior of the
+        regulariser GP conditioned on the inducing points.
+        Args:
+            x: the input data to calculate the regulariser covariance matrix at
+            full_covariance: whether to calculate the full covariance matrix or just the diagonal
+
+        Returns:
+
+        """
         if self._mode == RegularisationMode.prior:
             return self.regulariser.calculate_prior_covariance(
                 parameters=self.regulariser_parameters,
@@ -120,12 +166,22 @@ class RegularisationBase(ABC):
                 full_covariance=full_covariance,
             )
 
-    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @pydantic.validate_arguments(config=PYDANTIC_VALIDATION_CONFIG)
     def calculate_regularisation(
         self,
         parameters: Union[Dict, FrozenDict, GPBaseParameters],
         x: jnp.ndarray,
     ) -> jnp.float64:
+        """
+        Calculates the regularisation term.
+        This calls the jitted function to calculate the regularisation term.
+        Args:
+            parameters: the parameters of the GP to regularise
+            x: the input data to calculate the regularisation term at
+
+        Returns: the regularisation term
+
+        """
         if not isinstance(parameters, self.gp.Parameters):
             parameters = self.gp.generate_parameters(parameters)
         return self._jit_compiled_calculate_regularisation(

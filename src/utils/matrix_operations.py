@@ -3,8 +3,6 @@ import logging
 import jax.numpy as jnp
 import jax.scipy as jsp
 
-# from jax.experimental import host_callback
-
 
 def add_diagonal_regulariser(
     matrix: jnp.ndarray,
@@ -46,7 +44,7 @@ def _eigenvalue_warning(values_to_check, _) -> None:
 
 
 def compute_covariance_eigenvalues(
-    matrix: jnp.ndarray, logging_warning_threshold: float = 5e-2
+    matrix: jnp.ndarray,
 ) -> jnp.ndarray:
     """
     Compute the eigenvalues of a covariance matrix. Because the matrix is a covariance matrix, we expect
@@ -56,20 +54,11 @@ def compute_covariance_eigenvalues(
     https://github.com/google/neural-tangents/blob/5d38d3e97a2e251c37bb1ba44a89cbb8565a5459/neural_tangents/_src/predict.py#L1266
     Args:
         matrix: a covariance matrix of shape (n, n)
-        logging_warning_threshold: the threshold for logging a warning of the min to max eigenvalue ratio
 
     Returns: the eigenvalues of the covariance matrix, a vector of shape (n, 1)
 
     """
     covariance_eigenvalues = jnp.linalg.eigvals(matrix)  # doesn't work for GPU
-    minimum_covariance_eigenvalue = jnp.min(covariance_eigenvalues)
-    spectrum_ratio = jnp.abs(minimum_covariance_eigenvalue) / jnp.max(
-        covariance_eigenvalues
-    )
-    # host_callback.id_tap(
-    #     _eigenvalue_warning,
-    #     (minimum_covariance_eigenvalue, spectrum_ratio, logging_warning_threshold, covariance_eigenvalues),
-    # )
     return jnp.clip(
         covariance_eigenvalues,
         a_min=0,

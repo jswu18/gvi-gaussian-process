@@ -3,11 +3,17 @@ import jax.numpy as jnp
 import pydantic
 
 from src.gps.base.base import GPBase, GPBaseParameters
+from src.module import PYDANTIC_VALIDATION_CONFIG
 from src.regularisations.base import RegularisationBase
 from src.regularisations.schemas import RegularisationMode
 
 
 class GaussianSquaredDifferenceRegularisation(RegularisationBase):
+    """
+    A regulariser which is the squared difference between the mean and covariance of
+    two Gaussian distributions.
+    """
+
     def __init__(
         self,
         gp: GPBase,
@@ -25,7 +31,7 @@ class GaussianSquaredDifferenceRegularisation(RegularisationBase):
         )
 
     @staticmethod
-    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @pydantic.validate_arguments(config=PYDANTIC_VALIDATION_CONFIG)
     def calculate_squared_distance(
         m_p: jnp.ndarray,
         c_p: jnp.ndarray,

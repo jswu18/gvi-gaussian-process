@@ -5,15 +5,23 @@ import jax
 import jax.numpy as jnp
 import pydantic
 
-from src.module import Module, ModuleParameters
+from src.module import PYDANTIC_VALIDATION_CONFIG, Module, ModuleParameters
 from src.utils.checks import check_matching_dimensions, check_maximum_dimension
 
 
-class KernelBaseParameters(ModuleParameters):
+class KernelBaseParameters(ModuleParameters, ABC):
+    """
+    A base class for all kernel parameters. All kernel parameter classes will inheret this ABC.
+    """
+
     pass
 
 
 class KernelBase(Module, ABC):
+    """
+    A base class for all kernels. All kernel classes will inheret this ABC.
+    """
+
     Parameters = KernelBaseParameters
 
     def __init__(
@@ -21,6 +29,13 @@ class KernelBase(Module, ABC):
         number_output_dimensions: int = 1,
         preprocess_function: Callable[[jnp.ndarray], jnp.ndarray] = None,
     ):
+        """
+        Construct for the KernelBase class.
+
+        Args:
+            number_output_dimensions: the number of output dimensions of the kernel function
+            preprocess_function: a function to preprocess the inputs of the kernel function
+        """
         self.number_output_dimensions = number_output_dimensions
         self._jit_compiled_calculate_gram = jax.jit(
             lambda parameters, x1, x2: self._calculate_gram(
@@ -29,7 +44,7 @@ class KernelBase(Module, ABC):
         )
         super().__init__(preprocess_function=preprocess_function)
 
-    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @pydantic.validate_arguments(config=PYDANTIC_VALIDATION_CONFIG)
     def preprocess_inputs(
         self, x: jnp.ndarray, y: jnp.ndarray = None
     ) -> Tuple[jnp.ndarray, jnp.ndarray]:
@@ -50,7 +65,7 @@ class KernelBase(Module, ABC):
         )
 
     @staticmethod
-    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @pydantic.validate_arguments(config=PYDANTIC_VALIDATION_CONFIG)
     def check_inputs(x: jnp.ndarray, y: jnp.ndarray) -> None:
         """
         Checks the inputs of a kernel function.
@@ -88,7 +103,7 @@ class KernelBase(Module, ABC):
         """
         raise NotImplementedError
 
-    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @pydantic.validate_arguments(config=PYDANTIC_VALIDATION_CONFIG)
     def calculate_gram(
         self,
         parameters: KernelBaseParameters,

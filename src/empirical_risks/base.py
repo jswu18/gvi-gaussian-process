@@ -7,9 +7,14 @@ import pydantic
 from flax.core.frozen_dict import FrozenDict
 
 from src.gps.base.base import GPBase, GPBaseParameters
+from src.module import PYDANTIC_VALIDATION_CONFIG
 
 
 class EmpiricalRiskBase(ABC):
+    """
+    A base class for all empirical risks.
+    """
+
     def __init__(self, gp: GPBase):
         self._gp = gp
         self._jit_compiled_calculate_empirical_risk = jax.jit(
@@ -26,6 +31,15 @@ class EmpiricalRiskBase(ABC):
 
     @gp.setter
     def gp(self, gp: GPBase) -> None:
+        """
+        Set the GP.
+        This will recompile the JIT compiled function.
+        Args:
+            gp:
+
+        Returns:
+
+        """
         self._gp = gp
         self._jit_compiled_calculate_empirical_risk = jax.jit(
             lambda parameters, x, y: self._calculate_empirical_risk(
@@ -44,7 +58,7 @@ class EmpiricalRiskBase(ABC):
     ) -> float:
         raise NotImplementedError
 
-    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @pydantic.validate_arguments(config=PYDANTIC_VALIDATION_CONFIG)
     def calculate_empirical_risk(
         self,
         parameters: Union[Dict, FrozenDict, GPBaseParameters],

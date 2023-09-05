@@ -1,12 +1,11 @@
 from typing import Dict, List, Union
 
-import jax
 import jax.numpy as jnp
 import pydantic
 from flax.core.frozen_dict import FrozenDict
 
 from src.kernels.base import KernelBase, KernelBaseParameters
-from src.utils.custom_types import PRNGKey
+from src.module import PYDANTIC_VALIDATION_CONFIG
 
 
 class MultiOutputKernelParameters(KernelBaseParameters):
@@ -24,19 +23,10 @@ class MultiOutputKernel(KernelBase):
             preprocess_function=None,
         )
 
-    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @pydantic.validate_arguments(config=PYDANTIC_VALIDATION_CONFIG)
     def generate_parameters(
         self, parameters: Union[FrozenDict, Dict]
     ) -> MultiOutputKernelParameters:
-        """
-        Generates a Pydantic model of the parameters for Neural Network Gaussian Process Kernel.
-
-        Args:
-            parameters: A dictionary of the parameters for Neural Network Gaussian Process Kernel.
-
-        Returns: A Pydantic model of the parameters for Neural Network Gaussian Process Kernel.
-
-        """
         assert len(parameters["kernels"]) == self.number_output_dimensions
         return MultiOutputKernel.Parameters(
             kernels=[

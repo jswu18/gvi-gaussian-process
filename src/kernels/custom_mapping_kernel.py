@@ -10,9 +10,14 @@ from src.kernels.non_stationary.base import (
     NonStationaryKernelBase,
     NonStationaryKernelBaseParameters,
 )
+from src.module import PYDANTIC_VALIDATION_CONFIG
 
 
 class CustomMappingKernelParameters(KernelBaseParameters):
+    """
+    The parameters of a custom mapping kernel.
+    """
+
     base_kernel: NonStationaryKernelBaseParameters
     feature_mapping: Any
 
@@ -35,19 +40,10 @@ class CustomMappingKernel(KernelBase):
         self.feature_mapping = feature_mapping
         KernelBase.__init__(self, preprocess_function=preprocess_function)
 
-    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @pydantic.validate_arguments(config=PYDANTIC_VALIDATION_CONFIG)
     def generate_parameters(
         self, parameters: Union[FrozenDict, Dict]
     ) -> CustomMappingKernelParameters:
-        """
-        Generates a Pydantic model of the parameters for Neural Network Gaussian Process Kernel.
-
-        Args:
-            parameters: A dictionary of the parameters for Neural Network Gaussian Process Kernel.
-
-        Returns: A Pydantic model of the parameters for Neural Network Gaussian Process Kernel.
-
-        """
         return CustomMappingKernel.Parameters(
             base_kernel=self.base_kernel.generate_parameters(parameters["base_kernel"]),
             feature_mapping=parameters["feature_mapping"],
@@ -59,6 +55,20 @@ class CustomMappingKernel(KernelBase):
         x1: jnp.ndarray,
         x2: jnp.ndarray,
     ) -> jnp.ndarray:
+        """
+        Computing the Gram matrix with a custom mapping followed by a base kernel function.
+            - m1 is the number of points in x1
+            - m2 is the number of points in x2
+            - d is the number of dimensions
+
+        Args:
+            parameters: parameters of the kernel
+            x1: design matrix of shape (m1, d)
+            x2: design matrix of shape (m2, d)
+
+        Returns: the kernel gram matrix of shape (m_1, m_2)
+
+        """
         # convert to Pydantic model if necessary
         if not isinstance(parameters, self.Parameters):
             parameters = self.generate_parameters(parameters)

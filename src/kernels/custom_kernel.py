@@ -6,15 +6,20 @@ import pydantic
 from flax.core.frozen_dict import FrozenDict
 
 from src.kernels.base import KernelBase, KernelBaseParameters
+from src.module import PYDANTIC_VALIDATION_CONFIG
 
 
 class CustomKernelParameters(KernelBaseParameters):
+    """
+    The parameters of a custom kernel where the parameters can be any type.
+    """
+
     custom: Any
 
 
 class CustomKernel(KernelBase):
     """
-    A wrapper class for the kernel function provided by the NTK package.
+    A wrapper class for any custom kernel function.
     """
 
     Parameters = CustomKernelParameters
@@ -34,19 +39,10 @@ class CustomKernel(KernelBase):
         self.kernel_function = kernel_function
         KernelBase.__init__(self, preprocess_function=preprocess_function)
 
-    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @pydantic.validate_arguments(config=PYDANTIC_VALIDATION_CONFIG)
     def generate_parameters(
         self, parameters: Union[FrozenDict, Dict]
     ) -> CustomKernelParameters:
-        """
-        Generates a Pydantic model of the parameters for Neural Network Gaussian Process Kernel.
-
-        Args:
-            parameters: A dictionary of the parameters for Neural Network Gaussian Process Kernel.
-
-        Returns: A Pydantic model of the parameters for Neural Network Gaussian Process Kernel.
-
-        """
         return CustomKernel.Parameters(
             custom=parameters["custom"],
         )
@@ -58,7 +54,7 @@ class CustomKernel(KernelBase):
         x2: jnp.ndarray,
     ) -> jnp.ndarray:
         """
-        Computing the Gram matrix using the NNGP kernel function. If y is None, the Gram matrix is computed for x and x.
+        Computing the Gram matrix with a custom kernel function.
             - m1 is the number of points in x1
             - m2 is the number of points in x2
             - d is the number of dimensions

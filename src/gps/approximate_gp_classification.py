@@ -8,14 +8,22 @@ from src.gps.base.classification_base import GPClassificationBase
 from src.kernels import TemperedKernel
 from src.kernels.multi_output_kernel import MultiOutputKernel
 from src.means.base import MeanBase
-from src.utils.custom_types import PRNGKey
+from src.module import PYDANTIC_VALIDATION_CONFIG
 
 
 class ApproximateGPClassificationParameters(ApproximateGPBaseParameters):
+    """
+    A Pydantic model of the parameters for an approximate Gaussian process classifier.
+    This will contain the parameters for the mean function, and the kernel of the Gaussian process.
+    """
+
     pass
 
 
 class ApproximateGPClassification(ApproximateGPBase, GPClassificationBase):
+    """
+    An approximate Gaussian process classifier.
+    """
 
     Parameters = ApproximateGPClassificationParameters
 
@@ -48,17 +56,17 @@ class ApproximateGPClassification(ApproximateGPBase, GPClassificationBase):
             cdf_lower_bound=cdf_lower_bound,
         )
 
-    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @pydantic.validate_arguments(config=PYDANTIC_VALIDATION_CONFIG)
     def generate_parameters(
         self, parameters: Union[FrozenDict, Dict]
     ) -> ApproximateGPClassificationParameters:
         """
-        Generates a Pydantic model of the parameters for Regulariser Gaussian Measures.
+        Generates a Pydantic model of the parameters for an approximate Gaussian process classifier.
 
         Args:
-            parameters: A dictionary of the parameters for Regulariser Gaussian Measures.
+            parameters: A dictionary of the parameters for an approximate Gaussian process classifier.
 
-        Returns: A Pydantic model of the parameters for Regulariser Gaussian Measures.
+        Returns: A Pydantic model of the parameters for an approximate Gaussian process classifier.
 
         """
         return ApproximateGPClassification.Parameters(

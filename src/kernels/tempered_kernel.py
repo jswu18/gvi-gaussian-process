@@ -5,14 +5,22 @@ import pydantic
 from flax.core.frozen_dict import FrozenDict
 
 from src.kernels.base import KernelBase, KernelBaseParameters
-from src.utils.custom_types import JaxArrayType, JaxFloatType, PRNGKey
+from src.module import PYDANTIC_VALIDATION_CONFIG
+from src.utils.custom_types import JaxArrayType, JaxFloatType
 
 
 class TemperedKernelParameters(KernelBaseParameters):
+    """
+    The parameters of a tempered kernel.
+    """
+
     log_tempering_factor: Union[JaxArrayType[Literal["float64"]], JaxFloatType]
 
 
 class TemperedKernel(KernelBase):
+    """
+    A kernel that applies a base kernel to the inputs after tempering them with a factor.
+    """
 
     Parameters = TemperedKernelParameters
 
@@ -30,7 +38,7 @@ class TemperedKernel(KernelBase):
             number_output_dimensions=number_output_dimensions,
         )
 
-    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @pydantic.validate_arguments(config=PYDANTIC_VALIDATION_CONFIG)
     def generate_parameters(
         self, parameters: Union[FrozenDict, Dict]
     ) -> TemperedKernelParameters:
@@ -44,6 +52,20 @@ class TemperedKernel(KernelBase):
         x1: jnp.ndarray,
         x2: jnp.ndarray,
     ) -> jnp.ndarray:
+        """
+        Computing the Gram matrix with a tempered kernel function.
+            - m1 is the number of points in x1
+            - m2 is the number of points in x2
+            - d is the number of dimensions
+
+        Args:
+            parameters: parameters of the kernel
+            x1: design matrix of shape (m1, d)
+            x2: design matrix of shape (m2, d)
+
+        Returns: the kernel gram matrix of shape (m_1, m_2)
+
+        """
         # convert to Pydantic model if necessary
         if not isinstance(parameters, self.Parameters):
             parameters = self.generate_parameters(parameters)

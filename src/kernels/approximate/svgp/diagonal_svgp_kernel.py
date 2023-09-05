@@ -5,30 +5,23 @@ import pydantic
 from flax.core.frozen_dict import FrozenDict
 from jax.scipy.linalg import cho_solve
 
-from src.kernels.approximate.svgp.base import (
-    ExtendedSVGPBaseKernel,
-    ExtendedSVGPBaseKernelParameters,
-)
+from src.kernels.approximate.svgp.base import SVGPBaseKernel, SVGPBaseKernelParameters
 from src.kernels.base import KernelBase, KernelBaseParameters
+from src.module import PYDANTIC_VALIDATION_CONFIG
 from src.utils.custom_types import JaxArrayType
 
 
-class DiagonalSVGPKernelParameters(ExtendedSVGPBaseKernelParameters):
+class DiagonalSVGPKernelParameters(SVGPBaseKernelParameters):
     """
-    el_matrix_lower_triangle is a lower triangle of the L matrix
-    el_matrix_log_diagonal is the logarithm of the diagonal of the L matrix
-    combining them such that:
-        L = el_matrix_lower_triangle + diagonalise(exp(el_matrix_log_diagonal))
-    and
-        sigma_matrix = L @ L.T
+    The diagonal parameters used to parameterise the SVGP kernel.
     """
 
     log_el_matrix_diagonal: JaxArrayType[Literal["float64"]]
 
 
-class DiagonalSVGPKernel(ExtendedSVGPBaseKernel):
+class DiagonalSVGPKernel(SVGPBaseKernel):
     """
-    The stochastic variational Gaussian process kernel as defined in Titsias (2009).
+    A diagonal parameterisation of the SVGP kernel.
     """
 
     Parameters = DiagonalSVGPKernelParameters
@@ -55,7 +48,7 @@ class DiagonalSVGPKernel(ExtendedSVGPBaseKernel):
             is_diagonal_regularisation_absolute_scale=is_diagonal_regularisation_absolute_scale,
         )
 
-    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @pydantic.validate_arguments(config=PYDANTIC_VALIDATION_CONFIG)
     def generate_parameters(
         self, parameters: Union[FrozenDict, Dict] = None
     ) -> DiagonalSVGPKernelParameters:
@@ -71,13 +64,8 @@ class DiagonalSVGPKernel(ExtendedSVGPBaseKernel):
         self,
     ) -> jnp.ndarray:
         """
-        Initialise the L matrix where:
-            sigma_matrix = L @ L.T
-
-        Returns:
-            el_matrix_lower_triangle
-            el_matrix_log_diagonal
-
+        Initialise the diagonal parameters of the kernel by
+        taking the diagonal of the Cholesky decomposition.
         """
         regulariser_gaussian_measure_observation_precision = 1 / jnp.exp(
             self.log_observation_noise

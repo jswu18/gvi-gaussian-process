@@ -7,16 +7,22 @@ from jax.scipy.linalg import cho_factor, cho_solve
 
 from src.kernels.approximate.base import ApproximateBaseKernel
 from src.kernels.base import KernelBase, KernelBaseParameters
+from src.module import PYDANTIC_VALIDATION_CONFIG
 from src.utils.matrix_operations import add_diagonal_regulariser
 
 
 class SparsePosteriorKernelParameters(KernelBaseParameters):
+    """
+    The parameters of the sparse posterior kernel, which are the parameters of the base kernel.
+    """
+
     base_kernel: KernelBaseParameters
 
 
 class SparsePosteriorKernel(ApproximateBaseKernel):
     """
-    Approximate kernels which are defined with respect to a regulariser kernel
+    The sparse posterior kernel is a kernel that is used to approximate the posterior kernel of the
+    regulariser Gaussian process.
     """
 
     Parameters = SparsePosteriorKernelParameters
@@ -37,7 +43,7 @@ class SparsePosteriorKernel(ApproximateBaseKernel):
             preprocess_function=preprocess_function,
         )
 
-    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @pydantic.validate_arguments(config=PYDANTIC_VALIDATION_CONFIG)
     def generate_parameters(
         self, parameters: Union[FrozenDict, Dict]
     ) -> SparsePosteriorKernelParameters:

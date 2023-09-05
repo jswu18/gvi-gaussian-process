@@ -6,6 +6,7 @@ from jax import numpy as jnp
 
 from src.kernels.base import KernelBase, KernelBaseParameters
 from src.means.base import MeanBase, MeanBaseParameters
+from src.module import PYDANTIC_VALIDATION_CONFIG
 from src.utils.custom_types import JaxArrayType
 
 
@@ -14,6 +15,10 @@ class SVGPMeanParameters(MeanBaseParameters):
 
 
 class SVGPMean(MeanBase):
+    """
+    The mean function for the SVGP as defined by Titsias (2009).
+    """
+
     Parameters = SVGPMeanParameters
 
     def __init__(
@@ -43,19 +48,10 @@ class SVGPMean(MeanBase):
             preprocess_function=preprocess_function,
         )
 
-    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @pydantic.validate_arguments(config=PYDANTIC_VALIDATION_CONFIG)
     def generate_parameters(
         self, parameters: Union[FrozenDict, Dict]
     ) -> SVGPMeanParameters:
-        """
-        Generates a Pydantic model of the parameters for SVGP Mean Functions.
-
-        Args:
-            parameters: A dictionary of the parameters for SVGP Mean Functions.
-
-        Returns: A Pydantic model of the parameters for SVGP Mean Functions.
-
-        """
         return SVGPMean.Parameters(**parameters)
 
     def _predict(

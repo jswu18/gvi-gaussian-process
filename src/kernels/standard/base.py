@@ -7,7 +7,7 @@ from flax.core.frozen_dict import FrozenDict
 from jax import vmap
 
 from src.kernels.base import KernelBase, KernelBaseParameters
-from src.module import Module
+from src.module import PYDANTIC_VALIDATION_CONFIG, Module
 
 
 class StandardKernelBaseParameters(KernelBaseParameters, ABC):
@@ -44,7 +44,7 @@ class StandardKernelBase(KernelBase, ABC):
         """
         raise NotImplementedError
 
-    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @pydantic.validate_arguments(config=PYDANTIC_VALIDATION_CONFIG)
     def calculate_kernel(
         self,
         parameters: StandardKernelBaseParameters,

@@ -10,6 +10,10 @@ from src.means.base import MeanBase
 
 
 class GPRegressionBase(GPBase, ABC):
+    """
+    A base class for all GP regression models. All GP regression model classes will inheret this ABC.
+    """
+
     def __init__(
         self,
         mean: MeanBase,

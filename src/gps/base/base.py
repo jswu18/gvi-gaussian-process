@@ -10,11 +10,15 @@ from flax.core.frozen_dict import FrozenDict
 from src.distributions import Distribution, Gaussian
 from src.kernels.base import KernelBase, KernelBaseParameters
 from src.means.base import MeanBase, MeanBaseParameters
-from src.module import Module, ModuleParameters
+from src.module import PYDANTIC_VALIDATION_CONFIG, Module, ModuleParameters
 from src.utils.custom_types import JaxFloatType
 
 
 class GPBaseParameters(ModuleParameters, ABC):
+    """
+    Parameters for a Gaussian process defined with respect to a mean function and a kernel.
+    """
+
     log_observation_noise: JaxFloatType
     mean: MeanBaseParameters
     kernel: KernelBaseParameters
@@ -22,10 +26,12 @@ class GPBaseParameters(ModuleParameters, ABC):
 
 class GPBase(Module, ABC):
     """
-    A Gaussian measure defined with respect to a mean function and a kernel.
+    A Gaussian process defined with respect to a mean function and a kernel.
     """
 
     Parameters = GPBaseParameters
+
+    # indicates the type of distribution that is returned by the predict method
     PredictDistribution = Distribution
 
     def __init__(
@@ -34,7 +40,7 @@ class GPBase(Module, ABC):
         kernel: KernelBase,
     ):
         """
-        Defining the mean function, and the kernel for the Gaussian measure.
+        Defining the mean function, and the kernel for the Gaussian process.
 
         Args:
             mean: the mean function of the Gaussian measure
@@ -54,6 +60,16 @@ class GPBase(Module, ABC):
         x: jnp.ndarray,
         full_covariance: bool,
     ) -> Tuple[jnp.ndarray, jnp.ndarray]:
+        """
+        Calculates the mean and covariance of the Gaussian distribution of the prediction.
+        Args:
+            parameters: the parameters of the Gaussian process
+            x: the input points for which the prediction is made
+            full_covariance: whether the full covariance matrix is returned or just the diagonal
+
+        Returns: the mean and covariance of the Gaussian distribution of the prediction
+
+        """
         raise NotImplementedError
 
     @abstractmethod
@@ -63,12 +79,34 @@ class GPBase(Module, ABC):
         x: jnp.ndarray,
         full_covariance: bool,
     ) -> jnp.ndarray:
+        """
+        Calculates only the covariance of the Gaussian distribution of the prediction.
+        Args:
+            parameters: the parameters of the Gaussian process
+            x: the input points for which the prediction is made
+            full_covariance: whether the full covariance matrix is returned or just the diagonal
+
+        Returns: the covariance of the Gaussian distribution of the prediction
+
+        """
         raise NotImplementedError
 
     @abstractmethod
     def _predict_probability(
         self, parameters: GPBaseParameters, x: jnp.ndarray
     ) -> Union[Tuple[jnp.ndarray, jnp.ndarray], jnp.ndarray]:
+        """
+        If the Gaussian process is used as a classifier, this method returns the probabilities of the labels.
+        If the Gaussian process is used as a regressor, this method returns the mean and covariance of the
+        Gaussian distribution of the prediction.
+        Args:
+            parameters: the parameters of the Gaussian process
+            x: the input points for which the prediction is made
+
+        Returns: the probabilities of the labels or the mean and covariance of the Gaussian distribution of the
+                 prediction
+
+        """
         raise NotImplementedError
 
     @abstractmethod
@@ -76,14 +114,36 @@ class GPBase(Module, ABC):
         self,
         probabilities: Union[Tuple[jnp.ndarray, jnp.ndarray], jnp.ndarray],
     ) -> Distribution:
+        """
+        Constructs the distribution of the prediction.
+        Args:
+            probabilities: the probabilities of the labels or the mean and covariance of the Gaussian distribution of
+                            the prediction
+
+        Returns: the distribution of the prediction (Gaussian or Multinomial)
+
+        """
         raise NotImplementedError
 
-    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @pydantic.validate_arguments(config=PYDANTIC_VALIDATION_CONFIG)
     def predict_probability(
         self,
         parameters: Union[Dict, FrozenDict, GPBaseParameters],
         x: jnp.ndarray,
     ) -> Distribution:
+        """
+        If the Gaussian process is used as a classifier, this method returns the probabilities of the labels.
+        If the Gaussian process is used as a regressor, this method returns the mean and covariance of the
+        Gaussian distribution of the prediction.
+        This method is a wrapper for the _predict_probability method to run the jit-compiled version of the method.
+        Args:
+            parameters: the parameters of the Gaussian process
+            x: the input points for which the prediction is made
+
+        Returns: the probabilities of the labels or the mean and covariance of the Gaussian distribution of the
+                    prediction
+
+        """
         if not isinstance(parameters, self.Parameters):
             parameters = self.generate_parameters(parameters)
         Module.check_parameters(parameters, self.Parameters)
@@ -93,6 +153,16 @@ class GPBase(Module, ABC):
     def construct_observation_noise_matrix(
         self, log_observation_noise: Union[jnp.ndarray, float], number_of_points: int
     ):
+        """
+        Constructs the observation noise matrix.
+        Args:
+            log_observation_noise: the log of the observation noise
+            number_of_points: the number of points for which the observation noise matrix is constructed
+
+        Returns: the observation noise matrix of shape (k, n, n) where k is the number of output dimensions and n is
+                    the number of points
+
+        """
         return jnp.multiply(
             jnp.atleast_1d(jnp.exp(log_observation_noise))[:, None, None],
             jnp.array(
@@ -106,6 +176,18 @@ class GPBase(Module, ABC):
         x: jnp.ndarray,
         full_covariance: bool,
     ) -> jnp.ndarray:
+        """
+        Calculates the prior covariance matrix.
+        Args:
+            parameters: the parameters of the Gaussian process
+            x: the input points for which the prediction is made
+            full_covariance: whether the full covariance matrix is returned or just the diagonal
+
+        Returns: the prior covariance matrix of shape (k, n, n) where k is the number of output dimensions and n is
+                    the number of points if full_covariance is True, otherwise the prior covariance matrix of shape
+                    (k, n) where k is the number of output dimensions and n is the number of points
+
+        """
         covariance = self.kernel.calculate_gram(
             parameters=parameters.kernel,
             x1=x,
@@ -129,7 +211,7 @@ class GPBase(Module, ABC):
                 covariance = covariance.squeeze(axis=0)
         return covariance
 
-    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @pydantic.validate_arguments(config=PYDANTIC_VALIDATION_CONFIG)
     def calculate_prior_covariance(
         self,
         parameters: Union[Dict, FrozenDict, GPBaseParameters],
@@ -137,16 +219,17 @@ class GPBase(Module, ABC):
         full_covariance: bool = True,
     ) -> jnp.ndarray:
         """
-        Calculate the prior distribution of the Gaussian Processes.
-            - m is the number of points in x
-            - d is the number of dimensions
-
+        Calculates the prior covariance matrix.
+        This method is a wrapper for the _calculate_prior_covariance method to run the jit-compiled version of the
+        method.
         Args:
-            parameters: parameters of the Gaussian measure
-            x: design matrix of shape (n, d)
-            full_covariance: whether to compute the full covariance matrix or just the diagonal (requires m1 == m2)
+            parameters: the parameters of the Gaussian process
+            x: the input points for which the prediction is made
+            full_covariance: whether the full covariance matrix is returned or just the diagonal
 
-        Returns: the prior distribution
+        Returns: the prior covariance matrix of shape (k, n, n) where k is the number of output dimensions and n is
+                    the number of points if full_covariance is True, otherwise the prior covariance matrix of shape
+                    (k, n) where k is the number of output dimensions and n is the number of points
 
         """
         # convert to Pydantic model if necessary
@@ -160,7 +243,7 @@ class GPBase(Module, ABC):
         )
         return covariance
 
-    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @pydantic.validate_arguments(config=PYDANTIC_VALIDATION_CONFIG)
     def calculate_prior(
         self,
         parameters: Union[Dict, FrozenDict, GPBaseParameters],
@@ -199,6 +282,18 @@ class GPBase(Module, ABC):
         y_train: jnp.ndarray,
         x: jnp.ndarray,
     ) -> jnp.ndarray:
+        """
+        Calculate the posterior distribution of the Gaussian Processes.
+
+        Args:
+            parameters: the parameters of the Gaussian process
+            x_train: the input points of the training data
+            y_train: the output points of the training data
+            x: the input points for which the prediction is made
+
+        Returns: the posterior covariance matrix
+
+        """
         covariance = jax.vmap(
             lambda x_: self._calculate_full_posterior_covariance(
                 parameters=parameters,
@@ -293,6 +388,17 @@ class GPBase(Module, ABC):
         y_train: jnp.ndarray,
         x: jnp.ndarray,
     ) -> Tuple[jnp.ndarray, jnp.ndarray]:
+        """
+        Calculate the posterior distribution of the Gaussian Processes.
+        Args:
+            parameters: parameters of the kernel
+            x_train: training design matrix of shape (n, d)
+            y_train: training response matrix of shape (n, k)
+            x: design matrix of shape (m, d)
+
+        Returns: the mean (k, m) and covariance (k, m) of the posterior distribution
+
+        """
         mean, covariance = jax.vmap(
             lambda x_: self._calculate_full_posterior(
                 parameters=parameters,
@@ -394,6 +500,19 @@ class GPBase(Module, ABC):
         observation_noise_matrix: jnp.ndarray,
         y_train: jnp.ndarray,
     ):
+        """
+        Calculate the posterior mean and covariance of the Gaussian Processes.
+
+        Args:
+            gram_train: the gram matrix of the training points
+            gram_train_x: the gram matrix between the training points and the test points
+            gram_x: the gram matrix of the test points
+            observation_noise_matrix: the observation noise matrix
+            y_train: the training response matrix
+
+        Returns: the mean and covariance of the posterior distribution
+
+        """
         cholesky_decomposition_and_lower = jsp.linalg.cho_factor(
             gram_train + observation_noise_matrix
         )
@@ -406,13 +525,23 @@ class GPBase(Module, ABC):
         )
         return kernel_mean, covariance
 
-    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @pydantic.validate_arguments(config=PYDANTIC_VALIDATION_CONFIG)
     def calculate_prediction_gaussian(
         self,
         parameters: Union[Dict, FrozenDict, GPBaseParameters],
         x: jnp.ndarray,
         full_covariance: bool,
     ) -> Gaussian:
+        """
+        Calculate the predictive distribution of the Gaussian Processes.
+        Args:
+            parameters: parameters of the Gaussian Processes
+            x: the input design matrix of shape (m, d)
+            full_covariance: whether to return the full covariance matrix or just the diagonal
+
+        Returns:
+
+        """
         # convert to Pydantic model if necessary
         if not isinstance(parameters, self.Parameters):
             parameters = self.generate_parameters(parameters)
@@ -428,13 +557,23 @@ class GPBase(Module, ABC):
             full_covariance=full_covariance,
         )
 
-    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @pydantic.validate_arguments(config=PYDANTIC_VALIDATION_CONFIG)
     def calculate_prediction_gaussian_covariance(
         self,
         parameters: Union[Dict, FrozenDict, GPBaseParameters],
         x: jnp.ndarray,
         full_covariance: bool,
     ) -> jnp.ndarray:
+        """
+        Calculate the predictive distribution of the Gaussian Processes.
+        Args:
+            parameters: parameters of the Gaussian Processes
+            x: the input design matrix of shape (m, d)
+            full_covariance: whether to return the full covariance matrix or just the diagonal
+
+        Returns: the predictive covariance matrix of shape (m, m)
+
+        """
         # convert to Pydantic model if necessary
         if not isinstance(parameters, self.Parameters):
             parameters = self.generate_parameters(parameters)
@@ -446,7 +585,7 @@ class GPBase(Module, ABC):
         )
         return covariance
 
-    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @pydantic.validate_arguments(config=PYDANTIC_VALIDATION_CONFIG)
     def calculate_posterior(
         self,
         parameters: Union[Dict, FrozenDict, GPBaseParameters],
@@ -494,7 +633,7 @@ class GPBase(Module, ABC):
             posterior_covariance = posterior_covariance.squeeze(axis=0)
         return posterior_mean, posterior_covariance
 
-    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @pydantic.validate_arguments(config=PYDANTIC_VALIDATION_CONFIG)
     def calculate_posterior_covariance(
         self,
         parameters: Union[Dict, FrozenDict, GPBaseParameters],

@@ -5,8 +5,10 @@ from typing import Optional, Tuple
 import jax
 import jax.numpy as jnp
 import numpy as np
+import pydantic
 
 from src.kernels.base import KernelBase, KernelBaseParameters
+from src.module import PYDANTIC_VALIDATION_CONFIG
 from src.utils.custom_types import PRNGKey
 
 
@@ -27,6 +29,7 @@ class InducingPointsSelectorBase(ABC):
 
 
 class RandomInducingPointsSelector(InducingPointsSelectorBase):
+    @pydantic.validate_arguments(config=PYDANTIC_VALIDATION_CONFIG)
     def compute_inducing_points(
         self,
         key: PRNGKey,
@@ -60,6 +63,7 @@ class ConditionalVarianceInducingPointsSelector(InducingPointsSelectorBase):
         """
         self.threshold = threshold
 
+    @pydantic.validate_arguments(config=PYDANTIC_VALIDATION_CONFIG)
     def compute_inducing_points(
         self,
         key: PRNGKey,

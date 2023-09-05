@@ -16,6 +16,7 @@ def set_up_classification_experiment_data(
     train_data_percentage: float,
     test_data_percentage: float,
     validation_data_percentage: float,
+    name: str,
 ) -> List[ExperimentData]:
     label_dict = {}
     for label in labels_to_include:
@@ -43,6 +44,7 @@ def set_up_classification_experiment_data(
                 train_data_percentage=train_data_percentage,
                 test_data_percentage=test_data_percentage,
                 validation_data_percentage=validation_data_percentage,
+                name=name,
             )
         )
     return experiment_data_list

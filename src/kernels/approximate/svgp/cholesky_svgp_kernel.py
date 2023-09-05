@@ -5,15 +5,13 @@ import pydantic
 from flax.core.frozen_dict import FrozenDict
 from jax.scipy.linalg import cho_solve
 
-from src.kernels.approximate.svgp.base import (
-    ExtendedSVGPBaseKernel,
-    ExtendedSVGPBaseKernelParameters,
-)
+from src.kernels.approximate.svgp.base import SVGPBaseKernel, SVGPBaseKernelParameters
 from src.kernels.base import KernelBase, KernelBaseParameters
+from src.module import PYDANTIC_VALIDATION_CONFIG
 from src.utils.custom_types import JaxArrayType
 
 
-class CholeskySVGPKernelParameters(ExtendedSVGPBaseKernelParameters):
+class CholeskySVGPKernelParameters(SVGPBaseKernelParameters):
     """
     el_matrix_lower_triangle is a lower triangle of the L matrix
     el_matrix_log_diagonal is the logarithm of the diagonal of the L matrix
@@ -27,9 +25,9 @@ class CholeskySVGPKernelParameters(ExtendedSVGPBaseKernelParameters):
     el_matrix_log_diagonal: JaxArrayType[Literal["float64"]]
 
 
-class CholeskySVGPKernel(ExtendedSVGPBaseKernel):
+class CholeskySVGPKernel(SVGPBaseKernel):
     """
-    The stochastic variational Gaussian process kernel as defined in Titsias (2009).
+    A Cholesky parameterisation of the SVGP kernel.
     """
 
     Parameters = CholeskySVGPKernelParameters
@@ -56,7 +54,7 @@ class CholeskySVGPKernel(ExtendedSVGPBaseKernel):
             is_diagonal_regularisation_absolute_scale=is_diagonal_regularisation_absolute_scale,
         )
 
-    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @pydantic.validate_arguments(config=PYDANTIC_VALIDATION_CONFIG)
     def generate_parameters(
         self, parameters: Union[FrozenDict, Dict] = None
     ) -> CholeskySVGPKernelParameters:

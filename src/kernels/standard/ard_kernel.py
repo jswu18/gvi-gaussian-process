@@ -5,7 +5,8 @@ import pydantic
 from flax.core.frozen_dict import FrozenDict
 
 from src.kernels.standard.base import StandardKernelBase, StandardKernelBaseParameters
-from src.utils.custom_types import JaxArrayType, JaxFloatType, PRNGKey
+from src.module import PYDANTIC_VALIDATION_CONFIG
+from src.utils.custom_types import JaxArrayType, JaxFloatType
 
 
 class ARDKernelParameters(StandardKernelBaseParameters):
@@ -24,20 +25,14 @@ class ARDKernel(StandardKernelBase):
         self.number_of_dimensions = number_of_dimensions
         super().__init__(preprocess_function=preprocess_function)
 
-    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @pydantic.validate_arguments(config=PYDANTIC_VALIDATION_CONFIG)
     def generate_parameters(
         self, parameters: Union[FrozenDict, Dict]
     ) -> ARDKernelParameters:
-        """
-        Generates a Pydantic model of the parameters for ARDKernel Kernels.
-
-        Args:
-            parameters: A dictionary of the parameters for ARDKernel Kernels.
-
-        Returns: A Pydantic model of the parameters for ARDKernel Kernels.
-
-        """
-        return ARDKernel.Parameters(**parameters)
+        return ARDKernel.Parameters(
+            log_scaling=parameters["log_scaling"],
+            log_lengthscales=parameters["log_lengthscales"],
+        )
 
     @staticmethod
     def _calculate_kernel(
@@ -46,7 +41,7 @@ class ARDKernel(StandardKernelBase):
         x2: jnp.ndarray,
     ) -> jnp.float64:
         """
-        The ARDKernel kernel function defined as:
+        The Squared Exponential kernel function defined as:
         k(x1, x2) = scaling * exp(-0.5 * (x1 - x2)^T @ diag(1 / lengthscales) @ (x1 - x2)).
             - n is the number of points in x
             - m is the number of points in y
@@ -57,7 +52,7 @@ class ARDKernel(StandardKernelBase):
             x1: vector of shape (1, d)
             x2: vector of shape (1, d)
 
-        Returns: the ARDKernel kernel function evaluated at x and y
+        Returns: the Squared Exponential kernel function evaluated at x and y
 
         """
         scaling = jnp.exp(jnp.atleast_1d(parameters.log_scaling)) ** 2

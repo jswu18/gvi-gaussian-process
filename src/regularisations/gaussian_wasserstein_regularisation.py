@@ -7,6 +7,7 @@ import pydantic
 
 from src.distributions import Gaussian
 from src.gps.base.base import GPBase, GPBaseParameters
+from src.module import PYDANTIC_VALIDATION_CONFIG
 from src.regularisations.base import RegularisationBase
 from src.regularisations.schemas import RegularisationMode
 from src.utils.matrix_operations import (
@@ -17,6 +18,14 @@ from src.utils.matrix_operations import (
 
 
 class GaussianWassersteinRegularisation(RegularisationBase):
+    """
+    A regulariser which is the Wasserstein distance in L2 function space between
+    two Gaussian measures defined on the same space. This follows GWI from:
+        Veit David Wild, Robert Hu, and Dino Sejdinovic. Generalized variational inference in
+            function spaces: Gaussian measures meet bayesian deep learning. Advances in Neural Information
+            Processing Systems, 35:3716–3730, 2022.27
+    """
+
     def __init__(
         self,
         gp: GPBase,
@@ -95,7 +104,7 @@ class GaussianWassersteinRegularisation(RegularisationBase):
             return compute_covariance_eigenvalues(covariance_p_q_regularised)
 
     @staticmethod
-    @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
+    @pydantic.validate_arguments(config=PYDANTIC_VALIDATION_CONFIG)
     def calculate_gaussian_wasserstein_metric(
         mean_train_p: jnp.ndarray,
         covariance_train_p_diagonal: jnp.ndarray,
