@@ -2,12 +2,12 @@ import jax.numpy as jnp
 import pydantic
 
 from src.gps.base.base import GPBase, GPBaseParameters
-from src.regularisations.point_wise.base import PointWiseRegularisationBase
+from src.regularisations.projected.base import ProjectedRegularisationBase
 from src.regularisations.schemas import RegularisationMode
 from src.utils.custom_types import JaxFloatType
 
 
-class PointWiseKLRegularisation(PointWiseRegularisationBase):
+class ProjectedHellingerRegularisation(ProjectedRegularisationBase):
     def __init__(
         self,
         gp: GPBase,
@@ -22,16 +22,23 @@ class PointWiseKLRegularisation(PointWiseRegularisationBase):
             mode=mode,
         )
 
-    @staticmethod
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
-    def calculate_point_wise_distance(
+    def calculate_projected_distance(
+        self,
         m_p: JaxFloatType,
         c_p: JaxFloatType,
         m_q: JaxFloatType,
         c_q: JaxFloatType,
     ) -> JaxFloatType:
-        return (
-            jnp.log(jnp.sqrt(c_q) / jnp.sqrt(c_p))
-            + (c_p + jnp.square(m_p - m_q)) / (2 * c_q)
-            - 0.5
+        return 1 - jnp.sqrt(
+            jnp.divide(
+                2 * jnp.multiply(jnp.sqrt(c_p), jnp.sqrt(c_q)),
+                c_p + c_q,
+            )
+        ) * jnp.exp(
+            -0.25
+            * jnp.divide(
+                (m_p - m_q) ** 2,
+                c_p + c_q,
+            )
         )

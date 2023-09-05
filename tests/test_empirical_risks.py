@@ -4,7 +4,7 @@ import pytest
 from mockers.kernel import (
     MockKernel,
     MockKernelParameters,
-    calculate_reference_gram_eye_mock,
+    calculate_regulariser_gram_eye_mock,
 )
 from mockers.mean import MockMean, MockMeanParameters
 from src.empirical_risks import CrossEntropy, NegativeLogLikelihood
@@ -190,7 +190,7 @@ def test_gp_classification_nll(
     gp = GPClassification(
         mean=MockMean(number_output_dimensions=number_of_classes),
         kernel=MultiOutputKernel(
-            kernels=[MockKernel(kernel_func=calculate_reference_gram_eye_mock)]
+            kernels=[MockKernel(kernel_func=calculate_regulariser_gram_eye_mock)]
             * number_of_classes
         ),
         x=x_train,
@@ -262,7 +262,7 @@ def test_gp_classification_cross_entropy(
     gp = GPClassification(
         mean=MockMean(number_output_dimensions=number_of_classes),
         kernel=MultiOutputKernel(
-            kernels=[MockKernel(kernel_func=calculate_reference_gram_eye_mock)]
+            kernels=[MockKernel(kernel_func=calculate_regulariser_gram_eye_mock)]
             * number_of_classes
         ),
         x=x_train,

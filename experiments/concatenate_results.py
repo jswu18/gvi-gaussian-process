@@ -46,12 +46,12 @@ if __name__ == "__main__":
     try:
         df_train_metrics = concatenate_results(
             outputs_path=os.path.join(
-                base_outputs_path, str(ActionSchema.train_reference.value)
+                base_outputs_path, str(ActionSchema.train_regulariser.value)
             ),
         )
         df_train_metrics.to_csv(
             os.path.join(
-                base_outputs_path, f"{ActionSchema.train_reference.value}.csv"
+                base_outputs_path, f"{ActionSchema.train_regulariser.value}.csv"
             ),
             index=False,
         )

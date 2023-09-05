@@ -5,7 +5,7 @@ import pydantic
 from flax.core.frozen_dict import FrozenDict
 from jax.scipy.linalg import cho_solve
 
-from src.kernels.approximate.extended_svgp.base import (
+from src.kernels.approximate.svgp.base import (
     ExtendedSVGPBaseKernel,
     ExtendedSVGPBaseKernelParameters,
 )
@@ -26,8 +26,8 @@ class LogSVGPKernel(ExtendedSVGPBaseKernel):
 
     def __init__(
         self,
-        reference_kernel: KernelBase,
-        reference_kernel_parameters: KernelBaseParameters,
+        regulariser_kernel: KernelBase,
+        regulariser_kernel_parameters: KernelBaseParameters,
         log_observation_noise: float,
         inducing_points: jnp.ndarray,
         training_points: jnp.ndarray,
@@ -36,8 +36,8 @@ class LogSVGPKernel(ExtendedSVGPBaseKernel):
         preprocess_function: Callable[[jnp.ndarray], jnp.ndarray] = None,
     ):
         super().__init__(
-            reference_kernel_parameters=reference_kernel_parameters,
-            reference_kernel=reference_kernel,
+            regulariser_kernel_parameters=regulariser_kernel_parameters,
+            regulariser_kernel=regulariser_kernel,
             preprocess_function=preprocess_function,
             log_observation_noise=log_observation_noise,
             inducing_points=inducing_points,
@@ -59,12 +59,12 @@ class LogSVGPKernel(ExtendedSVGPBaseKernel):
     def initialise_el_matrix_parameters(
         self,
     ) -> jnp.ndarray:
-        reference_gaussian_measure_observation_precision = 1 / jnp.exp(
+        regulariser_gaussian_measure_observation_precision = 1 / jnp.exp(
             self.log_observation_noise
         )
         cholesky_decomposition = jnp.linalg.cholesky(
-            self.reference_gram_inducing
-            + reference_gaussian_measure_observation_precision
+            self.regulariser_gram_inducing
+            + regulariser_gaussian_measure_observation_precision
             * self.gram_inducing_train
             @ self.gram_inducing_train.T
         )
@@ -85,20 +85,20 @@ class LogSVGPKernel(ExtendedSVGPBaseKernel):
         # convert to Pydantic model if necessary
         if not isinstance(parameters, self.Parameters):
             parameters = self.generate_parameters(parameters)
-        reference_gram_x1_inducing = self.reference_kernel.calculate_gram(
-            parameters=self.reference_kernel_parameters,
+        regulariser_gram_x1_inducing = self.regulariser_kernel.calculate_gram(
+            parameters=self.regulariser_kernel_parameters,
             x1=x1,
             x2=self.inducing_points,
         )
 
-        reference_gram_x2_inducing = self.reference_kernel.calculate_gram(
-            parameters=self.reference_kernel_parameters,
+        regulariser_gram_x2_inducing = self.regulariser_kernel.calculate_gram(
+            parameters=self.regulariser_kernel_parameters,
             x1=x2,
             x2=self.inducing_points,
         )
 
-        reference_gram_x1_x2 = self.reference_kernel.calculate_gram(
-            parameters=self.reference_kernel_parameters,
+        regulariser_gram_x1_x2 = self.regulariser_kernel.calculate_gram(
+            parameters=self.regulariser_kernel_parameters,
             x1=x1,
             x2=x2,
         )
@@ -107,13 +107,15 @@ class LogSVGPKernel(ExtendedSVGPBaseKernel):
         )
         sigma_matrix = el_matrix.T @ el_matrix
         return (
-            reference_gram_x1_x2
+            regulariser_gram_x1_x2
             - (
-                reference_gram_x1_inducing
+                regulariser_gram_x1_inducing
                 @ cho_solve(
-                    c_and_lower=self.reference_gram_inducing_cholesky_decomposition_and_lower,
-                    b=reference_gram_x2_inducing.T,
+                    c_and_lower=self.regulariser_gram_inducing_cholesky_decomposition_and_lower,
+                    b=regulariser_gram_x2_inducing.T,
                 )
             )
-            + reference_gram_x1_inducing @ sigma_matrix @ reference_gram_x2_inducing.T
+            + regulariser_gram_x1_inducing
+            @ sigma_matrix
+            @ regulariser_gram_x2_inducing.T
         )

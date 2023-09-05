@@ -5,7 +5,7 @@ import pydantic
 from flax.core.frozen_dict import FrozenDict
 from jax.scipy.linalg import cho_solve
 
-from src.kernels.approximate.extended_svgp.base import (
+from src.kernels.approximate.svgp.base import (
     ExtendedSVGPBaseKernel,
     ExtendedSVGPBaseKernelParameters,
 )
@@ -22,8 +22,8 @@ class KernelisedSVGPKernel(ExtendedSVGPBaseKernel):
     def __init__(
         self,
         base_kernel: KernelBase,
-        reference_kernel: KernelBase,
-        reference_kernel_parameters: KernelBaseParameters,
+        regulariser_kernel: KernelBase,
+        regulariser_kernel_parameters: KernelBaseParameters,
         log_observation_noise: float,
         inducing_points: jnp.ndarray,
         training_points: jnp.ndarray,
@@ -33,8 +33,8 @@ class KernelisedSVGPKernel(ExtendedSVGPBaseKernel):
     ):
         self.base_kernel = base_kernel
         super().__init__(
-            reference_kernel_parameters=reference_kernel_parameters,
-            reference_kernel=reference_kernel,
+            regulariser_kernel_parameters=regulariser_kernel_parameters,
+            regulariser_kernel=regulariser_kernel,
             preprocess_function=preprocess_function,
             log_observation_noise=log_observation_noise,
             inducing_points=inducing_points,
@@ -69,31 +69,31 @@ class KernelisedSVGPKernel(ExtendedSVGPBaseKernel):
         # convert to Pydantic model if necessary
         if not isinstance(parameters, self.Parameters):
             parameters = self.generate_parameters(parameters)
-        reference_gram_x1_inducing = self.reference_kernel.calculate_gram(
-            parameters=self.reference_kernel_parameters,
+        regulariser_gram_x1_inducing = self.regulariser_kernel.calculate_gram(
+            parameters=self.regulariser_kernel_parameters,
             x1=x1,
             x2=self.inducing_points,
         )
 
-        reference_gram_x2_inducing = self.reference_kernel.calculate_gram(
-            parameters=self.reference_kernel_parameters,
+        regulariser_gram_x2_inducing = self.regulariser_kernel.calculate_gram(
+            parameters=self.regulariser_kernel_parameters,
             x1=x2,
             x2=self.inducing_points,
         )
 
-        reference_gram_x1_x2 = self.reference_kernel.calculate_gram(
-            parameters=self.reference_kernel_parameters,
+        regulariser_gram_x1_x2 = self.regulariser_kernel.calculate_gram(
+            parameters=self.regulariser_kernel_parameters,
             x1=x1,
             x2=x2,
         )
 
         return (
-            reference_gram_x1_x2
+            regulariser_gram_x1_x2
             - (
-                reference_gram_x1_inducing
+                regulariser_gram_x1_inducing
                 @ cho_solve(
-                    c_and_lower=self.reference_gram_inducing_cholesky_decomposition_and_lower,
-                    b=reference_gram_x2_inducing.T,
+                    c_and_lower=self.regulariser_gram_inducing_cholesky_decomposition_and_lower,
+                    b=regulariser_gram_x2_inducing.T,
                 )
             )
             + self.base_kernel.calculate_gram(

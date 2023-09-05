@@ -4,21 +4,21 @@ import jax.numpy as jnp
 import pydantic
 from flax.core.frozen_dict import FrozenDict
 
-from src.kernels.approximate.extended_svgp.base import (
+from src.kernels.approximate.svgp.base import (
     ExtendedSVGPBaseKernel,
     ExtendedSVGPBaseKernelParameters,
 )
 from src.kernels.base import KernelBase, KernelBaseParameters
 
 
-def calculate_reference_gram_mock(
+def calculate_regulariser_gram_mock(
     x1: jnp.ndarray,
     x2: jnp.ndarray = None,
 ) -> jnp.ndarray:
     return jnp.ones((x1.shape[0], x2.shape[0]))
 
 
-def calculate_reference_gram_eye_mock(
+def calculate_regulariser_gram_eye_mock(
     x1: jnp.ndarray,
     x2: jnp.ndarray = None,
 ) -> jnp.ndarray:
@@ -33,7 +33,7 @@ class MockKernelParameters(KernelBaseParameters):
 class MockKernel(KernelBase):
     sigma_matrix = jnp.ones((5, 5))
 
-    def __init__(self, kernel_func: Callable = calculate_reference_gram_mock):
+    def __init__(self, kernel_func: Callable = calculate_regulariser_gram_mock):
         self.kernel_func = kernel_func
         super().__init__()
 

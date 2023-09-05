@@ -16,7 +16,7 @@ from src.kernels.base import KernelBase, KernelBaseParameters
 from src.means import ConstantMean
 
 
-def train_reference_gp(
+def train_regulariser_gp(
     data: Data,
     empirical_risk_schema: schemas.EmpiricalRiskSchema,
     trainer_settings: TrainerSettings,
@@ -82,7 +82,7 @@ def train_reference_gp(
     return gp, gp_parameters, post_epoch_history
 
 
-def meta_train_reference_gp(
+def meta_train_regulariser_gp(
     data: Data,
     empirical_risk_schema: schemas.EmpiricalRiskSchema,
     trainer_settings: TrainerSettings,
@@ -98,7 +98,7 @@ def meta_train_reference_gp(
     post_epoch_histories = []
     gp, gp_parameters = None, None
     for i in range(number_of_iterations):
-        gp, gp_parameters, post_epoch_history = train_reference_gp(
+        gp, gp_parameters, post_epoch_history = train_regulariser_gp(
             data=data,
             empirical_risk_schema=empirical_risk_schema,
             trainer_settings=trainer_settings,
@@ -124,6 +124,8 @@ def meta_train_reference_gp(
                     x=prediction_x,
                 ).dict()
             )
+            if not os.path.exists(os.path.join(checkpoint_path, f"iteration-{i}")):
+                os.makedirs(os.path.join(checkpoint_path, f"iteration-{i}"))
             plotters.plot_data(
                 train_data=data,
                 inducing_data=Data(
@@ -133,7 +135,7 @@ def meta_train_reference_gp(
                 prediction_x=prediction_x,
                 mean=gp_prediction.mean,
                 covariance=gp_prediction.covariance,
-                title=f"Reference GP Iteration {i}",
+                title=f"Regulariser GP Iteration {i}",
                 save_path=os.path.join(
                     checkpoint_path,
                     f"iteration-{i}",

@@ -14,7 +14,7 @@ from experiments.classification.data import (
 from experiments.classification.metrics import calculate_metric
 from experiments.classification.plotters import plot_images
 from experiments.classification.schemas import ClassificationMetricSchema
-from experiments.classification.trainers import meta_train_reference_gp
+from experiments.classification.trainers import meta_train_regulariser_gp
 from experiments.shared.nn_means import CNN, MLP
 from experiments.shared.nngp_kernels import CNNGPKernel, MLPGPKernel
 from experiments.shared.plotters import plot_losses, plot_two_losses
@@ -27,9 +27,7 @@ from experiments.shared.trainer import TrainerSettings
 from experiments.shared.trainers import train_approximate_gp, train_tempered_gp
 from src.gps import ApproximateGPClassification
 from src.kernels import CustomKernel, MultiOutputKernel, TemperedKernel
-from src.kernels.approximate.extended_svgp.kernelised_svgp_kernel import (
-    KernelisedSVGPKernel,
-)
+from src.kernels.approximate.svgp.kernelised_svgp_kernel import KernelisedSVGPKernel
 from src.means import CustomMean
 
 jax.config.update("jax_enable_x64", True)
@@ -51,21 +49,21 @@ number_of_inducing_per_label = int(
 )
 
 
-reference_number_of_iterations = 5
-reference_nll_break_condition = -float("inf")
+regulariser_number_of_iterations = 5
+regulariser_nll_break_condition = -float("inf")
 
 approximate_kernel_diagonal_regularisation = 1e-10
 
-reference_gp_empirical_risk_schema = EmpiricalRiskSchema.cross_entropy
+regulariser_gp_empirical_risk_schema = EmpiricalRiskSchema.cross_entropy
 approximate_gp_empirical_risk_schema = EmpiricalRiskSchema.cross_entropy
 approximate_gp_regularisation_schema = RegularisationSchema.multinomial_wasserstein
 tempered_gp_empirical_risk_schema = EmpiricalRiskSchema.negative_log_likelihood
 
-reference_save_checkpoint_frequency = 1000
+regulariser_save_checkpoint_frequency = 1000
 approximate_save_checkpoint_frequency = 1000
 tempered_save_checkpoint_frequency = 1000
 
-reference_gp_trainer_settings = TrainerSettings(
+regulariser_gp_trainer_settings = TrainerSettings(
     key=0,
     optimiser_schema=OptimiserSchema.adabelief,
     learning_rate=1e-4,
@@ -152,14 +150,14 @@ single_label_kernel_parameters = CustomKernel.Parameters.construct(
     custom=nngp_kernel_parameters,
 )
 (
-    reference_gp,
-    reference_gp_parameters,
-    reference_post_epoch_histories,
+    regulariser_gp,
+    regulariser_gp_parameters,
+    regulariser_post_epoch_histories,
     inducing_data_list,
-) = meta_train_reference_gp(
+) = meta_train_regulariser_gp(
     data_list=[experiment_data.train for experiment_data in experiment_data_list],
-    empirical_risk_schema=reference_gp_empirical_risk_schema,
-    trainer_settings=reference_gp_trainer_settings,
+    empirical_risk_schema=regulariser_gp_empirical_risk_schema,
+    trainer_settings=regulariser_gp_trainer_settings,
     kernel=MultiOutputKernel(
         kernels=[single_label_kernel for _ in range(number_of_labels)]
     ),
@@ -167,18 +165,18 @@ single_label_kernel_parameters = CustomKernel.Parameters.construct(
         kernels=[single_label_kernel_parameters for _ in range(number_of_labels)],
     ),
     number_of_inducing_per_label=number_of_inducing_per_label,
-    number_of_iterations=reference_number_of_iterations,
-    empirical_risk_break_condition=reference_nll_break_condition,
-    save_checkpoint_frequency=reference_save_checkpoint_frequency,
+    number_of_iterations=regulariser_number_of_iterations,
+    empirical_risk_break_condition=regulariser_nll_break_condition,
+    save_checkpoint_frequency=regulariser_save_checkpoint_frequency,
     checkpoint_path=os.path.join(
         output_directory,
         checkpoints_folder_name,
-        "reference-gp",
+        "regulariser-gp",
     ),
 )
-reference_accuracy = calculate_metric(
-    gp=reference_gp,
-    gp_parameters=reference_gp_parameters,
+regulariser_accuracy = calculate_metric(
+    gp=regulariser_gp,
+    gp_parameters=regulariser_gp_parameters,
     data=reduce(
         operator.add, [experiment_data.test for experiment_data in experiment_data_list]
     ),
@@ -191,19 +189,19 @@ plot_images(
 )
 plot_losses(
     losses=[
-        [x["empirical-risk"] for x in reference_post_epoch_history]
-        for reference_post_epoch_history in reference_post_epoch_histories
+        [x["empirical-risk"] for x in regulariser_post_epoch_history]
+        for regulariser_post_epoch_history in regulariser_post_epoch_histories
     ],
-    labels=[f"iteration-{i}" for i in range(reference_number_of_iterations)],
-    loss_name=reference_gp_empirical_risk_schema.value,
-    title=f"Reference GP Empirical Risk: MNIST",
+    labels=[f"iteration-{i}" for i in range(regulariser_number_of_iterations)],
+    loss_name=regulariser_gp_empirical_risk_schema.value,
+    title=f"Regulariser GP Empirical Risk: MNIST",
     save_path=os.path.join(
         output_directory,
-        "reference-gp-losses.png",
+        "regulariser-gp-losses.png",
     ),
 )
 print(
-    f"Reference GP Accuracy:{reference_accuracy}",
+    f"Regulariser GP Accuracy:{regulariser_accuracy}",
 )
 
 approximate_experiment_directory = os.path.join(
@@ -217,18 +215,18 @@ svgp_kernel_parameters: List[KernelisedSVGPKernel.Parameters] = []
 for i in range(number_of_labels):
     svgp_kernels.append(
         KernelisedSVGPKernel(
-            reference_kernel=reference_gp.kernel.kernels[i],
-            reference_kernel_parameters=reference_gp_parameters.kernel.kernels[i],
-            log_observation_noise=reference_gp_parameters.log_observation_noise[i],
+            regulariser_kernel=regulariser_gp.kernel.kernels[i],
+            regulariser_kernel_parameters=regulariser_gp_parameters.kernel.kernels[i],
+            log_observation_noise=regulariser_gp_parameters.log_observation_noise[i],
             inducing_points=inducing_data_list[i].x,
             training_points=experiment_data_list[i].train.x,
             diagonal_regularisation=approximate_kernel_diagonal_regularisation,
-            base_kernel=reference_gp.kernel.kernels[i],
+            base_kernel=regulariser_gp.kernel.kernels[i],
         )
     )
     svgp_kernel_parameters.append(
         KernelisedSVGPKernel.Parameters.construct(
-            base_kernel=reference_gp_parameters.kernel.kernels[i],
+            base_kernel=regulariser_gp_parameters.kernel.kernels[i],
         )
     )
 approximate_gp = ApproximateGPClassification(
@@ -255,8 +253,8 @@ approximate_gp_parameters, approximate_post_epoch_history = train_approximate_gp
     trainer_settings=approximate_gp_trainer_settings,
     approximate_gp=approximate_gp,
     approximate_gp_parameters=initial_approximate_gp_parameters,
-    regulariser=reference_gp,
-    regulariser_parameters=reference_gp_parameters,
+    regulariser=regulariser_gp,
+    regulariser_parameters=regulariser_gp_parameters,
     save_checkpoint_frequency=approximate_save_checkpoint_frequency,
     checkpoint_path=os.path.join(
         output_directory,

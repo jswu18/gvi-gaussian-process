@@ -20,11 +20,11 @@ parser.add_argument(
     help="Max runtime of build data jobs.",
 )
 parser.add_argument(
-    "--train_reference_max_runtime",
+    "--train_regulariser_max_runtime",
     type=str,
     required=False,
     default="04:00:00",
-    help="Max runtime of train reference jobs.",
+    help="Max runtime of train regulariser jobs.",
 )
 parser.add_argument(
     "--train_approximate_max_runtime",
@@ -48,11 +48,11 @@ parser.add_argument(
     help="Number of GPUs for build data jobs.",
 )
 parser.add_argument(
-    "--train_reference_num_gpus",
+    "--train_regulariser_num_gpus",
     type=int,
     required=False,
     default=1,
-    help="Number of GPUs for train reference jobs.",
+    help="Number of GPUs for train regulariser jobs.",
 )
 parser.add_argument(
     "--train_approximate_num_gpus",
@@ -76,11 +76,11 @@ parser.add_argument(
     help="Number of cores for build data jobs.",
 )
 parser.add_argument(
-    "--train_reference_num_cores",
+    "--train_regulariser_num_cores",
     type=int,
     required=False,
     default=4,
-    help="Number of cores for train reference jobs.",
+    help="Number of cores for train regulariser jobs.",
 )
 parser.add_argument(
     "--train_approximate_num_cores",
@@ -104,11 +104,11 @@ parser.add_argument(
     help="Amount of RAM for build data jobs per core.",
 )
 parser.add_argument(
-    "--train_reference_mem",
+    "--train_regulariser_mem",
     type=str,
     required=False,
     default="5G",
-    help="Amount of RAM for train reference jobs per core.",
+    help="Amount of RAM for train regulariser jobs per core.",
 )
 parser.add_argument(
     "--train_approximate_mem",
@@ -232,13 +232,13 @@ if __name__ == "__main__":
     )
     generate_myriad_commands(
         problem=ProblemSchema(args.problem),
-        action=ActionSchema.train_reference,
+        action=ActionSchema.train_regulariser,
         command_path=precomputed_shell_command_path,
         save_path=myriad_shell_command_path,
-        max_runtime=args.train_reference_max_runtime,
-        num_gpus=args.train_reference_num_gpus,
-        num_cores=args.train_reference_num_cores,
-        mem=args.train_reference_mem,
+        max_runtime=args.train_regulariser_max_runtime,
+        num_gpus=args.train_regulariser_num_gpus,
+        num_cores=args.train_regulariser_num_cores,
+        mem=args.train_regulariser_mem,
         repository_path=os.getcwd(),
     )
     generate_myriad_commands(

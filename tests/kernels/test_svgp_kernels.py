@@ -5,10 +5,10 @@ from jax.config import config
 from mockers.kernel import (
     MockKernel,
     MockKernelParameters,
-    calculate_reference_gram_eye_mock,
+    calculate_regulariser_gram_eye_mock,
 )
 from src.kernels.approximate import (
-    DecomposedSVGPKernel,
+    CholeskySVGPKernel,
     DiagonalSVGPKernel,
     KernelisedSVGPKernel,
     LogSVGPKernel,
@@ -45,10 +45,10 @@ def test_svgp_sigma_log_diagonal(
     x_inducing: jnp.ndarray,
     target_el_matrix_log_diagonal: jnp.ndarray,
 ):
-    svgp_kernel = DecomposedSVGPKernel(
-        reference_kernel_parameters=MockKernelParameters(),
+    svgp_kernel = CholeskySVGPKernel(
+        regulariser_kernel_parameters=MockKernelParameters(),
         log_observation_noise=jnp.log(1),
-        reference_kernel=MockKernel(calculate_reference_gram_eye_mock),
+        regulariser_kernel=MockKernel(calculate_regulariser_gram_eye_mock),
         inducing_points=x_inducing,
         training_points=x_train,
     )
@@ -90,10 +90,10 @@ def test_svgp_sigma_lower_triangle_matrix(
     x_inducing: jnp.ndarray,
     target_el_matrix_lower_triangle: jnp.ndarray,
 ):
-    svgp_kernel = DecomposedSVGPKernel(
-        reference_kernel_parameters=MockKernelParameters(),
+    svgp_kernel = CholeskySVGPKernel(
+        regulariser_kernel_parameters=MockKernelParameters(),
         log_observation_noise=jnp.log(1),
-        reference_kernel=MockKernel(calculate_reference_gram_eye_mock),
+        regulariser_kernel=MockKernel(calculate_regulariser_gram_eye_mock),
         inducing_points=x_inducing,
         training_points=x_train,
     )
@@ -138,9 +138,9 @@ def test_initialise_diagonal_svgp_kernel(
     actual_log_diagonal: jnp.ndarray,
 ):
     svgp_kernel = DiagonalSVGPKernel(
-        reference_kernel_parameters=MockKernelParameters(),
+        regulariser_kernel_parameters=MockKernelParameters(),
         log_observation_noise=jnp.log(1),
-        reference_kernel=MockKernel(calculate_reference_gram_eye_mock),
+        regulariser_kernel=MockKernel(calculate_regulariser_gram_eye_mock),
         inducing_points=x_inducing,
         training_points=x_train,
     )
@@ -187,9 +187,9 @@ def test_initialise_el_matrix_log_svgp_kernel_grams(
     actual_el_matrix: jnp.ndarray,
 ):
     svgp_kernel = LogSVGPKernel(
-        reference_kernel_parameters=MockKernelParameters(),
+        regulariser_kernel_parameters=MockKernelParameters(),
         log_observation_noise=jnp.log(1),
-        reference_kernel=MockKernel(calculate_reference_gram_eye_mock),
+        regulariser_kernel=MockKernel(calculate_regulariser_gram_eye_mock),
         inducing_points=x_inducing,
         training_points=x_train,
     )
@@ -236,7 +236,7 @@ def test_initialise_el_matrix_log_svgp_kernel_grams(
         ],
     ],
 )
-def test_decomposed_svgp_kernel_grams(
+def test_cholesky_svgp_kernel_grams(
     el_matrix_lower_triangle: jnp.ndarray,
     el_matrix_log_diagonal: jnp.ndarray,
     x_train: jnp.ndarray,
@@ -244,10 +244,10 @@ def test_decomposed_svgp_kernel_grams(
     x: jnp.ndarray,
     k: jnp.ndarray,
 ):
-    svgp_kernel = DecomposedSVGPKernel(
-        reference_kernel_parameters=MockKernelParameters(),
+    svgp_kernel = CholeskySVGPKernel(
+        regulariser_kernel_parameters=MockKernelParameters(),
         log_observation_noise=jnp.log(1),
-        reference_kernel=MockKernel(calculate_reference_gram_eye_mock),
+        regulariser_kernel=MockKernel(calculate_regulariser_gram_eye_mock),
         inducing_points=x_inducing,
         training_points=x_train,
     )
@@ -308,9 +308,9 @@ def test_log_el_svgp_kernel_grams(
     k: jnp.ndarray,
 ):
     svgp_kernel = LogSVGPKernel(
-        reference_kernel_parameters=MockKernelParameters(),
+        regulariser_kernel_parameters=MockKernelParameters(),
         log_observation_noise=jnp.log(1),
-        reference_kernel=MockKernel(calculate_reference_gram_eye_mock),
+        regulariser_kernel=MockKernel(calculate_regulariser_gram_eye_mock),
         inducing_points=x_inducing,
         training_points=x_train,
     )
@@ -363,9 +363,9 @@ def test_diagonal_svgp_kernel_grams(
     k: jnp.ndarray,
 ):
     svgp_kernel = DiagonalSVGPKernel(
-        reference_kernel_parameters=MockKernelParameters(),
+        regulariser_kernel_parameters=MockKernelParameters(),
         log_observation_noise=jnp.log(1),
-        reference_kernel=MockKernel(calculate_reference_gram_eye_mock),
+        regulariser_kernel=MockKernel(calculate_regulariser_gram_eye_mock),
         inducing_points=x_inducing,
         training_points=x_train,
     )
@@ -417,9 +417,9 @@ def test_kernelised_svgp_kernel_grams(
 ):
     svgp_kernel = KernelisedSVGPKernel(
         base_kernel=MockKernel(),
-        reference_kernel_parameters=MockKernelParameters(),
+        regulariser_kernel_parameters=MockKernelParameters(),
         log_observation_noise=jnp.log(1),
-        reference_kernel=MockKernel(calculate_reference_gram_eye_mock),
+        regulariser_kernel=MockKernel(calculate_regulariser_gram_eye_mock),
         inducing_points=x_inducing,
         training_points=x_train,
     )

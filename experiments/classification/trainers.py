@@ -17,7 +17,7 @@ from src.kernels import MultiOutputKernel, MultiOutputKernelParameters
 from src.means import ConstantMean
 
 
-def train_reference_gp(
+def train_regulariser_gp(
     data_list: List[Data],
     empirical_risk_schema: EmpiricalRiskSchema,
     trainer_settings: TrainerSettings,
@@ -100,7 +100,7 @@ def train_reference_gp(
     return gp, gp_parameters, post_epoch_history, inducing_data_list
 
 
-def meta_train_reference_gp(
+def meta_train_regulariser_gp(
     data_list: List[Data],
     empirical_risk_schema: EmpiricalRiskSchema,
     trainer_settings: TrainerSettings,
@@ -121,7 +121,12 @@ def meta_train_reference_gp(
     gp, gp_parameters = None, None
     inducing_data_list: List[Data] = []
     for i in range(number_of_iterations):
-        gp, gp_parameters, post_epoch_history, inducing_data_list = train_reference_gp(
+        (
+            gp,
+            gp_parameters,
+            post_epoch_history,
+            inducing_data_list,
+        ) = train_regulariser_gp(
             data_list=data_list,
             empirical_risk_schema=empirical_risk_schema,
             trainer_settings=trainer_settings,

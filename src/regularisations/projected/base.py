@@ -10,7 +10,7 @@ from src.regularisations.schemas import RegularisationMode
 from src.utils.custom_types import JaxFloatType
 
 
-class PointWiseRegularisationBase(RegularisationBase):
+class ProjectedRegularisationBase(RegularisationBase):
     def __init__(
         self,
         gp: GPBase,
@@ -28,7 +28,7 @@ class PointWiseRegularisationBase(RegularisationBase):
     @staticmethod
     @pydantic.validate_arguments(config=dict(arbitrary_types_allowed=True))
     @abstractmethod
-    def calculate_point_wise_distance(
+    def calculate_projected_distance(
         m_p: JaxFloatType,
         c_p: JaxFloatType,
         m_q: JaxFloatType,
@@ -62,7 +62,7 @@ class PointWiseRegularisationBase(RegularisationBase):
             jax.vmap(
                 lambda m_p, c_p, m_q, c_q: jnp.mean(
                     jax.vmap(
-                        lambda m_p_, c_p_, m_q_, c_q_: self.calculate_point_wise_distance(
+                        lambda m_p_, c_p_, m_q_, c_q_: self.calculate_projected_distance(
                             m_p=m_p_,
                             c_p=c_p_,
                             m_q=m_q_,

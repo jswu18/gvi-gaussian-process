@@ -11,14 +11,14 @@ from src.gps import (
     GPRegression,
 )
 from src.kernels import MultiOutputKernel, MultiOutputKernelParameters
-from src.regularisations.point_wise import PointWiseKLRegularisation
+from src.regularisations.projected import ProjectedRenyiRegularisation
 from src.regularisations.schemas import RegularisationMode
 
 config.update("jax_enable_x64", True)
 
 
 @pytest.mark.parametrize(
-    "log_observation_noise,x_train,y_train,x,kl_regularisation",
+    "log_observation_noise,x_train,y_train,x,renyi_regularisation",
     [
         [
             jnp.log(1.0),
@@ -39,12 +39,12 @@ config.update("jax_enable_x64", True)
         ],
     ],
 )
-def test_zero_kl_gp_regression(
+def test_zero_renyi_gp_regression(
     log_observation_noise: float,
     x_train: jnp.ndarray,
     y_train: jnp.ndarray,
     x: jnp.ndarray,
-    kl_regularisation,
+    renyi_regularisation,
 ):
     gp = GPRegression(
         mean=MockMean(),
@@ -57,7 +57,7 @@ def test_zero_kl_gp_regression(
         mean=MockMean.Parameters(),
         kernel=MockKernel.Parameters(),
     )
-    regularisation = PointWiseKLRegularisation(
+    regularisation = ProjectedRenyiRegularisation(
         gp=gp,
         regulariser=gp,
         regulariser_parameters=gp_parameters,
@@ -68,12 +68,12 @@ def test_zero_kl_gp_regression(
             parameters=gp_parameters,
             x=x,
         ),
-        kl_regularisation,
+        renyi_regularisation,
     )
 
 
 @pytest.mark.parametrize(
-    "log_observation_noise,x,kl_regularisation",
+    "log_observation_noise,x,renyi_regularisation",
     [
         [
             jnp.log(1.0),
@@ -87,10 +87,10 @@ def test_zero_kl_gp_regression(
         ],
     ],
 )
-def test_zero_kl_approximate_gp_regression(
+def test_zero_renyi_approximate_gp_regression(
     log_observation_noise: float,
     x: jnp.ndarray,
-    kl_regularisation,
+    renyi_regularisation,
 ):
     gp = ApproximateGPRegression(
         mean=MockMean(),
@@ -101,7 +101,7 @@ def test_zero_kl_approximate_gp_regression(
         mean=MockMean.Parameters(),
         kernel=MockKernel.Parameters(),
     )
-    regularisation = PointWiseKLRegularisation(
+    regularisation = ProjectedRenyiRegularisation(
         gp=gp,
         regulariser=gp,
         regulariser_parameters=gp_parameters,
@@ -113,12 +113,12 @@ def test_zero_kl_approximate_gp_regression(
             parameters=gp_parameters,
             x=x,
         ),
-        kl_regularisation,
+        renyi_regularisation,
     )
 
 
 @pytest.mark.parametrize(
-    "log_observation_noise,x_train,y_train,x,kl_regularisation",
+    "log_observation_noise,x_train,y_train,x,renyi_regularisation",
     [
         [
             jnp.log(1.0),
@@ -135,16 +135,16 @@ def test_zero_kl_approximate_gp_regression(
                     [1.5, 2.5, 3.5],
                 ]
             ),
-            0.56319503,
+            0.80851541,
         ],
     ],
 )
-def test_kl_gp_regression(
+def test_renyi_gp_regression(
     log_observation_noise: float,
     x_train: jnp.ndarray,
     y_train: jnp.ndarray,
     x: jnp.ndarray,
-    kl_regularisation,
+    renyi_regularisation,
 ):
     regulariser = GPRegression(
         mean=MockMean(),
@@ -161,7 +161,7 @@ def test_kl_gp_regression(
         mean=MockMean.Parameters(),
         kernel=MockKernel.Parameters(),
     )
-    regularisation = PointWiseKLRegularisation(
+    regularisation = ProjectedRenyiRegularisation(
         gp=gp,
         regulariser=regulariser,
         regulariser_parameters=parameters,
@@ -172,12 +172,12 @@ def test_kl_gp_regression(
             parameters=parameters,
             x=x,
         ),
-        kl_regularisation,
+        renyi_regularisation,
     )
 
 
 @pytest.mark.parametrize(
-    "log_observation_noise,number_of_classes,x_train,y_train,x,kl_regularisation",
+    "log_observation_noise,number_of_classes,x_train,y_train,x,renyi_regularisation",
     [
         [
             jnp.log(jnp.array([0.1, 0.2, 0.4, 1.8])),
@@ -204,13 +204,13 @@ def test_kl_gp_regression(
         ],
     ],
 )
-def test_zero_kl_gp_classification(
+def test_zero_renyi_gp_classification(
     log_observation_noise: float,
     number_of_classes,
     x_train: jnp.ndarray,
     y_train: jnp.ndarray,
     x: jnp.ndarray,
-    kl_regularisation: float,
+    renyi_regularisation: float,
 ):
     gp = GPClassification(
         mean=MockMean(number_output_dimensions=number_of_classes),
@@ -225,7 +225,7 @@ def test_zero_kl_gp_classification(
             kernels=[MockKernelParameters()] * number_of_classes
         ),
     )
-    regularisation = PointWiseKLRegularisation(
+    regularisation = ProjectedRenyiRegularisation(
         gp=gp,
         regulariser=gp,
         regulariser_parameters=gp_parameters,
@@ -236,12 +236,12 @@ def test_zero_kl_gp_classification(
             parameters=gp_parameters,
             x=x,
         ),
-        kl_regularisation,
+        renyi_regularisation,
     )
 
 
 @pytest.mark.parametrize(
-    "log_observation_noise,number_of_classes,x,kl_regularisation",
+    "log_observation_noise,number_of_classes,x,renyi_regularisation",
     [
         [
             jnp.log(jnp.array([0.1, 0.2, 0.4, 1.8])),
@@ -256,11 +256,11 @@ def test_zero_kl_gp_classification(
         ],
     ],
 )
-def test_zero_kl_approximate_gp_classification(
+def test_zero_renyi_approximate_gp_classification(
     log_observation_noise: float,
     number_of_classes,
     x: jnp.ndarray,
-    kl_regularisation: float,
+    renyi_regularisation: float,
 ):
     gp = ApproximateGPClassification(
         mean=MockMean(number_output_dimensions=number_of_classes),
@@ -273,7 +273,7 @@ def test_zero_kl_approximate_gp_classification(
             kernels=[MockKernelParameters()] * number_of_classes
         ),
     )
-    regularisation = PointWiseKLRegularisation(
+    regularisation = ProjectedRenyiRegularisation(
         gp=gp,
         regulariser=gp,
         regulariser_parameters=gp_parameters,
@@ -285,12 +285,12 @@ def test_zero_kl_approximate_gp_classification(
             parameters=gp_parameters,
             x=x,
         ),
-        kl_regularisation,
+        renyi_regularisation,
     )
 
 
 @pytest.mark.parametrize(
-    "log_observation_noise,number_of_classes,x_train,y_train,x,kl_regularisation",
+    "log_observation_noise,number_of_classes,x_train,y_train,x,renyi_regularisation",
     [
         [
             jnp.log(jnp.array([0.1, 0.2, 0.4, 1.8])),
@@ -313,17 +313,17 @@ def test_zero_kl_approximate_gp_classification(
                     [1.5, 2.5, 3.5],
                 ]
             ),
-            0.61610398,
+            0.98404914,
         ],
     ],
 )
-def test_kl_gp_classification(
+def test_renyi_gp_classification(
     log_observation_noise: float,
     number_of_classes,
     x_train: jnp.ndarray,
     y_train: jnp.ndarray,
     x: jnp.ndarray,
-    kl_regularisation: float,
+    renyi_regularisation: float,
 ):
     regulariser = GPClassification(
         mean=MockMean(number_output_dimensions=number_of_classes),
@@ -342,7 +342,7 @@ def test_kl_gp_classification(
             kernels=[MockKernelParameters()] * number_of_classes
         ),
     )
-    regularisation = PointWiseKLRegularisation(
+    regularisation = ProjectedRenyiRegularisation(
         gp=gp,
         regulariser=regulariser,
         regulariser_parameters=parameters,
@@ -353,5 +353,5 @@ def test_kl_gp_classification(
             parameters=parameters,
             x=x,
         ),
-        kl_regularisation,
+        renyi_regularisation,
     )

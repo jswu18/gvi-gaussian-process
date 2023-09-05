@@ -36,7 +36,7 @@ def merge_dictionaries(dict1: Dict, dict2: Dict) -> Dict:
 
 
 def generate_configs(
-    config_path: str, output_path: str, reference_configs: Optional[Dict] = None
+    config_path: str, output_path: str, regulariser_configs: Optional[Dict] = None
 ) -> None:
     with open(os.path.join(config_path, "base.yaml"), "r") as file:
         base_config = yaml.safe_load(file)
@@ -70,21 +70,21 @@ def generate_configs(
             )
         configs = temp
         df_configs = df_temp
-    if reference_configs:
+    if regulariser_configs:
         temp = []
         df_temp = []
-        for reference_name in reference_configs:
-            df = pd.read_csv(f"{reference_configs[reference_name]}.csv")
+        for regulariser_name in regulariser_configs:
+            df = pd.read_csv(f"{regulariser_configs[regulariser_name]}.csv")
             for uuid_identifier in df.uuid:
                 temp.extend(
                     [
-                        dict(merge_dictionaries(x, {reference_name: uuid_identifier}))
+                        dict(merge_dictionaries(x, {regulariser_name: uuid_identifier}))
                         for x in configs
                     ]
                 )
                 df_temp.extend(
                     [
-                        dict(merge_dictionaries(x, {reference_name: uuid_identifier}))
+                        dict(merge_dictionaries(x, {regulariser_name: uuid_identifier}))
                         for x in df_configs
                     ]
                 )
@@ -114,9 +114,11 @@ if __name__ == "__main__":
         output_path=os.path.join(output_config_path, ActionSchema.build_data.name),
     )
     generate_configs(
-        config_path=os.path.join(base_config_path, ActionSchema.train_reference.name),
-        output_path=os.path.join(output_config_path, ActionSchema.train_reference.name),
-        reference_configs={
+        config_path=os.path.join(base_config_path, ActionSchema.train_regulariser.name),
+        output_path=os.path.join(
+            output_config_path, ActionSchema.train_regulariser.name
+        ),
+        regulariser_configs={
             "data_name": os.path.join(output_config_path, ActionSchema.build_data.name)
         },
     )
@@ -125,9 +127,9 @@ if __name__ == "__main__":
         output_path=os.path.join(
             output_config_path, ActionSchema.train_approximate.name
         ),
-        reference_configs={
-            "reference_name": os.path.join(
-                output_config_path, ActionSchema.train_reference.name
+        regulariser_configs={
+            "regulariser_name": os.path.join(
+                output_config_path, ActionSchema.train_regulariser.name
             )
         },
     )
@@ -138,7 +140,7 @@ if __name__ == "__main__":
         output_path=os.path.join(
             output_config_path, ActionSchema.temper_approximate.name
         ),
-        reference_configs={
+        regulariser_configs={
             "approximate_name": os.path.join(
                 output_config_path, ActionSchema.train_approximate.name
             )

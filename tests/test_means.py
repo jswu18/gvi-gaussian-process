@@ -116,10 +116,10 @@ def test_svgp_mean(
     mean: float,
 ):
     svgp_mean = SVGPMean(
-        reference_mean_parameters=MockMeanParameters(),
-        reference_mean=MockMean(),
-        reference_kernel_parameters=MockKernelParameters(),
-        reference_kernel=MockKernel(),
+        regulariser_mean_parameters=MockMeanParameters(),
+        regulariser_mean=MockMean(),
+        regulariser_kernel_parameters=MockKernelParameters(),
+        regulariser_kernel=MockKernel(),
         inducing_points=inducing_points,
     )
     assert jnp.array_equal(

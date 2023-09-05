@@ -18,25 +18,25 @@ class SVGPMean(MeanBase):
 
     def __init__(
         self,
-        reference_mean_parameters: MeanBaseParameters,
-        reference_mean: MeanBase,
-        reference_kernel_parameters: KernelBaseParameters,
-        reference_kernel: KernelBase,
+        regulariser_mean_parameters: MeanBaseParameters,
+        regulariser_mean: MeanBase,
+        regulariser_kernel_parameters: KernelBaseParameters,
+        regulariser_kernel: KernelBase,
         inducing_points: jnp.ndarray,
         number_output_dimensions: int = 1,
         preprocess_function: Callable[[jnp.ndarray], jnp.ndarray] = None,
     ):
         """
-        Defining the reference Gaussian measure and the reference mean function.
+        Defining the regulariser Gaussian measure and the regulariser mean function.
 
         Args:
-            reference_mean_parameters: the parameters of the reference mean function.
-            reference_mean: the mean function of the reference Gaussian measure.
+            regulariser_mean_parameters: the parameters of the regulariser mean function.
+            regulariser_mean: the mean function of the regulariser Gaussian measure.
         """
-        self.reference_mean_parameters = reference_mean_parameters
-        self.reference_mean = reference_mean
-        self.reference_kernel_parameters = reference_kernel_parameters
-        self.reference_kernel = reference_kernel
+        self.regulariser_mean_parameters = regulariser_mean_parameters
+        self.regulariser_mean = regulariser_mean
+        self.regulariser_kernel_parameters = regulariser_kernel_parameters
+        self.regulariser_kernel = regulariser_kernel
         self.inducing_points = inducing_points
         super().__init__(
             number_output_dimensions=number_output_dimensions,
@@ -64,8 +64,8 @@ class SVGPMean(MeanBase):
         x: jnp.ndarray,
     ) -> jnp.ndarray:
         """
-        Predict the mean function at the provided points x by adding the reference mean function to the
-        product of the reference kernel gram matrix and the weights.
+        Predict the mean function at the provided points x by adding the regulariser mean function to the
+        product of the regulariser kernel gram matrix and the weights.
             - n is the number of points in x
             - d is the number of dimensions
             - m is the number of inducing points
@@ -78,13 +78,13 @@ class SVGPMean(MeanBase):
 
         """
         return (
-            self.reference_mean.predict(
-                parameters=self.reference_mean_parameters,
+            self.regulariser_mean.predict(
+                parameters=self.regulariser_mean_parameters,
                 x=x,
             )
             + (
-                self.reference_kernel.calculate_gram(
-                    parameters=self.reference_kernel_parameters,
+                self.regulariser_kernel.calculate_gram(
+                    parameters=self.regulariser_kernel_parameters,
                     x1=x,
                     x2=x,
                     full_covariance=True,
