@@ -670,7 +670,24 @@ This presents a chicken and egg problem.
 We propose a numerical approach in Algorithm \ref{alg:inducing-points-prior-gp}, iteratively learning the kernel hyper-parameters and selecting the inducing points with Algorithm \ref{alg:inducing-point-selection} until convergence.
 We do not provide any convergence guarantees for this method, but we have observed reasonable results in our experiments with this procedure.
 
-An observation of Algorithm \ref{alg:inducing-points-prior-gp} is the incorporation of response data $\mathbf{Y}$ into the inducing point selection process, which did not exist in Algorithm \ref{alg:inducing-point-selection}. Learning the kernel with the response data can give more appropriate covariances when comparing candidate points $\mathbf{X}$ during the inducing points selection of Algorithm \ref{alg:inducing-point-selection}. \jw{include images for each iteration of algorithm}
+An observation of Algorithm \ref{alg:inducing-points-prior-gp} is the incorporation of response data $\mathbf{Y}$ into the inducing point selection process, which did not exist in Algorithm \ref{alg:inducing-point-selection}. Learning the kernel with the response data can give more appropriate covariances when comparing candidate points $\mathbf{X}$ during the inducing points selection of Algorithm \ref{alg:inducing-point-selection}. Figure \ref{inducing-points-and-kernel} visualises the inducing points selected for four iterations of Algorithm \ref{alg:inducing-points-prior-gp}.
+
+
+\begin{figure}[h!]
+\centering
+\begin{minipage}{.49\textwidth}
+  \centering
+  \includegraphics[width=\linewidth]{thesis-report/figures/toy_curves/data/curve0/data.png}
+  \includegraphics[width=\linewidth]{thesis-report/figures/toy_curves/data/curve3/data.png}
+\end{minipage}%
+\begin{minipage}{.49\textwidth}
+  \centering
+  \includegraphics[width=\linewidth]{thesis-report/figures/toy_curves/data/curve1/data.png}
+  \includegraphics[width=\linewidth]{thesis-report/figures/toy_curves/data/curve4/data.png}
+\end{minipage}%
+\label{inducing-points-and-kernel}
+\caption{GPs learned with GWI or pGVI}
+\end{figure}
 
 
 The prior is an essential component of a Bayesian posterior belief update.
@@ -1065,52 +1082,35 @@ Each \code{.yaml} outlines the configuration settings required to define an expe
 Generating configuration files was automated to scale our experiments to try all possible combinations of empirical risks, regularisers, mean functions, and kernels. These configurations were then submitted as jobs to a computing cluster, running our experiments in a organised and scaleable framework.
 
 \subsection{Regression Curve Experiments}
-To demonstrate our experimentation framework, we learned GWI-GPs and pGVI-GPs for ten regression curves shown in Figure \label{toy-curves}. Each curve has randomly selected segments removed from the training data to visualise an out-of-data (OOD) setting. 
+To demonstrate our experimentation framework, we learned GWI-GPs and pGVI-GPs for ten regression curves. 
+Each curve has randomly selected segments removed from the training data to visualise an out-of-data (OOD) setting.
+With our framework, we constructed 1513 experiments for each curve, each defined through \code{.yaml} configuration files. 
+Each experiment is a unique construction of a regulariser GP, an approximate GP, and a GVI objective (among other settings). 
+After performing all experiments, we select the configuration with the best performance. 
+Given the setup of these regression curve problems, we selected based on the highest negative-log-likelihood with respect to the training data. 
+In other problem regimes, it maybe more suitable to select based on test set performance. 
+We visualise four GPs in Figure \ref{toy-curves-gps}, the best performing GWI-GP or pGVI-GPs for their respective curve problem. 
+The rest of the curves are visualised in Appendix \ref{appendix:toy-curves}.
 
 \begin{figure}[h!]
 \centering
-\begin{minipage}{.19\textwidth}
+\begin{minipage}{.49\textwidth}
   \centering
-  \includegraphics[width=\linewidth]{experiments/regression/toy_curves/outputs/curve3/tempered-WassersteinRegularisation.png}
-  \includegraphics[width=\linewidth]{experiments/regression/toy_curves/outputs/curve3/tempered-WassersteinRegularisation.png}
+  \includegraphics[width=\linewidth]{thesis-report/figures/toy_curves/data/curve0/data.png}
+  \includegraphics[width=\linewidth]{thesis-report/figures/toy_curves/data/curve3/data.png}
 \end{minipage}%
-\begin{minipage}{.19\textwidth}
+\begin{minipage}{.49\textwidth}
   \centering
-  \includegraphics[width=\linewidth]{experiments/regression/toy_curves/outputs/curve3/tempered-WassersteinRegularisation.png}
-  \includegraphics[width=\linewidth]{experiments/regression/toy_curves/outputs/curve3/tempered-WassersteinRegularisation.png}
+  \includegraphics[width=\linewidth]{thesis-report/figures/toy_curves/data/curve1/data.png}
+  \includegraphics[width=\linewidth]{thesis-report/figures/toy_curves/data/curve4/data.png}
 \end{minipage}%
-\begin{minipage}{.19\textwidth}
-  \centering
-  \includegraphics[width=\linewidth]{experiments/regression/toy_curves/outputs/curve3/tempered-WassersteinRegularisation.png}
-  \includegraphics[width=\linewidth]{experiments/regression/toy_curves/outputs/curve3/tempered-WassersteinRegularisation.png}
-\end{minipage}%
-\begin{minipage}{.19\textwidth}
-  \centering
-  \includegraphics[width=\linewidth]{experiments/regression/toy_curves/outputs/curve3/tempered-WassersteinRegularisation.png}
-  \includegraphics[width=\linewidth]{experiments/regression/toy_curves/outputs/curve3/tempered-WassersteinRegularisation.png}
-\end{minipage}%
-\begin{minipage}{.19\textwidth}
-  \centering
-  \includegraphics[width=\linewidth]{experiments/regression/toy_curves/outputs/curve3/tempered-WassersteinRegularisation.png}
-  \includegraphics[width=\linewidth]{experiments/regression/toy_curves/outputs/curve3/tempered-WassersteinRegularisation.png}
-\end{minipage}%
-\caption{Example GVI-GPs for Regression}
+\label{toy-curves-gps}
+\caption{GPs learned with GWI or pGVI}
 \end{figure}
 
-
-\jw{Mostly to show feasibility of GWI-GPs and pGVI-GPs to learn and how these can all be combined in a hyperparameter searching framework}
-\begin{figure}[h!]
-\centering
-\begin{minipage}{.5\textwidth}
-  \centering
-  \includegraphics[width=0.9\linewidth]{experiments/regression/toy_curves/outputs/curve3/tempered-WassersteinRegularisation.png}
-\end{minipage}%
-\begin{minipage}{.5\textwidth}
-  \centering
-  \includegraphics[width=0.9\linewidth]{experiments/regression/toy_curves/outputs/curve4/tempered-PointWiseRenyiRegularisation.png}
-\end{minipage}
-\caption{Example GVI-GPs for Regression}
-\end{figure}
+Additionally, Table X presents a subset of the configurations resulting in each of these best performing variational GPs. 
+This table gives an idea of the large space of settings available within GWI and pGVI. 
+It also demonstrates the flexibility of the learning frameworks to accommodate different approximate spaces and learning objectives that may be better suited for a specific problem. 
 
 \newpage
 \section{Future Work}
@@ -1253,5 +1253,29 @@ trainer_settings:
   optimiser_schema: adam
   seed: 0
 \end{lstlisting}
+
+\newpage
+\subsection{Regression Curves}\label{appendix:toy-curves}
+\begin{figure}[h!]
+\centering
+\begin{minipage}{.49\textwidth}
+  \centering
+  \includegraphics[width=\linewidth]{thesis-report/figures/toy_curves/data/curve0/data.png}
+  \includegraphics[width=\linewidth]{thesis-report/figures/toy_curves/data/curve2/data.png}
+  \includegraphics[width=\linewidth]{thesis-report/figures/toy_curves/data/curve4/data.png}
+  \includegraphics[width=\linewidth]{thesis-report/figures/toy_curves/data/curve6/data.png}
+  \includegraphics[width=\linewidth]{thesis-report/figures/toy_curves/data/curve8/data.png}
+\end{minipage}%
+\begin{minipage}{.49\textwidth}
+  \centering
+  \includegraphics[width=\linewidth]{thesis-report/figures/toy_curves/data/curve1/data.png}
+  \includegraphics[width=\linewidth]{thesis-report/figures/toy_curves/data/curve3/data.png}
+  \includegraphics[width=\linewidth]{thesis-report/figures/toy_curves/data/curve5/data.png}
+  \includegraphics[width=\linewidth]{thesis-report/figures/toy_curves/data/curve7/data.png}
+  \includegraphics[width=\linewidth]{thesis-report/figures/toy_curves/data/curve9/data.png}
+\end{minipage}%
+\label{toy-curves}
+\caption{All ten Regression Curves}
+\end{figure}
 
 \end{document}
