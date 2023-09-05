@@ -135,7 +135,7 @@ def test_zero_renyi_approximate_gp_regression(
                     [1.5, 2.5, 3.5],
                 ]
             ),
-            0.80851541,
+            0.4042577,
         ],
     ],
 )
@@ -313,7 +313,7 @@ def test_zero_renyi_approximate_gp_classification(
                     [1.5, 2.5, 3.5],
                 ]
             ),
-            0.98404914,
+            0.49202457,
         ],
     ],
 )

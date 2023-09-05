@@ -32,9 +32,13 @@ class ProjectedRenyiRegularisation(ProjectedRegularisationBase):
         m_q: JaxFloatType,
         c_q: JaxFloatType,
     ) -> JaxFloatType:
-        return 0.5 * jnp.square(m_p - m_q) / (
-            self.alpha * c_p + (1 - self.alpha) * c_q
-        ) - (1 / (2 * self.alpha * (self.alpha - 1))) * jnp.log(
-            (self.alpha * c_p + (1 - self.alpha) * c_q)
-            / ((c_p**self.alpha) * (c_q ** (1 - self.alpha)))
+        return (
+            jnp.log(jnp.sqrt(c_p) / jnp.sqrt(c_q))
+            + (1 / (2 * (self.alpha - 1)))
+            * (jnp.log(c_p / (self.alpha * c_p + (1 - self.alpha) * c_q)))
+            + (1 / 2)
+            * (
+                (self.alpha * jnp.square(m_p - m_q))
+                / (self.alpha * c_p + (1 - self.alpha) * c_q)
+            )
         )
