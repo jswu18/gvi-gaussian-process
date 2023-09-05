@@ -1,0 +1,6 @@
+kernel:
+  kernel_schema: "fixed_sparse_posterior"
+  kernel_kwargs:
+    diagonal_regularisation: 1.0e-10
+    is_diagonal_regularisation_absolute_scale: False
+  kernel_parameters:

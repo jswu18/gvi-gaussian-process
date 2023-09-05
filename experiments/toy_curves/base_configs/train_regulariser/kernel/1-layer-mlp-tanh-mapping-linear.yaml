@@ -1,0 +1,24 @@
+kernel:
+  kernel_schema: "custom_mapping"
+  kernel_kwargs:
+    diagonal_regularisation: 1.0e-5
+    is_diagonal_regularisation_absolute_scale: False
+    base_kernel:
+      kernel_schema: "polynomial"
+      kernel_kwargs:
+        polynomial_degree: 1
+      kernel_parameters:
+        constant: 10000.0
+        scaling: 10000.0
+    nn_function_kwargs:
+      seed: 0
+      input_shape: [1]
+      layers:
+        layer_1:
+          layer_schema: "dense"
+          layer_kwargs:
+            features: 10
+        layer_2:
+          layer_schema: "tanh"
+          layer_kwargs:
+  kernel_parameters:

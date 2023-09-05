@@ -1,0 +1,10 @@
+inducing_points:
+  inducing_points_selector_schema: "conditional_variance"
+empirical_risk_schema: "negative_log_likelihood"
+empirical_risk_break_condition: -10
+save_checkpoint_frequency: False
+trainer_settings:
+  seed: 0
+  batch_size: 1000
+  batch_shuffle: True
+  batch_drop_last: False

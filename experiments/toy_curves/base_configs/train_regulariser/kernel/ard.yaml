@@ -1,0 +1,6 @@
+kernel:
+  kernel_schema: "ard"
+  kernel_kwargs:
+  kernel_parameters:
+    scaling: 1.0
+    lengthscales: 1.0
