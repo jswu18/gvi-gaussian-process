@@ -827,7 +827,7 @@ Our most up-to-date\footnote{We include the most up-to-date version of the imple
 
 \subsection{Implementation Architecture}\label{implementation-architecture}
 GWI and pGVI are highly flexible learning frameworks. As such, abstraction was critical to ensuring a scaleable and maintainable implementation architecture.
-Luckily, the GVI framework proposed by \cite{knoblauch2022optimization} naturally translates to a clear implementation architecture that we have developed and visualised in Figure \ref{gvi-implementation}.
+Luckily, the GVI framework proposed by \cite{knoblauch2022optimization} naturally translates to a clear implementation architecture that we have developed and visualised with the UML class diagram in Figure \ref{gvi-implementation}.
 We see that the GVI objective in (\ref{gvi-posterior-in-fs}) with $\ell$ and $\mathbb{D}$ has been abstracted to accommodate any valid empirical risk and regularisation, respectively.
 These abstractions are exactly mirrored in our implementation architecture as abstract base classes ensuring the same interface is inherited by all child class implementations.
 \begin{figure}[h!]
@@ -838,12 +838,12 @@ These abstractions are exactly mirrored in our implementation architecture as ab
 \begin{class}[text width=5cm]{GVI}{0,0}
 \attribute{empirical risk : EmpiricalRisk}
 \attribute{regularisation : Regularisation}
-\operation{calculate ( $\gamma$ , $\mathbf{X}$ , $\mathbf{Y}$ ) : Float}
+\operation{calculate ( $\gamma$ , $\mathbf{X}$ , $\mathbf{Y}$ ) : float}
 \end{class}
 
 \begin{abstractclass}[text width=5cm]{EmpiricalRisk}{-6,-3}
 \attribute{$Q$ : ApproximateGP}
-\operation{calculate ( $\gamma$ , $\mathbf{X}$ , $\mathbf{Y}$ ) : Float}
+\operation{calculate ( $\gamma$ , $\mathbf{X}$ , $\mathbf{Y}$ ) : float}
 \end{abstractclass}
 
 
@@ -860,17 +860,17 @@ These abstractions are exactly mirrored in our implementation architecture as ab
 \attribute{$\theta$ : ExactGP Parameters}
 \attribute{$Q$ : ApproximateGP}
 \attribute{mode : \{`prior', `posterior'\}}
-\operation{calculate ( $\gamma$ , $\mathbf{X}$ ) : Float}
+\operation{calculate ( $\gamma$ , $\mathbf{X}$ ) : float}
 \end{abstractclass}
 
 \begin{class}[text width=5cm]{Wasserstein}{9,-7.5}
 \inherit{Regularisation}
-\attribute{include eigendecomp. : Bool}
+\attribute{include eigendecomp. : bool}
 \end{class}
 
 \begin{abstractclass}[text width=5cm]{ProjectedRegularisation}{0,-7.5}
 \inherit{Regularisation}
-\attribute{$D$ : Int}
+\attribute{$D$ : int}
 \end{abstractclass}
 
 \begin{class}[text width=5cm]{Bhattacharyya}{-9,-9.25}
@@ -891,7 +891,7 @@ These abstractions are exactly mirrored in our implementation architecture as ab
 
 \begin{class}[text width=5cm]{Renyi}{9,-11}
 \inherit{ProjectedRegularisation}
-\attribute{$\alpha$ : Float}
+\attribute{$\alpha$ : float}
 \end{class}
 
 \begin{class}[text width=5cm]{SquaredDifference}{9,-9.25}
@@ -903,7 +903,7 @@ These abstractions are exactly mirrored in our implementation architecture as ab
 
 \end{tikzpicture}
 }
-\caption{GVI Implementation Architecture}
+\caption{UML Class Diagram of GVI Implementation Architecture}
 \label{gvi-implementation}
 \end{center}
 \end{figure}
@@ -961,18 +961,18 @@ Algorithms \ref{alg:inducing-point-selection}, \ref{alg:gwi-gp}, and \ref{alg:in
 
 
 \begin{abstractclass}[text width=5cm]{Mean}{-9, 3.85}
-\operation{predict ( $\theta_{m}$ , $\mathbf{X}$ ) : Array}
+\operation{predict ( $\theta_{m}$ , $\mathbf{X}$ ) : array}
 \end{abstractclass}
 
 \begin{abstractclass}[text width=5cm]{Kernel}{9, 3.85}
-\operation{gram ( $\theta_{k}$ , $\mathbf{X}$ ) : Array}
+\operation{gram ( $\theta_{k}$ , $\mathbf{X}$ ) : array}
 \end{abstractclass}
 
 \composition{GP}{}{}{Mean}
 \composition{GP}{}{}{Kernel}
 \end{tikzpicture}
 }
-\caption{GP Implementation Architecture}
+\caption{UML Class Diagram of GP Implementation Architecture}
 \label{gp-implementation}
 \end{center}
 \end{figure}
@@ -983,7 +983,7 @@ Algorithms \ref{alg:inducing-point-selection}, \ref{alg:gwi-gp}, and \ref{alg:in
 \resizebox{0.75\textwidth}{!}{
 \begin{tikzpicture}
 \begin{abstractclass}[text width=5cm]{Mean}{0, 0}
-\operation{predict ( $\theta_{m}$ , $\mathbf{X}$ ) : Array}
+\operation{predict ( $\theta_{m}$ , $\mathbf{X}$ ) : array}
 \end{abstractclass}
 
 \begin{class}[text width=5cm]{Constant}{0, -3}
@@ -995,18 +995,18 @@ Algorithms \ref{alg:inducing-point-selection}, \ref{alg:gwi-gp}, and \ref{alg:in
 \attribute{$\theta_{m_P}$ : Mean Parameters}
 \attribute{$k$ : Kernel}
 \attribute{$\theta_{k}$ : Kernel Parameters}
-\attribute{$\mathbf{Z}$ : Array}
+\attribute{$\mathbf{Z}$ : array}
 \inherit{Mean}
 \end{class}
 
 \begin{class}[text width=5cm]{NeuralNetwork}{6, -3}
-\attribute{architecture : List}
+\attribute{architecture : list}
 
 \inherit{Mean}
 \end{class}
 \end{tikzpicture}
 }
-\caption{Mean Implementation Architecture}
+\caption{UML Class Diagram of Mean Implementation Architecture}
 \label{mean-implementation}
 \end{center}
 \end{figure}
@@ -1018,11 +1018,11 @@ Algorithms \ref{alg:inducing-point-selection}, \ref{alg:gwi-gp}, and \ref{alg:in
 \resizebox{\textwidth}{!}{
 \begin{tikzpicture}
 \begin{abstractclass}[text width=5cm]{Kernel}{4, 0}
-\operation{gram ( $\theta_{k}$ , $\mathbf{X}$ ) : Array}
+\operation{gram ( $\theta_{k}$ , $\mathbf{X}$ ) : array}
 \end{abstractclass}
 
 \begin{class}[text width=5cm]{Polynomial}{-2, -1.5}
-\attribute{degree : Float}
+\attribute{degree : float}
 \inherit{Kernel}
 \end{class}
 
@@ -1037,7 +1037,7 @@ Algorithms \ref{alg:inducing-point-selection}, \ref{alg:gwi-gp}, and \ref{alg:in
 \end{class}
 
 \begin{class}[text width=5cm]{NNGP}{10, -1.5}
-\attribute{architecture: List}
+\attribute{architecture: list}
 \inherit{Kernel}
 \end{class}
 
@@ -1045,7 +1045,7 @@ Algorithms \ref{alg:inducing-point-selection}, \ref{alg:gwi-gp}, and \ref{alg:in
 
 \begin{abstractclass}[text width=5cm]{Approximate}{4, -4}
 \inherit{Kernel}
-\attribute{$\mathbf{Z}$ : Array}
+\attribute{$\mathbf{Z}$ : array}
 \end{abstractclass}
 
 \begin{abstractclass}[text width=5cm]{SVGP}{1, -7}
@@ -1081,7 +1081,7 @@ Algorithms \ref{alg:inducing-point-selection}, \ref{alg:gwi-gp}, and \ref{alg:in
 
 \end{tikzpicture}
 }
-\caption{Kernel Implementation Architecture}
+\caption{UML Class Diagram of Kernel Implementation Architecture}
 \label{kernel-implementation}
 \end{center}
 \end{figure}
