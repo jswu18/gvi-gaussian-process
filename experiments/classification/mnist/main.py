@@ -15,8 +15,8 @@ from experiments.classification.metrics import calculate_metric
 from experiments.classification.plotters import plot_images
 from experiments.classification.schemas import ClassificationMetricSchema
 from experiments.classification.trainers import meta_train_regulariser_gp
-from experiments.shared.nn_means import CNN, MLP
-from experiments.shared.nngp_kernels import CNNGPKernel, MLPGPKernel
+from experiments.shared.nn_means import CNN, FCN
+from experiments.shared.nngp_kernels import CNNGPKernel, FCNGPKernel
 from experiments.shared.plotters import plot_losses, plot_two_losses
 from experiments.shared.schemas import (
     EmpiricalRiskSchema,
@@ -125,7 +125,7 @@ nn_mean_parameters = nn_mean.init(
     jax.random.PRNGKey(0),
     experiment_data_list[0].train.x[:1, ...].reshape(-1, 28, 28, 1),
 )
-# nn_mean = MLP(
+# nn_mean = FCN(
 #     features=[100, 100, len(labels_to_include)],
 # )
 # nn_mean_parameters = nn_mean.init(
@@ -138,7 +138,7 @@ custom_mean = CustomMean(
     # preprocess_function=lambda x: x.reshape(-1, 784),
 )
 
-nngp_kernel = MLPGPKernel(features=[100, 100, 1])
+nngp_kernel = FCNGPKernel(features=[100, 100, 1])
 # nngp_kernel = CNNGPKernel(number_of_outputs=number_of_labels)
 nngp_kernel_parameters = nngp_kernel.initialise_parameters()
 single_label_kernel = CustomKernel(
