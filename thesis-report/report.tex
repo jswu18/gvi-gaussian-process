@@ -326,7 +326,7 @@ We will also discuss the challenges of learning within this framework.
 Although GPs are objects constructed in an infinite dimensional setting, this section will first review VI in a finite dimensional setting.
 
 A Bayesian approach to modelling begins with assuming a data generating process for an observation $y$ as conditionally dependent on $M$ unobserved latent random variables $Z$ through a likelihood $p(Y=y\vert Z)$ and a prior on the latent variables $p(Z)$.
-These are used for the Bayesian posterior \vw{here you need to use the pdfs i.e. $p(Z|Y=y)$ and $p(z)$. The formula looks different if you write it for measures.}\jw{done, thanks.}
+These are used for the Bayesian posterior 
 \begin{align}
     p(Z \vert Y=y) \propto p(Y=y\vert Z)p(Z),
     \label{bayesian-posterior}
@@ -556,8 +556,9 @@ which is always well-defined and does not have the support mis-match problem of 
 The subscripts denotes the respective GM of the object, $\tr(\cdot)$ is the trace of an operator, and $(C)^{1/2}$ denotes the square root of the positive self-adjoint operator $C$.
 Most mean functions satisfy (\ref{l2-mean}) and most kernels satisfy (\ref{l2-kernel}), ensuring the existence of the corresponding Gaussian measures P and Q on $\mathcal{L}^2$.
 This provides significantly more freedom for the variational set $\boldsymbol{Q}$ than the svGP approach from \cite{titsias2009variational}.
+
 With GWI, \cite{wild2022generalized} proposes GWI-net, a variational GP parameterised with a neural network mean to replace the svGP mean in (\ref{svgp-mean}).
-The experimental results of this approach showed promising potential in both regression and classification tasks.
+The experimental results of this approach in \cite{wild2022generalized} showed promising potential in both regression and classification tasks.
 
 \newpage
 
@@ -597,19 +598,31 @@ We propose choosing NNGP kernels for the prior GP that will be the corresponding
 We also explore settings when $k$ is a NNGP kernel being the infinite width limit of an architecture unrelated to $m_Q$.
 The learnable hyper-parameters of NNGP kernels are the variances of the weights and biases for each infinite-width limit layer of the neural network architecture.
 \begin{figure}[h!]
-
 \centering
+\begin{minipage}{.25\textwidth}
+  \centering
   \includegraphics[width=\linewidth]{thesis-report/figures/mnist_inducing_point/random_mnist_inducing_point_selection.png}
+\end{minipage}%
+\begin{minipage}{.25\textwidth}
+  \centering
   \includegraphics[width=\linewidth]{thesis-report/figures/mnist_inducing_point/greedy_mnist_ard_inducing_point_selection.png}
+\end{minipage}%
+\begin{minipage}{.25\textwidth}
+  \centering
+  \includegraphics[width=\linewidth]{thesis-report/figures/mnist_inducing_point/greedy_mnist_fcn_nngp_inducing_point_selection.png}
+\end{minipage}%
+\begin{minipage}{.25\textwidth}
+  \centering
   \includegraphics[width=\linewidth]{thesis-report/figures/mnist_inducing_point/greedy_mnist_cnn_nngp_inducing_point_selection.png}
-\caption{Inducing Point Selection of MNIST with Different Kernels}\label{mnist-inducing-points}
+\end{minipage}%
+\caption{Inducing Point Selection with Different Prior Kernels}\label{mnist-inducing-points}
 \end{figure}
 
 We show some preliminary results in Figure \ref{mnist-inducing-points}, where we compare inducing point selection with different kernels on the MNIST data. 
-Using Algorithm \ref{alg:inducing-point-selection}, we selected 10 images from 1000 of the digit seven.
+Using Algorithm \ref{alg:inducing-point-selection}, we selected 10 images from 5000 for each digit.
 We include random inducing point selection as a control for visual comparison.
-We can see that with the NNGP kernel, Algorithm \ref{alg:inducing-point-selection} is significantly better at selecting different instances of the same digit, providing better coverage of data variation.
-On the other hand, images selected with the ARD kernel is comprable to random selection. 
+We can see that with the NNGP kernels, Algorithm \ref{alg:inducing-point-selection} is significantly better at selecting different instances of the same digit, providing better coverage of data variation.
+On the other hand, images selected with the ARD kernel are comprable to random selection. 
 It should be noted that this is a preliminary result, solely for the purposes of showing the potential of NNGP kernels. 
 These experiments were performed without any training on the kernel hyper-parameters.
 
@@ -617,7 +630,10 @@ We also explore neural network kernels of the form
 \begin{align}
     k(x, x') = k_0(h(x), h(x')),
 \end{align}
-where $k_0$ is a base kernel that can be any kernel function and $h(\cdot)$ is any feature mapping. We use GWI to learn the hyper-parameters of $k_0$ and the parameters of the  feature mapping $h$. In our experiments, we choose non-stationary kernels for $k_0$ to ensure non-zero gradients for the gram matrix diagonals $k(h(x), h(x))$. Depending on the data domain, we propose using a suitable neural network architecture for $h(\cdot)$, such as a convolutional neural network feature extractor for image data.
+where $k_0$ is a base kernel that can be any kernel function and $h(\cdot)$ is any feature mapping. 
+We use GWI to learn the hyper-parameters of $k_0$ and the  feature mapping $h$. 
+In our experiments, we choose non-stationary kernels for $k_0$ to ensure non-zero gradients for the gram matrix diagonals $k(h(x), h(x))$. 
+Depending on the data domain, we propose using a suitable neural network architecture for $h$, such as a convolutional neural network feature extractor for image data.
 
 
 
@@ -692,12 +708,6 @@ This presents a chicken and egg problem.
 We propose a numerical approach in Algorithm \ref{alg:inducing-points-prior-gp}, iteratively learning the kernel hyper-parameters and selecting the inducing points with Algorithm \ref{alg:inducing-point-selection} until convergence.
 We do not provide any convergence guarantees for this method, but we have observed reasonable results in our experiments with this procedure.
 
-An observation of Algorithm \ref{alg:inducing-points-prior-gp} is the incorporation of response data $\mathbf{Y}$ into the inducing point selection process, which did not exist in Algorithm \ref{alg:inducing-point-selection}. 
-Learning the kernel with the response data can give more appropriate covariances when comparing candidate points $\mathbf{X}$ during the inducing points selection of Algorithm \ref{alg:inducing-point-selection}. F
-igure \ref{inducing-points-and-kernel} visualises the inducing points selected for the first four iterations of Algorithm \ref{alg:inducing-points-prior-gp} overlayed with the Bayesian posterior of a GP parameterised with the learned kernel, conditioned on those inducing points. 
-This motivates the intuition that the kernel learning and inducing point selection generally minimise large uncertainty bounds around areas where training points exist.
-This ensures that the selected inducing points will optimally cover the training data under the learning capabilities of the chosen kernel function.
-
 
 \begin{figure}[h!]
 \centering
@@ -715,9 +725,18 @@ This ensures that the selected inducing points will optimally cover the training
 \caption{Inducing Point Selection for Four Iterations of Algorithm \ref{alg:inducing-points-prior-gp}}
 \end{figure}
 
+An observation of Algorithm \ref{alg:inducing-points-prior-gp} is the incorporation of response data $\mathbf{Y}$ into the inducing point selection process, which did not exist in Algorithm \ref{alg:inducing-point-selection}. 
+Learning the kernel with the response data can give more appropriate covariances when comparing candidate points $\mathbf{X}$ during the inducing points selection of Algorithm \ref{alg:inducing-point-selection}. 
+Figure \ref{inducing-points-and-kernel} visualises the inducing points selected for the first four iterations of Algorithm \ref{alg:inducing-points-prior-gp} overlayed with the Bayesian posterior of a zero mean GP parameterised with the learned kernel, conditioned on those inducing points. 
+This visualises the inducing point selection procedure, attempting to minimise large uncertainty bounds over the training points to ensure maximum variance coverage of the selected points.
+By learning the kernel in between iterations, we see that Algorithm \ref{alg:inducing-points-prior-gp} can also appropriately adjust the variances on training data, which was held fixed during Algorithm \ref{alg:inducing-point-selection}.
+
+
+
+
 
 The prior is an essential component of a Bayesian posterior belief update.
-However in the context of GWI, the prior GP can be interpreted as a regulariser for empirical risk minimisation.
+However in the context of GVI, the prior GP can be interpreted as a regulariser for empirical risk minimisation.
 To prevent confusion in this discussion, we will call this the regulariser GP. In our experiments, we explore traditional regularisers constructed with the standard GP prior, having $\mathcal{O}(1)$ computational complexity. We also propose the GP regulariser
 \begin{align}
     y \vert \mathbf{Z}, \mathbf{U}, \sigma^2
@@ -726,7 +745,7 @@ To prevent confusion in this discussion, we will call this the regulariser GP. I
 \end{align}
 a `lightweight' Bayesian posterior formulated with the inducing points $\mathbf{Z}\in \mathcal{X}^M$ and corresponding responses $\mathbf{U} \in \mathbb{R}^M$.
 This regulariser would violate the traditional interpretation of a prior as it would explicitly use training data twice during inference.
-We loosen this interpretation with the optimisation-centric nature of GWI, viewing this regulariser as potentially better informed than the prior GP.
+We loosen this interpretation with the optimisation-centric nature of GVI, viewing this regulariser as potentially better informed than the prior GP.
 Our experiments show that this less traditional regulariser can sometimes construct a better learning objective for GWI-GPs.
 Moreover, the computational tractability of GWI is maintained with inversions of $\mathbb{R}^{M\times M}$ matrices only, when evaluating (\ref{gp-posterior-regulariser}).
 \jw{maybe some images visualising a prior GP regulariser, posterior GP regulariser, and the corresponding GWI-GPs learned from them}
@@ -739,7 +758,7 @@ where $\alpha_T$ is learned through negative log-likelihood optimisation on $\GP
 \begin{align}
     y \sim \mathcal{N}(m_Q(x), \alpha_T \left( r(x, x)) + \sigma^2\right).
 \end{align}
-Tempering is also applied to classificaiton by constructing $\boldsymbol{\alpha} \coloneqq \left[\alpha_T^1 \dots \alpha_T^J\right]^T \in [0, \infty)^J$, a seperate tempering factor for each GP, and optimising the classification log-likelihood in (\ref{robust-max-function-expected-log-likelihood}).
+Tempering is also applied to classification by constructing $\boldsymbol{\alpha} \coloneqq \left[\alpha_T^1 \dots \alpha_T^J\right]^T \in [0, \infty)^J$, a seperate tempering factor for each GP, and optimising the classification log-likelihood in (\ref{robust-max-function-expected-log-likelihood}).
 
 \subsection{Wasserstein Distance Approximations}
 \cite{wild2022generalized} provides the batched approximation of the Wasserstein distance from (\ref{wasserstein-distance}) for $N$ data points as
@@ -924,9 +943,9 @@ Algorithms \ref{alg:inducing-point-selection}, \ref{alg:gwi-gp}, and \ref{alg:in
 \operation{predict ( $\theta$ , $\mathbf{X}$ ) : Distribution}
 \end{abstractclass}
 
-\begin{abstractclass}[text width=5cm]{ApproxGP}{-3, 1.25}
+\begin{abstractclass}[text width=5cm]{GPRegression}{-3, 1.25}
 \inherit{GP}
-\operation{predict ( $\gamma$ , $\mathbf{X}$ ) : Distribution}
+\attribute{dist. : Dist. = Gaussian}
 \end{abstractclass}
 
 \begin{abstractclass}[text width=5cm]{GPClassification}{3, 1.25}
@@ -934,9 +953,9 @@ Algorithms \ref{alg:inducing-point-selection}, \ref{alg:gwi-gp}, and \ref{alg:in
 \attribute{dist. : Dist = Multinomial}
 \end{abstractclass}
 
-\begin{abstractclass}[text width=5cm]{GPRegression}{9, 1.25}
+\begin{abstractclass}[text width=5cm]{ApproxGP}{9, 1.25}
 \inherit{GP}
-\attribute{dist. : Dist. = Gaussian}
+\operation{predict ( $\gamma$ , $\mathbf{X}$ ) : Distribution}
 \end{abstractclass}
 
 \begin{class}[text width=5cm]{ExactGPRegression}{-9, -3}
@@ -944,9 +963,9 @@ Algorithms \ref{alg:inducing-point-selection}, \ref{alg:gwi-gp}, and \ref{alg:in
 \inherit{GPRegression}
 \end{class}
 
-\begin{class}[text width=5cm]{ApproxGPClassification}{-3, -3}
+\begin{class}[text width=5cm]{ApproxGPRegression}{-3, -3}
 \inherit{ApproxGP}
-\inherit{GPClassification}
+\inherit{GPRegression}
 \end{class}
 
 \begin{class}[text width=5cm]{ExactGPClassification}{3, -3}
@@ -954,9 +973,9 @@ Algorithms \ref{alg:inducing-point-selection}, \ref{alg:gwi-gp}, and \ref{alg:in
 \inherit{GPClassification}
 \end{class}
 
-\begin{class}[text width=5cm]{ApproxGPRegression}{9, -3}
+\begin{class}[text width=5cm]{ApproxGPClassification}{9, -3}
 \inherit{ApproxGP}
-\inherit{GPRegression}
+\inherit{GPClassification}
 \end{class}
 
 
@@ -1087,7 +1106,7 @@ Algorithms \ref{alg:inducing-point-selection}, \ref{alg:gwi-gp}, and \ref{alg:in
 \end{figure}
 
 Our implementation is in Python and predominantly uses JAX, a high-performance numerical computing package developed by \cite{jax2018github}.
-Because there is currently no stable, well-maintained, and well-documented implementation of GPs with JAX, all implementations were essentially developed from scratch for the purposes of this project.
+Because there is currently no existing stable, well-maintained, and well-documented implementation of GPs with JAX, all implementations were essentially developed from scratch for the purposes of this project.
 We chose JAX for its currently growing user-base, unique customisations, and to ensure compatibility with the implementation of NNGP kernels by \cite{novak2019neural}, which is also developed in JAX.
 We chose Python for its current popularity within the machine learning community.
 To ensure numerical stability, we incorporated a number of commonly used implementation techniques such as adding jitter and using the Cholesky decomposition for matrix inversions, when necessary.
