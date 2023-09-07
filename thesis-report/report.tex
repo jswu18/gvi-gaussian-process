@@ -129,10 +129,10 @@ $\Box$ \end{quotation}}
 	% \vfill
 
 	\vspace{1cm}
-	{\Large James (\textit{Jian Shu}) Wu\par}
+	{\LARGE James (\textit{Jian Shu}) Wu\par}
 	\vspace{0.5cm}
 	supervised by\par
-    Veit D. \textsc{Wild} \& Jeremias \textsc{Knoblauch}\\
+    \Large{Veit D. Wild \& Jeremias Knoblauch}\\
 	\vfill
 	{\large September 2023\par}
  \textsc{MSc Computational Statistics and Machine Learning}\\
@@ -158,13 +158,25 @@ $\Box$ \end{quotation}}
 % \newpage
 
 \begin{abstract}
-Summarise your report concisely.
+Proposed by \cite{knoblauch2022optimization}, generalised variational inference (GVI) is a flexible learning framework motivated by an optimisation-centric interpretation of the Bayesian posterior. 
+Extending this framework to infinite dimensions, \cite{wild2022generalized} proposed Gaussian Wasserstein Inference (GWI) in Function Spaces, a GVI framework for Gaussian processes (GPs). 
+GWI circumvents many limitations of traditional variational inference for GPs and provides a more flexible and scaleable learning framework.
+Our work improves components of GWI and also proposes a new framework that we call projected GVI (pGVI) for GPs. 
+Compared to the computational costs of currently existing approaches, pGVI is a significantly cheaper learning framework.
+Our proposed methods are experimentally-driven and predominantly motivated to improve the computational and predictive performance of variational GPs. 
+Finally, we present our learning frameworks through a comprehensive software implementation available at \href{https://github.com/jswu18/generalised-variational-inference-for-gaussian-processes}{https://github.com/jswu18/generalised-variational-inference-for-gaussian-processes}.
 \end{abstract}
 
 \newpage
 \section*{Acknowledgements}
-Thanks mom!
+\textit{This work would not have been possible without Jeremias Knoblauch and Veit D. Wild. 
+Thank you for your patience and guidance as I navigated this world of theory while wearing the hardhat of an engineer. 
+I look forward to continuing our collaboration into the future.
+I’d also like to thank my friends and family who have supported me throughout my life and in particular, this past year. 
+This degree has been a very challenging but rewarding experience and I couldn’t have done it without all of you.
+}
 
+\hspace*{\fill} \textit{- James}
 
 \newpage
 \tableofcontents
@@ -172,48 +184,81 @@ Thanks mom!
 \pagenumbering{arabic}
 \setcounter{page}{1}
 \counterwithin{figure}{section}
-\setcounter{section}{-1}
-\section{Notation}
-We begin with some general remarks on the notation used in the following sections. 
-We will denote $\mathcal{X}$ as any input space, $\mathbb{R}$ as the real space, $\mathbb{R}^N$ as an $N$-dimensional real space, and $\{\cdots\}$ as a space constructed by a custom set of elements. The bolded letters $\boldsymbol{\boldsymbol{\mathcal{F}}}$, $\boldsymbol{\mathcal{G}}$, $\boldsymbol{\mathcal{Q}}$, and $\boldsymbol{\Gamma}$ will also denote spaces and will be defined when used.
+% \setcounter{section}{-1}
 
-A Gaussian distribution will be denoted $\mathcal{N}(\cdot, \cdot)$ where 
+\newpage
+\section{Introduction}
+Uncertainty quantification is an important research direction within the machine learning community.
+As a modelling approach it can encourage desirable prediction behaviours, such as out-of-distribution (OOD) detection. 
+In practice, quantifying uncertainty can enable better informed decision-making, particularly important in high-risk settings.
+
+% These include Monte-Carlo dropout, an approach based on weight sampling for neural networks, ensemble techniques, quantifying the spread of `disagreement' across a number of different models, and Bayesian approaches, where previous observations are used to quantify our beliefs for new data through the Bayesian posterior.
+% This has motivated variational approaches such as \cite{titsias2009variational}.
+% However, these approaches have their own limitations with respect to scaleability and restrictive approximation spaces.
+
+There are a number of modelling approaches for uncertainty quantification. 
+Bayesian approaches are a common choice and generally provide more theoretically intuitive interpretations of uncertainty compared to other methods. 
+Our work focuses on a well-known Bayesian approach called Gaussian processes (GPs), which we review in Section \ref{section:gaussian-processes}.
+GPs quantify uncertainty in the function space domain, but like most Bayesian approaches they suffer from mis-specifications and computational intractability. 
+The problem of GP intractability motivated variational approaches such as \cite{titsias2009variational}, which we review in Section \ref{section:vi-gp}.
+But these approaches have their own limitations, operating within restrictive approximation spaces.
+Section \ref{section:gvi-for-gps} reviews generalised variational inference (GVI), proposed by \cite{knoblauch2022optimization} and Gaussian Wasserstein inference (GWI) in function spaces, proposed by \cite{wild2022generalized}. 
+These address the issues of mis-specification, intractability, and restrictiveness that limited previous GP approaches. 
+
+Our contributions begin in Section \ref{section:improving-gwi} where we present various improvements to the GWI learning framework.
+This is followed by Section \ref{section:pgvi}, which introduces a new computationally cheaper framework we call projected GVI 
+(pGVI) for GPs.
+We also present an experimentation framework, summarised in Section \ref{section:experimentation-framework}. 
+This includes the development of an extensive software implementation designed for flexibility and scaleability, introducing appropriate abstraction architectures, and following best practices common in the engineering community. 
+This section will also present our experimentation setup, followed by examples to show this in action. We finish with Section \ref{section:future-work} proposing future research directions and concluding thoughts in Section \ref{section:conclusions}.
+
+\newpage
+\section{Notation}
+Before we begin, we will make some general remarks on the notation used throughout the text. 
+We will denote $\mathcal{X}$ as any input space, $\mathbb{R}$ as the real space, and $\mathbb{R}^N$ as an $N$-dimensional real space. 
+$\boldsymbol{\boldsymbol{\mathcal{F}}}$, $\boldsymbol{\mathcal{G}}$, $\boldsymbol{\mathcal{Q}}$, and $\boldsymbol{\Gamma}$ will also denote spaces, but will be defined throughout the text as needed.
+
+A Gaussian distribution will be denoted $\mathcal{N}(\cdot, \cdot)$, where 
 \begin{align}
-    Y \sim \mathcal{N}(\mathbf{m}, \mathbf{K}),
+    Y \sim \mathcal{N}(\mathbf{m}, \mathbf{K})
 \end{align}
-such that $Y \in \mathbb{R}^N$ denotes that $Y$ is an $N$ dimensional random vector taking values in $\mathbb{R}^N$ following a Gaussian distribution with $\mathbf{m} \in \mathbb{R}^N$ as the mean vector and $\mathbf{K} \in \mathbb{R}^{N \times N}_{\succcurlyeq 0}$ as the covariance matrix. 
+and $Y \in \mathbb{R}^N$ denotes that $Y$ is a random vector taking values in $\mathbb{R}^N$ following a Gaussian distribution with $\mathbf{m} \in \mathbb{R}^N$ as the mean and $\mathbf{K} \in \mathbb{R}^{N \times N}_{\succcurlyeq 0}$ as the covariance. 
 The notation $\mathbf{K} \in \mathbb{R}^{N \times N}_{\succcurlyeq 0}$ indicates that $\mathbf{K}$ is a real-valued matrix of shape $N \times N$ that is positive semi-definite, which is denoted by the subscript ${\succcurlyeq 0}$. 
 
 
-For any random element $F$ taking values in some space $\boldsymbol{\boldsymbol{\mathcal{F}}}$, we review the three notational conventions:
-\begin{enumerate}
+For any random element $F$, we review the following notational conventions:
+\begin{itemize}
+    \setlength\itemsep{0em}
     \item sample notation: 
         \begin{align}
-            F \sim \mathcal{N}(\cdot, \cdot),
+            F \sim \mathcal{N}(\cdot, \cdot)
         \end{align}
-        and becomes $F \vert Y$ when conditioned on $Y$,
+        as seen previously, which becomes $F \vert \mathbf{Y}$ when the random element is conditioned on the known element $\mathbf{Y}$,
     \item measure notation: 
         \begin{align}
             \mathbb{P}^F = \mathcal{N}(\cdot, \cdot),
         \end{align}
-        where $\mathbb{P}^F$ is the probability measure of $F$ or alternatively $\mathbb{P}(F) = \mathcal{N}(\cdot, \cdot)$, and when conditioned becomes $\mathbb{P}(F \vert Y)$, and
+        where $\mathbb{P}^F$ is the probability measure of $F$ or alternatively $\mathbb{P}(F) = \mathcal{N}(\cdot, \cdot)$, which becomes $\mathbb{P}(F \vert \mathbf{Y})$ when conditioned, and
     \item probability density notation: 
         \begin{align}
            p(f) = \mathcal{N}(\cdot, \cdot),
         \end{align}
-        when there exists a density $p$ with respect to some other measure, most commonly the Lebesgue measure. When conditioned on $Y$, we denote $p(f\vert Y)$.
-\end{enumerate}
-Sample, measure, and probability density notation will be used interchangeably whenever appropriate. We will also define new notation such as $P \coloneqq \mathbb{P}(F)$ and $Q \coloneqq \mathbb{Q}(F)$ whenever convenient. $\mathbb{E}_{P}[\wc]$ denotes expectation with respect to $P$ and $\mathbb{D}[Q, P]$ denotes a divergence between the measures $Q$ and $P$. Other divergences will follow similar notation and will be defined whenever needed.
+        when there exists a density $p$ with respect to some other measure, most commonly the Lebesgue measure. 
+        When conditioned, we denote $p(f\vert \mathbf{Y})$.
+\end{itemize}
+Sample, measure, and probability density notation will be used interchangeably throughout this text, whenever appropriate. 
+We will also define new notation such as $P \coloneqq \mathbb{P}(F)$ and $Q \coloneqq \mathbb{Q}(F)$, whenever convenient.
 
-\newpage
-\section{Introduction}
+Other conventions that we follow includes $\mathbb{E}_{P}[\wc]$, which denotes expectation with respect to $P$ and $\mathbb{D}[Q, P]$, which denotes a divergence between the measures $Q$ and $P$. 
+Other divergences will follow similar notation and will be defined whenever used.
+
 
 \newpage
 \section{Gaussian Processes}\label{section:gaussian-processes}
-Gaussian processes (GPs) are powerful universal function approximators that can be used for both regression and classification tasks. We will introduce the GP following \cite{rasmussen2003gaussian}, \cite{matthews2017scalable}, and \cite{wild2022generalized}.
+Gaussian processes (GPs) are powerful universal function approximators that can be used for both regression and classification tasks. The following sections will review the GP and its application to regression and classification following \cite{rasmussen2003gaussian}, \cite{matthews2017scalable}, and \cite{wild2022generalized}.
 
 \subsection{The Gaussian Process}\label{section:the-gp}
-A Gaussian process (GP) is a stochastic process such that for any $N$ points $\mathbf{X} \coloneqq \left\{ x_n\right\}_{n=1}^N$ where $x_n \in \mathcal{X}$, the corresponding random response vector $Y \in \mathbb{R}^N$ has the Gaussian distribution
+A GP is a stochastic process such that for any $N$ points $\mathbf{X} \coloneqq \left\{ x_n\right\}_{n=1}^N$ where $x_n \in \mathcal{X}$, the corresponding random response vector $Y \in \mathbb{R}^N$ has the Gaussian distribution
 \begin{align}
     \label{gp-vector}
     Y \sim \mathcal{N}\left(\mathbf{m}, \mathbf{K}\right),
@@ -231,7 +276,7 @@ while constructing $\mathbf{K}$ involves choosing a kernel function mapping $k: 
 \end{align}
 for $n, n'=1,\dots, N$.
 $\mathbf{K}$ is also known as the gram matrix.
-Appendix \ref{appendix:positive-definite-kernel} shows that choosing kernel functions defined as inner products of a feature space mapping will ensure that $\mathbf{K}$ is positive semi-definite for a valid covariance matrix.
+Appendix \ref{appendix:positive-definite-kernel} shows that choosing kernel functions defined as inner products of a feature space mapping will ensure that $\mathbf{K}$ is a valid positive semi-definite covariance matrix.
 
 
 The distribution in (\ref{gp-vector}) is a finite-dimensional instance of the GP random function mapping
@@ -245,7 +290,7 @@ In other words, choosing a mean and kernel to construct (\ref{gp}) ensures that 
 GPs are a powerful modelling approach. With minimal restrictions for choosing the mean function and kernel function, there are endless possibilities for constructing expressive GP model spaces.
 This control and visibility into the model's behaviour is a strong advantage of GPs compared to other approaches.
 
-\cite{novak2019neural} explains that the GP is an important construction for understanding the theoretical properties of many neural network architectures at initialisation.
+Morevoer, \cite{novak2019neural} explains that the GP is an important construction for understanding the theoretical properties of many neural network architectures at initialisation.
 Showing that the infinite width limit of many such architectures can be expressed as a GP has provided a theoretical framework for analysing neural networks typically viewed as black box approaches.
 This provides further motivation for the potential and importance of GPs.
 
@@ -271,7 +316,7 @@ Having also chosen the aleoteric data uncertainty to be modelled as Gaussian in 
 with
 \begin{align}
     \label{gp-posterior-mean}
-    \bar{m}(x) = m(x) + \mathbf{K}_{x, \mathbf{X}} \left(\mathbf{K}_{\mathbf{X}, \mathbf{X}} + \sigma^2 \mathbf{I}\right)^{-1} \left( \mathbf{Y} - \mathbf{m}_{\mathbf{X}}\right),
+    \bar{m}(x) = m(x) + \mathbf{K}_{x, \mathbf{X}} \left(\mathbf{K}_{\mathbf{X}, \mathbf{X}} + \sigma^2 \mathbf{I}\right)^{-1} \left( \mathbf{Y} - \mathbf{m}_{\mathbf{X}}\right)
 \end{align}
 and
 \begin{align}
@@ -286,13 +331,13 @@ Consider the classification task where we have $N$ observation pairs $(\mathbf{X
     Y \sim \mathcal{C}\Big(s\left(F_1(x), \dots, F_J(x)\right)\Big),
     \label{gp-classifier}
 \end{align}
-where we construct GPs $F_j \sim \GP\left(m_j, k_j\right)$ for each label $j=1, \dots J$, such that $F_1, \dots, F_J$ are stochastically independent GPs and $s: \mathbb{R}^J \rightarrow \Delta(J)$ is a mapping to a $J$ dimensional probability simplex parameterising a categorical distribution $\mathcal{C}$ (a generalisation of the Bernoulli distribution to $J$ labels). In other words, the probability of the $j^{th}$ label is
+where we construct GPs $F_j \sim \GP\left(m_j, k_j\right)$ for each label $j=1, \dots J$, such that $F_1, \dots, F_J$ are stochastically independent GPs and $s: \mathbb{R}^J \rightarrow \Delta(J)$ is a mapping to a $J$ dimensional probability simplex parameterising a categorical distribution $\mathcal{C}$. In other words, the probability of the $j^{th}$ label is
 \begin{align}
     \mathbb{P}(Y=j) = s_j(F_1(x), \dots, F_J(x)),
 \end{align}
 the $j^{th}$ element of the probability simplex $s(\cdot)$.
 
-\cite{matthews2017scalable} provides a few different choices for $s$ in (\ref{gp-classifier}). We follow \cite{wild2022generalized}, using the robust max function to define the $j^{th}$ element of the probability simplex with
+\paragraph{The Robust Max Function}\cite{matthews2017scalable} provides a few different choices for $s$ in (\ref{gp-classifier}). We follow \cite{wild2022generalized}, using the robust max function to define the $j^{th}$ element of the probability simplex with
 \begin{align}
 s_{j}\left(f_1, \dots, f_J\right) = \begin{cases}
       1-\delta, &  \text{if } j = \argmax_{j=1\dots J}\left(f_j\right), \\
@@ -300,7 +345,10 @@ s_{j}\left(f_1, \dots, f_J\right) = \begin{cases}
    \end{cases}
    \label{robust-max-function}
 \end{align}
-where $\delta \in [0, 1]$. Typically, $\delta$ is chosen as a very small value (i.e. $1e^{-2}$). Constructing the $\Delta(J)$ vector with (\ref{robust-max-function}), we have the probability value of $1-\delta$ for the label of maximum value and $\frac{\delta}{J-1}$ otherwise. This formulation provides robustness to outliers, as it only considers the ranking of the GP models for each label.
+where $\delta \in [0, 1]$. 
+Typically, $\delta$ is chosen as a very small value (i.e. $1e^{-2}$). 
+Constructing the $\Delta(J)$ vector with (\ref{robust-max-function}), we have the probability value of $1-\delta$ for the label of maximum value and $\frac{\delta}{J-1}$ otherwise. 
+\cite{wild2022generalized} explains that this formulation provides robustness to outliers, as it only considers the ranking of the GP models for each label.
 
 A benefit of the robust max function is that the expected log-likelihood under the categorical distribution in (\ref{gp-classifier}) becomes analytically tractable. \cite{wild2022generalized} shows that with $N$ input and response pairs, the expected log-likelihood is
 \begin{align}
@@ -311,21 +359,21 @@ with
 \begin{align}
     S(x, j) \coloneqq \frac{1}{\sqrt{\pi}}\sum_{i=1}^{I} w_i \left(\prod_{j'=1, j'\neq j}^J \phi\left(\frac{\xi_i\sqrt{(2 k_{j'}(x, x)}+m_j(x) - m_{j'}(x)}{\sqrt{k_{j'}(x, x)}}\right)\right)
 \end{align}
-and $\left\{w_i, \xi_i\right\}_{i=1}^I$ are respectively the weights and roots of the Hermite polynomial of order $I \in \mathbb{N}$. $\phi(\cdot)$ is the standard normal cumulative distribution function.
+and $\left\{w_i, \xi_i\right\}_{i=1}^I$ being the weights and roots of the Hermite polynomial of order $I \in \mathbb{N}$. $\phi(\cdot)$ is the standard normal cumulative distribution function.
 
 \newpage
 \section{Variational Inference for Gaussian Processes}\label{section:vi-gp}
-A major drawback of GPs has been their inability to scale with respect to $N$, the number of training points.
+Although they are analytically tractable, a major drawback of GPs has been their inability to scale computationally with respect to $N$, the number of training points.
 Both classification and regression predictive posteriors rely on evaluating the inversion of an $\mathbb{R}^{N \times N}$ matrix in (\ref{gp-posterior-mean}) and (\ref{gp-posterior-covariance}).
 This operation has computational complexity $\mathcal{O}(N^3)$ and space complexity $\mathcal{O}(N^2)$, both of which quickly become problematic when scaling to larger-sized training sets.
-Despite their impressive performance and theoretically-driven approach, the computational intractability of GPs has been a serious limitation, restricting their use to problem domains having smaller sized data sets.
-In this section, we will review Variational Inference (VI) for GPs to obtain computationally cheaper approximations of the true predictive posterior.
+This problem has been a serious limitation of GPs and has restricted their use to problem domains of smaller sized data sets.
+In this section, we will review variational inference (VI) for GPs to obtain computationally cheaper approximations of the true predictive posterior.
 We will also discuss the challenges of learning within this framework.
 
 \subsection{Variational Inference in Finite Dimensions}\label{section:vi-in-finite-dimensions}
 Although GPs are objects constructed in an infinite dimensional setting, this section will first review VI in a finite dimensional setting.
 
-A Bayesian approach to modelling begins with assuming a data generating process for an observation $y$ as conditionally dependent on $M$ unobserved latent random variables $Z$ through a likelihood $p(Y=y\vert Z)$ and a prior on the latent variables $p(Z)$.
+A Bayesian approach to modelling begins with assuming a data generating process for an observation $y \in \mathbb{R}$ as conditionally dependent on $M$ unobserved latent random variables $Z \in \mathcal{X}^M$ through a likelihood $p(Y=y\vert Z)$ and a prior on the latent variables $p(Z)$.
 These are used for the Bayesian posterior 
 \begin{align}
     p(Z \vert Y=y) \propto p(Y=y\vert Z)p(Z),
@@ -333,14 +381,14 @@ These are used for the Bayesian posterior
 \end{align}
 which is often computationally and/or analytically intractable.
 This has motivated the need for variational methods like VI to approximate (\ref{bayesian-posterior}).
-VI is based on the observation that the Kullback-Leibler (KL) divergence between an arbitrary probability measure $Q \coloneqq \mathbb{Q}(Z)$ and the true Bayesian posterior $\mathbb{P}(Z\vert Y)$ can be rewritten as
+VI is based on the observation that the Kullback-Leibler (KL) divergence between an arbitrary probability measure $Q \coloneqq \mathbb{Q}(Z)$ and the true Bayesian posterior in (\ref{bayesian-posterior}), which we denote $\mathbb{P}(Z\vert Y)$, can be rewritten as
 \begin{align}
     \KLD\left[Q, \mathbb{P}(Z \vert Y)\right] = L(Q) - \log p(y),
     \label{finite-dimensional-vi-kld}
 \end{align}
 where
 \begin{align}
-    L(Q) \coloneqq -\mathbb{E}_{Q}\left[\log p(y \vert Z)\right] + \KLD(Q, P),
+    L(Q) \coloneqq -\mathbb{E}_{Q}\left[\log p(y \vert Z)\right] + \KLD\left[Q, P\right],
     \label{finite-dimensional-vi-loss}
 \end{align}
 having $P \coloneqq \mathbb{P}(Z)$ the prior, $p(y) = \int p(y\vert z)p(z) dz$ the marginal log-likelihood, $\mathbb{E}_{Q}\left[\wc \right]$ denoting the expectation with respect to $Q$, and $\KLD\left[\wc, \wc\right]$ denoting the KL divergence.
@@ -368,8 +416,7 @@ These three assumptions are in tension with each other.
 For example, a larger approximation space $\boldsymbol{Q}$ can cause $L(Q)$ to be intractable or create a more difficult optimisation setup.
 However in practice, VI can be quite successful if employed by well-informed practitioners.
 
-\subsection{Sparse Variatonal Gaussian Processes}\label{section:svgp}
-\jw{is it sparse or stochastic variational GP? lol}
+\subsection[Sparse Variational Gaussian Processes]{Sparse\footnote{Also known as stochastic or scaleable variational Gaussian processes (svGPs)} Variational Gaussian Processes}\label{section:svgp}
 To overcome the computationally intractable GP we review \cite{titsias2009variational}, which proposed the variational approximation for the Bayesian predictive posterior in (\ref{gp-posterior-normal}) as
 \begin{align}
     \mathbb{Q}(F) \coloneqq \GP(m_Q, r),
@@ -476,12 +523,55 @@ The matrix inversion is $\mathcal{O}(M^3)$, but remains a constant when computin
 Thus the complexity of selecting each inducing point is $\mathcal{O}(NM^2)$, assuming $M << N$.
 Looping to select $M$ inducing points, Algorithm \ref{alg:inducing-point-selection} has $\mathcal{O}(NM^3)$ computational complexity.
 Choosing $M$ as $\mathcal{O}(N^{1/2})$, we have $\mathcal{O}(N^{5/2})$ computational complexity and $\mathcal{O}(N)$ space complexity.
-\\\jw{Add other results from \cite{burt2020convergence}. Maybe any guarantees from this method?}
-\\\jw{Maybe show a picture of the inducing points selected for a toy curve}
+
+The inducing point selection method in Algorithm \ref{alg:inducing-points-prior-gp} requires a pre-selected kernel.
+However in practice, kernel selection generally involves negative log likelihood optimisation on training data.
+In the case of learning the prior GP, this would involve learning the kernel hyper-parameters on the selected inducing points.
+This presents a chicken and egg problem.
+\cite{burt2020convergence} proposes an EM-like approach, iteratively learning the kernel hyper-parameters and selecting the inducing points with Algorithm \ref{alg:inducing-point-selection}. \cite{burt2020convergence} iterates this process until convergence of the evidence lower bound (ELBO), however our implementation takes a more naive approach iterating until the inducing points do not change. We summarise this in Algorithm \ref{alg:inducing-points-prior-gp}.
+
+\begin{algorithm}[h!]
+\caption{Prior Kernel Learning and Inducing Points Selection}\label{alg:inducing-points-prior-gp}
+\begin{algorithmic}
+\Require $\theta_0$ \Comment{initial hyper-parameters of $k$}
+ \State $i \leftarrow 0$
+  \State $\mathbf{Z}_0 \leftarrow$ \Call{GreedyVarianceSelection}{$\mathbf{X}$, $\theta_0$} \Comment{via Algorithm \ref{alg:inducing-point-selection} with $k$}
+  \State $\mathbf{U}_i \leftarrow \mathbf{Y}\left[\mathbf{X}.\text{index}\left(\mathbf{Z}_0\right)\right]$ \Comment{Corresponding inducing point responses}
+\While{$\mathbf{Z}_i \neq \mathbf{Z}_{i-1}$}
+\State $\theta_{i+1} \leftarrow$ \Call{OptimiseNLL}{$\theta_0$, $\mathbf{Z}_i$, $\mathbf{U}_i$} \Comment{via type-II maximimum likelihood on inducing points}
+\State $\mathbf{Z}_{i+1} \leftarrow$ \Call{GreedyVarianceSelection}{$\mathbf{X}$, $\theta_{i+1}$}
+\State $\mathbf{U}_{i+1} \leftarrow \mathbf{Y}\left[\mathbf{X}.\text{index}\left(\mathbf{Z}_i\right)\right]$
+\State $i \leftarrow i+1$
+\EndWhile
+\State \Return ($\theta_i$, $\mathbf{Z}_i$)
+\end{algorithmic}
+\end{algorithm}
+
+Algorithm \ref{alg:inducing-points-prior-gp} incorporates response data $\mathbf{Y}$ into the inducing point selection process, which did not exist in Algorithm \ref{alg:inducing-point-selection}. 
+Learning the kernel with the response data can give more appropriate covariances when comparing candidate points $\mathbf{X}$ during the inducing points selection of Algorithm \ref{alg:inducing-point-selection}. 
+Figure \ref{inducing-points-and-kernel} visualises the inducing points selected for the first four iterations of Algorithm \ref{alg:inducing-points-prior-gp} overlayed with the Bayesian posterior of a zero mean GP parameterised with the learned kernel, conditioned on those selected inducing points. 
+This visualises the inducing point selection procedure, attempting to minimise large uncertainty bounds over the training points to ensure maximum variance coverage of the selected points.
+By learning the kernel in between iterations, we see that Algorithm \ref{alg:inducing-points-prior-gp} can also appropriately adjust the variances on training data, which was held fixed during Algorithm \ref{alg:inducing-point-selection}.
+
+\begin{figure}[h!]
+\centering
+\begin{minipage}{.5\textwidth}
+  \centering
+  \includegraphics[width=\linewidth]{thesis-report/figures/inducing_points_kernel/iteration-0/prediction.png}
+  \includegraphics[width=\linewidth]{thesis-report/figures/inducing_points_kernel/iteration-2/prediction.png}
+\end{minipage}%
+\begin{minipage}{.5\textwidth}
+  \centering
+  \includegraphics[width=\linewidth]{thesis-report/figures/inducing_points_kernel/iteration-1/prediction.png}
+  \includegraphics[width=\linewidth]{thesis-report/figures/inducing_points_kernel/iteration-3/prediction.png}
+\end{minipage}%
+\caption{Inducing Point Selection for Four Iterations of Algorithm \ref{alg:inducing-points-prior-gp}}
+\label{inducing-points-and-kernel}
+\end{figure}
 
 \newpage
-\section{Generalised Variational Inference for Gaussian Processes}
-The variational objective in (\ref{svgp-vi-loss}) is the root cause of the restrictive svGP variational set, as learning in a VI framework necessitates an often ill-defined KL divergence between GPs.
+\section{Generalised Variational Inference for Gaussian Processes}\label{section:gvi-for-gps}
+The variational objective in (\ref{svgp-vi-loss}) is the root cause of the restrictive variational set for the svGP. This is because GP learning in the VI framework necessitates a KL divergence, which is often ill-defined.
 This section will review generalised variational inference (GVI) in finite dimensions from \cite{knoblauch2022optimization}, a learning framework that does not rely on the KL divergence.
 This will be followed by a review of \cite{wild2022generalized} which extends GVI to an infinite dimensional setting to construct a GP learning framework that also avoids the KL divergence, providing richer approximation spaces.
 
@@ -504,7 +594,7 @@ For example in BNNs, Gaussian priors are generally chosen for computational conv
 The likelihood evaluation of BNNs are also most definitely mis-specified, as it's unlikely that evaluating such an over-parameterised model would provide any meaningful insights into the data likelihood.
 Finally, the posterior of BNNs are often approximated either through samplers or variational approximations.
 To achieve sampling convergence, larger-scaled models may require much more computational resources and time than is practically available.
-On the other hand, achieving a reasonable variational approximation is not always guaranteed, as discussed in Section \ref{section:vi-in-finite-dimensions}.
+A reasonable variational approximation is also not always guaranteed, as discussed in Section \ref{section:vi-in-finite-dimensions}.
 
 \cite{knoblauch2022optimization} introduces a new interpretation of the Bayesian posterior, showing that it is also the solution of the optimisation problem
 \begin{align}
@@ -516,11 +606,11 @@ More generally, $\ell$ is called the loss function and $\mathbb{D}$ is the diver
 
 Framed through optimisation, the Bayesian posterior will always be a valid solution of (\ref{gvi-posterior}), regardless of the three  assumptions required to ensure a valid belief update.
 This is more in-tune with practitioners of larger-scaled models who focus on predictive performance rather than model specification.
-\cite{knoblauch2022optimization} also shows that by generalising the Bayesian posterior within the learning framework of (\ref{gvi-posterior}), any choice of prior $P$ for $Z$, valid divergence $\mathbb{D}$, loss $\ell$, and approximation set $\boldsymbol{Q}$ will result in a generalised posterior that maintains interpretations as a belief update.
-This flexible inference approach will motivate the replacement of the KL divergence that was problematic in standard VI reviewed in Section \ref{section:vi-gp}.
+\cite{knoblauch2022optimization} also shows that by generalising the Bayesian posterior within the learning framework of (\ref{gvi-posterior}), any choice of prior $P$, valid divergence $\mathbb{D}$, loss $\ell$, and approximation set $\boldsymbol{Q}$ will result in a generalised posterior that maintains interpretations as a belief update.
+This flexible inference approach will motivate the replacement of the KL divergence that was problematic in VI for GPs reviewed in Section \ref{section:vi-gp}.
 
 \subsection{Generalising Variational Inference on Function Spaces}
-This section will review \cite{wild2022generalized}, which extends GVI to infinite dimensional settings for quantifying uncertainties on function spaces and provides a framework for variational learning of GPs.
+This section reviews \cite{wild2022generalized}, which extends GVI to infinite dimensional settings for quantifying uncertainties on function spaces and proposes  a new framework for variational learning of GPs.
 
 \cite{wild2022generalized} shows that GVI in function spaces involves solving
 \begin{align}
@@ -542,18 +632,18 @@ and the kernel satisfies
     \label{l2-kernel}
 \end{align}
 also known as the trace-class kernel condition.
-These conditions guarantee sample functions from the GP to have square-integrable paths, such that there exists $\mathbb{P} \coloneqq \mathcal{N}(m, C)$, a GM on $\mathcal{L}^2$ with the same mean $m$ and a covariance operator
+These conditions guarantee that sample functions from the GP will have square-integrable paths such that there exists $\mathbb{P} \coloneqq \mathcal{N}(m, C)$, a GM on $\mathcal{L}^2$ with the same mean $m$ and a covariance operator
 \begin{align}
     C(f) \coloneqq \int_{\mathcal{X}} k(\cdot, x) f(x) d\rho(x),
 \end{align}
 for any function $f \in \mathcal{L}^2$.
-With the GVI objective in (\ref{gvi-posterior-in-fs}), \cite{wild2022generalized} proposes Gaussian Wasserstein Inference (GWI), replacing the KL divergence with the 2-Wasserstein distance between GMs on Hilbert spaces where
+With the GVI objective in (\ref{gvi-posterior-in-fs}), \cite{wild2022generalized} proposes Gaussian Wasserstein Inference (GWI), replacing the KL divergence with the 2-Wasserstein distance between GMs on Hilbert spaces given as
 \begin{align}
     \mathbb{W}\left[Q, P\right]^2 = \left\|m_P - m_Q\right\|_2^2 + \tr\left(C_P\right) + \tr\left(C_Q\right) - 2 \tr \left[\left(\left(C_P\right)^{1/2} C_Q \left(C_P\right)^{1/2} \right)^{1/2}\right],
     \label{wasserstein-distance}
 \end{align}
 which is always well-defined and does not have the support mis-match problem of the KL divergence.
-The subscripts denotes the respective GM of the object, $\tr(\cdot)$ is the trace of an operator, and $(C)^{1/2}$ denotes the square root of the positive self-adjoint operator $C$.
+The subscripts denote the respective GM of the object, $\tr(\cdot)$ is the trace of an operator, and $(C)^{1/2}$ denotes the square root of the positive self-adjoint operator $C$.
 Most mean functions satisfy (\ref{l2-mean}) and most kernels satisfy (\ref{l2-kernel}), ensuring the existence of the corresponding Gaussian measures P and Q on $\mathcal{L}^2$.
 This provides significantly more freedom for the variational set $\boldsymbol{Q}$ than the svGP approach from \cite{titsias2009variational}.
 
@@ -562,41 +652,43 @@ The experimental results of this approach in \cite{wild2022generalized} showed p
 
 \newpage
 
-\section{Improving Gaussian Wasserstein Inference}
-In this section we expand on GWI, the function space GVI framework proposed by \cite{wild2022generalized}.
-We propose using GWI with new prior kernels and new variational kernels, further exploring the flexibility of the learning framework from \cite{wild2022generalized}.
+\section{Improving Gaussian Wasserstein Inference}\label{section:improving-gwi}
+In this section we expand on GWI, the function space GVI framework from \cite{wild2022generalized}.
+We introduce new prior kernels and new variational kernels to GWI, further exploring the flexibility of the learning framework.
 We also introduce a new modular GWI learning procedure.
 GPs learned in this framework will be called GWI-GPs.
 Finally, we describe some numerical approximations that we developed for the Wasserstein distance to significantly improve inference speed with minor trade-offs.
 
-\subsection{Gaussian Wasserstein Inference Kernels}
+\subsection{Improved Kernel Selection}
 The GWI framework is parameterised in terms of the infinite-dimensional parameters:
 \begin{itemize}
+    \setlength\itemsep{0em}
     \item $m_P \in \mathcal{L}^2$, a prior mean function,
     \item $k: \mathcal{X} \times \mathcal{X} \rightarrow \mathbb{R}$, a prior (trace-class) kernel,
     \item $m_Q \in \mathcal{L}^2$, a variational mean function, and
     \item $r: \mathcal{X} \times \mathcal{X} \rightarrow \mathbb{R}$, a variational (trace-class) kernel,
 \end{itemize}
-to construct the objective in (\ref{gvi-posterior-in-fs}). \cite{wild2022generalized} constructed GWI-net with $m_P$ as the zero mean function, $k$ as the ARD kernel, $m_Q$ as a neural network, and $r$ as the svGP kernel
+to construct the objective in (\ref{gvi-posterior-in-fs}). \cite{wild2022generalized} proposes GWI-net, parameterising $m_P$ as the zero mean function, $k$ as the ARD kernel, $m_Q$ as a neural network, and $r$ as the svGP kernel
 \begin{align}
     r(x, x') = k(x, x') - \mathbf{K}_{x, \mathbf{Z}} \mathbf{K}_{\mathbf{Z}, \mathbf{Z}} \mathbf{K}_{\mathbf{Z}, x'} + \mathbf{K}_{x, \mathbf{Z}} \mathbf{\Sigma} \mathbf{K}_{\mathbf{Z}, x'},
     \label{gwi-svgp-kernel}
 \end{align}
-where $\mathbf{\Sigma} \in \mathbb{R}^{M \times M}_{\succcurlyeq 0}$ parameterises $r$.
+where $\mathbf{\Sigma} \in \mathbb{R}^{M \times M}_{\succcurlyeq 0}$ parameterises $r$. The following sections will introduce new parameterisations for the prior and variational kernel.
 
-\subsubsection{The Prior Kernel}
-The GWI-net construction from \cite{wild2022generalized} uses a ARD kernel for the prior
+\subsubsection{Prior Kernels}\label{prior-kernels}
+The GWI-net construction from \cite{wild2022generalized} uses an ARD kernel for the prior
 \begin{align}
     k(x, x') = \sigma^2_f \exp\left(-\frac{1}{2} \sum_{d=1}^D \frac{1}{\alpha_d^2}(x_d-x_d')^2\right),
 \end{align}
-where $\sigma_f > 0$ is the kernel scaling factor and $\boldsymbol{\alpha} \coloneqq [\alpha_1, \dots \alpha_D]$, having each $\alpha_d >0$ as the length-scale for dimension $d$.
+where $\sigma_f > 0$ is the kernel scaling factor and for each dimension $d=1, \dots, D$, $\alpha_d >0$ is the corresponding length-scale.
 In structured data settings like images, having a length-scale for each dimension can be less effective when it is important to learn correlations between features.
-We propose using GWI with kernels that are formulated to learn better in more structure data settings. These include the neural network Gaussian process kernels (NNGP kernels) from \cite{novak2019neural} and a form of neural network kernels.
+We propose using GWI with kernels that are formulated to learn better in more structure data settings. These include the neural network Gaussian process kernels (NNGP kernels) from \cite{novak2019neural} and a form of neural network kernels that we will introduce as custom feature mapping kernels.
 
-\cite{novak2019neural} shows that NNGP kernels are the infinite width limit of neural network architectures at initialisation.
+\paragraph{NNGP Kernels} \cite{novak2019neural} shows that NNGP kernels are the infinite width limit of neural network architectures at initialisation.
 We propose choosing NNGP kernels for the prior GP that will be the corresponding infinite width limit of the neural network mean function $m_Q$.
 We also explore settings when $k$ is a NNGP kernel being the infinite width limit of an architecture unrelated to $m_Q$.
 The learnable hyper-parameters of NNGP kernels are the variances of the weights and biases for each infinite-width limit layer of the neural network architecture.
+
 \begin{figure}[h!]
 \centering
 \begin{minipage}{.25\textwidth}
@@ -615,46 +707,52 @@ The learnable hyper-parameters of NNGP kernels are the variances of the weights 
   \centering
   \includegraphics[width=\linewidth]{thesis-report/figures/mnist_inducing_point/greedy_mnist_cnn_nngp_inducing_point_selection.png}
 \end{minipage}%
-\caption{Inducing Point Selection with Different Prior Kernels}\label{mnist-inducing-points}
+\caption{Inducing Point Selection with Different Prior Kernels}\label{fig:mnist-inducing-points}
 \end{figure}
 
-We show some preliminary results in Figure \ref{mnist-inducing-points}, where we compare inducing point selection with different kernels on the MNIST data. 
+We show some preliminary results in Figure \ref{fig:mnist-inducing-points}, where we compare inducing point selection with different kernels on MNIST data. 
 Using Algorithm \ref{alg:inducing-point-selection}, we selected 10 images from 5000 for each digit.
 We include random inducing point selection as a control for visual comparison.
-We can see that with the NNGP kernels, Algorithm \ref{alg:inducing-point-selection} is significantly better at selecting different instances of the same digit, providing better coverage of data variation.
+We can see that with the NNGP kernels, Algorithm \ref{alg:inducing-point-selection} is significantly better at selecting different instances of the same digit, providing better coverage of the data variation.
 On the other hand, images selected with the ARD kernel are comprable to random selection. 
 It should be noted that this is a preliminary result, solely for the purposes of showing the potential of NNGP kernels. 
 These experiments were performed without any training on the kernel hyper-parameters.
 
-We also explore neural network kernels of the form
+\paragraph{Custom Feature Mapping Kernels} We also explore neural network kernels of the form
 \begin{align}
     k(x, x') = k_0(h(x), h(x')),
+    \label{custom-feature-map-kernel}
 \end{align}
 where $k_0$ is a base kernel that can be any kernel function and $h(\cdot)$ is any feature mapping. 
 We use GWI to learn the hyper-parameters of $k_0$ and the  feature mapping $h$. 
-In our experiments, we choose non-stationary kernels for $k_0$ to ensure non-zero gradients for the gram matrix diagonals $k(h(x), h(x))$. 
+In our experiments, we choose non-stationary kernels for $k_0$ to ensure non-zero gradients for the gram matrix diagonals $k_0(h(x), h(x))$. 
 Depending on the data domain, we propose using a suitable neural network architecture for $h$, such as a convolutional neural network feature extractor for image data.
 
 
 
-\subsubsection{Parameterising the Sparse Variational Gaussian Process Kernel}
-\cite{wild2022generalized} proposes learning the positive semi-definite matrix $\mathbf{\Sigma}$ by learning the parameters of $\mathbf{L} \in \mathbb{R}^{M \times M}$, a lower triangle matrix with positive diagonals. This becomes a Cholesky decomposition, ensuring $\mathbf{\Sigma} = \mathbf{L}\mathbf{L}^T \in \mathbb{R}^{M \times M}_{\succcurlyeq 0}$. We call this the Cholesky parameterisation.
+\subsubsection{Variational Kernels}\label{variational-kernels}
+\cite{wild2022generalized} proposes learning the positive semi-definite matrix $\mathbf{\Sigma}$ in  (\ref{gwi-svgp-kernel}) by learning the parameters of $\mathbf{L} \in \mathbb{R}^{M \times M}$, a lower triangle matrix with positive diagonals. 
+This becomes a Cholesky decomposition, ensuring $\mathbf{\Sigma} = \mathbf{L}\mathbf{L}^T \in \mathbb{R}^{M \times M}_{\succcurlyeq 0}$. 
+We call this the Cholesky parameterisation. 
+This section introduces new parameterisations for the svGP kernel and new forms of variational kernels.
 
+
+\paragraph{svGP Parameterisations}
 We introduce a new parameterisation of $\mathbf{\Sigma}$ called the diagonal parameterisation. The diagonal parameterisation learns
 \begin{align}
     \diag(\mathbf{v}): \log(\mathbf{v}) \in \mathbb{R}^M,
 \end{align}
-where $\mathbf{\Sigma} = \diag(\mathbf{v}) \in \mathbb{R}^{M \times M}_{\succcurlyeq 0}$, a diagonal matrix of positive elements. Although this new parameterisations are more restrictive than the Cholesky decomposition parameterisation, it is computationally cheaper during gradient-based learning and has shown to have comprable performance during our experiments.
+where $\mathbf{\Sigma} = \diag(\mathbf{v}) \in \mathbb{R}^{M \times M}_{\succcurlyeq 0}$, a diagonal matrix of positive elements. 
+Although this new parameterisation is more restrictive than the Cholesky decomposition parameterisation, it is computationally cheaper during gradient-based learning and has shown to have comprable performance during our experiments.
 
 We also propose a base kernel parameterisation, replacing $\mathbf{K}_{x, \mathbf{Z}} \mathbf{\Sigma} \mathbf{K}_{\mathbf{Z}, x}$, the last term of (\ref{gwi-svgp-kernel}) with
 \begin{align}
     r(x, x') = k(x, x') - \mathbf{K}_{x, \mathbf{Z}} \mathbf{K}_{\mathbf{Z}, \mathbf{Z}} \mathbf{K}_{\mathbf{Z}, x'} + r_0(x, x'),
-    \label{gwi-svgp-kernel}
 \end{align}
 where $r_0$ is the base kernel, which can be any kernel function. We learn the hyper-parameters of $r_0$ with GWI.
 
-\subsubsection{Sparse Posterior Kernels}
-Inspired by the GP posterior covariance in (\ref{gp-posterior-covariance}) and the svGP kernel from \cite{titsias2009variational}, we present a new form of variational kernel we call the sparse posterior kernel with the formulation
+\paragraph{Sparse Posterior Kernels}
+Inspired by the GP posterior covariance in (\ref{gp-posterior-covariance}) and the svGP kernel from \cite{titsias2009variational}, we present a new form of variational kernel we call sparse posterior kernels with the formulation
 \begin{align}
     r(x, x') = r_0(x, x') - r_0\left(x, \mathbf{Z}\right) r_0\left(\mathbf{Z}, \mathbf{Z}\right)^{-1} r_0\left(\mathbf{Z}, x'\right),
 \end{align}
@@ -662,6 +760,7 @@ where $r_0$ is any base kernel learned during GWI such that $r_0\left(x, \mathbf
 In our experiments, we choose and initialise the parameters of $r_0$ to be the same as that of the prior kernel $k$.
 These kernels have $\mathcal{O}(M^3)$ computational complexity.
 
+\paragraph{Fixed Sparse Posterior Kernels}
 During prediction, the inversion $r_0\left(\mathbf{Z}, \mathbf{Z}\right)^{-1}$ is a constant. However during inference, gradients must pass through it to learn the parameters of the base kernel. Thus, we also present a fixed version of the sparse posterior kernel
 \begin{align}
     r(x, x') = r_0(x, x') - r_0\left(x, \mathbf{Z}\right) k\left(\mathbf{Z}, \mathbf{Z}\right)^{-1} r_0\left(\mathbf{Z}, x'\right),
@@ -669,8 +768,8 @@ During prediction, the inversion $r_0\left(\mathbf{Z}, \mathbf{Z}\right)^{-1}$ i
 where the matrix inversion is a constant and defined with respect to the prior kernel. This option provides faster training, no longer needing gradients to pass through a matrix inverse. Treating the inversion as a pre-computed constant, this kernel has $\mathcal{O}(M^2)$ computational complexity.
 
 \subsection{An Improved Learning Procedure}
-We build on the learning procedure from \cite{wild2022generalized} to propose Algorithm \ref{alg:gwi-gp}, a flexible framework for learning variational GPs.
-The rest of this section provides more details for certain steps of the learning procedure.
+We improve on the GWI learning procedure from \cite{wild2022generalized} to propose Algorithm \ref{alg:gwi-gp}.
+The rest of this section provides more details for certain steps of the procedure.
 \begin{algorithm}[h!]
 \caption{GWI-GP Learning}\label{alg:gwi-gp}
 \begin{algorithmic}
@@ -684,58 +783,8 @@ The rest of this section provides more details for certain steps of the learning
 \end{algorithmic}
 \end{algorithm}
 
-\begin{algorithm}[h!]
-\caption{Prior Kernel Learning and Inducing Points Selection}\label{alg:inducing-points-prior-gp}
-\begin{algorithmic}
-\Require $\theta_0$ \Comment{initial hyper-parameters of $k$}
- \State $i \leftarrow 0$
-  \State $\mathbf{Z}_0 \leftarrow$ \Call{GreedyVarianceSelection}{$\mathbf{X}$, $\theta_0$} \Comment{via Algorithm \ref{alg:inducing-point-selection} with $k$}
-  \State $\mathbf{U}_i \leftarrow \mathbf{Y}\left[\mathbf{X}.\text{index}\left(\mathbf{Z}_0\right)\right]$ \Comment{Corresponding inducing point responses}
-\While{$\mathbf{Z}_i \neq \mathbf{Z}_{i-1}$}
-\State $\theta_{i+1} \leftarrow$ \Call{OptimiseNLL}{$\theta_0$, $\mathbf{Z}_i$, $\mathbf{U}_i$} \Comment{via type-II maximimum likelihood on inducing points}
-\State $\mathbf{Z}_{i+1} \leftarrow$ \Call{GreedyVarianceSelection}{$\mathbf{X}$, $\theta_{i+1}$}
-\State $\mathbf{U}_{i+1} \leftarrow \mathbf{Y}\left[\mathbf{X}.\text{index}\left(\mathbf{Z}_i\right)\right]$
-\State $i \leftarrow i+1$
-\EndWhile
-\State \Return ($\theta_i$, $\mathbf{Z}_i$)
-\end{algorithmic}
-\end{algorithm}
 
-The inducing point selection method from \cite{burt2020convergence} reviewed in Section \ref{section:inducing-point-selection} requires a pre-selected kernel.
-However in practice, kernel selection generally involves negative log likelihood optimisation on training data.
-In the case of learning the prior GP, this would involve learning the kernel hyper-parameters on the selected inducing points.
-This presents a chicken and egg problem.
-We propose a numerical approach in Algorithm \ref{alg:inducing-points-prior-gp}, iteratively learning the kernel hyper-parameters and selecting the inducing points with Algorithm \ref{alg:inducing-point-selection} until convergence.
-We do not provide any convergence guarantees for this method, but we have observed reasonable results in our experiments with this procedure.
-
-
-\begin{figure}[h!]
-\centering
-\begin{minipage}{.5\textwidth}
-  \centering
-  \includegraphics[width=\linewidth]{thesis-report/figures/inducing_points_kernel/iteration-0/prediction.png}
-  \includegraphics[width=\linewidth]{thesis-report/figures/inducing_points_kernel/iteration-2/prediction.png}
-\end{minipage}%
-\begin{minipage}{.5\textwidth}
-  \centering
-  \includegraphics[width=\linewidth]{thesis-report/figures/inducing_points_kernel/iteration-1/prediction.png}
-  \includegraphics[width=\linewidth]{thesis-report/figures/inducing_points_kernel/iteration-3/prediction.png}
-\end{minipage}%
-\label{inducing-points-and-kernel}
-\caption{Inducing Point Selection for Four Iterations of Algorithm \ref{alg:inducing-points-prior-gp}}
-\end{figure}
-
-An observation of Algorithm \ref{alg:inducing-points-prior-gp} is the incorporation of response data $\mathbf{Y}$ into the inducing point selection process, which did not exist in Algorithm \ref{alg:inducing-point-selection}. 
-Learning the kernel with the response data can give more appropriate covariances when comparing candidate points $\mathbf{X}$ during the inducing points selection of Algorithm \ref{alg:inducing-point-selection}. 
-Figure \ref{inducing-points-and-kernel} visualises the inducing points selected for the first four iterations of Algorithm \ref{alg:inducing-points-prior-gp} overlayed with the Bayesian posterior of a zero mean GP parameterised with the learned kernel, conditioned on those inducing points. 
-This visualises the inducing point selection procedure, attempting to minimise large uncertainty bounds over the training points to ensure maximum variance coverage of the selected points.
-By learning the kernel in between iterations, we see that Algorithm \ref{alg:inducing-points-prior-gp} can also appropriately adjust the variances on training data, which was held fixed during Algorithm \ref{alg:inducing-point-selection}.
-
-
-
-
-
-The prior is an essential component of a Bayesian posterior belief update.
+\paragraph{The Regulariser} The prior is an essential component of a Bayesian posterior belief update.
 However in the context of GVI, the prior GP can be interpreted as a regulariser for empirical risk minimisation.
 To prevent confusion in this discussion, we will call this the regulariser GP. In our experiments, we explore traditional regularisers constructed with the standard GP prior, having $\mathcal{O}(1)$ computational complexity. We also propose the GP regulariser
 \begin{align}
@@ -745,20 +794,22 @@ To prevent confusion in this discussion, we will call this the regulariser GP. I
 \end{align}
 a `lightweight' Bayesian posterior formulated with the inducing points $\mathbf{Z}\in \mathcal{X}^M$ and corresponding responses $\mathbf{U} \in \mathbb{R}^M$.
 This regulariser would violate the traditional interpretation of a prior as it would explicitly use training data twice during inference.
-We loosen this interpretation with the optimisation-centric nature of GVI, viewing this regulariser as potentially better informed than the prior GP.
+We loosen this interpretation with the optimisation-centric nature of GVI, viewing this as as potentially better informed regulariser than a prior.
 Our experiments show that this less traditional regulariser can sometimes construct a better learning objective for GWI-GPs.
 Moreover, the computational tractability of GWI is maintained with inversions of $\mathbb{R}^{M\times M}$ matrices only, when evaluating (\ref{gp-posterior-regulariser}).
 \jw{maybe some images visualising a prior GP regulariser, posterior GP regulariser, and the corresponding GWI-GPs learned from them}
 
-The predictive posterior of GWI-GPs are tempered following \cite{wild2022generalized}. This involves learning a factor $\alpha_T < 0$ for the tempered kernel
+\paragraph{Tempering}\cite{wild2022generalized} and \cite{adlam2020cold} have explained that tempering the predictive posterior of GPs can improve predictive performance and has theoretical interpretations for correcting against a mis-specified prior. Following \cite{wild2022generalized}, we temper the  GVI-GPs by learning a factor $\alpha_T < 0$ for the tempered kernel formulated as
 \begin{align}
     r_T(\mathbf{X}, \mathbf{X}) = \alpha_T \left(r(\mathbf{X}, \mathbf{X})+\sigma^2 \mathbf{I}\right),
 \end{align}
-where $\alpha_T$ is learned through negative log-likelihood optimisation on $\GP(m_Q, r_T)$ for a hold-out validation set with the rest of the GP parameters held fixed. This will form the final tempered GWI-GP predictive posterior
+where $\alpha_T$ is learned through negative log-likelihood optimisation on $\GP(m_Q, r_T)$ for a hold-out validation set with the rest of the GP parameters held fixed. 
+This will form the final tempered GWI-GP predictive posterior. 
+\cite{wild2022generalized} and \cite{} have argued that tempering 
 \begin{align}
-    y \sim \mathcal{N}(m_Q(x), \alpha_T \left( r(x, x)) + \sigma^2\right).
+    y \sim \mathcal{N}(m_Q(x), \alpha_T \left( r(x, x) + \sigma^2\right).
 \end{align}
-Tempering is also applied to classification by constructing $\boldsymbol{\alpha} \coloneqq \left[\alpha_T^1 \dots \alpha_T^J\right]^T \in [0, \infty)^J$, a seperate tempering factor for each GP, and optimising the classification log-likelihood in (\ref{robust-max-function-expected-log-likelihood}).
+Tempering is also applied to classification by constructing $\left[\alpha_T^1 \dots \alpha_T^J\right]^T \in [0, \infty)^J$, a separate tempering factor for each GP, and optimising the classification log-likelihood in (\ref{robust-max-function-expected-log-likelihood}).
 
 \subsection{Wasserstein Distance Approximations}
 \cite{wild2022generalized} provides the batched approximation of the Wasserstein distance from (\ref{wasserstein-distance}) for $N$ data points as
@@ -768,21 +819,23 @@ Tempering is also applied to classification by constructing $\boldsymbol{\alpha}
     & \qquad - \frac{2}{\sqrt{N_B N_S}} \sum_{n_s=1}^{N_S} \sqrt{\lambda_{n_s}\left\big(r\left(\mathbf{X}_{N_S}, \mathbf{X}_{N_B}\right)k\left(\mathbf{X}_{N_B}, \mathbf{X}_{N_S}\right)\right\big)},
     \label{wasserstein-distance-approximation}
 \end{align}
-where $N_B < N$ and $N_S < N$ are two independent batches from the full data and $\lambda_{n}(\cdot)$ evaluates the $n^{th}$ eigenvalue.
+where $N_B < N$ and $N_S < N$ are two independent batches from the full data and $\lambda_{n}(\cdot)$ evaluates the $n^{th}$ eigenvalue. We introduce a few numerical approximations of the Wasserstein distance to improve computational performance.
 
+\paragraph{Symmetric Matrices}In our experiments, we use the same data sample for $\mathbf{X}_{N_B}$ and $\mathbf{X}_{N_S}$, to ensure symmetric square matrices for $r\left(\mathbf{X}_{N_S}, \mathbf{X}_{N_B}\right)$ and $k\left(\mathbf{X}_{N_B}, \mathbf{X}_{N_S}\right)$ in the eigen-decomposition term of (\ref{wasserstein-distance-approximation}). 
+This allows us to take advantage of eigenvalue properties of symmetric matrices, further explained in Appendix \ref{appendix:eigenvalue-symmetric-matrix}. 
+We use symmetric matrices to leverage the eigendecomposition implementation in version 0.4 of Python JAX which is only available on GPUs for symmetric matrices. 
+Our experiments showed that using the same batch for $\mathbf{X}_{N_S}$ and $\mathbf{X}_{N_B}$ don't seem to make any significant difference on the resulting GWI-GP.
 
-In our experiments, we use the same data sample for $\mathbf{X}_{N_B}$ and $\mathbf{X}_{N_S}$, to ensure symmetric square matrices for $r\left(\mathbf{X}_{N_S}, \mathbf{X}_{N_B}\right)$ and $k\left(\mathbf{X}_{N_B}, \mathbf{X}_{N_S}\right)$ in the eigen-decomposition term of (\ref{wasserstein-distance-approximation}). This allows us to take advantage of eigenvalue properties of symmetric matrices, further explained in Appendix \ref{appendix:eigenvalue-symmetric-matrix}. We use symmetric matrices to leverage the eigendecomposition implementation in version 0.4 of Python JAX which is only available on GPUs for symmetric matrices. Our experiments show that using the same batch for $\mathbf{X}_{N_S}$ and $\mathbf{X}_{N_B}$ don't seem to make any significant difference on the resulting GWI-GP.
-
-The eigendecomposition in the last term of (\ref{wasserstein-distance-approximation}) is computationally expensive with $\mathcal{O}(N^3)$ complexity, which in our case is the sample size $N_S$.
+\paragraph{Dropping the Eigendecomposition}The eigendecomposition in the last term of (\ref{wasserstein-distance-approximation}) is computationally expensive with $\mathcal{O}(N^3)$ complexity, which in our case is the sample size $N_S$.
 In our experiments we found that we can often drop this last term during GWI with minor effect on the learned GWI-GP.
-This trade-off of having a slightly imprecise Wasserstein distance significantly improves the speed of gradient computations during GWI.
+This trade-off of having a slightly imprecise Wasserstein distance is significantly counteracted with much faster training speeds.
 
 \newpage
-\section{Projected Generalised Variational Inference for Gaussian Processes}
+\section{Projected Generalised Variational Inference for Gaussian Processes}\label{section:pgvi}
 This section proposes a new learning framework called projected GVI (pGVI) for GPs to learn variational GPs we call pGVI-GPs.
 pGVI uses the same GWI procedure in Algorithm \ref{alg:gwi-gp}, except it replaces the Wasserstein regularisation with a new form of regularisation we call projected regularisation.
 Projected regularisations are significantly cheaper computationally, making pGVI an extremely attractive option in practice.
-We will present projected regularisations, followed by different formulations for the projected GVI objective.
+We will present the general projected regularisation formulation, followed by different constructions of the projected GVI objective.
 
 \subsection{Projected Regularisation}
 The GVI framework from \cite{knoblauch2022optimization} assumes
@@ -804,41 +857,43 @@ However our experiments suggest that this can act as a  sufficient regulariser t
 
 Projected regularisations are very cheap to compute.
 The base regularisers that we propose are between scalar random variables having $\mathcal{O}(1)$ computational complexity for each training input $x_n$.
-With $N$ points, we have $\mathcal{O}(N)$ complexity, significantly cheaper than the Wasserstein distance in (\ref{wasserstein-distance-approximation}), which is $\mathcal{O}(N^3)$. 
+With $N$ points, we have $\mathcal{O}(N)$ complexity, significantly cheaper than the Wasserstein distance in (\ref{wasserstein-distance-approximation}), which is $\mathcal{O}(N^3)$.  
 
 \subsection{Base Regularisers}
 We will now review the base regularisers $\mathbb{D}_0$ used in our experiments. 
-These provide different formulations for the pGVI objective.
-The Bhattacharyya distance is
+These provide different constructions of the pGVI objective.
+In the following we will denote $Q_{x} \coloneqq \mathbb{Q}\left(F(x)\right)$, $P_{x} \coloneqq \mathbb{P}\left(F(x)\right)$, $\mu_p \coloneqq m_P(x)$, $\mu_q \coloneqq m_Q(x)$, $\sigma_p^2 \coloneqq k(x, x)$, and $\sigma_q^2 \coloneqq r(x, x)$.
+\paragraph{The Bhattacharyya distance} Given as
 \begin{align}
-    \mathbb{B} \left[Q_{x}, P_{x}\right] &= \frac{1}{4} \frac{\left(\mu_p - \mu_q\right)^2}{\sigma_p^2 + \sigma_q^2} + \frac{1}{2} \log\left(\frac{\sigma_p^2 + \sigma_q^2}{2\sigma_p\sigma_q^}\right),
+    \mathbb{B} \left[Q_{x}, P_{x}\right] &= \frac{1}{4} \frac{\left(\mu_p - \mu_q\right)^2}{\sigma_p^2 + \sigma_q^2} + \frac{1}{2} \log\left(\frac{\sigma_p^2 + \sigma_q^2}{2\sigma_p\sigma_q^}\right).
 \end{align}
-where $Q_{x} \coloneqq \mathbb{Q}\left(F(x)\right)$, $P_{x} \coloneqq \mathbb{P}\left(F(x)\right)$, $\mu_p \coloneqq m_P(x)$, $\mu_q \coloneqq m_Q(x)$, $\sigma_p^2 \coloneqq k(x, x)$, and $\sigma_q^2 \coloneqq r(x, x)$.
-The squared 2-Wasserstein distance for Gaussians on $\mathbb{R}$ is
+\paragraph{The Wasserstein distance} Given as
 \begin{align}
-    \mathbb{W} \left[Q_{x}, P_{x}\right]^2 &= \left(\mu_p - \mu_q\right)^2 + \sigma_p^2 + \sigma_q^2 - 2 \sigma_p\sigma_q.
+    \mathbb{W} \left[Q_{x}, P_{x}\right]^2 &= \left(\mu_p - \mu_q\right)^2 + \sigma_p^2 + \sigma_q^2 - 2 \sigma_p\sigma_q
 \end{align}
-The Hellinger distance is
+for Gaussians on $\mathbb{R}$.
+\paragraph{The Hellinger divergence} Given as
 \begin{align}
     \mathbb{H} \left[Q_{x}, P_{x}\right] = 1 - \sqrt{\frac{2\sigma_p\sigma_q}{\sigma_p^2 + \sigma_q^2}} \exp\left(\frac{1}{4} \frac{ \left(\mu_p - \mu_q\right)^2}{\sigma_p^2 + \sigma_q^2}\right).
 \end{align}
-The KL divergence for measures on $\mathbb{R}$ is
+\paragraph{The KL divergence} Given as
 \begin{align}
-    \mathbb{KL} \left[Q_{x}, P_{x}\right] &= \log\frac{\sigma_q^2}{\sigma_p^2} + \frac{\sigma_p^2 + \left(\mu_p - \mu_q\right)^2}{2 \sigma_q^2} - \frac{1}{2}.
+    \mathbb{KL} \left[Q_{x}, P_{x}\right] &= \log\frac{\sigma_q^2}{\sigma_p^2} + \frac{\sigma_p^2 + \left(\mu_p - \mu_q\right)^2}{2 \sigma_q^2} - \frac{1}{2}
 \end{align}
-The $\alpha$-Renyi divergence is
+for Gaussian on $\mathbb{R}$.
+\paragraph{The $\alpha$-Renyi divergence} Given as
 \begin{align}
     \mathbb{R}_\alpha \left[Q_{x}, P_{x}\right] &= \log\frac{\sigma_p}{\sigma_q} + \frac{1}{2(\alpha-1)}\log\left(\frac{\sigma_p^2}{\alpha \sigma_p^2 + (1-\alpha) \sigma_q^2}\right)  + \frac{1}{2}\frac{\alpha \left(\mu_p - \mu_q\right)^2}{\alpha \sigma_p^2 + (1-\alpha) \sigma_q^2},
 \end{align}
 with $\alpha \sigma_p^2 + (1-\alpha) \sigma_q^2 > 0$.
-Finally, we also experimented with a naive divergence
+\paragraph{A naive divergence}Finally, we also experimented with a naive divergence
 \begin{align}
     \mathbb{N} \left[Q_{x}, P_{x}\right] = \left(\mu_p - \mu_q\right)^2 + \left(\sigma_q^2-\sigma_p^2\right)^2,
 \end{align}
 taking the squared difference of the means and covariances.
 
 \newpage
-\section{Experimentation Framework}
+\section{Experimentation Framework}\label{section:experimentation-framework}
 This section presents the experimentation framework that we developed for learning GWI-GPs and pGVI-GPs.
 We begin by describing our implementation architecture followed by our setup for scaling experimentation.
 Finally we will present results for some 1-D curve regression problems to show our framework in action.
@@ -847,8 +902,9 @@ Our most up-to-date\footnote{We include the most up-to-date version of the imple
 \subsection{Implementation Architecture}\label{implementation-architecture}
 GWI and pGVI are highly flexible learning frameworks. As such, abstraction was critical to ensuring a scaleable and maintainable implementation architecture.
 Luckily, the GVI framework proposed by \cite{knoblauch2022optimization} naturally translates to a clear implementation architecture that we have developed and visualised with the UML class diagram in Figure \ref{gvi-implementation}.
+For visual clarity, we only included relevant attributes and methods.
 We see that the GVI objective in (\ref{gvi-posterior-in-fs}) with $\ell$ and $\mathbb{D}$ has been abstracted to accommodate any valid empirical risk and regularisation, respectively.
-These abstractions are exactly mirrored in our implementation architecture as abstract base classes ensuring the same interface is inherited by all child class implementations.
+These abstractions are exactly mirrored in our implementation architecture as abstract base classes, ensuring the same interface is inherited by all child class implementations.
 \begin{figure}[h!]
 \begin{center}
 \resizebox{\textwidth}{!}{
@@ -1106,35 +1162,37 @@ Algorithms \ref{alg:inducing-point-selection}, \ref{alg:gwi-gp}, and \ref{alg:in
 \end{figure}
 
 Our implementation is in Python and predominantly uses JAX, a high-performance numerical computing package developed by \cite{jax2018github}.
-Because there is currently no existing stable, well-maintained, and well-documented implementation of GPs with JAX, all implementations were essentially developed from scratch for the purposes of this project.
+Because there is currently no existing stable, well-maintained, and well-documented implementation of GPs using JAX, all implementations were essentially developed from scratch for the purposes of this project.
 We chose JAX for its currently growing user-base, unique customisations, and to ensure compatibility with the implementation of NNGP kernels by \cite{novak2019neural}, which is also developed in JAX.
 We chose Python for its current popularity within the machine learning community.
-To ensure numerical stability, we incorporated a number of commonly used implementation techniques such as adding jitter and using the Cholesky decomposition for matrix inversions, when necessary.
+We incorporated a number of commonly used implementation techniques whenever necessary, such as adding jitter and using the Cholesky decomposition for matrix inversions.
 
 As we continue to grow the code base, we incorporated a number of standard software engineering tools to ensure a scaleable, maintainable, and controlled implementation environment.
 We introduce strict typing controls for all model parameter classes with Pydantic base models from \cite{samuel_colvin_2023_8277473}.
-Pydantic models enforce typing hints during run-time that would otherwise be considered `syntactic sugar' in Python. This also provides clear guidelines when constructing GPs within our framework.
-Our implementation also includes a rigorous testing environment that currently has 95\% test coverage over the implementations found in the \code{src/} directory, much higher than needed in most software development projects.
-This also includes mockers for isolated testing of different components (i.e. mockers for means and kernels to isolate testing of GP implementations). Finally, we use Poetry developed by \cite{Eustace} to strictly control package requirements, ensuring the version compatibility of dependencies.
+Pydantic models enforce typing hints during run-time that would otherwise be considered `syntactic sugar' in Python. This also provides clear guidelines when constructing GPs within our implementation framework.
+Our implementation also includes a rigorous number of tests that currently has 95\% test coverage over the implementations found in the \href{https://github.com/jswu18/generalised-variational-inference-for-gaussian-processes/tree/main/src}{\code{src/}} directory, much higher than needed in most software development projects.
+This also includes the use of mockers for isolated testing of different components (i.e. mockers for means and kernels to isolate testing of GP implementations). 
+Finally, we use Poetry developed by \cite{Eustace} to strictly control package requirements, ensuring the version compatibility of dependencies.
 
 \subsection{Scaling Experiments}
 In addition to our implementation architecture, we developed a scaleable solution for performing large numbers of experiments.
-Implemented in the \code{experiments/} directory, we constructed schemas and resolvers for each abstraction in Section \ref{implementation-architecture}.
+Implemented in the \href{https://github.com/jswu18/generalised-variational-inference-for-gaussian-processes/tree/main/experiments}{\code{experiments/}} directory, we constructed schemas and resolvers for each abstraction in Section \ref{implementation-architecture}.
 This allows us to define and construct experiments through \code{.yaml} configuration files.
-Each \code{.yaml} outlines the configuration settings required to define an experiment i.e. the GP, learning objective, learning rate, optimiser, etc. Appendix \ref{appendix:regulariser-yaml} and \ref{appendix:approximate-yaml} show example \code{.yaml} configuration files used for learning a regulariser GP and approximate GP respectively.
+Each \code{.yaml} outlines the configuration settings required to define an experiment (i.e. the GP, learning objective, learning rate, optimiser, etc.).
+Appendix \ref{appendix:configuration-yamls} shows example \code{.yaml} configuration files used for training a regulariser GP and an approximate GP .
 
-Generating configuration files was automated to scale our experiments to try all possible combinations of empirical risks, regularisers, mean functions, and kernels. These configurations were then submitted as jobs to a computing cluster, running our experiments in a organised and scaleable framework.
+Generating configuration files was automated to scale our experiments to try all possible combinations of empirical risks, regularisers, mean functions, and kernels. These configurations were then submitted as jobs to a computing cluster, running our experiments in an organised and scaleable framework.
 
 \subsection{Regression Curve Experiments}
 To demonstrate our experimentation framework, we learned GWI-GPs and pGVI-GPs for ten regression curves. 
 Each curve has randomly selected segments removed from the training data to visualise an out-of-data (OOD) setting.
 With our framework, we constructed 1513 experiments for each curve, each defined through \code{.yaml} configuration files. 
-Each experiment is a unique construction of a regulariser GP, an approximate GP, and a GVI objective (among other settings). 
-After performing all experiments, we select the configuration with the best performance. 
-Given the setup of these regression curve problems, we chose the best performing experiment as the GP having the highest negative-log-likelihood with respect to the training data. 
-In other problem regimes, it maybe more suitable to select based on test set performance. 
-We visualise four GPs in Figure \ref{toy-curves-gps}, the best performing GWI-GP or pGVI-GPs for their respective curve problem.
-The rest of the curves are visualised in Appendix \ref{appendix:toy-curves}.
+An experiment is a unique combination of constructions for a regulariser GP, an approximate GP, and a GVI objective (among other settings). 
+After training all possible combinations, we selected the configuration with the best performance. 
+Given the setup of these regression curve problems, we chose the best performing experiment as the GP having the highest negative log-likelihood with respect to the training data. 
+In other problem regimes, it may be more suitable to select based on a different performance metric, such as the test set negative log-likelihood. 
+We visualise four GPs in Figure \ref{toy-curves-gps}, the best performing GWI-GP or pGVI-GPs for their respective curve problems.
+The best performing GPs for each of the ten curves are visualised in Appendix \ref{appendix:toy-curves}.
 
 \begin{figure}[h!]
 \centering
@@ -1153,33 +1211,43 @@ The rest of the curves are visualised in Appendix \ref{appendix:toy-curves}.
 \end{figure}
 
 Additionally, Table X presents a subset of the configurations resulting in each of these best performing variational GPs. 
-This table gives an idea of the large space of settings available within GWI and pGVI. 
-It also demonstrates the flexibility of the learning frameworks to accommodate different approximate spaces and learning objectives that may be better suited for a specific problem. 
+This different settings combinations in Table X gives an idea of the large search spaces available within GWI and pGVI. 
+It also demonstrates the flexibility of the learning frameworks to accommodate different variational spaces and learning objectives that may be better suited for a specific problem. 
 
 \newpage
-\section{Future Work}
+\section{Future Work}\label{section:future-work}
+Following the work that we have present, this section discusses some extensions that could be worth exploring in the future.
 
-\subsection{Inducing Points Selection}
-\jw{Not using actual data points}
-\jw{Not selecting actual training points, but learning points that are most representative of the data? i.e. naively a convex combination of images, or weight params in a single layer NN.}
-\jw{Selecting in a Feature Space}
-\jw{i.e. choosing inducing points from the feature representation of the data points from a NN feature extractor}
+\paragraph{Fictitious Inducing Points} Algorithm \ref{alg:inducing-points-prior-gp} selects inducing points as a subset of existing training points within the training set.
+Limiting the selection space to the training data could be restrictive. 
+Learning `fictitious' inducing points that are not explicitly in the training data may help incorporate additional flexibility to the selection process.
+The \code{k-means++} algorithm proposed by \cite{arthur2007k} is another common approach to inducing point selection, identifying cluster centroids as potential inducing points.
+This moves away from limiting inducing point selection to the training data.
+Incorporating this approach into Algorithm \ref{alg:inducing-point-selection} and \ref{alg:inducing-points-prior-gp} may improve inducing point selection in certain data regimes.
 
+\paragraph{UCI Regression Benchmarking} 
+Many variational GP approaches such as \cite{wild2022generalized}, \jw{MORE CITATIONS}, benchmark their work against the standard UCI regression datasets. 
+The next step for our work will be to benchmark the experimentation framework we proposed in Section \ref{section:experimentation-framework} with these same datasets.
+This will provide better understanding of the strengths and weaknesses of GWI-GPs and pGVI-GPs within the context of the existing literature for function space inference.
 
-\subsection{Experiments in Different Data Domains}
+\paragraph{Image Classification} 
+As identified by \cite{wild2022generalized}, a differentiating feature of GWI is the freedom to choose any mean function for the variational GP. 
+\cite{wild2022generalized} shows promising experimental results for GWI within the context of image classification by parameterising the variational mean with a convolutional neural network.
+However, \cite{wild2022generalized} uses ARD kernels to construct their variational kernel.
 
-\jw{Regression}
+A natural next step is to explore the performance of GWI-GPs and pGWI-GPs using the kernels proposed in Section \ref{prior-kernels}, which have promising potential as shown in the inducing point selection of Figure \ref{fig:mnist-inducing-points}.
+Moreover, the new variational kernels in Section \ref{variational-kernels} are another direction to explore within this context of classification.
 
-\jw{Image Classification}
+\paragraph{NLP Classification} The GWI framework proposed by \cite{wild2022generalized} introduces flexibility and computational tractability previously unavailable within variational GP learning. 
+This motivates exploring the computational limits of our learning framework by exploring larger data settings, such as problems in the Natural Language Processing (NLP) domain.
+One such problem could be sentiment analysis. Another is named-entity recognition (NER), entity classification for words in a text (i.e. noun, verb, adjective, etc). These would both be natural modelling extensions of an image classification model.
 
-
-\jw{NLP Named-Entity Recognition}
-\jw{Putting pre-trained transformers in the mean and kernels.}
-
-
-
+\cite{pmlr-v119-hron20a} proposes the existence of infinite-width attention networks, a fundamental building block for many current modelling approaches in the NLP domain. 
+These can be incorporated during kernel selection for our variational inference framework.
+Additionally, our custom feature map kernel proposed in (\ref{custom-feature-map-kernel}) can accommodate any feature mapping for $h$ including pre-trained transformer embedding models, currently a default architecture within the NLP community. 
 \newpage
-\section{Conclusions}
+\section{Conclusions}\label{section:conclusions}
+Exploring the computational limits of GVI in new problem domains will provide better experimental understanding into the strengths and weaknesses of this learning framework.
 
 
 \newpage
@@ -1218,7 +1286,8 @@ For square symmetric matrices $\mathbf{A}, \mathbf{B} \in \mathbb{R}^{N \times N
 where $\lambda_{n}(\cdot)$ computes the $n^{th}$ eigenvalue.
 
 \newpage
-\subsection{Example Regulariser Gaussian Process Training Configuration}\label{appendix:regulariser-yaml}
+\subsection{Example YAML Configurations}\label{appendix:configuration-yamls}
+\begin{figure}[!h]
 \begin{lstlisting}[style=yaml]
 data_name: 604913dc3af2417fb1d5a21ea26e4afd
 empirical_risk_break_condition: -10
@@ -1252,10 +1321,11 @@ trainer_settings:
   optimiser_schema: adam
   seed: 0
 \end{lstlisting}
+\caption{Regulariser Gaussian Process Example Configuration}
+\end{figure}
 
 \newpage
-\subsection{Example Approximate Gaussian Process Training Configuration}\label{appendix:approximate-yaml}
-
+\begin{figure}[!h]
 \begin{lstlisting}[style=yaml]
 empirical_risk_schema: negative_log_likelihood
 kernel:
@@ -1289,6 +1359,7 @@ reference_name: 7b386a3faf1f4b79ac6ff6604b6bc932
 regularisation:
   regularisation_kwargs:
     mode: posterior
+    alpha: 0.5
   regularisation_schema: projected_renyi
 save_checkpoint_frequency: 1000
 trainer_settings:
@@ -1300,6 +1371,8 @@ trainer_settings:
   optimiser_schema: adam
   seed: 0
 \end{lstlisting}
+\caption{Approximate Gaussian Process Example Configuration}
+\end{figure}
 
 \newpage
 \subsection{Regression Curves}\label{appendix:toy-curves}
@@ -1325,4 +1398,4 @@ trainer_settings:
 \caption{All ten Regression Curves}
 \end{figure}
 
-\end{document}
+\end{document}x
