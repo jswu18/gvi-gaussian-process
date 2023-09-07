@@ -157,9 +157,10 @@ class ConditionalVarianceInducingPointsSelector(InducingPointsSelectorBase):
                 pass
             di = jnp.clip(di, 0, None)
             # added to original code to prevent picking the same point twice
+            indices = indices.astype(int)
             for next_idx in reversed(jnp.argsort(di)):
-                if next_idx not in indices[:m]:
-                    indices[m + 1] = next_idx
+                if int(next_idx) not in indices[: m + 1]:
+                    indices[m + 1] = int(next_idx)
                     break
             # indices[m + 1] = jnp.argmax(di)  # select first point, add to index 0
             # sum of di is tr(Kff-Qff), if this is small things are ok
