@@ -45,7 +45,8 @@ def set_up_classification_experiment_data(
                 test_data_percentage=test_data_percentage,
                 validation_data_percentage=validation_data_percentage,
                 name=name,
-            )
+                rescale_y=False,
+            ),
         )
     return experiment_data_list
 

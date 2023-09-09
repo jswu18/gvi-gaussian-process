@@ -6,7 +6,7 @@ import jax
 from jax import numpy as jnp
 from sklearn.model_selection import train_test_split
 
-from src.utils.custom_types import PRNGKey
+from src.utils.custom_types import PRNGKey, JaxArrayType
 
 
 @dataclass
