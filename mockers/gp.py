@@ -1,4 +1,4 @@
-from typing import Any, Dict, Tuple, Union
+from typing import Dict, Tuple, Union
 
 import jax.numpy as jnp
 import pydantic
@@ -9,7 +9,7 @@ from mockers.mean import MockMean, MockMeanParameters
 from src.distributions import Distribution
 from src.gps.base.base import GPBase, GPBaseParameters
 from src.module import PYDANTIC_VALIDATION_CONFIG
-from src.utils.custom_types import JaxFloatType, PRNGKey
+from src.utils.custom_types import JaxFloatType
 
 
 class MockGPParameters(GPBaseParameters):

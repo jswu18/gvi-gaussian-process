@@ -1,163 +1,71 @@
 
-# Sample Regression Curves
+# Regression Curve Experiments
 
-## Curve 0
-<p align="middle">
-  <img src="outputs/curve0/wasserstein/tempered-approximate-gp.png" width="32%" />
-  <img src="outputs/curve0/projected_wasserstein/tempered-approximate-gp.png" width="32%" />
-  <img src="outputs/curve0/squared_difference/tempered-approximate-gp.png" width="32%" />
-</p>
-<p align="middle">
-  <img src="outputs/curve0/projected_renyi/tempered-approximate-gp.png" width="32%" />
-  <img src="outputs/curve0/projected_kl/tempered-approximate-gp.png" width="32%" />
-  <img src="outputs/curve0/projected_symmetric_kl/tempered-approximate-gp.png" width="32%" />
-</p>
-<p align="middle">
-  <img src="outputs/curve0/projected_bhattacharyya/tempered-approximate-gp.png" width="32%" />
-  <img src="outputs/curve0/projected_hellinger/tempered-approximate-gp.png" width="32%" />
-</p>
+To demonstrate our experimentation framework, we trained approximate GPs for ten different regression curve problems. 
+Randomly selected segments of each curve were removed from the training data to simulate an out-of-distribution (OOD) setting.
 
-## Curve 1
-<p align="middle">
-  <img src="outputs/curve1/wasserstein/tempered-approximate-gp.png" width="32%" />
-  <img src="outputs/curve1/projected_wasserstein/tempered-approximate-gp.png" width="32%" />
-  <img src="outputs/curve1/squared_difference/tempered-approximate-gp.png" width="32%" />
-</p>
-<p align="middle">
-  <img src="outputs/curve1/projected_renyi/tempered-approximate-gp.png" width="32%" />
-  <img src="outputs/curve1/projected_kl/tempered-approximate-gp.png" width="32%" />
-  <img src="outputs/curve1/projected_symmetric_kl/tempered-approximate-gp.png" width="32%" />
-</p>
-<p align="middle">
-  <img src="outputs/curve1/projected_bhattacharyya/tempered-approximate-gp.png" width="32%" />
-  <img src="outputs/curve1/projected_hellinger/tempered-approximate-gp.png" width="32%" />
-</p>
+## Reproducing the Experiments
 
-## Curve 2
-<p align="middle">
-  <img src="outputs/curve2/wasserstein/tempered-approximate-gp.png" width="32%" />
-  <img src="outputs/curve2/projected_wasserstein/tempered-approximate-gp.png" width="32%" />
-  <img src="outputs/curve2/squared_difference/tempered-approximate-gp.png" width="32%" />
-</p>
-<p align="middle">
-  <img src="outputs/curve2/projected_renyi/tempered-approximate-gp.png" width="32%" />
-  <img src="outputs/curve2/projected_kl/tempered-approximate-gp.png" width="32%" />
-  <img src="outputs/curve2/projected_symmetric_kl/tempered-approximate-gp.png" width="32%" />
-</p>
-<p align="middle">
-  <img src="outputs/curve2/projected_bhattacharyya/tempered-approximate-gp.png" width="32%" />
-  <img src="outputs/curve2/projected_hellinger/tempered-approximate-gp.png" width="32%" />
-</p>
+Using our framework, we constructed 1260 combinations of experiment settings, each defined through .yaml configuration files. 
+Each setting includes a unique combination of constructions for the regulariser GP, the approximate GP, and the GVI objective, among other parameters.
+The lists of options for each section that we explored are outlined in `base_configs/`.
 
-## Curve 3
+To reproduce our experiments, run the following from the repository root:
+
+1. Generate the experiment configurations.
+
+```shell
+python experiments/generate_configs.py --problem toy_curves
+```
+
+2. Generate shell scripts for experiments.
+
+```shell
+python experiments/generate_shell_commands.py --problem toy_curves 
+```
+
+3. (Optional) Generate shell scripts for job submission to the Myriad cluster.
+
+```shell
+python experiments/generate_myriad_commands.py --problem toy_curves 
+```
+
+4. (Optional) If running on Myriad, run the automatically generated shell commands. Only submit each set of jobs after the previous set has completed.
+```shell
+./toy_curves-build_data.sh
+./toy_curves-train_regulariser.sh
+./toy_curves-train_approximate.sh
+./toy_curves-temper_approximate.sh
+```
+
+## Best Performing Approximate GPs 
+
+After running all 1260 combinations, we selected the experiment having the best validation set negative log-likelihood.
+Our framework is quite successful at learning the training data for all the curve examples. 
+With the exception of Curve 4, they also demonstrate reasonable behaviours in the OOD setting
+
 <p align="middle">
-  <img src="outputs/curve3/wasserstein/tempered-approximate-gp.png" width="32%" />
-  <img src="outputs/curve3/projected_wasserstein/tempered-approximate-gp.png" width="32%" />
-  <img src="outputs/curve3/squared_difference/tempered-approximate-gp.png" width="32%" />
-</p>
-<p align="middle">
-  <img src="outputs/curve3/projected_renyi/tempered-approximate-gp.png" width="32%" />
-  <img src="outputs/curve3/projected_kl/tempered-approximate-gp.png" width="32%" />
-  <img src="outputs/curve3/projected_symmetric_kl/tempered-approximate-gp.png" width="32%" />
-</p>
-<p align="middle">
-  <img src="outputs/curve3/projected_bhattacharyya/tempered-approximate-gp.png" width="32%" />
-  <img src="outputs/curve3/projected_hellinger/tempered-approximate-gp.png" width="32%" />
+  <img src="../../thesis-report/figures/toy_curves/curve0.png" width="49%" />
+  <img src="../../thesis-report/figures/toy_curves/curve1.png" width="49%" />
 </p>
 
-
-## Curve 4
 <p align="middle">
-  <img src="outputs/curve4/wasserstein/tempered-approximate-gp.png" width="32%" />
-  <img src="outputs/curve4/projected_wasserstein/tempered-approximate-gp.png" width="32%" />
-  <img src="outputs/curve4/squared_difference/tempered-approximate-gp.png" width="32%" />
-</p>
-<p align="middle">
-  <img src="outputs/curve4/projected_renyi/tempered-approximate-gp.png" width="32%" />
-  <img src="outputs/curve4/projected_kl/tempered-approximate-gp.png" width="32%" />
-  <img src="outputs/curve4/projected_symmetric_kl/tempered-approximate-gp.png" width="32%" />
-</p>
-<p align="middle">
-  <img src="outputs/curve4/projected_bhattacharyya/tempered-approximate-gp.png" width="32%" />
-  <img src="outputs/curve4/projected_hellinger/tempered-approximate-gp.png" width="32%" />
+  <img src="../../thesis-report/figures/toy_curves/curve2.png" width="49%" />
+  <img src="../../thesis-report/figures/toy_curves/curve3.png" width="49%" />
 </p>
 
-## Curve 5
 <p align="middle">
-  <img src="outputs/curve5/wasserstein/tempered-approximate-gp.png" width="32%" />
-  <img src="outputs/curve5/projected_wasserstein/tempered-approximate-gp.png" width="32%" />
-  <img src="outputs/curve5/squared_difference/tempered-approximate-gp.png" width="32%" />
-</p>
-<p align="middle">
-  <img src="outputs/curve5/projected_renyi/tempered-approximate-gp.png" width="32%" />
-  <img src="outputs/curve5/projected_kl/tempered-approximate-gp.png" width="32%" />
-  <img src="outputs/curve5/projected_symmetric_kl/tempered-approximate-gp.png" width="32%" />
-</p>
-<p align="middle">
-  <img src="outputs/curve5/projected_bhattacharyya/tempered-approximate-gp.png" width="32%" />
-  <img src="outputs/curve5/projected_hellinger/tempered-approximate-gp.png" width="32%" />
+  <img src="../../thesis-report/figures/toy_curves/curve4.png" width="49%" />
+  <img src="../../thesis-report/figures/toy_curves/curve5.png" width="49%" />
 </p>
 
-## Curve 6
 <p align="middle">
-  <img src="outputs/curve6/wasserstein/tempered-approximate-gp.png" width="32%" />
-  <img src="outputs/curve6/projected_wasserstein/tempered-approximate-gp.png" width="32%" />
-  <img src="outputs/curve6/squared_difference/tempered-approximate-gp.png" width="32%" />
-</p>
-<p align="middle">
-  <img src="outputs/curve6/projected_renyi/tempered-approximate-gp.png" width="32%" />
-  <img src="outputs/curve6/projected_kl/tempered-approximate-gp.png" width="32%" />
-  <img src="outputs/curve6/projected_symmetric_kl/tempered-approximate-gp.png" width="32%" />
-</p>
-<p align="middle">
-  <img src="outputs/curve6/projected_bhattacharyya/tempered-approximate-gp.png" width="32%" />
-  <img src="outputs/curve6/projected_hellinger/tempered-approximate-gp.png" width="32%" />
+  <img src="../../thesis-report/figures/toy_curves/curve6.png" width="49%" />
+  <img src="../../thesis-report/figures/toy_curves/curve7.png" width="49%" />
 </p>
 
-## Curve 7
 <p align="middle">
-  <img src="outputs/curve7/wasserstein/tempered-approximate-gp.png" width="32%" />
-  <img src="outputs/curve7/projected_wasserstein/tempered-approximate-gp.png" width="32%" />
-  <img src="outputs/curve7/squared_difference/tempered-approximate-gp.png" width="32%" />
-</p>
-<p align="middle">
-  <img src="outputs/curve7/projected_renyi/tempered-approximate-gp.png" width="32%" />
-  <img src="outputs/curve7/projected_kl/tempered-approximate-gp.png" width="32%" />
-  <img src="outputs/curve7/projected_symmetric_kl/tempered-approximate-gp.png" width="32%" />
-</p>
-<p align="middle">
-  <img src="outputs/curve7/projected_bhattacharyya/tempered-approximate-gp.png" width="32%" />
-  <img src="outputs/curve7/projected_hellinger/tempered-approximate-gp.png" width="32%" />
+  <img src="../../thesis-report/figures/toy_curves/curve8.png" width="49%" />
+  <img src="../../thesis-report/figures/toy_curves/curve9.png" width="49%" />
 </p>
 
-## Curve 8
-<p align="middle">
-  <img src="outputs/curve8/wasserstein/tempered-approximate-gp.png" width="32%" />
-  <img src="outputs/curve8/projected_wasserstein/tempered-approximate-gp.png" width="32%" />
-  <img src="outputs/curve8/squared_difference/tempered-approximate-gp.png" width="32%" />
-</p>
-<p align="middle">
-  <img src="outputs/curve8/projected_renyi/tempered-approximate-gp.png" width="32%" />
-  <img src="outputs/curve8/projected_kl/tempered-approximate-gp.png" width="32%" />
-  <img src="outputs/curve8/projected_symmetric_kl/tempered-approximate-gp.png" width="32%" />
-</p>
-<p align="middle">
-  <img src="outputs/curve8/projected_bhattacharyya/tempered-approximate-gp.png" width="32%" />
-  <img src="outputs/curve8/projected_hellinger/tempered-approximate-gp.png" width="32%" />
-</p>
-
-## Curve 9
-<p align="middle">
-  <img src="outputs/curve9/wasserstein/tempered-approximate-gp.png" width="32%" />
-  <img src="outputs/curve9/projected_wasserstein/tempered-approximate-gp.png" width="32%" />
-  <img src="outputs/curve9/squared_difference/tempered-approximate-gp.png" width="32%" />
-</p>
-<p align="middle">
-  <img src="outputs/curve9/projected_renyi/tempered-approximate-gp.png" width="32%" />
-  <img src="outputs/curve9/projected_kl/tempered-approximate-gp.png" width="32%" />
-  <img src="outputs/curve9/projected_symmetric_kl/tempered-approximate-gp.png" width="32%" />
-</p>
-<p align="middle">
-  <img src="outputs/curve9/projected_bhattacharyya/tempered-approximate-gp.png" width="32%" />
-  <img src="outputs/curve9/projected_hellinger/tempered-approximate-gp.png" width="32%" />
-</p>

@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, Union
+from typing import Callable, Dict, Union
 
 import jax.numpy as jnp
 import pydantic
@@ -7,7 +7,6 @@ from flax.core.frozen_dict import FrozenDict
 from src.means.base import MeanBase, MeanBaseParameters
 from src.means.svgp_mean import SVGPMean, SVGPMeanParameters
 from src.module import PYDANTIC_VALIDATION_CONFIG
-from src.utils.custom_types import PRNGKey
 
 
 class MockMeanParameters(MeanBaseParameters):

@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, Union
+from typing import Callable, Dict, Union
 
 import jax.numpy as jnp
 import pydantic

@@ -1,7 +1,6 @@
 from typing import Dict
 
 import jax.numpy as jnp
-import pydantic
 import pytest
 from jax.config import config
 from mock import Mock
