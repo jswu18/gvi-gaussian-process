@@ -107,42 +107,42 @@ def generate_configs(
 
 if __name__ == "__main__":
     args = parser.parse_args()
-    base_config_path = f"experiments/{args.problem}/base_configs"
-    output_config_path = f"experiments/{args.problem}/configs"
+    BASE_CONFIG_PATH = f"experiments/{args.problem}/base_configs"
+    OUTPUT_CONFIG_PATH = f"experiments/{args.problem}/configs"
     generate_configs(
-        config_path=os.path.join(base_config_path, ActionSchema.build_data.name),
-        output_path=os.path.join(output_config_path, ActionSchema.build_data.name),
+        config_path=os.path.join(BASE_CONFIG_PATH, ActionSchema.build_data.name),
+        output_path=os.path.join(OUTPUT_CONFIG_PATH, ActionSchema.build_data.name),
     )
     generate_configs(
-        config_path=os.path.join(base_config_path, ActionSchema.train_regulariser.name),
+        config_path=os.path.join(BASE_CONFIG_PATH, ActionSchema.train_regulariser.name),
         output_path=os.path.join(
-            output_config_path, ActionSchema.train_regulariser.name
+            OUTPUT_CONFIG_PATH, ActionSchema.train_regulariser.name
         ),
         regulariser_configs={
-            "data_name": os.path.join(output_config_path, ActionSchema.build_data.name)
+            "data_name": os.path.join(OUTPUT_CONFIG_PATH, ActionSchema.build_data.name)
         },
     )
     generate_configs(
-        config_path=os.path.join(base_config_path, ActionSchema.train_approximate.name),
+        config_path=os.path.join(BASE_CONFIG_PATH, ActionSchema.train_approximate.name),
         output_path=os.path.join(
-            output_config_path, ActionSchema.train_approximate.name
+            OUTPUT_CONFIG_PATH, ActionSchema.train_approximate.name
         ),
         regulariser_configs={
             "regulariser_name": os.path.join(
-                output_config_path, ActionSchema.train_regulariser.name
+                OUTPUT_CONFIG_PATH, ActionSchema.train_regulariser.name
             )
         },
     )
     generate_configs(
         config_path=os.path.join(
-            base_config_path, ActionSchema.temper_approximate.name
+            BASE_CONFIG_PATH, ActionSchema.temper_approximate.name
         ),
         output_path=os.path.join(
-            output_config_path, ActionSchema.temper_approximate.name
+            OUTPUT_CONFIG_PATH, ActionSchema.temper_approximate.name
         ),
         regulariser_configs={
             "approximate_name": os.path.join(
-                output_config_path, ActionSchema.train_approximate.name
+                OUTPUT_CONFIG_PATH, ActionSchema.train_approximate.name
             )
         },
     )

@@ -14,8 +14,6 @@ class KernelBaseParameters(ModuleParameters, ABC):
     A base class for all kernel parameters. All kernel parameter classes will inheret this ABC.
     """
 
-    pass
-
 
 class KernelBase(Module, ABC):
     """
@@ -112,7 +110,8 @@ class KernelBase(Module, ABC):
         full_covariance: bool = True,
     ) -> jnp.ndarray:
         """
-        Computes the prior gram matrix of the kernel. If x2 is None, the covariance matrix is computed for x1 and x1.
+        Computes the prior gram matrix of the kernel.
+        If x2 is None, the covariance matrix is computed for x1 and x1.
             - m1 is the number of points in x1
             - m2 is the number of points in x2
             - d is the number of dimensions

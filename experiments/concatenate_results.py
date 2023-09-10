@@ -35,10 +35,6 @@ def concatenate_results(
     return pd.concat(df_list, axis=0)
 
 
-def get_best_results(df_metrics: pd.DataFrame, column: str) -> pd.DataFrame:
-    pass
-
-
 if __name__ == "__main__":
     args = parser.parse_args()
 

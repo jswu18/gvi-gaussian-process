@@ -89,11 +89,10 @@ class NegativeLogLikelihood(EmpiricalRiskBase):
                 x=x,
                 y=y,
             )
-        elif isinstance(self.gp, GPClassificationBase):
+        if isinstance(self.gp, GPClassificationBase):
             return self._calculate_multinomial_negative_log_likelihood(
                 parameters=parameters,
                 x=x,
                 y=y,
             )
-        else:
-            raise NotImplementedError(f"GP type {type(self.gp)} not implemented")
+        raise NotImplementedError(f"GP type {type(self.gp)} not implemented")

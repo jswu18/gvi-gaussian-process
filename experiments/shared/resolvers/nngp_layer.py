@@ -30,7 +30,7 @@ def nngp_layer_resolver(
             ),
             True,
         )
-    elif nngp_layer_schema == NeuralNetworkGaussianProcessLayerSchema.dense:
+    if nngp_layer_schema == NeuralNetworkGaussianProcessLayerSchema.dense:
         assert "features" in nngp_layer_kwargs, "Features must be specified."
         return (
             lambda w_std, b_std: stax.Dense(
@@ -41,7 +41,7 @@ def nngp_layer_resolver(
             ),
             True,
         )
-    elif nngp_layer_schema == NeuralNetworkGaussianProcessLayerSchema.average_pool:
+    if nngp_layer_schema == NeuralNetworkGaussianProcessLayerSchema.average_pool:
         assert "window_shape" in nngp_layer_kwargs, "Window shape must be specified."
         assert "strides" in nngp_layer_kwargs, "Strides must be specified."
         return (
@@ -51,11 +51,10 @@ def nngp_layer_resolver(
             ),
             False,
         )
-    elif nngp_layer_schema == NeuralNetworkGaussianProcessLayerSchema.relu:
+    if nngp_layer_schema == NeuralNetworkGaussianProcessLayerSchema.relu:
         return stax.Relu(), False
-    elif nngp_layer_schema == NeuralNetworkGaussianProcessLayerSchema.flatten:
+    if nngp_layer_schema == NeuralNetworkGaussianProcessLayerSchema.flatten:
         return stax.Flatten(), False
-    elif nngp_layer_schema == NeuralNetworkGaussianProcessLayerSchema.tanh:
+    if nngp_layer_schema == NeuralNetworkGaussianProcessLayerSchema.tanh:
         return stax.Erf(), False
-    else:
-        raise ValueError(f"Unknown neural network layer schema: {nngp_layer_schema}.")
+    raise ValueError(f"Unknown neural network layer schema: {nngp_layer_schema}.")

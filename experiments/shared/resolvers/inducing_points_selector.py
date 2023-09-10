@@ -10,7 +10,6 @@ def inducing_points_selector_resolver(
 ):
     if inducing_points_schema == InducingPointsSelectorSchema.random:
         return RandomInducingPointsSelector()
-    elif inducing_points_schema == InducingPointsSelectorSchema.conditional_variance:
+    if inducing_points_schema == InducingPointsSelectorSchema.conditional_variance:
         return ConditionalVarianceInducingPointsSelector()
-    else:
-        raise ValueError(f"Unknown inducing points scheme: {inducing_points_schema}")
+    raise ValueError(f"Unknown inducing points scheme: {inducing_points_schema}")

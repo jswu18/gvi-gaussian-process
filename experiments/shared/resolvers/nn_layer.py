@@ -19,12 +19,12 @@ def nn_layer_resolver(
             features=nn_layer_kwargs["features"],
             kernel_size=tuple(nn_layer_kwargs["kernel_size"]),
         )(x)
-    elif nn_layer_schema == NeuralNetworkLayerSchema.dense:
+    if nn_layer_schema == NeuralNetworkLayerSchema.dense:
         assert "features" in nn_layer_kwargs, "Features must be specified."
         return nn.Dense(
             features=nn_layer_kwargs["features"],
         )(x)
-    elif nn_layer_schema == NeuralNetworkLayerSchema.average_pool:
+    if nn_layer_schema == NeuralNetworkLayerSchema.average_pool:
         assert "window_shape" in nn_layer_kwargs, "Window shape must be specified."
         assert "strides" in nn_layer_kwargs, "Strides must be specified."
         return nn.avg_pool(
@@ -32,11 +32,10 @@ def nn_layer_resolver(
             window_shape=tuple(nn_layer_kwargs["window_shape"]),
             strides=tuple(nn_layer_kwargs["strides"]),
         )
-    elif nn_layer_schema == NeuralNetworkLayerSchema.relu:
+    if nn_layer_schema == NeuralNetworkLayerSchema.relu:
         return nn.relu(x)
-    elif nn_layer_schema == NeuralNetworkLayerSchema.flatten:
+    if nn_layer_schema == NeuralNetworkLayerSchema.flatten:
         return x.reshape((x.shape[0], -1))
-    elif nn_layer_schema == NeuralNetworkLayerSchema.tanh:
+    if nn_layer_schema == NeuralNetworkLayerSchema.tanh:
         return nn.tanh(x)
-    else:
-        raise ValueError(f"Unknown neural network layer schema: {nn_layer_schema}.")
+    raise ValueError(f"Unknown neural network layer schema: {nn_layer_schema}.")

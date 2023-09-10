@@ -10,8 +10,6 @@ class Distribution(ModuleParameters, ABC):
     A base class for all distribution parameters. All distribution classes will inheret this ABC.
     """
 
-    pass
-
 
 class Gaussian(Distribution):
     """

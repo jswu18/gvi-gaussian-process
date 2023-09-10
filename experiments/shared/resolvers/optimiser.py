@@ -8,9 +8,8 @@ def optimiser_resolver(
 ) -> optax.GradientTransformation:
     if optimiser_schema == OptimiserSchema.adam:
         return optax.adam(learning_rate=learning_rate)
-    elif optimiser_schema == OptimiserSchema.adabelief:
+    if optimiser_schema == OptimiserSchema.adabelief:
         return optax.adabelief(learning_rate=learning_rate)
-    elif optimiser_schema == OptimiserSchema.rmsprop:
+    if optimiser_schema == OptimiserSchema.rmsprop:
         return optax.rmsprop(learning_rate=learning_rate)
-    else:
-        raise ValueError(f"Unknown optimiser: {optimiser_schema=}")
+    raise ValueError(f"Unknown optimiser: {optimiser_schema=}")

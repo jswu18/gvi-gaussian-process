@@ -69,7 +69,8 @@ class Module(ABC):
         """
         Construct for the Module class.
         Args:
-            preprocess_function: a function to preprocess the inputs of the kernel function, defaults to None (identity)
+            preprocess_function: a function to preprocess the inputs of the kernel function,
+                                 defaults to None (identity)
         """
         if preprocess_function is None:
             self.preprocess_function = lambda x: x

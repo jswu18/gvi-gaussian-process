@@ -9,7 +9,7 @@ from src.kernels.non_stationary.base import (
     NonStationaryKernelBaseParameters,
 )
 from src.module import PYDANTIC_VALIDATION_CONFIG
-from src.utils.custom_types import JaxFloatType, PRNGKey
+from src.utils.custom_types import JaxFloatType
 
 
 class PolynomialKernelParameters(NonStationaryKernelBaseParameters):

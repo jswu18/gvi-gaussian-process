@@ -16,5 +16,4 @@ def empirical_risk_resolver(
             gp, GPClassificationBase
         ), "CrossEntropy is only for classification"
         return CrossEntropy(gp=gp)
-    else:
-        raise ValueError(f"Unknown empirical risk schema: {empirical_risk_schema=}")
+    raise ValueError(f"Unknown empirical risk schema: {empirical_risk_schema=}")

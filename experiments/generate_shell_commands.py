@@ -74,38 +74,38 @@ def generate_shell_commands(
 if __name__ == "__main__":
     args = parser.parse_args()
 
-    main_path = f"experiments/{args.problem}/main.py"
-    config_path = f"experiments/{args.problem}/configs"
-    save_path = f"experiments/{args.problem}/shell_commands"
+    MAIN_PATH = f"experiments/{args.problem}/main.py"
+    CONFIG_PATH = f"experiments/{args.problem}/configs"
+    SAVE_PATH = f"experiments/{args.problem}/shell_commands"
     generate_shell_commands(
         action=ActionSchema.build_data,
         repository_path=os.getcwd(),
-        main_path=main_path,
-        config_path=config_path,
-        save_path=save_path,
+        main_path=MAIN_PATH,
+        config_path=CONFIG_PATH,
+        save_path=SAVE_PATH,
         chunk_size=args.build_data_chunk_size,
     )
     generate_shell_commands(
         action=ActionSchema.train_regulariser,
         repository_path=os.getcwd(),
-        main_path=main_path,
-        config_path=config_path,
-        save_path=save_path,
+        main_path=MAIN_PATH,
+        config_path=CONFIG_PATH,
+        save_path=SAVE_PATH,
         chunk_size=args.train_regulariser_chunk_size,
     )
     generate_shell_commands(
         action=ActionSchema.train_approximate,
         repository_path=os.getcwd(),
-        main_path=main_path,
-        config_path=config_path,
-        save_path=save_path,
+        main_path=MAIN_PATH,
+        config_path=CONFIG_PATH,
+        save_path=SAVE_PATH,
         chunk_size=args.train_approximate_chunk_size,
     )
     generate_shell_commands(
         action=ActionSchema.temper_approximate,
         repository_path=os.getcwd(),
-        main_path=main_path,
-        config_path=config_path,
-        save_path=save_path,
+        main_path=MAIN_PATH,
+        config_path=CONFIG_PATH,
+        save_path=SAVE_PATH,
         chunk_size=args.temper_approximate_chunk_size,
     )

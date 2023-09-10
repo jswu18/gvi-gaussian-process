@@ -8,8 +8,6 @@ class NonStationaryKernelBaseParameters(StandardKernelBaseParameters, ABC):
     Parameters for non-stationary kernels.
     """
 
-    pass
-
 
 class NonStationaryKernelBase(StandardKernelBase, ABC):
     """
@@ -17,5 +15,3 @@ class NonStationaryKernelBase(StandardKernelBase, ABC):
     the kernel function depends on the inputs x and y and not only on their
     difference x - y. This class is a base class for all non-stationary kernels.
     """
-
-    pass

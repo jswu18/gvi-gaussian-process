@@ -44,14 +44,14 @@ def regularisation_resolver(
             regulariser_parameters=regulariser_parameters,
             **regularisation_kwargs,
         )
-    elif regularisation_schema == schemas.RegularisationSchema.gaussian_wasserstein:
+    if regularisation_schema == schemas.RegularisationSchema.gaussian_wasserstein:
         return GaussianWassersteinRegularisation(
             gp=gp,
             regulariser=regulariser,
             regulariser_parameters=regulariser_parameters,
             **regularisation_kwargs,
         )
-    elif (
+    if (
         regularisation_schema
         == schemas.RegularisationSchema.projected_gaussian_wasserstein
     ):
@@ -61,35 +61,35 @@ def regularisation_resolver(
             regulariser_parameters=regulariser_parameters,
             **regularisation_kwargs,
         )
-    elif regularisation_schema == schemas.RegularisationSchema.projected_kl:
+    if regularisation_schema == schemas.RegularisationSchema.projected_kl:
         return ProjectedKLRegularisation(
             gp=gp,
             regulariser=regulariser,
             regulariser_parameters=regulariser_parameters,
             **regularisation_kwargs,
         )
-    elif regularisation_schema == schemas.RegularisationSchema.projected_bhattacharyya:
+    if regularisation_schema == schemas.RegularisationSchema.projected_bhattacharyya:
         return ProjectedBhattacharyyaRegularisation(
             gp=gp,
             regulariser=regulariser,
             regulariser_parameters=regulariser_parameters,
             **regularisation_kwargs,
         )
-    elif regularisation_schema == schemas.RegularisationSchema.projected_hellinger:
+    if regularisation_schema == schemas.RegularisationSchema.projected_hellinger:
         return ProjectedHellingerRegularisation(
             gp=gp,
             regulariser=regulariser,
             regulariser_parameters=regulariser_parameters,
             **regularisation_kwargs,
         )
-    elif regularisation_schema == schemas.RegularisationSchema.projected_renyi:
+    if regularisation_schema == schemas.RegularisationSchema.projected_renyi:
         return ProjectedRenyiRegularisation(
             gp=gp,
             regulariser=regulariser,
             regulariser_parameters=regulariser_parameters,
             **regularisation_kwargs,
         )
-    elif regularisation_schema == schemas.RegularisationSchema.multinomial_wasserstein:
+    if regularisation_schema == schemas.RegularisationSchema.multinomial_wasserstein:
         assert isinstance(gp, GPClassificationBase), "GP must be a classification GP"
         assert isinstance(
             regulariser, GPClassificationBase
@@ -100,5 +100,4 @@ def regularisation_resolver(
             regulariser_parameters=regulariser_parameters,
             **regularisation_kwargs,
         )
-    else:
-        raise ValueError(f"Unknown regularisation schema: {regularisation_schema=}")
+    raise ValueError(f"Unknown regularisation schema: {regularisation_schema=}")

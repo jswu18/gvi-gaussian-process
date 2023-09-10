@@ -69,5 +69,4 @@ def mean_resolver(
             }
         )
         return mean, mean_parameters
-    else:
-        raise ValueError(f"Unknown mean schema: {mean_schema}.")
+    raise ValueError(f"Unknown mean schema: {mean_schema}.")

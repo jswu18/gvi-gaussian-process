@@ -46,10 +46,7 @@ from src.kernels.non_stationary import (
     PolynomialKernelParameters,
 )
 from src.kernels.non_stationary.base import NonStationaryKernelBase
-from src.kernels.standard import (
-    ARDKernel,
-    ARDKernelParameters,
-)
+from src.kernels.standard import ARDKernel, ARDKernelParameters
 
 
 def resolve_existing_kernel(
@@ -485,41 +482,41 @@ def kernel_resolver(
         return _resolve_inner_product_kernel(
             kernel_parameters_config=kernel_parameters_config
         )
-    elif kernel_schema == KernelSchema.polynomial:
+    if kernel_schema == KernelSchema.polynomial:
         return _resolve_polynomial_kernel(
             kernel_kwargs_config=kernel_kwargs_config,
             kernel_parameters_config=kernel_parameters_config,
         )
-    elif kernel_schema == KernelSchema.ard:
+    if kernel_schema == KernelSchema.ard:
         return _resolve_ard_kernel(
             kernel_parameters_config=kernel_parameters_config,
             data_dimension=data_dimension,
         )
-    elif kernel_schema == KernelSchema.nngp:
+    if kernel_schema == KernelSchema.nngp:
         return _resolve_nngp_kernel(
             kernel_kwargs_config=kernel_kwargs_config,
             data_dimension=data_dimension,
         )
-    elif kernel_schema == KernelSchema.custom_mapping:
+    if kernel_schema == KernelSchema.custom_mapping:
         return _resolve_custom_mapping_kernel(
             kernel_kwargs_config=kernel_kwargs_config,
             data_dimension=data_dimension,
         )
-    elif kernel_schema == KernelSchema.sparse_posterior:
+    if kernel_schema == KernelSchema.sparse_posterior:
         return _resolve_sparse_posterior_kernel(
             kernel_kwargs_config=kernel_kwargs_config,
             regulariser_kernel=regulariser_kernel,
             regulariser_kernel_parameters=regulariser_kernel_parameters,
             data_dimension=data_dimension,
         )
-    elif kernel_schema == KernelSchema.fixed_sparse_posterior:
+    if kernel_schema == KernelSchema.fixed_sparse_posterior:
         return _resolve_fixed_sparse_posterior_kernel(
             kernel_kwargs_config=kernel_kwargs_config,
             regulariser_kernel=regulariser_kernel,
             regulariser_kernel_parameters=regulariser_kernel_parameters,
             data_dimension=data_dimension,
         )
-    elif kernel_schema in [
+    if kernel_schema in [
         KernelSchema.cholesky_svgp,
         KernelSchema.diagonal_svgp,
         KernelSchema.log_svgp,
@@ -532,8 +529,7 @@ def kernel_resolver(
             regulariser_kernel_parameters=regulariser_kernel_parameters,
             data_dimension=data_dimension,
         )
-    else:
-        raise NotImplementedError(f"Kernel schema {kernel_schema} not implemented.")
+    raise NotImplementedError(f"Kernel schema {kernel_schema} not implemented.")
 
     #
     # elif kernel_schema == KernelSchema.multi_output:

@@ -6,7 +6,7 @@ import jax
 from jax import numpy as jnp
 from sklearn.model_selection import train_test_split
 
-from src.utils.custom_types import PRNGKey, JaxArrayType
+from src.utils.custom_types import PRNGKey
 
 
 @dataclass
@@ -49,12 +49,11 @@ class ExperimentData:
     def _add_with_none(a: Optional[Data], b: Optional[Data]) -> Optional[Data]:
         if a is None and b is None:
             return None
-        elif a is None:
+        if a is None:
             return b
-        elif b is None:
+        if b is None:
             return a
-        else:
-            return a + b
+        return a + b
 
     def __add__(self, other):
         assert self.y_mean == other.y_mean
@@ -110,7 +109,8 @@ def set_up_experiment(
     validation_data_percentage: float,
     rescale_y: bool = True,
 ) -> ExperimentData:
-    # adapted from https://datascience.stackexchange.com/questions/15135/train-test-validation-set-splitting-in-sklearn
+    # adapted from:
+    # https://datascience.stackexchange.com/questions/15135/train-test-validation-set-splitting-in-sklearn
     key, subkey = jax.random.split(key)
     (
         x_train,

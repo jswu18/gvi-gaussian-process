@@ -24,9 +24,9 @@ class StandardKernelBase(KernelBase, ABC):
     ):
         super().__init__(preprocess_function=preprocess_function)
 
-    @staticmethod
     @abstractmethod
     def _calculate_kernel(
+        self,
         parameters: StandardKernelBaseParameters,
         x1: jnp.ndarray,
         x2: jnp.ndarray,

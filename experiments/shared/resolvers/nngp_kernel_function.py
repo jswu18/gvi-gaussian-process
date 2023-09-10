@@ -1,6 +1,5 @@
-from typing import Any, Callable, Dict, List, Tuple, Union
+from typing import Callable, Dict, Tuple, Union
 
-import flax.linen as nn
 import jax
 import jax.numpy as jnp
 from flax.core.frozen_dict import FrozenDict
@@ -35,10 +34,10 @@ def nngp_kernel_function_resolver(
 
     def kernel_function(parameters, x1, x2, nn_layers_, is_parameterised_array_):
         nn_architecture = []
-        for i_, nn_layer_ in enumerate(nn_layers_):
-            if is_parameterised_array_[i_]:
+        for j, nn_layer_ in enumerate(nn_layers_):
+            if is_parameterised_array_[j]:
                 nn_architecture.append(
-                    nn_layer_(parameters["w_std"][i_], parameters["b_std"][i_])
+                    nn_layer_(parameters["w_std"][j], parameters["b_std"][j])
                 )
             else:
                 nn_architecture.append(nn_layer_)

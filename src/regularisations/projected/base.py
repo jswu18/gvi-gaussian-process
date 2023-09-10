@@ -30,10 +30,10 @@ class ProjectedRegularisationBase(RegularisationBase):
             mode=mode,
         )
 
-    @staticmethod
     @pydantic.validate_arguments(config=PYDANTIC_VALIDATION_CONFIG)
     @abstractmethod
     def calculate_projected_distance(
+        self,
         m_p: JaxFloatType,
         c_p: JaxFloatType,
         m_q: JaxFloatType,

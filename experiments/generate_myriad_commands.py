@@ -136,21 +136,21 @@ def build_base_commands(
 ):
     base_commands = [
         "#$ -S /bin/bash",
-        f"# Max runtime of job. Shorter means scheduled faster.",
+        "# Max runtime of job. Shorter means scheduled faster.",
         f"#$ -l h_rt={max_runtime}",
         f"#$ -l gpu={num_gpus}",
-        f"# Number of cores. Set to more than one when using a GPU, but not too many.",
+        "# Number of cores. Set to more than one when using a GPU, but not too many.",
         f"#$ -pe smp {num_cores}",
-        f"# Amount of RAM.",
-        f"# IMPORTANT: each core gets RAM below, so in this case 20GB total.",
+        "# Amount of RAM.",
+        "# IMPORTANT: each core gets RAM below, so in this case 20GB total.",
         f"#$ -l mem={mem}",
-        f"# Stops smaller jobs jumping in front of you in the queue.",
+        "# Stops smaller jobs jumping in front of you in the queue.",
         "#$ -R y",
         "# Merges the standard output and error output files into one file.",
         "#$ -j y",
         "# Working directory of job.",
         "# (-cwd is short for set wd to the directory you run qsub)",
-        f"#$ -wd /home/ucabwuh/generalised-variational-inference-for-gaussian-processes",
+        "#$ -wd /home/ucabwuh/generalised-variational-inference-for-gaussian-processes",
         "# Name of the job",
         f"#$ -N {job_name}",
         "date",
@@ -217,13 +217,13 @@ def generate_myriad_commands(
 if __name__ == "__main__":
     args = parser.parse_args()
 
-    precomputed_shell_command_path = f"experiments/{args.problem}/shell_commands"
-    myriad_shell_command_path = f"experiments/{args.problem}/myriad_shell_commands"
+    PRECOMPUTED_SHELL_COMMAND_PATH = f"experiments/{args.problem}/shell_commands"
+    MYRIAD_SHELL_COMMAND_PATH = f"experiments/{args.problem}/myriad_shell_commands"
     generate_myriad_commands(
         problem=ProblemSchema(args.problem),
         action=ActionSchema.build_data,
-        command_path=precomputed_shell_command_path,
-        save_path=myriad_shell_command_path,
+        command_path=PRECOMPUTED_SHELL_COMMAND_PATH,
+        save_path=MYRIAD_SHELL_COMMAND_PATH,
         max_runtime=args.build_data_max_runtime,
         num_gpus=args.build_data_num_gpus,
         num_cores=args.build_data_num_cores,
@@ -233,8 +233,8 @@ if __name__ == "__main__":
     generate_myriad_commands(
         problem=ProblemSchema(args.problem),
         action=ActionSchema.train_regulariser,
-        command_path=precomputed_shell_command_path,
-        save_path=myriad_shell_command_path,
+        command_path=PRECOMPUTED_SHELL_COMMAND_PATH,
+        save_path=MYRIAD_SHELL_COMMAND_PATH,
         max_runtime=args.train_regulariser_max_runtime,
         num_gpus=args.train_regulariser_num_gpus,
         num_cores=args.train_regulariser_num_cores,
@@ -244,8 +244,8 @@ if __name__ == "__main__":
     generate_myriad_commands(
         problem=ProblemSchema(args.problem),
         action=ActionSchema.train_approximate,
-        command_path=precomputed_shell_command_path,
-        save_path=myriad_shell_command_path,
+        command_path=PRECOMPUTED_SHELL_COMMAND_PATH,
+        save_path=MYRIAD_SHELL_COMMAND_PATH,
         max_runtime=args.train_approximate_max_runtime,
         num_gpus=args.train_approximate_num_gpus,
         num_cores=args.train_approximate_num_cores,
@@ -255,8 +255,8 @@ if __name__ == "__main__":
     generate_myriad_commands(
         problem=ProblemSchema(args.problem),
         action=ActionSchema.temper_approximate,
-        command_path=precomputed_shell_command_path,
-        save_path=myriad_shell_command_path,
+        command_path=PRECOMPUTED_SHELL_COMMAND_PATH,
+        save_path=MYRIAD_SHELL_COMMAND_PATH,
         max_runtime=args.temper_approximate_max_runtime,
         num_gpus=args.temper_approximate_num_gpus,
         num_cores=args.temper_approximate_num_cores,
