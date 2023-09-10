@@ -45,27 +45,27 @@ Our framework is quite successful at learning the training data for all the curv
 With the exception of Curve 4, they also demonstrate reasonable behaviours in the OOD setting
 
 <p align="middle">
-  <img src="../../thesis-report/figures/toy_curves/curve0.png" width="49%" />
-  <img src="../../thesis-report/figures/toy_curves/curve1.png" width="49%" />
+  <img src="../../thesis_report/figures/toy_curves/curve0.png" width="49%" />
+  <img src="../../thesis_report/figures/toy_curves/curve1.png" width="49%" />
 </p>
 
 <p align="middle">
-  <img src="../../thesis-report/figures/toy_curves/curve2.png" width="49%" />
-  <img src="../../thesis-report/figures/toy_curves/curve3.png" width="49%" />
+  <img src="../../thesis_report/figures/toy_curves/curve2.png" width="49%" />
+  <img src="../../thesis_report/figures/toy_curves/curve3.png" width="49%" />
 </p>
 
 <p align="middle">
-  <img src="../../thesis-report/figures/toy_curves/curve4.png" width="49%" />
-  <img src="../../thesis-report/figures/toy_curves/curve5.png" width="49%" />
+  <img src="../../thesis_report/figures/toy_curves/curve4.png" width="49%" />
+  <img src="../../thesis_report/figures/toy_curves/curve5.png" width="49%" />
 </p>
 
 <p align="middle">
-  <img src="../../thesis-report/figures/toy_curves/curve6.png" width="49%" />
-  <img src="../../thesis-report/figures/toy_curves/curve7.png" width="49%" />
+  <img src="../../thesis_report/figures/toy_curves/curve6.png" width="49%" />
+  <img src="../../thesis_report/figures/toy_curves/curve7.png" width="49%" />
 </p>
 
 <p align="middle">
-  <img src="../../thesis-report/figures/toy_curves/curve8.png" width="49%" />
-  <img src="../../thesis-report/figures/toy_curves/curve9.png" width="49%" />
+  <img src="../../thesis_report/figures/toy_curves/curve8.png" width="49%" />
+  <img src="../../thesis_report/figures/toy_curves/curve9.png" width="49%" />
 </p>
 

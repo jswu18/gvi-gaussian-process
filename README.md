@@ -14,8 +14,8 @@ This repository present a comprehensive software implementation of our learning 
 We demonstrate our approach for a few curve regression tasks:
 
 <p align="middle">
-  <img src="thesis-report/figures/toy_curves/curve6.png" width="49%" />
-  <img src="thesis-report/figures/toy_curves/curve8.png" width="49%" />
+  <img src="thesis_report/figures/toy_curves/curve6.png" width="49%" />
+  <img src="thesis_report/figures/toy_curves/curve8.png" width="49%" />
 </p>
 
 For further details for the above visualisations, please see `experiments/toy_curves/`.
