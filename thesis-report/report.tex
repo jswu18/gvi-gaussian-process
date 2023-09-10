@@ -227,7 +227,7 @@ A Gaussian distribution will be denoted $\mathcal{N}(\cdot, \cdot)$, where
 with $Y \in \mathbb{R}^N$ indicates that $Y$ is a random vector following a Gaussian distribution having $\mathbf{m} \in \mathbb{R}^N$ as the mean and $\mathbf{K} \in \mathbb{R}^{N \times N}_{\succcurlyeq 0}$ as the covariance. 
 The subscript ${\succcurlyeq 0}$ denotes that $\mathbf{K}$ is positive semi-definite.
 
-For any random element $F$, we review the following notational conventions:
+For any random element $F$, we review the following notation conventions:
 \begin{itemize}
     \setlength\itemsep{-0.25em}
     \item sample notation: 
@@ -348,7 +348,7 @@ where the GP random function mapping $F$ accounts for the epistemic (model) unce
 
 In GP regression, the Bayesian posterior for a test point $x \in \mathcal{X}$ when conditioned on the training data $\mathbf{X}$ and $\mathbf{Y}$, acts as a `prediction' for the epistemic uncertainty of the test data responses. 
 With all terms being Gaussian, this posterior has a closed-form conditional Gaussian expression.
-Having also chosen the aleoteric data uncertainty to be modelled as Gaussian in (\ref{aleotric-uncertainty}), GP regression models the test data response $y \in \mathbb{R}$ as
+Having also chosen the aleatoric data uncertainty to be modelled as Gaussian in (\ref{aleotric-uncertainty}), GP regression models the test data response $y \in \mathbb{R}$ as
 \begin{align}
     y \vert \mathbf{X}, \mathbf{Y}, \sigma^2
     \sim \mathcal{N}\left(\bar{m}(x), \bar{k}(x, x)\right),
@@ -520,7 +520,7 @@ conveniently eliminating the need for gradient-based optimisations such that $\g
 
 The svGP ensures matrix inversions of $\mathbb{R}^{M \times M}$ matrices with $\mathcal{O}\left(M^3\right)$ computational complexity, while the operation $\mathbf{K}_{\mathbf{Z}, \mathbf{X}} \mathbf{K}_{\mathbf{X}, \mathbf{Z}}$ in (\ref{svgp-optimal-sigma-m}) has complexity $\mathcal{O}\left(NM^2\right)$.
 Thus, the overall computational complexity of this approach is $\mathcal{O}\left(NM^2\right)$ with space complexity $\mathcal{O}\left(NM\right)$.
-This significantly improves the scalability of GP approaches from the standard GP in Section \ref{section:gaussian-processes}. $M$ is typically chosen as $\mathcal{O}(N^{1/2})$ such that the svGP has $\mathcal{O}(N^{2})$ and $\mathcal{O}(N^{3/2})$ time and space complexity respectively.
+This significantly improves the scaleability of GP approaches from the standard GP in Section \ref{section:gaussian-processes}. $M$ is typically chosen as $\mathcal{O}(N^{1/2})$ such that the svGP has $\mathcal{O}(N^{2})$ and $\mathcal{O}(N^{3/2})$ time and space complexity respectively.
 
 This svGP formulation provides a solution to the scaling issues of the GP but illustrates how the three assumptions of standard VI discussed in Section \ref{section:vi-in-finite-dimensions} can break down.
 In particular, the variational set $\mathbf{Q}$ defined by the parameter set $\boldsymbol{\Gamma}$ may not be expressive enough to contain a reasonable approximation of the true Bayesian posterior.
@@ -594,7 +594,7 @@ For example, the first image for `1' is a line slanted to the right while the se
   \State $\mathbf{Z}_0 \leftarrow$ \Call{GreedyVarianceSelection}{$\mathbf{X}$, $\theta_0$} \Comment{via Algorithm \ref{alg:inducing-point-selection} with $k$}
   \State $\mathbf{U}_i \leftarrow \mathbf{Y}\left[\mathbf{X}.\text{index}\left(\mathbf{Z}_0\right)\right]$ \Comment{corresponding inducing point responses}
 \While{$\mathbf{Z}_i \neq \mathbf{Z}_{i-1}$}
-\State $\theta_{i+1} \leftarrow$ \Call{OptimiseNLL}{$\theta_0$, $\mathbf{Z}_i$, $\mathbf{U}_i$} \Comment{via type-II maximimum likelihood on inducing points}
+\State $\theta_{i+1} \leftarrow$ \Call{OptimiseNLL}{$\theta_0$, $\mathbf{Z}_i$, $\mathbf{U}_i$} \Comment{via type-II maximum likelihood on inducing points}
 \State $\mathbf{Z}_{i+1} \leftarrow$ \Call{GreedyVarianceSelection}{$\mathbf{X}$, $\theta_{i+1}$}
 \State $\mathbf{U}_{i+1} \leftarrow \mathbf{Y}\left[\mathbf{X}.\text{index}\left(\mathbf{Z}_i\right)\right]$
 \State $i \leftarrow i+1$
@@ -638,7 +638,7 @@ Inducing Point Selection for Four Iterations of Algorithm \ref{alg:inducing-poin
 Algorithm \ref{alg:inducing-points-prior-gp} incorporates response data into the inducing point selection process, which did not exist in Algorithm \ref{alg:inducing-point-selection}. 
 Learning the kernel with the response data can give more appropriate covariances when comparing candidate points during the inducing points selection of Algorithm \ref{alg:inducing-point-selection}. 
 Figure \ref{inducing-points-and-kernel} visualises the inducing points selected in the first four iterations of Algorithm \ref{alg:inducing-points-prior-gp} for a regression problem.
-This is overlayed with the Bayesian posterior of a GP parameterised with the learned kernel and zero mean, when conditioned on those selected inducing points. 
+This is overlaid with the Bayesian posterior of a GP parameterised with the learned kernel and zero mean, when conditioned on those selected inducing points. 
 This visualises the selection procedure as it attempts to minimise uncertainty over training points, ensuring maximum coverage over the input space in (\ref{inducing-point-input-space}).
 By learning the kernel in-between iterations, we see that Algorithm \ref{alg:inducing-points-prior-gp} can appropriately adjust the variances on the training data, which would be held fixed during Algorithm \ref{alg:inducing-point-selection}.
 
@@ -706,7 +706,7 @@ This section reviews \cite{wild2022generalized}, which extends GVI to infinite d
     \label{gvi-posterior-in-fs}
 \end{align}
 where $Q \in \boldsymbol{Q}$ is a variational family of probability measures on a function space $\boldsymbol{\mathcal{F}}$ and $\mathbb{P}(F)$ is a prior on $\boldsymbol{\mathcal{F}}$.
-\cite{wild2022generalized} explains that the Kolomogorov Extension Theorem guarantees that for every GP, there exists a corresponding Gaussian measure (GM). 
+\cite{wild2022generalized} explains that the Kolmogorov Extension Theorem guarantees that for every GP, there exists a corresponding Gaussian measure (GM). 
 This GM is usually over the trivial function space $\boldsymbol{\mathcal{F}} = \left\{f: \mathcal{X} \rightarrow \mathbb{R}\right\}$.
 However, this space is highly prone to support mis-match and ensuring a tractable KL on $\boldsymbol{\mathcal{F}}$ requires heavy restrictions on the variational family $\boldsymbol{Q}$, as discussed in Section \ref{section:svgp}.
 Instead, \cite{wild2022generalized} identifies the existence of GPs with corresponding GMs on the Hilbert space of square integrable functions $\mathcal{L}^2\left(\mathcal{X}, \rho, \mathbb{R}\right)$ when the mean satisfies
@@ -909,7 +909,7 @@ The rest of this section provides further details for certain steps of this proc
     \State $P \leftarrow$ ($k$, $\theta$) \Comment{construct prior/regulariser GP}
     \State $Q \leftarrow$ ($m_Q$, $r$, $\mathbf{Z}$) \Comment{construct GWI-GP}
     \State ($\gamma_{m_Q}$, $\gamma_r$) $\leftarrow$ \Call{OptimiseGWI}{$P$, $Q$} \Comment{via GWI, $\gamma_{m_Q}$, $\gamma_r$ are hyper-parameters of $m_Q$, $r$}
-    \State $\gamma_r \leftarrow$ \Call{OptimiseTemper}{$\gamma_r$} \Comment{via type-II maximimum likelihood on a validation set}
+    \State $\gamma_r \leftarrow$ \Call{OptimiseTemper}{$\gamma_r$} \Comment{via type-II maximum likelihood on a validation set}
     \State \Return ($\gamma_{m_Q}$, $\gamma_r$)
 \end{algorithmic}
 \end{algorithm}
@@ -972,7 +972,7 @@ Figure \ref{fig:tempered-gwi} visualises an extreme example of a GP before and a
 \end{align}
 where $N_B < N$ and $N_S < N$ for two independent batches and $\lambda_{n}(\cdot)$ evaluates the $n^{th}$ eigenvalue. We introduce further numerical approximations of (\ref{wasserstein-distance-approximation}) to improve computation speed.
 
-\paragraph{Symmetric Matrices}In our experiments, we use the same data sample for $\mathbf{X}_{N_B}$ and $\mathbf{X}_{N_S}$, to ensure symmetric square matrices for $r\left(\mathbf{X}_{N_S}, \mathbf{X}_{N_B}\right)$ and $k\left(\mathbf{X}_{N_B}, \mathbf{X}_{N_S}\right)$ in the eigen-decomposition term of (\ref{wasserstein-distance-approximation}). 
+\paragraph{Symmetric Matrices}In our experiments, we use the same data sample for $\mathbf{X}_{N_B}$ and $\mathbf{X}_{N_S}$, to ensure symmetric square matrices for $r\left(\mathbf{X}_{N_S}, \mathbf{X}_{N_B}\right)$ and $k\left(\mathbf{X}_{N_B}, \mathbf{X}_{N_S}\right)$ in the eigendecomposition term of (\ref{wasserstein-distance-approximation}). 
 This allows us to take advantage of eigenvalue properties of symmetric matrices, further explained in Appendix \ref{appendix:eigenvalue-symmetric-matrix}. 
 We use symmetric matrices to leverage the eigendecomposition implementation in version 0.4 of Python JAX, which is only available on GPUs for symmetric matrices. 
 Our experiments showed that using the same batch for $\mathbf{X}_{N_S}$ and $\mathbf{X}_{N_B}$ doesn't seem to make any significant difference on the resulting GWI-GP.
@@ -1450,7 +1450,7 @@ A differentiating feature of GWI is the freedom to parameterise the variational 
 However, they use an ARD kernel to construct their svGP variational kernel.
 
 We showed that the kernels in Section \ref{prior-kernels} have the potential to better quantify uncertainty in images by leveraging the more structured nature of the data.
-A natural next step is to explore the performance of GWI-GPs and pGWI-GPs with these NNGP kernels and custom feature mapping kernels in combination with the new variational kernels proposed in Section \ref{variational-kernels}.
+A natural next step is to explore the performance of GWI-GPs and pGVI-GPs with these NNGP kernels and custom feature mapping kernels in combination with the new variational kernels proposed in Section \ref{variational-kernels}.
 With the classification GP implementations in our code base, one could extend our current work to this use case with relative ease.
 
 \paragraph{NLP Classification} GWI and pGVI introduces flexibility and computational performance previously unavailable to variational GP learning. 
@@ -1682,7 +1682,7 @@ proj-squared-difference \\
        wasserstein-partial \\
 \bottomrule
 \end{tabular}
-\caption{GVI Regularisation \textit{(`partial' indicates dropping the eigen-decomposition term)}}
+\caption{GVI Regularisation \textit{(`partial' indicates dropping the eigendecomposition term)}}
 \end{table}
 
 \begin{table}[h!]
