@@ -79,7 +79,9 @@ ax.legend()
 fig.savefig("train_data.png", bbox_inches="tight")
 plt.show()
 ```
-![alt text](examples/regression/train_data.png)
+<p align="middle">
+  <img src="examples/regression/train_data.png" width="100%" />
+</p>
 
 We will now construct an ARD kernel for inducing points selection:
 ```python
@@ -119,7 +121,9 @@ ax.legend()
 fig.savefig("inducing_data.png", bbox_inches="tight")
 plt.show()
 ```
-![alt text](examples/regression/inducing_data.png)
+<p align="middle">
+  <img src="examples/regression/inducing_data.png" width="100%" />
+</p>
 
 We will now construct an exact GP parameterised by a zero mean function and the ARD kernel from before:
 ```python
@@ -193,7 +197,9 @@ ax.set_title("Exact GP NLL")
 fig.savefig("exact_gp_nll.png", bbox_inches="tight")
 plt.show()
 ```
-![alt text](examples/regression/exact_gp_nll.png)
+<p align="middle">
+  <img src="examples/regression/exact_gp_nll.png" width="100%" />
+</p>
 
 Visualising the predictions of the exact GP:
 ```python
@@ -221,7 +227,9 @@ ax.legend()
 plt.savefig("exact_gp.png")
 plt.show()
 ```
-![alt text](examples/regression/exact_gp.png)
+<p align="middle">
+  <img src="examples/regression/exact_gp.png" width="100%" />
+</p>
 
 Now we are ready to train the approximate GP. 
 We start by constructing a fully connected neural network, which we will use for our approximate mean:
@@ -352,7 +360,9 @@ ax.set_title("Approximate GP GVI Loss")
 fig.savefig("approximate_gp_gvi_loss.png", bbox_inches="tight")
 plt.show()
 ```
-![alt text](examples/regression/approximate_gp_gvi_loss.png)
+<p align="middle">
+  <img src="examples/regression/approximate_gp_gvi_loss.png" width="100%" />
+</p>
 
 We can now plot the approximate GP prediction:
 ```python
@@ -380,7 +390,9 @@ ax.legend()
 plt.savefig("approximate_gp.png")
 plt.show()
 ```
-![alt text](examples/regression/approximate_gp.png)
+<p align="middle">
+  <img src="examples/regression/approximate_gp.png" width="100%" />
+</p>
 
 In practice, the approximate GP would be tempered with a held-out validation set.
 For the purposes of this example, we generate some new data:
@@ -474,7 +486,9 @@ ax.set_title("Tempered Approximate GP NLL")
 fig.savefig("tempered_approximate_gp_nll.png", bbox_inches="tight")
 plt.show()
 ```
-![alt text](examples/regression/tempered_approximate_gp_nll.png)
+<p align="middle">
+  <img src="examples/regression/tempered_approximate_gp_nll.png" width="100%" />
+</p>
 
 Plotting the tempered GP prediction, we have now completed a full example of GVI for GPs!
 ```python
@@ -509,4 +523,6 @@ ax.legend()
 plt.savefig("tempered_gp.png")
 plt.show()
 ```
-![alt text](examples/regression/tempered_gp.png)
+<p align="middle">
+  <img src="examples/regression/tempered_gp.png" width="100%" />
+</p>
