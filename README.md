@@ -126,11 +126,11 @@ We will now construct an exact GP parameterised by a zero mean function and the 
 from src.means import ConstantMean
 from src.gps import GPRegression
 
-# construct mean
+# Construct mean
 mean = ConstantMean()
 mean_parameters = mean.Parameters.construct(constant=0.0)
 
-# construct exact GP
+# Construct exact GP
 exact_gp = GPRegression(
     mean=mean,
     kernel=kernel,
@@ -244,7 +244,7 @@ class FullyConnectedNeuralNetwork(nn.Module):
 
 fcnn = FullyConnectedNeuralNetwork()
 
-# randomly initialise parameters
+# Randomly initialise parameters
 key, subkey = jax.random.split(key)
 fcnn_parameters = fcnn.init(
     subkey,
@@ -433,7 +433,7 @@ tempered_empirical_risk_loss = [
 ]
 optimiser = optax.adabelief(learning_rate=1e-3)
 
-# initalise optimiser with tempered kernel parmaeters
+# Initialise optimiser with tempered kernel parameters
 opt_state = optimiser.init(tempered_kernel_parameters.dict())
 for _ in range(1000):
     gradients = jax.grad(
