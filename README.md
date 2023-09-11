@@ -151,7 +151,7 @@ from src.empirical_risks import NegativeLogLikelihood
 empirical_risk = NegativeLogLikelihood(gp=exact_gp)
 ```
 
-We train the exact GP using optax:
+We train the exact GP using Optax:
 ```python
 import optax
 
@@ -252,7 +252,7 @@ fcnn_parameters = fcnn.init(
 )
 ```
 
-We now instantiate a custom mean function, which will constructed with our neural network:
+We now instantiate a custom mean function, which will be constructed with our neural network:
 ```python
 from src.means import CustomMean
 
@@ -264,7 +264,7 @@ approximate_mean_parameters = approximate_mean.Parameters.construct(
 )
 ```
 
-As an example, we construct our approximate kernel with the sparse posterior kernel:
+For this example, we construct our approximate kernel with the sparse posterior kernel:
 ```python
 from src.kernels.approximate import SparsePosteriorKernel
 
@@ -311,7 +311,7 @@ gvi = GeneralisedVariationalInference(
 )
 ```
 
-Now we can train our approximate GP with optax using the GVI objective:
+Now we can train our approximate GP with Optax using the GVI objective:
 ```python
 optimiser = optax.adabelief(learning_rate=1e-3)
 opt_state = optimiser.init(approximate_gp_parameters.dict())
@@ -341,6 +341,7 @@ for _ in range(10000):
             y,
         )
     )
+
 fig, ax = plt.subplots(figsize=(8, 5))
 plt.plot(gvi_loss)
 ax.set_xlabel("Epoch")
@@ -379,8 +380,9 @@ plt.show()
 ```
 ![alt text](examples/approximate_gp.png)
 
-For the purposes of this example, we generate some new data to use for tempering our approximate GP. 
-In practice, this would be a pre-selected validation set separate from the training set.
+In practice, the approximate GP would be tempered with a held-out validation set.
+For the purposes of this example, we generate some new data:
+
 ```python
 key, subkey = jax.random.split(key)
 x_temper = jnp.linspace(-1, 1, 100).reshape(-1, 1)
@@ -405,7 +407,7 @@ tempered_kernel_parameters = tempered_kernel.Parameters.construct(
 )
 ```
 
-We now instantiate our tempered GP using the tempered kernel and the approximate GP mean:
+We now instantiate our tempered GP using the tempered kernel and the approximate GP mean from before:
 ```python
 tempered_gp = ApproximateGPRegression(
     mean=approximate_gp.mean,
@@ -418,10 +420,9 @@ tempered_gp_parameters = tempered_gp.Parameters.construct(
 ```
 
 We can now train our tempered GP using the negative log likelihood as the empirical risk. 
-We will use optax to optimise the tempered kernel parameters:
+We will use Optax to optimise the tempered kernel parameters:
 ```python
 tempered_empirical_risk = NegativeLogLikelihood(gp=tempered_gp)
-
 
 tempered_empirical_risk_loss = [
     tempered_empirical_risk.calculate_empirical_risk(
@@ -462,6 +463,7 @@ for _ in range(1000):
             y_temper,
         )
     )
+
 fig, ax = plt.subplots(figsize=(8, 5))
 plt.plot(tempered_empirical_risk_loss)
 ax.set_xlabel("Epoch")
@@ -472,7 +474,7 @@ plt.show()
 ```
 ![alt text](examples/tempered_approximate_gp_nll.png)
 
-Plotting the tempered GP prediction, we have now completed a full example for GVI for GPs!
+Plotting the tempered GP prediction, we have now completed a full example of GVI for GPs!
 ```python
 prediction = tempered_gp.predict_probability(
     parameters=tempered_gp_parameters,
