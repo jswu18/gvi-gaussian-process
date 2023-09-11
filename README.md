@@ -59,7 +59,7 @@ from jax.config import config
 config.update("jax_enable_x64", True)
 ```
 
-For our example, we will generate some noisy data following a sine function:
+For our example, we will generate some noisy data following a sin function:
 ```python
 number_of_points = 100
 noise = 0.1
