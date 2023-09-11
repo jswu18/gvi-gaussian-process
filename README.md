@@ -8,7 +8,7 @@ We also introduce a new learning framework that we call projected GVI (pGVI) for
 pGVI weakens the GVI assumption of a definite regulariser. 
 Instead, we propose regularising between scalar projections of the stochastic processes, an approach we call projected regularisation. 
 We demonstrate that pGVI is a highly flexible and well-performing variational inference framework with significantly cheaper linearly time computational costs compared to the cubic costs of existing approaches.
-This repository present a comprehensive software implementation of the GWI and pGVI learning frameworks. 
+This repository presents a comprehensive software implementation of the GWI and pGVI learning frameworks. 
 
 Below are two visualisations from our regression experiments in `experiments/toy_curves/`.
 <p align="middle">
