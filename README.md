@@ -9,7 +9,7 @@ Instead, we propose regularising between scalar projections of the stochastic pr
 We demonstrate that pGVI is a highly flexible and well-performing variational inference framework with significantly cheaper linearly scaling computational costs compared to the cubic costs of existing approaches.
 This repository present a comprehensive software implementation of our learning frameworks. 
 
-Below are visualisations from our regression experiments in`experiments/toy_curves/`
+Below are two visualisations from our regression experiments in`experiments/toy_curves/`.
 <p align="middle">
   <img src="thesis_report/figures/toy_curves/curve6.png" width="49%" />
   <img src="thesis_report/figures/toy_curves/curve8.png" width="49%" />
@@ -43,9 +43,9 @@ This section demonstrates an example usage of our codebase.
 We will go through a full GVI training example for a GP regression task.
 This will involve the following steps:
 1. inducing points selection, 
-2. training an exact GP, 
-3. training an approximate GP, and 
-4. tempering the approximate GP.
+2. training an exact GP on the inducing points 
+3. training an approximate GP on the full training data, and 
+4. tempering the approximate GP on a separate validation set.
 
 We begin by importing some necessary modules:
 ```python
