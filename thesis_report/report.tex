@@ -173,9 +173,9 @@ pGVI weakens the GVI assumptions of a definite regulariser.
 Instead, we propose regularising between scalar projections of the stochastic processes, an approach we call projected regularisation.
 We demonstrate that pGVI is a highly flexible and well-performing variational inference framework with significantly cheaper linearly scaling computational costs compared to the cubic costs of existing approaches.
 We also present our learning frameworks through a comprehensive software implementation available on 
-\href{https://github.com/jswu18/generalised-variational-inference-for-gaussian-processes}{GitHub}\footnote{For the most up-to-date version, see: \href{https://github.com/jswu18/generalised-variational-inference-for-gaussian-processes}{https://github.com/jswu18/generalised-variational-inference-for-gaussian-processes}} 
+\href{https://github.com/jswu18/gvi-gaussian-process}{GitHub}\footnote{For the most up-to-date version, see: \href{https://github.com/jswu18/gvi-gaussian-process}{https://github.com/jswu18/gvi-gaussian-process}} 
 \footnote{
-For the last version prior to the submission date, see: \href{https://github.com/jswu18/generalised-variational-inference-for-gaussian-processes/tree/73ed68491fc5ceb15291fc4512a2bf0c83bd8f48}{https://github.com/jswu18/generalised-variational-inference-for-gaussian-processes/tree/73ed68491fc5ceb15291fc4512a2bf0c83bd8f48}}.
+For the last version prior to the submission date, see: \href{https://github.com/jswu18/gvi-gaussian-process/tree/73ed68491fc5ceb15291fc4512a2bf0c83bd8f48}{https://github.com/jswu18/gvi-gaussian-process/tree/73ed68491fc5ceb15291fc4512a2bf0c83bd8f48}}.
 \end{abstract}
 
 \newpage
@@ -218,7 +218,7 @@ With $\mathbf{X}$ and $k$, we can construct matrices of the form $\mathbf{K} \in
     \left[\mathbf{K}\right]_{n, n'} \coloneqq k(x_n, x_{n'})
 \end{align}
 for $n, n'=1,\dots,N$. 
-We will also denote $\mathbf{K}$ as $\mathbf{K}_{\mathbf{X}, \mathbf{X}}$ or $k\left(\mathbf{X}, \mathbf{X}\right)$ whenever necessary.
+We denote $\mathbf{K}$ as $\mathbf{K}_{\mathbf{X}, \mathbf{X}}$ or $k\left(\mathbf{X}, \mathbf{X}\right)$ whenever necessary.
 
 A Gaussian distribution will be denoted $\mathcal{N}(\cdot, \cdot)$, where 
 \begin{align}
@@ -247,7 +247,7 @@ For any random element $F$, we review the following notation conventions:
         when there exists a density $p$ with respect to some other measure, most commonly the Lebesgue measure. 
         When conditioned, we denote $p(f\vert \mathbf{Y})$.
 \end{itemize}
-Whenever appropriate, sample, measure, and probability density notation will be used interchangeably. 
+Sample, measure, and probability density notation will be used interchangeably, whenever appropriate. 
 We will also define new notation such as $P \coloneqq \mathbb{P}(F)$ and $Q \coloneqq \mathbb{Q}(F)$, whenever convenient.
 
 Other conventions that we follow include:
@@ -274,7 +274,7 @@ Bayesian approaches are a common choice and generally provide more theoretically
 Our work focuses on a well-known Bayesian approach called Gaussian processes (GPs), which we review in Section \ref{section:gaussian-processes}.
 GPs quantify uncertainty in the function space domain but like most Bayesian approaches, they suffer from mis-specifications and computational intractability. 
 The problem of GP intractability has motivated many variational approaches, including the sparse variational GP (svGP) proposed by \cite{titsias2009variational}.
-We review the svGP in Section \ref{section:vi-gp}, but by operating within restrictive approximation spaces, we also discuss the limitations of this approach. 
+We review the svGP in Section \ref{section:vi-gp}, but by operating within restrictive approximation spaces, we also recognise the limitations of this approach. 
 With a review of \cite{knoblauch2022optimization} in Section \ref{section:gvi-for-gps}, we explain how generalised variational inference (GVI) addresses the issues of mis-specification and intractability prevalent in Bayesian inference.
 GVI re-contextualises Bayesian modelling within an optimisation-centric learning framework.
 This is followed by a review of Gaussian Wasserstein Inference (GWI) from \cite{wild2022generalized} later in the same section, which extends GVI to function spaces.
@@ -285,7 +285,7 @@ This includes new parameterisations for the prior kernel such as the NNGP kernel
 We will also introduce new variational kernels as well as faster numerical approximations of the GWI objective.
 This is followed by Section \ref{section:pgvi}, which introduces a new computationally cheap framework we call projected GVI 
 (pGVI) for GPs.
-pGVI offers more flexibility in defining learning objectives for variational GPs with a new form of regularisation we call projected regularisation.
+pGVI offers more flexibility for defining learning objectives for variational GPs with a new form of regularisation we call projected regularisation.
 This computes divergences between scalar projections of GPs.
 We also present an experimentation framework, summarised in Section \ref{section:experimentation-framework}. 
 This includes the development of an extensive software implementation designed for flexibility and scaleability, introducing appropriate abstraction architectures, and following best practices common in the software engineering community. 
@@ -323,14 +323,14 @@ The distribution in (\ref{gp-vector}) is a finite-dimensional instance of the GP
     \label{gp}
 \end{align}
  where $F \coloneqq \left\{F(x): x \in \mathcal{X}\right\}$ such that a sample path from $F$ has the mapping $f: \mathcal{X} \rightarrow \mathbb{R}$.
-In other words, choosing a mean and kernel to construct (\ref{gp}) ensures that \textit{any} finite set of inputs will have a consistent joint Gaussian distribution adhering to (\ref{gp-vector}) where we define 
+In other words, choosing a mean and kernel to construct (\ref{gp}) ensures that \textit{any} finite set of inputs will have a consistent joint Gaussian distribution adhering to (\ref{gp-vector}), where we define 
 \begin{align}
     Y:=\left[F(x_1),\hdots, F(x_N)\right]^T.
 \end{align}
 
-GPs are a powerful modelling approach. With minimal restrictions for choosing the mean function and kernel function, there are endless possibilities for constructing expressive GP model spaces.
+GPs are a powerful modelling approach. With minimal restrictions for choosing the mean and kernel function, there are endless possibilities for constructing expressive GP model spaces.
 This control and visibility into the model's behaviour is a strong advantage for GPs compared to other approaches.
-Moreover, \cite{novak2019neural} explains that the GP is also an important construction for understanding the theoretical properties of many neural network architectures at initialisation.
+\cite{novak2019neural} explains that the GP is also an important construct for understanding the theoretical properties of many neural network architectures at initialisation.
 Showing that the infinite width limit of many such architectures can be expressed as a GP has provided a theoretical framework for analysing neural networks, which are typically viewed as black box approaches.
 This further motivates the potential and importance of GPs.
 
@@ -407,7 +407,7 @@ and $\left\{w_i, \xi_i\right\}_{i=1}^I$ being the weights and roots of the Hermi
 \section{Standard Variational Inference for Gaussian Processes}\label{section:vi-gp}
 Although they are \textit{analytically} tractable, a major drawback of GP models has been their inability to \textit{computationally} scale with respect to $N$, the number of training points.
 Both classification and regression predictive posteriors rely on evaluating the inversion of an $\mathbb{R}^{N \times N}$ matrix in (\ref{gp-posterior-mean}) and (\ref{gp-posterior-covariance}).
-This operation has computational complexity $\mathcal{O}(N^3)$ and space complexity $\mathcal{O}(N^2)$, both of which quickly become problematic when scaling to larger-sized training sets.
+This operation has time complexity  $\mathcal{O}(N^3)$ and space complexity $\mathcal{O}(N^2)$, both of which quickly become problematic when scaling to larger-sized training sets.
 This problem has been a serious limitation of GPs and has restricted their use to problem domains having smaller-sized data sets.
 
 This section will review standard variational inference (VI) for GPs and in particular, the sparse variational GP (svGP) from \cite{titsias2009variational}, to obtain computationally cheaper approximations of the true predictive posterior.
@@ -430,7 +430,7 @@ VI is based on the observation that the Kullback-Leibler (KL) divergence between
 \end{align}
 where $p(y) = \int p(y\vert z)p(z) dz$ is the marginal log-likelihood and
 \begin{align}
-    L(Q) \coloneqq -\mathbb{E}_{Q}\left[\log p(y \vert \mathbf{Z})\right] + \KLD\left[Q, P\right]
+    L(Q) \coloneqq -\mathbb{E}_{Q}\left[\log p(y \vert \mathbf{Z})\right] + \KLD\left[Q, P\right],
     \label{finite-dimensional-vi-loss}
 \end{align}
 such that $P \coloneqq \mathbb{P}(Z)$ is the prior and $\KLD\left[\wc, \wc\right]$ denotes the KL divergence.
@@ -518,11 +518,11 @@ where
 \end{align}
 conveniently eliminating the need for gradient-based optimisations such that $\gamma = \left(\boldsymbol{\mu}^*, \mathbf{\Sigma}^*,  \mathbf{Z}\right)$.
 
-The svGP ensures matrix inversions of $\mathbb{R}^{M \times M}$ matrices with $\mathcal{O}\left(M^3\right)$ computational complexity, while the operation $\mathbf{K}_{\mathbf{Z}, \mathbf{X}} \mathbf{K}_{\mathbf{X}, \mathbf{Z}}$ in (\ref{svgp-optimal-sigma-m}) has complexity $\mathcal{O}\left(NM^2\right)$.
-Thus, the overall computational complexity of this approach is $\mathcal{O}\left(NM^2\right)$ with space complexity $\mathcal{O}\left(NM\right)$.
+The svGP ensures matrix inversions of $\mathbb{R}^{M \times M}$ matrices with $\mathcal{O}\left(M^3\right)$ time complexity , while the operation $\mathbf{K}_{\mathbf{Z}, \mathbf{X}} \mathbf{K}_{\mathbf{X}, \mathbf{Z}}$ in (\ref{svgp-optimal-sigma-m}) has complexity $\mathcal{O}\left(NM^2\right)$.
+Thus, the overall time complexity  of this approach is $\mathcal{O}\left(NM^2\right)$ with space complexity $\mathcal{O}\left(NM\right)$.
 This significantly improves the scaleability of GP approaches from the standard GP in Section \ref{section:gaussian-processes}. $M$ is typically chosen as $\mathcal{O}(N^{1/2})$ such that the svGP has $\mathcal{O}(N^{2})$ and $\mathcal{O}(N^{3/2})$ time and space complexity respectively.
 
-This svGP formulation provides a solution to the scaling issues of the GP but illustrates how the three assumptions of standard VI discussed in Section \ref{section:vi-in-finite-dimensions} can break down.
+This svGP formulation provides a solution to the scaling issues of the GP, but illustrates how the three assumptions of standard VI discussed in Section \ref{section:vi-in-finite-dimensions} can break down.
 In particular, the variational set $\mathbf{Q}$ defined by the parameter set $\boldsymbol{\Gamma}$ may not be expressive enough to contain a reasonable approximation of the true Bayesian posterior.
 For example, the mean function of the true posterior with a zero mean GP can be expressed as the linear combination
 \begin{align}
@@ -567,7 +567,7 @@ Algorithm \ref{alg:inducing-point-selection} reviews an approach from \cite{burt
 Figure \ref{fig:inducing-point-algo} compares random selection to Algorithm \ref{alg:inducing-point-selection} with MNIST data, selecting 10 inducing points from 5000 for each digit. 
 We see that the greedy variance approach is much more effective at selecting a diverse set of images.
 Moreover, the images in Figure \ref{fig:inducing-point-algo} were selected in order from left to right.
-We can see that the first two images selected by greedy variance are generally two very different variations of the digit.
+The first two images selected by greedy variance are generally two very different variations of the digit.
 For example, the first image for `1' is a line slanted to the right while the second image involves more strokes and slants left, showing how the algorithm greedily minimises the variance across the candidate images.
 
 \begin{figure}[h!]
@@ -608,7 +608,7 @@ The inducing point selection method in Algorithm \ref{alg:inducing-point-selecti
 However in practice, kernel selection generally involves negative log-likelihood (NLL) optimisation on training data.
 In the case of learning the prior GP, this would involve learning the kernel hyper-parameters on the selected inducing points.
 This presents a chicken and egg problem.
-\cite{burt2020convergence} proposes an EM-like approach, iteratively learning the kernel hyper-parameters and selecting the inducing points with Algorithm \ref{alg:inducing-point-selection} until convergence of an evidence lower bound.
+\cite{burt2020convergence} proposes an EM-like approach, iteratively learning the kernel hyper-parameters and selecting the inducing points with Algorithm \ref{alg:inducing-point-selection} until the convergence of an evidence lower bound.
 Our implementation takes a more naive approach, iterating between point selection and NLL minimisation until the inducing points do not change. 
 We summarise this approach in Algorithm \ref{alg:inducing-points-prior-gp}.
 
@@ -642,12 +642,12 @@ This is overlaid with the Bayesian posterior of a GP parameterised with the lear
 This visualises the selection procedure as it attempts to minimise uncertainty over training points, ensuring maximum coverage over the input space in (\ref{inducing-point-input-space}).
 By learning the kernel in-between iterations, we see that Algorithm \ref{alg:inducing-points-prior-gp} can appropriately adjust the variances on the training data, which would be held fixed during Algorithm \ref{alg:inducing-point-selection}.
 
-In the loop of Algorithm \ref{alg:inducing-point-selection}, each element of the diagonal evaluation has computational complexity $\mathcal{O}(M^2)$ from matrix multiplication, so computing for all $N$ candidate points along the diagonal is $\mathcal{O}(NM^2)$.
+In the loop of Algorithm \ref{alg:inducing-point-selection}, each element of the diagonal evaluation has time complexity  $\mathcal{O}(M^2)$ from matrix multiplication, so computing for all $N$ candidate points along the diagonal is $\mathcal{O}(NM^2)$.
 The matrix inversion is $\mathcal{O}(M^3)$, but remains a constant when computing each element of the diagonal.
 Thus the complexity of selecting each inducing point is $\mathcal{O}(NM^2)$, assuming $M << N$.
-Looping to select $M$ inducing points, Algorithm \ref{alg:inducing-point-selection} has $\mathcal{O}(NM^3)$ computational complexity.
-Choosing $M$ as $\mathcal{O}(N^{1/2})$, we have $\mathcal{O}(N^{5/2})$ computational complexity and $\mathcal{O}(N)$ space complexity. 
-Assuming Algorithm \ref{alg:inducing-points-prior-gp} loops for $k$ iterations, we have $\mathcal{O}(k N^{5/2})$ computational complexity and the same space complexity
+Looping to select $M$ inducing points, Algorithm \ref{alg:inducing-point-selection} has $\mathcal{O}(NM^3)$ time complexity .
+Choosing $M$ as $\mathcal{O}(N^{1/2})$, we have $\mathcal{O}(N^{5/2})$ time complexity  and $\mathcal{O}(N)$ space complexity. 
+Assuming Algorithm \ref{alg:inducing-points-prior-gp} loops for $k$ iterations, we have $\mathcal{O}(k N^{5/2})$ time complexity and the same space complexity as before.
 
 
 
@@ -657,7 +657,7 @@ The standard VI objective in (\ref{svgp-vi-loss}) is the root cause of the restr
 This is because learning in the standard VI framework necessitates a KL divergence, which is often ill-defined for GPs.
 
 This section will review generalised variational inference (GVI) in finite dimensions from \cite{knoblauch2022optimization}, a framework that does not rely on the KL divergence.
-Reviewing GVI is a important first step for constructing new realisations of variational inference frameworks.
+GVI is a fundamental construct for new realisations of variational inference frameworks.
 This will be followed by a review of \cite{wild2022generalized}, which extends GVI to an infinite dimensional setting and proposes Gaussian Wasserstein Inference (GWI) in function spaces.
 GWI constructs a learning framework that avoids the KL divergence for GPs, providing richer approximation spaces for variational learning.
 
@@ -669,7 +669,7 @@ Extending the Bayesian posterior from (\ref{bayesian-posterior}) to $N$ observat
 \end{align}
 where $p(Z)$ is the prior for the latent variables and $p(Y=y \vert Z)$ is the likelihood of an observation.
 The Bayesian posterior $q_B(Z)$ is traditionally viewed as an updated belief for the latent variables by incorporating the likelihood evaluation of new observations.
-This interpretation is commonly cited in the context of statistical modelling, where practitioners are focused on obtaining the model specification that characterises the underlying data generating process. 
+This interpretation is commonly cited in the context of statistical modelling, where practitioners are focused on obtaining the model specification that characterises an underlying data generating process. 
 The validity of this belief update relies on three assumptions:
 \begin{enumerate}
     \setlength\itemsep{-0.25em}
@@ -690,7 +690,7 @@ As discussed in Section \ref{section:vi-in-finite-dimensions}, a reasonable vari
     q_B(Z) = \argmin_{Q \in \boldsymbol{Q}} \left\{\mathbb{E}_{Q}\left[\sum_{n=1}^N \ell \left(Z, y_n\right)\right] + \mathbb{D}\left[Q, P\right]\right\}
     \label{gvi-posterior}
 \end{align}
-when choosing $\boldsymbol{Q}$ as the space of all probability measures on $Z$, the negative log-likelihood $\ell(Z, y) =-\log p\left(y \vert Z\right)$,  and the KL divergence $\mathbb{D}\left[Q, P\right] = \KLD\left[Q, P\right]$ where $P$ is the prior.
+when choosing $\boldsymbol{Q}$ as the space of all probability measures on $Z$, the negative log-likelihood $\ell(Z, y) =-\log p\left(y \vert Z\right)$,  and the KL divergence $\mathbb{D}\left[Q, P\right] = \KLD\left[Q, P\right]$ with $P$ as the prior.
 More generally, $\ell$ is called the loss function and $\mathbb{D}$ is the divergence. With this interpretation, the Bayesian posterior is the solution of a regularised empirical risk minimisation problem.
 
 Framed through optimisation, the Bayesian posterior will always be a valid solution of (\ref{gvi-posterior}), regardless of the three assumptions required to ensure a valid Bayesian belief update.
@@ -732,7 +732,7 @@ With the GVI objective in (\ref{gvi-posterior-in-fs}), \cite{wild2022generalized
 \end{align}
 which is always well-defined and does not have the support mis-match problem of the KL divergence.
 The subscripts denote the respective GM of each term, $\tr$ is the trace of an operator, and $(C)^{1/2}$ denotes the square root of the positive self-adjoint operator $C$.
-Most mean functions satisfy (\ref{l2-mean}) and most kernels satisfy (\ref{l2-kernel}), ensuring the existence of the corresponding Gaussian measures P and Q on $\mathcal{L}^2$.
+Most mean functions satisfy (\ref{l2-mean}) and most kernels satisfy (\ref{l2-kernel}), ensuring the existence of the corresponding Gaussian measures $P$ and $Q$ on $\mathcal{L}^2$.
 This provides significantly more freedom for the variational set $\boldsymbol{Q}$ than the svGP approach from \cite{titsias2009variational}.
 
 With GWI, \cite{wild2022generalized} proposes GWI-net, a variational GP parameterised with a neural network mean to replace the svGP mean in (\ref{svgp-mean}).
@@ -742,7 +742,7 @@ The experimental results of this approach in \cite{wild2022generalized} show pro
 
 \section{Improving Gaussian Wasserstein Inference}\label{section:improving-gwi}
 In this section, we propose improvements to GWI for GPs, the function space GVI framework from \cite{wild2022generalized}.
-We introduce new prior kernels and new variational kernels for GWI, further exploring the flexibility of the learning framework.
+We introduce new prior and variational kernels for GWI, further exploring the flexibility of the learning framework.
 We also introduce a new modular GWI learning procedure.
 GPs learned with this procedure will be called GWI-GPs.
 Finally, we introduce numerical approximations of the Wasserstein distance that significantly improves inference speed.
@@ -813,7 +813,7 @@ These experiments were performed without any training on the kernel hyper-parame
 \end{align}
 where $h: \mathcal{X} \rightarrow \mathbb{R}^D$ is a mapping to a $D$-dimensional feature space and $k_0: \mathbb{R}^D \times \mathbb{R}^D \rightarrow \mathbb{R}$ is a base kernel that can be any kernel function. 
 We use Algorithm \ref{alg:inducing-points-prior-gp} to learn the hyper-parameters of $k_0$ and $h$. 
-In our experiments, we choose non-stationary kernels for $k_0$ to ensure non-zero gradients for the gram matrix diagonals $k_0(h(x), h(x))$ with respect to the hyper-parameters of $h$. 
+In our experiments, we chose non-stationary kernels for $k_0$ to ensure non-zero gradients for the gram matrix diagonals $k_0(h(x), h(x))$ with respect to the hyper-parameters of $h$. 
 Like with NNGP kernels, we suggest choosing a suitable neural network architecture for $h$ depending on the data domain.
 
 \begin{figure}[h!]
@@ -850,7 +850,7 @@ Like with NNGP kernels, we suggest choosing a suitable neural network architectu
 
 To motivate our approach, Figure \ref{fig:mnist-nn-mapping-kernels-0} shows inducing points selected with Algorithm \ref{alg:inducing-point-selection} using randomly initialised custom feature mapping kernels and selecting from the same 5000 images of each digit as for Figure \ref{fig:mnist-inducing-points}. 
 We chose $k_0$ as a linear kernel and $h$ as a neural network (FCNN or CNN) with an output layer of $D=256$ features. 
-We observe that even with random initialisation, the selected images are more diverse than the ARD kernel.
+We observed that even with random initialisation, the selected images are more diverse than the ARD kernel.
 Figure \ref{fig:mnist-nn-mapping-kernels-3} visualises the inducing points after learning the hyper-parameters of $k$ with Algorithm \ref{alg:inducing-points-prior-gp}.
 These images are qualitatively comparable to those selected by NNGP kernels.
 
@@ -864,7 +864,7 @@ where $\mathbf{\Sigma} \in \mathbb{R}^{M \times M}_{\succcurlyeq 0}$ is the hype
 \cite{wild2022generalized} proposes learning the positive semi-definite matrix $\mathbf{\Sigma}$ by learning the parameters of $\mathbf{L} \in \mathbb{R}^{M \times M}$, a lower triangle matrix with positive diagonal elements.
 As a Cholesky decomposition, this ensures that $\mathbf{\Sigma} = \mathbf{L}\mathbf{L}^T \in \mathbb{R}^{M \times M}_{\succcurlyeq 0}$. 
 We call this the Cholesky parameterisation. 
-This section introduces new parameterisations for the svGP kernel and new forms of variational kernels.
+This section introduces new parameterisations for the svGP kernel followed by new forms of variational kernels.
 
 \paragraph{svGP Parameterisations}
 We introduce a new parameterisation of $\mathbf{\Sigma}$ called the diagonal parameterisation. The diagonal parameterisation learns
@@ -916,7 +916,7 @@ The rest of this section provides further details for certain steps of this proc
 \paragraph{The Regulariser} The prior is an essential component of a Bayesian posterior belief update.
 However in the context of GVI, the prior can be interpreted as a regulariser for empirical risk minimisation.
 To prevent confusion in this discussion, we will call this the regulariser. 
-In our experiments, we explored traditional regularisers constructed with the standard GP prior, having $\mathcal{O}(1)$ computational complexity. 
+In our experiments, we explored traditional regularisers constructed with the standard GP prior, having $\mathcal{O}(1)$ time complexity . 
 Additionally, we propose another option for the GP regulariser
 \begin{align}
     y \vert \mathbf{Z}, \mathbf{U}, \sigma^2
@@ -925,7 +925,7 @@ Additionally, we propose another option for the GP regulariser
 \end{align}
 a `lightweight' Bayesian posterior using the inducing points $\mathbf{Z}\in \mathcal{X}^M$ and corresponding responses $\mathbf{U} \in \mathbb{R}^M$.
 This regulariser would violate the traditional interpretation of a prior as it would explicitly use training data twice during inference.
-However, we loosen this interpretation with the optimisation-centric nature of GVI, viewing this as a potentially better-informed regulariser than the unconditioned GP prior.
+However, we weaken this interpretation with the optimisation-centric nature of GVI, viewing this as a potentially better-informed regulariser than the unconditioned GP prior.
 Our experiments show that this less-than traditional regulariser can sometimes construct a better learning objective for GWI-GPs.
 Moreover, with inversions of $\mathbb{R}^{M\times M}$ matrices only, we maintain computational tractability when evaluating the GWI objective.
 \newpage
@@ -959,7 +959,7 @@ Tempering is also applied to classification by constructing $\left[\alpha_T^1 \d
 \label{fig:tempered-gwi}
 \end{figure}
 
-Figure \ref{fig:tempered-gwi} visualises an extreme example of a GP before and after tempering. We observe $\alpha_T$ is essentially `squeezing' the variance to more appropriate uncertainty bounds for the data, while the rest of the GP's behaviour remains the same.
+Figure \ref{fig:tempered-gwi} visualises an extreme example of a GP before and after tempering. We observe that $\alpha_T$ is essentially `squeezing' the variance to more appropriate uncertainty bounds for the data, while the rest of the GP's behaviour remains the same.
 
 
 \subsection{Wasserstein Distance Approximations}
@@ -979,7 +979,7 @@ Our experiments showed that using the same batch for $\mathbf{X}_{N_S}$ and $\ma
 
 \paragraph{Dropping the Eigendecomposition}The eigendecomposition in the last term of (\ref{wasserstein-distance-approximation}) is computationally expensive with $\mathcal{O}(N^3)$ complexity, which in our case is the sample size $N_S$.
 In our GWI experiments we often dropped this term with negligible practical effects.
-This imprecise regulariser, which caused minimal change to our inference results, was significantly counteracted with much faster training speeds.
+This imprecise regulariser, which caused minimal change to our inference results, was significantly counteracted by much faster training speeds.
 
 \newpage
 \section{Projected Generalised Variational Inference for Gaussian Processes}\label{section:pgvi}
@@ -1012,10 +1012,10 @@ The experimental success of projected regularisation suggests that a regulariser
 
 
 The experimentally-driven approach of pGVI is attractive because it is computationally cheaper than GWI or any other previous approaches to function space VI.
-The base regularisers that we propose have $\mathcal{O}(1)$ computational complexity with respect to a training input $x_n$.
-For a batch of $N_B$ points, we have $\mathcal{O}(N_B)$ complexity, much faster than $\mathcal{O}(N_B^3)$ for the Wasserstein distance in (\ref{wasserstein-distance-approximation}).  
-Other approaches like \cite{rudner2020rethinking}, \cite{sun2019functional}, \cite{ma2019variational}, and \cite{ma2021functional} generally attempt to stochastically approximate a function space KL divergence with some finite $N$-dimensional realisation also having complexity $\mathcal{O}(N^3)$. 
-This makes the linear complexity of pGVI an extremely attractive approach in practice.
+The base regularisers that we propose have $\mathcal{O}(1)$ time complexity  with respect to a training input $x_n$.
+For a batch of $N_B$ points we have $\mathcal{O}(N_B)$, much faster than $\mathcal{O}(N_B^3)$ for the Wasserstein distance in (\ref{wasserstein-distance-approximation}).  
+Other approaches like \cite{rudner2020rethinking}, \cite{sun2019functional}, \cite{ma2019variational}, and \cite{ma2021functional} generally attempt to stochastically approximate a function space KL divergence with some finite $N$-dimensional realisation, also having complexity $\mathcal{O}(N^3)$. 
+This makes the linear time complexity of pGVI an extremely attractive approach in practice.
 
 \subsection{Base Regularisers}
 We now review the base regularisers $\mathbb{D}_0$ used in our experiments. 
@@ -1048,16 +1048,16 @@ with $\alpha \sigma_p^2 + (1-\alpha) \sigma_q^2 > 0$.
 \begin{align}
     \mathbb{N} \left[Q_{x}, P_{x}\right] = \left(\mu_p - \mu_q\right)^2 + \left(\sigma_q^2-\sigma_p^2\right)^2,
 \end{align}
-taking the squared difference of the means and covariances.
+combining the squared difference of the means and covariances.
 
 \newpage
 \section{Experimentation Framework}\label{section:experimentation-framework}
 This section presents the experimentation framework that we developed for GWI-GPs and pGVI-GPs.
 We begin by summarising our implementation architecture followed by a description of our experimentation setup.
 Lastly, we will present results for some 1-D regression problems to show our framework in action.
-Our Python implementation is openly available on \href{https://github.com/jswu18/generalised-variational-inference-for-gaussian-processes}{GitHub}\footnote{For the most up-to-date version, see: \href{https://github.com/jswu18/generalised-variational-inference-for-gaussian-processes}{https://github.com/jswu18/generalised-variational-inference-for-gaussian-processes}} 
+Our Python implementation is openly available on \href{https://github.com/jswu18/gvi-gaussian-process}{GitHub}\footnote{For the most up-to-date version, see: \href{https://github.com/jswu18/gvi-gaussian-process}{https://github.com/jswu18/gvi-gaussian-process}} 
 \footnote{
-For the last version prior to the submission date, see: \href{https://github.com/jswu18/generalised-variational-inference-for-gaussian-processes/tree/73ed68491fc5ceb15291fc4512a2bf0c83bd8f48}{https://github.com/jswu18/generalised-variational-inference-for-gaussian-processes/tree/73ed68491fc5ceb15291fc4512a2bf0c83bd8f48}}. 
+For the last version prior to the submission date, see: \href{https://github.com/jswu18/gvi-gaussian-process/tree/73ed68491fc5ceb15291fc4512a2bf0c83bd8f48}{https://github.com/jswu18/gvi-gaussian-process/tree/73ed68491fc5ceb15291fc4512a2bf0c83bd8f48}}. 
 It should be noted that our implementation collects the terms svGP, GWI-GP, and pGVI-GP under the umbrella name `approximate GP'.
 
 \subsection{Implementation Architecture}\label{implementation-architecture}
@@ -1066,7 +1066,7 @@ As such, abstraction was critical for ensuring scaleable and maintainable implem
 Luckily, the GVI framework proposed by \cite{knoblauch2022optimization} naturally translates to an architecture that we outline with the UML class diagram in Figure \ref{gvi-implementation}.
 For visual clarity, we only included relevant attributes and methods.
 We see that the GVI objective in (\ref{gvi-posterior-in-fs}) with $\ell$ and $\mathbb{D}$ has been abstracted to accommodate any valid empirical risk and regularisation, respectively.
-These abstractions are exactly mirrored in our implementation architecture as abstract base classes, ensuring that the same interface is maintained for all child class implementations.
+These abstractions are exactly mirrored in our implementation architecture as abstract base classes, ensuring that the same interface is maintained for all child classes.
 \begin{figure}[h!]
 \begin{center}
 \resizebox{\textwidth}{!}{
@@ -1398,7 +1398,7 @@ Appendix \ref{appendix:configurations} contains further details for each setting
 Interestingly, in some cases it was actually better to use fewer inducing points with $M = \mathcal{O}(N^{1/3})$.
 We also see that optimal settings can vary quite significantly.
 This demonstrates the flexibility of GWI and pGVI to accommodate the specific variational space and learning objective that may be best suited for a given problem.
-
+Please refer to the \code{experiments/toy\_curves/} directory to reproduce our results.
 
 \begin{table}[h!]
 \tiny
@@ -1460,18 +1460,18 @@ Candidate problems include sentiment analysis and named-entity recognition (NER)
 Attention networks are a fundamental building block for transformer models, the default architecture used by the NLP community at the moment. \cite{pmlr-v119-hron20a} proposes the existence of infinite-width attention networks.
 These could be used to parameterise GPs within our VI frameworks.
 Alternatively, the custom feature map kernel proposed in (\ref{custom-feature-map-kernel}) can accommodate any feature mapping for $h$, including pre-trained transformer embedding models. 
-These would both be reasonable approaches to constructing variational GPs for the NLP domain.
+These would both be reasonable approaches for constructing variational GPs in the NLP domain.
 
 \newpage
 \section{Conclusions}\label{section:conclusions}
-Generalised variational inference (GVI) is an exciting development from \cite{knoblauch2022optimization} within the field of Bayesian inference.
-Motivated by GVI, Gaussian Wasserstein Inference (GWI) from \cite{wild2022generalized} establishes a new direction for function space variational inference, pivoting from previous approaches to the problem.
+Generalised variational inference (GVI) proposed by \cite{knoblauch2022optimization} is an exciting development within the field of Bayesian inference.
+An infinite dimensional realisation of GVI, Gaussian Wasserstein Inference (GWI) from \cite{wild2022generalized} establishes a new direction for function space variational inference, pivoting from previous approaches to the problem.
 This has only started to demonstrate the potential of GVI, when applied to Gaussian processes (GPs). 
 
 
-Through the modular nature of Algorithm \ref{alg:gwi-gp} and new kernel parameterisations, we further explore the flexibility of GWI.
+Through the modular nature of Algorithm \ref{alg:gwi-gp} and new kernel parameterisations, we further explored the flexibility of GWI.
 With projected GVI (pGVI), we experimentally showed that weakening the assumption of a definite regulariser in GVI can still maintain a sensible loss objective for GP variational learning.
-Compared to the $\mathcal{O}(N^3)$ computational complexity of previous methods, projected regularisation is shown to be an attractive and practical $\mathcal{O}(N)$ alternative. 
+Compared to the cubic time complexity  of previous methods, projected regularisation is shown to be an attractive and practical linear time alternative. 
 pGVI is an even more flexible learning framework and improves the accessibility of GPs for new problem domains that we hope to explore in the future.
 
 Our proposed methods were developed in an experimentally-driven environment, primarily motivated to improve the computational and predictive performance of variational GPs. 
