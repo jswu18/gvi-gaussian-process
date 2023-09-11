@@ -291,8 +291,10 @@ approximate_gp_parameters = approximate_gp.Parameters.construct(
 )
 ```
 
-The GVI objective is constructed with an empirical risk and a regularisation term.
-We will use the negative log likelihood as the empirical risk and regularise with the projected Renyi divergence: 
+GVI involves an empirical risk and a regularisation.
+We will use the negative log likelihood as the empirical risk and regularise with the projected Renyi divergence.
+We will also use the non-traditional approach of regularising with the 'lightweight' Bayesian posterior of the exact GP.
+To construct our GVI objective:
 ```python
 from src.regularisations.projected import ProjectedRenyiRegularisation
 from src.generalised_variational_inference import GeneralisedVariationalInference
