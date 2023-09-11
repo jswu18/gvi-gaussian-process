@@ -9,7 +9,7 @@ Instead, we propose regularising between scalar projections of the stochastic pr
 We demonstrate that pGVI is a highly flexible and well-performing variational inference framework with significantly cheaper linearly scaling computational costs compared to the cubic costs of existing approaches.
 This repository present a comprehensive software implementation of our learning frameworks. 
 
-Below are two visualisations from our regression experiments in`experiments/toy_curves/`.
+Below are two visualisations from our regression experiments in `experiments/toy_curves/`.
 <p align="middle">
   <img src="thesis_report/figures/toy_curves/curve6.png" width="49%" />
   <img src="thesis_report/figures/toy_curves/curve8.png" width="48.5%" />
