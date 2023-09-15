@@ -1,0 +1,16 @@
+mean:
+  mean_schema: "custom"
+  mean_kwargs:
+    number_output_dimensions: 1
+    nn_function_kwargs:
+      seed: 0
+      input_shape: [16]
+      layers:
+        layer_1:
+          layer_schema: "dense"
+          layer_kwargs:
+            features: 10
+        layer_2:
+          layer_schema: "tanh"
+          layer_kwargs:
+  mean_parameters:

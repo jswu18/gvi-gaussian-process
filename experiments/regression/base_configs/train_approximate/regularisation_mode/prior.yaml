@@ -1,0 +1,3 @@
+regularisation:
+  regularisation_kwargs:
+    mode: "prior"

@@ -1,0 +1,4 @@
+regularisation:
+  regularisation_schema: "gaussian_squared_difference"
+  regularisation_kwargs:
+    full_covariance: False

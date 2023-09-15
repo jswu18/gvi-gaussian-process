@@ -1,0 +1,7 @@
+kernel:
+  kernel_schema: "cholesky_svgp"
+  kernel_kwargs:
+    observation_noise: 1.0
+    diagonal_regularisation: 1.0e-10
+    is_diagonal_regularisation_absolute_scale: False
+  kernel_parameters:

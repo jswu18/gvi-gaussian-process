@@ -1,0 +1,2 @@
+regularisation:
+  regularisation_schema: "projected_bhattacharyya"
