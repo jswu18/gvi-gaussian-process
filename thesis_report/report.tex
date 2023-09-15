@@ -136,8 +136,9 @@ $\Box$ \end{quotation}}
 	% \vfill
 
 	\vspace{1cm}
-	{\LARGE James (\textit{Jian Shu}) Wu\par}
-	\vspace{0.5cm}
+	{\LARGE James Wu\par}
+	% {\LARGE Candidate: XMTK5\par}
+    \vspace{0.5cm}
 	supervised by\par
     \Large{Veit D. Wild \& Jeremias Knoblauch}\\
 	\vfill
@@ -168,13 +169,12 @@ $\Box$ \end{quotation}}
 Proposed by \cite{knoblauch2022optimization}, generalised variational inference (GVI) is a learning framework motivated by an optimisation-centric interpretation of Bayesian inference. 
 Extending GVI to infinite dimensions, \cite{wild2022generalized} introduces Gaussian Wasserstein inference (GWI) in function spaces. 
 GWI demonstrates a new inference approach for variational Gaussian Processes (GPs), circumventing many limitations of previous approaches.
-Our work introduces various improvements to GWI for GPs, including new kernel parameterisations such as the NNGP kernels from \cite{novak2019neural}. We also introduce a new learning framework that we call projected GVI (pGVI) for GPs. 
+Our work introduces various improvements to GWI for GPs, including new kernel parameterisations such as the neural network GP (NNGP) kernels from \cite{novak2019neural}. We also introduce a new learning framework that we call projected GVI (pGVI) for GPs. 
 pGVI weakens the GVI assumption of a definite regulariser.
 Instead, we propose regularising between scalar projections of the stochastic processes, an approach we call projected regularisation.
 We demonstrate that pGVI is a highly flexible and well-performing variational inference framework with significantly cheaper linearly time computational costs compared to the cubic costs of existing approaches.
 We also present our learning frameworks through a comprehensive software implementation available on 
-\href{https://github.com/jswu18/gvi-gaussian-process}{GitHub}\footnote{For the most up-to-date version, see: \href{https://github.com/jswu18/gvi-gaussian-process}{https://github.com/jswu18/gvi-gaussian-process}}$^{,}$\footnote{
-For the last version prior to the submission date, see: \\\href{https://github.com/jswu18/gvi-gaussian-process/tree/59093fbfbdc535881b7f6af4a367b1ea2e5dc773}{https://github.com/jswu18/gvi-gaussian-process/tree/59093fbfbdc535881b7f6af4a367b1ea2e5dc773}}.
+\href{https://github.com/jswu18/gvi-gaussian-process}{GitHub}\footnote{For the most up-to-date version, see: \href{https://github.com/jswu18/gvi-gaussian-process}{https://github.com/jswu18/gvi-gaussian-process}}.
 \end{abstract}
 
 \newpage
@@ -856,7 +856,7 @@ These images are qualitatively comparable to those selected by NNGP kernels.
 \subsubsection{Variational Kernels}\label{variational-kernels}
 The svGP kernel is given as
 \begin{align}
-    r(x, x') = k(x, x') - \mathbf{K}_{x, \mathbf{Z}} \mathbf{K}_{\mathbf{Z}, \mathbf{Z}} \mathbf{K}_{\mathbf{Z}, x'} + \mathbf{K}_{x, \mathbf{Z}} \mathbf{\Sigma} \mathbf{K}_{\mathbf{Z}, x'},
+    r(x, x') = k(x, x') - \mathbf{K}_{x, \mathbf{Z}} \left(\mathbf{K}_{\mathbf{Z}, \mathbf{Z}}\right)^{-1} \mathbf{K}_{\mathbf{Z}, x'} + \mathbf{K}_{x, \mathbf{Z}} \mathbf{\Sigma} \mathbf{K}_{\mathbf{Z}, x'},
     \label{gwi-svgp-kernel}
 \end{align}
 where $\mathbf{\Sigma} \in \mathbb{R}^{M \times M}_{\succcurlyeq 0}$ is the hyper-parameter of $r$. 
@@ -875,7 +875,7 @@ Although this new parameterisation is more restrictive than the Cholesky paramet
 
 We also propose a base kernel parameterisation replacing $\mathbf{K}_{x, \mathbf{Z}} \mathbf{\Sigma} \mathbf{K}_{\mathbf{Z}, x}$, the last term of (\ref{gwi-svgp-kernel}) such that
 \begin{align}
-    r(x, x') = k(x, x') - \mathbf{K}_{x, \mathbf{Z}} \mathbf{K}_{\mathbf{Z}, \mathbf{Z}} \mathbf{K}_{\mathbf{Z}, x'} + r_0(x, x'),
+    r(x, x') = k(x, x') - \mathbf{K}_{x, \mathbf{Z}} \left( \mathbf{K}_{\mathbf{Z}, \mathbf{Z}}\right)^{-1} \mathbf{K}_{\mathbf{Z}, x'} + r_0(x, x'),
 \end{align}
 where $r_0$ is the base kernel, which can be any kernel function. We learn the hyper-parameters of $r_0$ with GWI.
 
@@ -1054,8 +1054,7 @@ combining the squared difference of the means and covariances.
 This section presents the experimentation framework that we developed for GWI-GPs and pGVI-GPs.
 We begin by summarising our implementation architecture followed by a description of our experimentation setup.
 Lastly, we will present results for some 1-D regression problems to show our framework in action.
-Our Python implementation is openly available on \href{https://github.com/jswu18/gvi-gaussian-process}{GitHub}\footnote{For the most up-to-date version, see: \href{https://github.com/jswu18/gvi-gaussian-process}{https://github.com/jswu18/gvi-gaussian-process}}$^{,}$\footnote{
-For the last version prior to the submission date, see: \\\href{https://github.com/jswu18/gvi-gaussian-process/tree/59093fbfbdc535881b7f6af4a367b1ea2e5dc773}{https://github.com/jswu18/gvi-gaussian-process/tree/59093fbfbdc535881b7f6af4a367b1ea2e5dc773}}. 
+Our Python implementation is openly available on \href{https://github.com/jswu18/gvi-gaussian-process}{GitHub}\footnote{For the most up-to-date version, see: \href{https://github.com/jswu18/gvi-gaussian-process}{https://github.com/jswu18/gvi-gaussian-process}}. 
 It should be noted that our implementation collects the terms svGP, GWI-GP, and pGVI-GP under the umbrella name `approximate GP'.
 
 \subsection{Implementation Architecture}\label{implementation-architecture}
