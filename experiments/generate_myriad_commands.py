@@ -152,7 +152,7 @@ def build_base_commands(
         "#$ -j y",
         "# Working directory of job.",
         "# (-cwd is short for set wd to the directory you run qsub)",
-        "#$ -wd /home/ucabwuh/gvi-gaussian-processes",
+        "#$ -wd /home/ucabwuh/gvi-gaussian-process",
         "# Name of the job",
         f"#$ -N {job_name}",
         "date",
