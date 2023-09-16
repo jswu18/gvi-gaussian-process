@@ -1,7 +1,6 @@
 kernel:
   kernel_schema: "nngp"
   kernel_kwargs:
-    input_shape: [16]
     layers:
       layer_1:
         layer_schema: "dense"

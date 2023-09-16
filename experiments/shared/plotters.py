@@ -10,6 +10,8 @@ def plot_losses(
     labels: Union[str, List[str]] = None,
     title: str = None,
 ):
+    if len(losses) == 0:
+        return
     fig, ax = plt.subplots(figsize=(13, 6.5))
     fig.tight_layout()
     if isinstance(losses[0], list):

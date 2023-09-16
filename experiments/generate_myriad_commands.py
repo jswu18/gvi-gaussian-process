@@ -2,6 +2,8 @@ import argparse
 import os
 import shutil
 
+import numpy as np
+
 from experiments.shared.schemas import ActionSchema, ProblemSchema
 
 parser = argparse.ArgumentParser(
@@ -203,15 +205,18 @@ def generate_myriad_commands(
         with open(myriad_command_path, "w") as file:
             file.write("\n".join(base_commands + [shell_command]))
         myriad_command_paths.append(myriad_command_path)
-    with open(f"{problem.name}-{action.name}.sh", "w") as file:
-        file.write(
-            "\n".join(
-                [
-                    "qsub " + myriad_command_path
-                    for myriad_command_path in myriad_command_paths
-                ]
+    for i in range(0, int(np.ceil(len(myriad_command_paths) / 1000))):
+        with open(f"{problem.name}-{action.name}-{i}.sh", "w") as file:
+            file.write(
+                "\n".join(
+                    [
+                        "qsub " + myriad_command_path
+                        for myriad_command_path in myriad_command_paths[
+                            i * 1000 : (i + 1) * 1000
+                        ]
+                    ]
+                )
             )
-        )
 
 
 if __name__ == "__main__":

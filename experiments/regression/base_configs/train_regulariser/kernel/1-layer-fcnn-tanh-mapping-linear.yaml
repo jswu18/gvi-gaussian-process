@@ -12,7 +12,6 @@ kernel:
         scaling: 10000.0
     nn_function_kwargs:
       seed: 0
-      input_shape: [16]
       layers:
         layer_1:
           layer_schema: "dense"
