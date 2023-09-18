@@ -6,5 +6,5 @@ save_checkpoint_frequency: False
 trainer_settings:
   batch_drop_last: false
   batch_shuffle: true
-  batch_size: 1000
+  batch_size: 50000
   seed: 0
