@@ -54,7 +54,19 @@ class ConformalRegressionBase(Module, ABC):
             x: input data of shape (n, d)
             coverage: the coverage percentage
 
-        Returns: Tuple of lower and upper bounds of shape (n, 1)
+        Returns: Tuple of lower and upper bounds of shape (1, n)
+
+        """
+        raise NotImplementedError
+
+    @abstractmethod
+    def _predict_median(self, x: jnp.ndarray) -> jnp.ndarray:
+        """
+        Returns median predictions for a given input.
+        Args:
+            x: input data of shape (n, d)
+
+        Returns: median predictions of shape (1, n)
 
         """
         raise NotImplementedError
@@ -103,14 +115,23 @@ class ConformalRegressionBase(Module, ABC):
             x: input data of shape (n, d)
             coverage: the coverage percentage
 
-        Returns: Tuple of lower and upper bounds of shape (n, 1)
+        Returns: Tuple of lower and upper bounds of shape (1, n)
 
         """
         calibration = self._calculate_calibration(coverage)
         uncalibrated_lower, uncalibrated_upper = self._predict_uncalibrated_coverage(
             x=x, coverage=coverage
         )
-        return uncalibrated_lower - calibration, uncalibrated_upper + calibration
+        calibrated_lower, calibrated_upper = (
+            uncalibrated_lower - calibration,
+            uncalibrated_upper + calibration,
+        )
+        median = self._predict_median(x)
+        # nothing should cross the mean
+        return (
+            jnp.min(jnp.concatenate([calibrated_lower, median], axis=0), axis=0),
+            jnp.max(jnp.concatenate([calibrated_upper, median], axis=0), axis=0),
+        )
 
     @pydantic.validate_arguments(config=PYDANTIC_VALIDATION_CONFIG)
     def predict_coverage(
@@ -123,7 +144,7 @@ class ConformalRegressionBase(Module, ABC):
             x: input data of shape (n, d)
             coverage: the coverage percentage
 
-        Returns: Tuple of lower and upper bounds of shape (n, 1)
+        Returns: Tuple of lower and upper bounds of shape (1, n)
 
         """
         return self._jit_compiled_predict_coverage(x, coverage)

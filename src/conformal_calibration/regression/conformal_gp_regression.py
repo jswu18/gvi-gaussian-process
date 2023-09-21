@@ -35,7 +35,7 @@ class ConformalGPRegression(ConformalRegressionBase):
             x: input data of shape (n, d)
             coverage: the coverage percentage
 
-        Returns: Tuple of lower and upper uncalibrated bounds of shape (n, 1)
+        Returns: Tuple of lower and upper uncalibrated bounds of shape (1, n)
 
         """
         gaussian = Gaussian(
@@ -52,3 +52,20 @@ class ConformalGPRegression(ConformalRegressionBase):
             gaussian.covariance
         )
         return jnp.atleast_2d(lower_bound), jnp.atleast_2d(upper_bound)
+
+    def _predict_median(self, x: jnp.ndarray) -> jnp.ndarray:
+        """
+        Uses the GP to predict the median.
+        Args:
+            x: input data of shape (n, d)
+
+        Returns: median predictions of shape (1, n)
+
+        """
+        gaussian = Gaussian(
+            **self.gp.predict_probability(
+                parameters=self.gp_parameters,
+                x=x,
+            ).dict()
+        )
+        return jnp.atleast_2d(gaussian.mean)
