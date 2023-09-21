@@ -135,35 +135,42 @@ class ConformalRegressionBase(Module, ABC):
 
     @pydantic.validate_arguments(config=PYDANTIC_VALIDATION_CONFIG)
     def predict_coverage(
-        self, x: jnp.ndarray, coverage: float
+        self,
+        x: jnp.ndarray,
+        coverage: Union[float, jnp.ndarray],
     ) -> Tuple[jnp.ndarray, jnp.ndarray]:
         """
         Calls the jit-compiled method to calculate the calibrated
         coverage of a given input x at a given coverage percentage.
         Args:
             x: input data of shape (n, d)
-            coverage: the coverage percentage
+            coverage: the coverage percentage(s)
 
-        Returns: Tuple of lower and upper bounds of shape (1, n)
+        Returns: Tuple of lower and upper bounds of shape (m, n) where m is the number of coverage percentages
 
         """
-        return self._jit_compiled_predict_coverage(x, coverage)
+        coverage = jnp.atleast_1d(coverage)
+        return jax.vmap(
+            lambda coverage_: self._jit_compiled_predict_coverage(x, coverage_)
+        )(coverage)
 
     @pydantic.validate_arguments(config=PYDANTIC_VALIDATION_CONFIG)
     def calculate_average_interval_width(
-        self, x: jnp.ndarray, coverage: float
-    ) -> float:
+        self,
+        x: jnp.ndarray,
+        coverage: Union[float, jnp.ndarray],
+    ) -> jnp.ndarray:
         """
         Calculates the average interval width of a given input x at a given coverage percentage.
         Args:
             x: input data of shape (n, d)
-            coverage: the coverage percentage
+            coverage: the coverage percentage(s)
 
         Returns: the average interval width
 
         """
         lower, upper = self.predict_coverage(x=x, coverage=coverage)
-        return float(jnp.mean(upper - lower))
+        return jnp.mean(upper - lower, axis=1)
 
     @pydantic.validate_arguments(config=PYDANTIC_VALIDATION_CONFIG)
     def generate_parameters(
