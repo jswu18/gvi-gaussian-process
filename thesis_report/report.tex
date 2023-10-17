@@ -223,7 +223,7 @@ A Gaussian distribution will be denoted $\mathcal{N}(\cdot, \cdot)$, where
 \begin{align}
     Y \sim \mathcal{N}(\mathbf{m}, \mathbf{K})
 \end{align}
-with $Y \in \mathbb{R}^N$ indicates that $Y$ is a random vector following a Gaussian distribution having $\mathbf{m} \in \mathbb{R}^N$ as the mean and $\mathbf{K} \in \mathbb{R}^{N \times N}_{\succcurlyeq 0}$ as the covariance. 
+with $Y \in \mathbb{R}^N$, indicating that $Y$ is a random vector following a Gaussian distribution having $\mathbf{m} \in \mathbb{R}^N$ as the mean and $\mathbf{K} \in \mathbb{R}^{N \times N}_{\succcurlyeq 0}$ as the covariance. 
 The subscript ${\succcurlyeq 0}$ denotes that $\mathbf{K}$ is positive semi-definite.
 
 For any random element $F$, we review the following notation conventions:
@@ -261,7 +261,7 @@ Other conventions that we follow include:
 \newpage
 \section{Introduction}
 Uncertainty quantification is an important research direction within the machine learning community.
-As a modelling approach, it can encourage desirable prediction behaviours such as out-of-distribution (OOD) detection. 
+As a modelling approach, it can demonstrate desirable prediction behaviours such as out-of-distribution (OOD) detection. 
 In practice, quantifying uncertainty can provide valuable information during high-risk situations and enable better informed decision-making.
 
 % These include Monte-Carlo dropout, an approach based on weight sampling for neural networks, ensemble techniques, quantifying the spread of `disagreement' across a number of different models, and Bayesian approaches, where previous observations are used to quantify our beliefs for new data through the Bayesian posterior.
@@ -280,7 +280,7 @@ This is followed by a review of Gaussian Wasserstein inference (GWI) from \cite{
 GWI offers a solution to the restrictive approximation spaces of previous variational GP approaches, such as the svGP.
 
 Our contributions begin in Section \ref{section:improving-gwi}, where we present a number of improvements to the GWI learning framework.
-This includes new parameterisations for the prior kernel such as the NNGP kernel from \cite{novak2019neural}.
+This includes new parameterisations for the prior kernel such as the neural network GP (NNGP) kernel from \cite{novak2019neural}.
 We will also introduce new variational kernels as well as faster numerical approximations of the GWI objective.
 This is followed by Section \ref{section:pgvi}, which introduces a new computationally cheap framework we call projected GVI 
 (pGVI) for GPs.
@@ -371,7 +371,7 @@ Consider the classification task where we have $N$ observation pairs $(\mathbf{X
     Y \sim \mathcal{C}\Big(s\left(F_1(x), \dots, F_J(x)\right)\Big),
     \label{gp-classifier}
 \end{align}
-where we construct $F_j \sim \GP\left(m_j, k_j\right)$ for each label $j=1, \dots J$ such that $F_1, \dots, F_J$ are stochastically independent, and $s: \mathbb{R}^J \rightarrow \Delta(J)$ is a mapping to a $J$ dimensional probability simplex parameterising a categorical distribution $\mathcal{C}$. 
+where we construct $F_j \sim \GP\left(m_j, k_j\right)$ for each label $j=1, \dots J$ such that $F_1, \dots, F_J$ are stochastically independent, and $s: \mathbb{R}^J \rightarrow \Delta(J)$ is a mapping to a $J$ dimensional probability simplex, which parameterises the categorical distribution $\mathcal{C}$. 
 This means that the probability of the $j^{th}$ label is given as
 \begin{align}
     \mathbb{P}(Y=j) = s_j(F_1(x), \dots, F_J(x)),
@@ -457,7 +457,7 @@ Standard VI depends on three important assumptions to ensure a reasonable approx
 \end{enumerate}
 These three assumptions are in tension with each other.
 For example, a larger approximation space $\boldsymbol{Q}$ can cause $L(Q)$ to be intractable or create a more difficult optimisation setup.
-However in practice, VI can be quite successful if employed by well-informed practitioners of the method.
+However, VI can be quite successful if employed by well-informed practitioners of the method.
 
 \subsection[Sparse Variational Gaussian Processes]{Sparse\footnote{Also known as stochastic or scaleable variational Gaussian processes (svGPs)} Variational Gaussian Processes}\label{section:svgp}
 To overcome the computationally intractable GP we review \cite{titsias2009variational}, which proposes a variational approximation for the Bayesian predictive posterior in (\ref{gp-posterior-normal}) as
@@ -534,7 +534,7 @@ On the other hand, the corresponding variational mean $m_Q$ in (\ref{svgp-mean})
 \end{align}
 with $\left[\beta_1 \cdots \beta_M\right]^T = \mathbf{K}_{\mathbf{Z}, \mathbf{Z}}^{-1}\boldsymbol{\mu}$.
 Choosing $M$ as $\mathcal{O}(N^{1/2})$, it is not unlikely that the inducing point space will be too small to contain a reasonable approximation of $\hat{m}$.
-A similar argument can be made for the posterior kernel.
+\cite{wild2021connections} also makes a similar argument for the posterior kernel.
 \cite{burt2020understanding} explains that the KL divergence between two GPs is not generally tractable or even finite.
 Thus within the Bayesian context of functional VI, we are forced to restrict the variational set $\boldsymbol{Q}$, to obtain a tractable loss $L$.
 
@@ -553,7 +553,7 @@ Algorithm \ref{alg:inducing-point-selection} reviews an approach from \cite{burt
 \begin{algorithmic}
 \State $m \leftarrow 1$
  \State $i \leftarrow \argmax \left(\diag\mathbf{K}_{\mathbf{X}, \mathbf{X}}\right) $
- \State $\mathbf{z} \leftarrow \{x_i\}$ \Comment{initialise selection set}
+ \State $\mathbf{z} \leftarrow \{\}$ \Comment{initialise selection set}
 \While{$m < M$}
 \State$i \leftarrow \argmax \left(\diag \left(\mathbf{K}_{\mathbf{X}, \mathbf{X}} - \mathbf{K}_{\mathbf{X}, \mathbf{z}} \left(\mathbf{K}_{\mathbf{z}, \mathbf{z}}\right)^{-1}\mathbf{K}_{\mathbf{z}, \mathbf{X}}\right)\right)$
  \State  $\mathbf{z} \leftarrow \mathbf{z} \cup \{x_i\}$ \Comment{add to the current selection set}
@@ -591,11 +591,11 @@ For example, the first image for `1' is a single line slanted to the right while
 \Require $\theta_0$ \Comment{initial hyper-parameters of $k$}
  \State $i \leftarrow 0$
   \State $\mathbf{Z}_0 \leftarrow$ \Call{GreedyVarianceSelection}{$\mathbf{X}$, $\theta_0$} \Comment{via Algorithm \ref{alg:inducing-point-selection} with $k$}
-  \State $\mathbf{U}_i \leftarrow \mathbf{Y}\left[\mathbf{X}.\text{index}\left(\mathbf{Z}_0\right)\right]$ \Comment{corresponding inducing point responses}
+  \State $\mathbf{U}_0 \leftarrow \mathbf{Y}\left[\mathbf{X}.\text{index}\left(\mathbf{Z}_0\right)\right]$ \Comment{corresponding inducing point responses}
 \While{$\mathbf{Z}_i \neq \mathbf{Z}_{i-1}$}
 \State $\theta_{i+1} \leftarrow$ \Call{OptimiseNLL}{$\theta_0$, $\mathbf{Z}_i$, $\mathbf{U}_i$} \Comment{via type-II maximum likelihood on inducing points}
 \State $\mathbf{Z}_{i+1} \leftarrow$ \Call{GreedyVarianceSelection}{$\mathbf{X}$, $\theta_{i+1}$}
-\State $\mathbf{U}_{i+1} \leftarrow \mathbf{Y}\left[\mathbf{X}.\text{index}\left(\mathbf{Z}_i\right)\right]$
+\State $\mathbf{U}_{i+1} \leftarrow \mathbf{Y}\left[\mathbf{X}.\text{index}\left(\mathbf{Z}_{i+1}\right)\right]$
 \State $i \leftarrow i+1$
 \EndWhile
 \State \Return ($\theta_i$, $\mathbf{Z}_i$)
@@ -655,7 +655,7 @@ Assuming Algorithm \ref{alg:inducing-points-prior-gp} loops for $k$ iterations, 
 The standard VI objective in (\ref{svgp-vi-loss}) is the root cause of the restrictive variational set for the svGP. 
 This is because learning in the standard VI framework necessitates a KL divergence, which is often ill-defined for GPs.
 
-This section will review generalised variational inference (GVI) in finite dimensions from \cite{knoblauch2022optimization}, a framework that does not rely on the KL divergence.
+This section reviews generalised variational inference (GVI) in finite dimensions from \cite{knoblauch2022optimization}, a framework that does not rely on the KL divergence.
 GVI is a fundamental construct for new realisations of variational inference frameworks.
 We also review \cite{wild2022generalized}, which extends GVI to an infinite dimensional setting and proposes Gaussian Wasserstein inference (GWI) in function spaces.
 GWI constructs a learning framework that avoids the KL divergence for GPs, providing richer approximation spaces for variational learning.
@@ -763,9 +763,9 @@ The GWI-net construction from \cite{wild2022generalized} uses an ARD kernel for 
 \begin{align}
     k(x, x') = \sigma^2_f \exp\left(-\frac{1}{2} \sum_{d=1}^D \frac{1}{\alpha_d^2}(x_d-x_d')^2\right),
 \end{align}
-where $\sigma_f > 0$ is the kernel scaling factor and for each dimension $d=1, \dots, D$, $\alpha_d >0$ is the corresponding length-scale.
+where $\sigma_f > 0$ is the kernel scaling factor and $\alpha_d >0$ is the length-scale for each dimension $d=1, \dots, D$.
 In structured data settings like images when it is important to learn correlations between features, having an independent length-scale for each dimension can be less effective.
-We propose using kernels that are better suited for structured data settings. These include the neural network Gaussian process kernels (NNGP kernels) from \cite{novak2019neural} and a form of neural network kernels that we will call custom feature mapping kernels.
+We propose using kernels that are better suited for structured data settings. These include the neural network GP (NNGP) kernels from \cite{novak2019neural} and a form of neural network kernels that we will call custom feature mapping kernels.
 
 \paragraph{NNGP Kernels} \cite{novak2019neural} shows that NNGP kernels are the infinite-width limit of neural network architectures at initialisation.
 We suggest choosing NNGP kernels with architectures known to be suitable for the given data domain (i.e. a convolutional neural network (CNN) for image data).
@@ -928,7 +928,7 @@ However, we weaken this interpretation with the optimisation-centric nature of G
 Our experiments show that this less-than traditional regulariser can sometimes construct a better learning objective for GWI-GPs.
 Moreover, with inversions of $\mathbb{R}^{M\times M}$ matrices only, we maintain computational tractability when evaluating the GWI objective.
 \newpage
-\paragraph{Tempering}\cite{wild2022generalized} and \cite{adlam2020cold} explain that tempering the predictive posterior of GPs can improve predictive performance and has theoretical interpretations for correcting against a mis-specified prior. Following \cite{wild2022generalized}, we temper GWI-GPs by learning a factor $\alpha_T < 0$ for the tempered kernel formulated as
+\paragraph{Tempering}\cite{wild2022generalized} and \cite{adlam2020cold} explain that tempering the predictive posterior of GPs can improve predictive performance and has theoretical interpretations for correcting against a mis-specified prior. Following \cite{wild2022generalized}, we temper GWI-GPs by learning a factor $\alpha_T > 0$ for the tempered kernel formulated as
 \begin{align}
     r_T(\mathbf{X}, \mathbf{X}) = \alpha_T \left(r(\mathbf{X}, \mathbf{X})+\sigma^2 \mathbf{I}\right),
 \end{align}
@@ -998,7 +998,7 @@ We weaken this assumption and propose regularisers of the form
     \mathbb{D}\left[Q, P\right] = \frac{1}{N}\sum_{{n}=1}^{N} \mathbb{D}_0 \Big[\mathbb{Q}\left(F(x_n)\right), \mathbb{P}\left(F(x_n)\right)\Big],
     \label{proj-regulariser}
 \end{align}
-where $\mathbb{D}_0$ is a (base) regulariser between two probability measures on $\mathbb{R}$ and $x_n \in \mathcal{X}$.
+where $x_n \in \mathcal{X}$ and $\mathbb{D}_0$ is a (base) regulariser between two probability measures on $\mathbb{R}$.
 Specifically, since both the variational approximation and regulariser are GPs, we have that $\mathbb{Q}\left(F(x_n)\right) = \mathcal{N}\left(m_Q(x_n), r(x_n, x_n)\right)$ and $\mathbb{P}\left(F(x_n)\right) = \mathcal{N}\left(m_P(x_n), k(x_n, x_n)\right)$.
 Therefore any base regulariser $\mathbb{D}_0$ that can be computed between two scalar Gaussian random variables will lead to a tractable regulariser computation and therefore a tractable variational loss. We call regularisation schemes following (\ref{proj-regulariser}), projected regularisation.
 
@@ -1053,7 +1053,7 @@ combining the squared difference of the means and covariances.
 \section{Experimentation Framework}\label{section:experimentation-framework}
 This section presents the experimentation framework that we developed for GWI-GPs and pGVI-GPs.
 We begin by summarising our implementation architecture followed by a description of our experimentation setup.
-Lastly, we will present results for some 1-D regression problems to show our framework in action.
+This is followed by some results for 1-D regression problems to show our framework in action.
 Our Python implementation is openly available on \href{https://github.com/jswu18/gvi-gaussian-process}{GitHub}\footnote{For the most up-to-date version, see: \href{https://github.com/jswu18/gvi-gaussian-process}{https://github.com/jswu18/gvi-gaussian-process}}. 
 It should be noted that our implementation collects the terms svGP, GWI-GP, and pGVI-GP under the umbrella name `approximate GP'.
 
@@ -1136,7 +1136,7 @@ These abstractions are exactly mirrored in our implementation architecture as ab
 
 \end{tikzpicture}
 }
-\caption{UML Class Diagram of the GVI Implementation Architecture}
+\caption{GVI Implementation Architecture}
 \label{gvi-implementation}
 \end{center}
 \end{figure}
@@ -1208,7 +1208,7 @@ These architectures are also exactly reflected in our code base.
 \composition{GP}{}{}{Kernel}
 \end{tikzpicture}
 }
-\caption{UML Class Diagram of the GP Implementation Architecture}
+\caption{GP Implementation Architecture}
 \label{gp-implementation}
 \end{center}
 \end{figure}
@@ -1242,7 +1242,7 @@ These architectures are also exactly reflected in our code base.
 \end{class}
 \end{tikzpicture}
 }
-\caption{UML Class Diagram of the Mean Function Implementation Architecture}
+\caption{Mean Function Implementation Architecture}
 \label{mean-implementation}
 \end{center}
 \end{figure}
@@ -1315,7 +1315,7 @@ These architectures are also exactly reflected in our code base.
 
 \end{tikzpicture}
 }
-\caption{UML Class Diagram of the Kernel Function Implementation Architecture}
+\caption{Kernel Function Implementation Architecture}
 \label{kernel-implementation}
 \end{center}
 \end{figure}
@@ -1341,7 +1341,7 @@ Each \code{.yaml} outlines the settings of an experiment (the GP, learning objec
 Appendix \ref{appendix:configuration-yamls} shows example \code{.yaml} configuration files for training a regulariser GP and an approximate GP .
 
 Generating configuration files was automated, allowing us to scale our experiments to all possible combinations of empirical risks, regularisers, mean functions, and kernels. 
-These configurations were then submitted as jobs to a computing cluster, running our experiments in an organised and well-documented environment.
+These configurations were then submitted as jobs to a computing cluster, running our experiments in a well-organised environment.
 
 \subsection{Regression Curve Experiments}
 To demonstrate our experimentation framework, we trained approximate GPs for ten different regression curve problems. 
@@ -1448,7 +1448,7 @@ However, they use an ARD kernel to construct their svGP variational kernel.
 
 We showed that the kernels in Section \ref{prior-kernels} have the potential to better quantify uncertainty in images by leveraging the more structured nature of the data.
 A natural next step is to explore the performance of GWI-GPs and pGVI-GPs with these NNGP kernels and custom feature mapping kernels in combination with the new variational kernels proposed in Section \ref{variational-kernels}.
-With the classification GP implementations in our code base, one could extend our current work to this use case with relative ease.
+With the classification GP implementations in our code base, one could extend our current work to this use-case with relative ease.
 
 \paragraph{NLP Classification} GWI and pGVI introduces flexibility and computational performance previously unavailable to variational GP learning. 
 This motivates us to explore the limits of these learning frameworks with larger data settings, such as problems in the Natural Language Processing (NLP) domain.
