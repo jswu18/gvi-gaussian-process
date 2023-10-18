@@ -552,11 +552,11 @@ Algorithm \ref{alg:inducing-point-selection} reviews an approach from \cite{burt
 \caption{Greedy Variance Inducing Point Selection}\label{alg:inducing-point-selection}
 \begin{algorithmic}
 \State $m \leftarrow 1$
- \State $i \leftarrow \argmax \left(\diag\mathbf{K}_{\mathbf{X}, \mathbf{X}}\right) $
- \State $\mathbf{z} \leftarrow \{\}$ \Comment{initialise selection set}
+  \State $z_1 \leftarrow \argmax_{x \in \mathbf{X}} k(x, x)$
+ \State $\mathbf{z} \leftarrow \{z_1\}$ \Comment{initialise selection set}
 \While{$m < M$}
-\State$i \leftarrow \argmax \left(\diag \left(\mathbf{K}_{\mathbf{X}, \mathbf{X}} - \mathbf{K}_{\mathbf{X}, \mathbf{z}} \left(\mathbf{K}_{\mathbf{z}, \mathbf{z}}\right)^{-1}\mathbf{K}_{\mathbf{z}, \mathbf{X}}\right)\right)$
- \State  $\mathbf{z} \leftarrow \mathbf{z} \cup \{x_i\}$ \Comment{add to the current selection set}
+\State$z_{m+1} \leftarrow \argmax_{x \in \mathbf{X}} \left(\diag \left(\mathbf{K}_{\mathbf{X}, \mathbf{X}} - \mathbf{K}_{\mathbf{X}, z_{m}} k\left(z_{m}, z_{m}\right)^{-1}\mathbf{K}_{z_{m}, \mathbf{X}}\right)\right)$
+ \State  $\mathbf{z} \leftarrow \mathbf{z} \cup \{z_{m+1}\}$ \Comment{add to the current selection set}
  \State  $m \leftarrow m+1$
 \EndWhile
 \State \Return $\mathbf{z}$
@@ -641,12 +641,12 @@ This is overlaid with the Bayesian posterior of a GP parameterised with the lear
 This visualises the selection procedure as it attempts to minimise uncertainty over training points, ensuring maximum coverage over the input space.
 By learning the kernel in-between iterations, we see that Algorithm \ref{alg:inducing-points-prior-gp} can appropriately adjust the variances on the training data, which would be held fixed during Algorithm \ref{alg:inducing-point-selection}.
 
-In the loop of Algorithm \ref{alg:inducing-point-selection}, each element of the diagonal evaluation has time complexity  $\mathcal{O}(M^2)$ from matrix multiplication, so computing for all $N$ candidate points along the diagonal is $\mathcal{O}(NM^2)$.
-The matrix inversion is $\mathcal{O}(M^3)$, but remains a constant when computing each element of the diagonal.
-Thus the complexity of selecting each inducing point is $\mathcal{O}(NM^2)$, assuming $M << N$.
-Looping to select $M$ inducing points, Algorithm \ref{alg:inducing-point-selection} has $\mathcal{O}(NM^3)$ time complexity .
-Choosing $M$ as $\mathcal{O}(N^{1/2})$, we have $\mathcal{O}(N^{5/2})$ time complexity  and $\mathcal{O}(N)$ space complexity. 
-Assuming Algorithm \ref{alg:inducing-points-prior-gp} loops for $k$ iterations, we have $\mathcal{O}(k N^{5/2})$ time complexity and the same space complexity as Algorithm \ref{alg:inducing-point-selection}.
+In the loop of Algorithm \ref{alg:inducing-point-selection}, each element of the diagonal evaluation has time complexity  $\mathcal{O}(M)$ from matrix multiplication, so computing for all $N$ candidate points along the diagonal is $\mathcal{O}(NM)$.
+% The matrix inversion is $\mathcal{O}(M^3)$, but remains a constant when computing each element of the diagonal.
+% Thus the complexity of selecting each inducing point is $\mathcal{O}(NM^2)$, assuming $M << N$.
+Selecting $M$ inducing points, Algorithm \ref{alg:inducing-point-selection} has $\mathcal{O}(NM^2)$ time complexity .
+Choosing $M$ as $\mathcal{O}(N^{1/2})$, we have $\mathcal{O}(N^{2})$ time complexity  and $\mathcal{O}(N)$ space complexity. 
+Assuming Algorithm \ref{alg:inducing-points-prior-gp} loops for $k$ iterations, we have $\mathcal{O}(k N^{2})$ time complexity and the same space complexity as Algorithm \ref{alg:inducing-point-selection}.
 
 
 
