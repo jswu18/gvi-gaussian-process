@@ -247,21 +247,32 @@ For any random element $F$, we review the following notation conventions:
         When conditioned, we denote $p(f\vert \mathbf{Y})$.
 \end{itemize}
 Sample, measure, and probability density notation will be used interchangeably, whenever appropriate. 
-We will also define new notation such as $P \coloneqq \mathbb{P}(F)$ and $Q \coloneqq \mathbb{Q}(F)$, whenever convenient.
+We will also define new notation such as $P \coloneqq \mathbb{P}(F)$ and $Q \coloneqq \mathbb{Q}(F)$, whenever convenient. We will use 
+\begin{align}
+    \mathbb{D}[Q, P]
+\end{align}
+to denote a divergence between the measures $Q$ and $P$, where a divergence satisfies
+\begin{align}
+    \mathbb{D}[Q, P] \geq 0
+\end{align}
+and 
+\begin{align}
+    \mathbb{D}[Q, P] = 0 \Leftrightarrow Q = P.
+\end{align}
+Other divergences will follow similar notation and will be defined whenever they are used.
 
 Other conventions that we follow include:
 \begin{itemize}
     \setlength\itemsep{-0.25em}
-    \item $\mathbb{E}_{P}[\wc]$ to denote expectation with respect to $P$,
-    \item $\left[\wc\right]^T$ to denote the matrix transpose, and 
-    \item $\mathbb{D}[Q, P]$ to denote a divergence between the measures $Q$ and $P$. Other divergences will follow similar notation and will be defined whenever they are used.
+    \item $\mathbb{E}_{P}[\wc]$ to denote expectation with respect to $P$, and
+    \item $\left[\wc\right]^T$ to denote the matrix transpose. 
 \end{itemize}
  
 
 \newpage
 \section{Introduction}
-Uncertainty quantification is an important research direction within the machine learning community.
-As a modelling approach, it can demonstrate desirable prediction behaviours such as out-of-distribution (OOD) detection. 
+Uncertainty quantification (UQ) is an important research direction within the machine learning community.
+As an approach, UQ can demonstrate desirable prediction behaviours such as out-of-distribution (OOD) detection. 
 In practice, quantifying uncertainty can provide valuable information during high-risk situations and enable better informed decision-making.
 
 % These include Monte-Carlo dropout, an approach based on weight sampling for neural networks, ensemble techniques, quantifying the spread of `disagreement' across a number of different models, and Bayesian approaches, where previous observations are used to quantify our beliefs for new data through the Bayesian posterior.
@@ -285,14 +296,14 @@ We will also introduce new variational kernels as well as faster numerical appro
 This is followed by Section \ref{section:pgvi}, which introduces a new computationally cheap framework we call projected GVI 
 (pGVI) for GPs.
 pGVI offers more flexibility for defining learning objectives for variational GPs with a new form of regularisation we call projected regularisation.
-This computes divergences between scalar projections of GPs.
+This computes divergences between scalar projections of GPs, providing significantly cheaper linear time computational costs compared to the cubic costs of existing approaches.
 We also present an experimentation framework for our contributions, summarised in Section \ref{section:experimentation-framework}. 
 This includes the development of an extensive software implementation designed for flexibility and scaleability, introducing appropriate abstraction architectures, and following best practices common in the software engineering community. 
 This section will also present our experimentation setup, with examples to show it in action. We conclude with Section \ref{section:future-work} proposing future research directions and final thoughts in Section \ref{section:conclusions}.
 
 \newpage
 \section{Gaussian Processes}\label{section:gaussian-processes}
-Gaussian processes (GPs) are powerful universal function approximators that can be used for both regression and classification tasks. The following sections will review GPs following \cite{rasmussen2003gaussian}, \cite{matthews2017scalable}, and \cite{wild2022generalized}.
+Gaussian processes (GPs) are powerful function approximators that can be used for both regression and classification tasks. The following sections will review GPs following \cite{rasmussen2003gaussian}, \cite{matthews2017scalable}, and \cite{wild2022generalized}.
 
 \subsection{The Gaussian Process}\label{section:the-gp}
 A GP is a stochastic process such that for any $N$ points $\mathbf{X} \coloneqq \left\{ x_n\right\}_{n=1}^N$ where $x_n \in \mathcal{X}$, the corresponding random response vector $Y \in \mathbb{R}^N$ has the Gaussian distribution
@@ -312,7 +323,7 @@ while constructing $\mathbf{K}$ involves choosing a kernel function mapping $k: 
     \left[\mathbf{K}\right]_{n, n'} \coloneqq k(x_n, x_{n'}),
 \end{align}
 for $n, n'=1,\dots, N$.
-$\mathbf{K}$ is also known as the gram matrix.
+$\mathbf{K}$ is also known as the Gram matrix.
 Appendix \ref{appendix:positive-definite-kernel} shows that choosing kernel functions defined as inner products of a feature space mapping will ensure that $\mathbf{K}$ is a valid positive semi-definite covariance matrix, as required in (\ref{gp-vector}).
 
 
@@ -336,12 +347,12 @@ This further motivates the potential and importance of GPs.
 \subsection{Gaussian Process Regression}
 Consider the regression task where we have $N$ observation pairs $(\mathbf{X}, \mathbf{Y}) \coloneqq \left\{(x_n, y_n)\right\}_{n=1}^{N}$ with inputs $x_n \in \mathcal{X}$ and responses $y_n \in \mathbb{R}$. GP regression models the data generating process as
 \begin{align}
-    y \sim F(x) + \epsilon,
+    y_n \sim F(x_n) + \epsilon_n,
     \label{regression-data-uncertainties}
 \end{align}
-where the GP random function mapping $F$ accounts for the epistemic (model) uncertainty and the random scalar $\epsilon$ accounts for the aleatoric (measurement) uncertainty. In this formulation, we assume that the aleatoric uncertainty is homoscedastic of the form
+where the GP random function mapping $F$ accounts for the epistemic (model) uncertainty and the random scalar $\epsilon_n$ accounts for the aleatoric (measurement) uncertainty. In this formulation, we assume that the aleatoric uncertainty is homoscedastic of the form
 \begin{align}
-    \epsilon \sim \mathcal{N} \left(0, \sigma^2\right).
+    \epsilon_n \sim \mathcal{N} \left(0, \sigma^2\right).
     \label{aleotric-uncertainty}
 \end{align}
 
@@ -363,7 +374,7 @@ and
     \label{gp-posterior-covariance}
     \bar{k}(x, x) = k(x, x) - \mathbf{K}_{x, \mathbf{X}} \left(\mathbf{K}_{\mathbf{X}, \mathbf{X}} + \sigma^2 \mathbf{I}\right)^{-1} \mathbf{K}_{\mathbf{X}, x},
 \end{align}
-where $\mathbf{m}_{\mathbf{X}}$ is more verbose notation for (\ref{gp-mean-vector}), $\mathbf{K}_{\mathbf{X}, \mathbf{X}}$ is verbose for (\ref{gp-kernel-matrix}), $\mathbf{K}_{x, \mathbf{X}} \in \mathbb{R}^{1 \times N}$ and $\mathbf{K}_{\mathbf{X}, x} \in \mathbb{R}^{N \times 1}$ are gram matrices constructed with $\mathbf{X}$ and $x$ following (\ref{gp-kernel-matrix}), and $\mathbf{I} \in \mathbb{R}^{N \times N}$ is the identity matrix.
+where $\mathbf{m}_{\mathbf{X}}$ is more verbose notation for (\ref{gp-mean-vector}) and $\mathbf{K}_{\mathbf{X}, \mathbf{X}}$ is verbose for (\ref{gp-kernel-matrix}). $\mathbf{K}_{x, \mathbf{X}} \in \mathbb{R}^{1 \times N}$ and $\mathbf{K}_{\mathbf{X}, x} \in \mathbb{R}^{N \times 1}$ are row and column matrices respectively, constructed with $\mathbf{X}$ and $x$ following (\ref{gp-kernel-matrix}). $\mathbf{I} \in \mathbb{R}^{N \times N}$ is the identity matrix.
 
 \subsection{Gaussian Process Classification}
 Consider the classification task where we have $N$ observation pairs $(\mathbf{X}, \mathbf{Y}) \coloneqq \left\{(x_n, y_n)\right\}_{n=1}^{N}$ with inputs $x_n \in \mathcal{X}$ and label responses $y_n \in \{1, \dots, J\}$. In other words, we wish to map each input $x_n$ to one of $J$ labels. Following the approach from \cite{matthews2017scalable}, GPs can be used for classification through the model
@@ -708,7 +719,7 @@ where $Q \in \boldsymbol{Q}$ is a variational family of probability measures on 
 \cite{wild2022generalized} explains that the Kolmogorov Extension Theorem guarantees that for every GP, there exists a corresponding Gaussian measure (GM). 
 This GM is usually over the trivial function space $\boldsymbol{\mathcal{F}} = \left\{f: \mathcal{X} \rightarrow \mathbb{R}\right\}$.
 However, this space is highly prone to support mis-match and ensuring a tractable KL on $\boldsymbol{\mathcal{F}}$ requires heavy restrictions on the variational family $\boldsymbol{Q}$, as discussed in Section \ref{section:svgp}.
-Instead, \cite{wild2022generalized} identifies the existence of GPs with corresponding GMs on the Hilbert space of square integrable functions $\mathcal{L}^2\left(\mathcal{X}, \rho, \mathbb{R}\right)$ when the mean satisfies
+Instead, \cite{wild2022generalized} identifies the existence of GPs with corresponding GMs on the Hilbert space of square integrable functions $\mathcal{L}^2\left(\mathcal{X}, \rho, \mathbb{R}\right) = \left\{f \in \boldsymbol{\mathcal{F}} : \left[\int_{\mathcal{X}} f(x)^2 d\rho(x)\right]^{1/2} < \infty\right\}$ when the mean satisfies
 \begin{align}
     m \in \mathcal{L}^2\left(\mathcal{X}, \rho, \mathbb{R}\right)
     \label{l2-mean}
@@ -719,6 +730,7 @@ and the kernel satisfies
     \label{l2-kernel}
 \end{align}
 also known as the trace-class kernel condition.
+We will denote $\mathcal{L}^2\left(\mathcal{X}, \rho, \mathbb{R}\right)$ as $\mathcal{L}^2$ for convenience. 
 These conditions guarantee that sample functions from the GP will have square-integrable paths such that there exists $\mathbb{P} \coloneqq \mathcal{N}(m, C)$, a GM on $\mathcal{L}^2$ with the same mean $m$ and a covariance operator
 \begin{align}
     C(f) \coloneqq \int_{\mathcal{X}} k(\cdot, x) f(x) d\rho(x),
@@ -812,7 +824,7 @@ These experiments were performed without any training on the kernel hyper-parame
 \end{align}
 where $h: \mathcal{X} \rightarrow \mathbb{R}^D$ is a mapping to a $D$-dimensional feature space and $k_0: \mathbb{R}^D \times \mathbb{R}^D \rightarrow \mathbb{R}$ is a base kernel that can be any kernel function. 
 We use Algorithm \ref{alg:inducing-points-prior-gp} to learn the hyper-parameters of $k_0$ and $h$. 
-In our experiments, we chose non-stationary kernels for $k_0$ to ensure non-zero gradients for the gram matrix diagonals $k_0(h(x), h(x))$ with respect to the hyper-parameters of $h$. 
+In our experiments, we chose non-stationary kernels for $k_0$ to ensure non-zero gradients for the Gram matrix diagonals $k_0(h(x), h(x))$ with respect to the hyper-parameters of $h$. 
 Like with NNGP kernels, we suggest choosing a suitable neural network architecture for $h$ depending on the data domain.
 
 \begin{figure}[h!]
@@ -862,34 +874,37 @@ The svGP kernel is given as
 where $\mathbf{\Sigma} \in \mathbb{R}^{M \times M}_{\succcurlyeq 0}$ is the hyper-parameter of $r$. 
 \cite{wild2022generalized} proposes learning the positive semi-definite matrix $\mathbf{\Sigma}$ by learning the parameters of $\mathbf{L} \in \mathbb{R}^{M \times M}$, a lower triangle matrix with positive diagonal elements.
 As a Cholesky decomposition, this ensures that $\mathbf{\Sigma} = \mathbf{L}\mathbf{L}^T \in \mathbb{R}^{M \times M}_{\succcurlyeq 0}$. 
-We call this the Cholesky parameterisation. 
+We call this the \textit{Cholesky parameterisation}. 
 This section introduces new parameterisations for the svGP kernel followed by new forms of variational kernels.
 
 \paragraph{svGP Parameterisations}
-We introduce a new parameterisation of $\mathbf{\Sigma}$ called the diagonal parameterisation. The diagonal parameterisation learns
+We introduce a new parameterisation of $\mathbf{\Sigma}$ called the \textit{diagonal parameterisation}. The diagonal parameterisation learns
 \begin{align}
     \diag(\mathbf{v}): \log(\mathbf{v}) \in \mathbb{R}^M,
 \end{align}
 where $\mathbf{\Sigma} = \diag(\mathbf{v}) \in \mathbb{R}^{M \times M}_{\succcurlyeq 0}$, a diagonal matrix of positive elements, and $\diag: \mathbb{R}^M \rightarrow \mathbb{R}^{M \times M}$, using a vector in $\mathbb{R}^M$ to construct a diagonal matrix in $\mathbb{R}^{M \times M}$.
 Although this new parameterisation is more restrictive than the Cholesky parameterisation, it is computationally cheaper during gradient-based learning and has shown to have comparable performance during our experiments.
+This suggests that a Cholesky decomposition may be more expressive than needed for our purposes.
 
-We also propose a base kernel parameterisation replacing $\mathbf{K}_{x, \mathbf{Z}} \mathbf{\Sigma} \mathbf{K}_{\mathbf{Z}, x}$, the last term of (\ref{gwi-svgp-kernel}) such that
+We also propose a \textit{base kernel parameterisation} replacing $\mathbf{K}_{x, \mathbf{Z}} \mathbf{\Sigma} \mathbf{K}_{\mathbf{Z}, x}$, the last term of (\ref{gwi-svgp-kernel}) such that
 \begin{align}
     r(x, x') = k(x, x') - \mathbf{K}_{x, \mathbf{Z}} \left( \mathbf{K}_{\mathbf{Z}, \mathbf{Z}}\right)^{-1} \mathbf{K}_{\mathbf{Z}, x'} + r_0(x, x'),
 \end{align}
-where $r_0$ is the base kernel, which can be any kernel function. We learn the hyper-parameters of $r_0$ with GWI.
+where $r_0$ is the base kernel, which can be any kernel function. We learn the hyper-parameters of $r_0$ with GWI through gradient-based optimisation.
 
 \paragraph{Sparse Posterior Kernels}
-Inspired by the GP posterior covariance in (\ref{gp-posterior-covariance}) and the svGP kernel from \cite{titsias2009variational}, we present a new form of variational kernel we call sparse posterior kernels with the formulation
+Inspired by the GP posterior covariance in (\ref{gp-posterior-covariance}) and the svGP kernel from \cite{titsias2009variational}, we present a new form of variational kernel we call \textit{sparse posterior kernels} with the formulation
 \begin{align}
     r(x, x') = r_0(x, x') - r_0\left(x, \mathbf{Z}\right) r_0\left(\mathbf{Z}, \mathbf{Z}\right)^{-1} r_0\left(\mathbf{Z}, x'\right),
 \end{align}
-where $r_0$ is any base kernel learned during GWI such that $r_0\left(x, \mathbf{Z}\right) \in \mathbb{R}^{1 \times M}$, $r_0\left(\mathbf{Z}, \mathbf{Z}\right) \in \mathbb{R}^{M \times M}$, and $r_0\left(\mathbf{Z}, x'\right) \in \mathbb{R}^{M \times 1}$ are gram matrices of $r_0$ following the construction in (\ref{gp-kernel-matrix}).
+where $r_0$ is any base kernel learned during GWI such that $r_0\left(x, \mathbf{Z}\right) \in \mathbb{R}^{1 \times M}$, $r_0\left(\mathbf{Z}, \mathbf{Z}\right) \in \mathbb{R}^{M \times M}$, and $r_0\left(\mathbf{Z}, x'\right) \in \mathbb{R}^{M \times 1}$ are Gram matrices of $r_0$ following the construction in (\ref{gp-kernel-matrix}).
 In our experiments, we chose $r_0$ as the same kernel as the prior kernel $k$. We also initialised its hyper-parameters with the hyper-parameters of $k$.
 Treating $k\left(\mathbf{Z}, \mathbf{Z}\right)^{-1}$ as a pre-computed constant, sparse posterior kernels are $\mathcal{O}(M^2)$ to evaluate.
 
 \paragraph{Fixed Sparse Posterior Kernels}
-During GP prediction with sparse posterior kernels, the inversion $r_0\left(\mathbf{Z}, \mathbf{Z}\right)^{-1}$ is a constant. However during inference, gradients must pass through it to learn the parameters of the base kernel. Thus, we also present a fixed version of the sparse posterior kernel
+During GP prediction with sparse posterior kernels, the inversion $r_0\left(\mathbf{Z}, \mathbf{Z}\right)^{-1}$ is a constant. 
+However during inference, gradients must pass through it to learn the parameters of the base kernel. 
+Thus, we also present a \textit{fixed} version of the sparse posterior kernel
 \begin{align}
     r(x, x') = r_0(x, x') - r_0\left(x, \mathbf{Z}\right) k\left(\mathbf{Z}, \mathbf{Z}\right)^{-1} r_0\left(\mathbf{Z}, x'\right),
 \end{align}
@@ -912,7 +927,7 @@ The rest of this section provides further details for certain steps of this proc
     \State \Return ($\gamma_{m_Q}$, $\gamma_r$)
 \end{algorithmic}
 \end{algorithm}
-\paragraph{The Regulariser} The prior is an essential component of a Bayesian posterior belief update.
+\paragraph{The Regulariser} The prior is an essential component of a Bayesian posterior.
 However in the context of GVI, the prior can be interpreted as a regulariser for empirical risk minimisation.
 To prevent confusion in this discussion, we will call this the regulariser. 
 In our experiments, we explored traditional regularisers constructed with the standard GP prior, having $\mathcal{O}(1)$ time complexity . 
@@ -969,7 +984,7 @@ Figure \ref{fig:tempered-gwi} visualises an extreme example of a GP before and a
     & \qquad - \frac{2}{\sqrt{N_B N_S}} \sum_{n_s=1}^{N_S} \sqrt{\lambda_{n_s}\left\big(r\left(\mathbf{X}_{N_S}, \mathbf{X}_{N_B}\right)k\left(\mathbf{X}_{N_B}, \mathbf{X}_{N_S}\right)\right\big)},
     \label{wasserstein-distance-approximation}
 \end{align}
-where $N_B < N$ and $N_S < N$ for two independent batches and $\lambda_{n}(\cdot)$ evaluates the $n^{th}$ eigenvalue. We introduce further numerical approximations of (\ref{wasserstein-distance-approximation}) to improve computation speed.
+where $N_B < N$ and $N_S < N$ for two independent batches. $\lambda_{n}: \mathbb{R}^{N_S \times N_S} \rightarrow \mathbb{R}$ evaluates the $n^{th}$ eigenvalue. We introduce further numerical approximations of (\ref{wasserstein-distance-approximation}) to improve computation speed.
 
 \paragraph{Symmetric Matrices}In our experiments, we use the same data sample for $\mathbf{X}_{N_B}$ and $\mathbf{X}_{N_S}$, to ensure symmetric square matrices for $r\left(\mathbf{X}_{N_S}, \mathbf{X}_{N_B}\right)$ and $k\left(\mathbf{X}_{N_B}, \mathbf{X}_{N_S}\right)$ in the eigendecomposition term of (\ref{wasserstein-distance-approximation}). 
 This allows us to take advantage of eigenvalue properties of symmetric matrices, further explained in Appendix \ref{appendix:eigenvalue-symmetric-matrix}. 
@@ -978,6 +993,7 @@ Our experiments showed that using the same batch for $\mathbf{X}_{N_S}$ and $\ma
 
 \paragraph{Dropping the Eigendecomposition}The eigendecomposition in the last term of (\ref{wasserstein-distance-approximation}) is computationally expensive with $\mathcal{O}(N^3)$ complexity, which in our case is the sample size $N_S$.
 In our GWI experiments we often dropped this term with negligible practical effects.
+This suggests that for our use cases, the correlation constraints imposed by the eigendecomposition is a less essential contributor to achieving good prediction performance.
 This imprecise regulariser, which caused minimal change to our inference results, was significantly counteracted by much faster training speeds.
 
 \newpage
@@ -1006,7 +1022,8 @@ Projected regularisations were inspired by the experimental observation that dro
 By only regularising against the marginal function values in (\ref{proj-regulariser}), we are similarly unconstrained with respect to correlations.
 However our experiments show that this can be a sufficient regulariser to recover most of the benefits of GVI in terms of uncertainty quantification. 
 This suggests that in practice, the assumption of a definite regulariser may sometimes be overly strict.
-% In most practical VI use cases where $Q$ is an approximation, we would rarely expect to actually be in a setting where $Q$ matches our target posterior. \vw{I think you dont need the previous sentence. Your point still holds without it and it is probably a bit controversial to say this.}
+In most VI use cases where $Q$ is an approximation, we would rarely expect to actually be in a setting where $Q$ matches our target posterior. 
+% \vw{I think you dont need the previous sentence. Your point still holds without it and it is probably a bit controversial to say this.}
 The experimental success of projected regularisation suggests that a regulariser $\mathbb{D}[Q, P] \geq 0$ having capacity to prevent overfitting to the empirical risk may be sufficient to provide a reasonable learning objective for GVI.
 
 
@@ -1490,7 +1507,7 @@ Given a kernel function $k: \mathcal{X} \times \mathcal{X} \rightarrow \mathbb{R
 \begin{align}
     k(x, x') = \langle \phi(x), \phi(x') \rangle_{\mathcal{H}},
 \end{align}
-where $\phi: \mathcal{X} \rightarrow \mathcal{H}$, a gram matrix $\mathbf{K} \in \mathbb{R}^{N\times N}$ defined element-wise as
+where $\phi: \mathcal{X} \rightarrow \mathcal{H}$, a Gram matrix $\mathbf{K} \in \mathbb{R}^{N\times N}$ defined element-wise as
 \begin{align}
     \left[\mathbf{K}\right]_{n, n'} = k(x_n, x_{n'})
 \end{align}
